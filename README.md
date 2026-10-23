@@ -1,0 +1,172 @@
+# Ladecockpit
+
+**Your real Supercharger invoices in Home Assistant – plus a small web app that shows what charging actually costs you.**
+
+[Deutsch](README.de.md)
+
+![Ladecockpit web app with demo data](docs/screenshot.png)
+
+Most Home Assistant setups estimate Supercharger costs from the car's kWh and a fixed price, or ask you to type the price in after every session. Ladecockpit fetches the actual invoice from the Tesla Fleet API instead (billed kWh, price per kWh, idle fees, site, PDF) and hands it to Home Assistant.
+
+## Features
+
+- **Exact invoices, automatically.** Ladecockpit notices the end of a session, picks up the invoice within minutes and sends it once to Home Assistant. A blueprint books it into your own helpers.
+- **Price radar.** Shows, from your own invoices, which time of day and which Supercharger is cheapest for you.
+- **Next charging stop.** Forecasts when the battery reaches your floor (default 10 %) based on your recent consumption.
+- **Monthly view.** Cost, kWh, average price, cost per 100 km/mi, optional comparison with a reference price or the fuel cost of another car.
+- **Reconciliation.** Compares your Home Assistant totals with the invoices.
+- **Works while the car is offline.** Keeps its own history of battery level and odometer, e.g. for a car parked without reception.
+- **Cheap on the Tesla API.** Live data comes from Home Assistant. Tesla is only asked for the charging history, a few dozen requests per month.
+- **Read-only.** There is no code that sends commands to the car or wakes it.
+- English and German, demo mode without any credentials.
+
+## How it works
+
+```
+Home Assistant ──(battery, odometer, charging state)──► Ladecockpit ──(charging history)──► Tesla Fleet API
+      ▲                                                     │
+      └──────── event "ladecockpit_invoice" ◄───────────────┘
+                (blueprint books kWh + cost into your helpers)
+```
+
+1. Ladecockpit polls a few entities of your car in Home Assistant (local, free) every minute.
+2. When the charging state leaves `charging`, it asks Tesla for the charging history every 10 minutes until the new invoice is there (at most 3 hours). Otherwise it syncs every 6 hours.
+3. Each new invoice is sent exactly once as the event `ladecockpit_invoice`.
+4. On the very first sync, all past invoices are only imported (shown in the app) and **not** sent, so totals you already keep in Home Assistant are not counted twice.
+
+## Requirements
+
+- Docker (any machine that runs 24/7 is best, e.g. a small VM or NAS)
+- A Tesla account and a **Tesla developer app** with Fleet API access
+- Optional but recommended: Home Assistant with an integration that exposes your car's entities (Tesla Fleet, Teslemetry, Tessie, …)
+
+## Quick start (demo)
+
+```bash
+git clone https://github.com/uekala/ladecockpit.git
+cd ladecockpit
+cp .env.example .env
+docker compose up -d --build
+```
+
+Open `http://localhost:8077`. Without credentials the app runs with example data.
+
+## Setup
+
+### 1. Tesla developer app
+
+If you already use the Tesla Fleet integration in Home Assistant (or another Fleet API tool) with your own developer app, you can reuse it:
+
+1. On [developer.tesla.com](https://developer.tesla.com) open your app.
+2. Add `http://localhost:8077/auth/callback` to **Allowed Redirect URIs**.
+3. Make sure the scope **Vehicle Charging Management** is enabled. Tesla bundles the charging history and charging commands in this scope. Ladecockpit only reads.
+4. Note the client ID and secret.
+
+Starting from scratch? The Fleet API only answers apps whose domain is registered with a public key. The [Home Assistant Tesla Fleet documentation](https://www.home-assistant.io/integrations/tesla_fleet/) walks through creating the app and registering the key. Tesla's own steps are in the [Fleet API docs](https://developer.tesla.com/docs/fleet-api).
+
+### 2. Configure
+
+```bash
+cp .env.example .env
+```
+
+Minimum: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN` (Home Assistant → Profile → Security → Long-lived access tokens) and your car's entities:
+
+| Setting | Example | Unlocks |
+|---|---|---|
+| `HA_ENT_SOC` | `sensor.my_tesla_battery_level` | battery card, forecast |
+| `HA_ENT_RANGE` | `sensor.my_tesla_battery_range` | range |
+| `HA_ENT_ODOMETER` | `sensor.my_tesla_odometer` | distance per month, cost per 100 km/mi |
+| `HA_ENT_CHARGING` | `sensor.my_tesla_charging` | invoice right after a session ends |
+
+Use the IP of Home Assistant in `HA_URL`. `.local` names often do not resolve inside containers. All settings are listed in [.env.example](.env.example).
+
+### 3. Run
+
+```bash
+docker compose up -d --build
+docker compose logs -f      # expect "Ladecockpit … started (live, …)"
+```
+
+Or use the published image (see `docker-compose.yml`): `ghcr.io/uekala/ladecockpit:latest` for amd64 and arm64.
+
+### 4. Connect to Tesla
+
+Open `http://localhost:8077` on the machine running the container and click **Sign in with Tesla**. The first sync starts right after.
+
+The redirect URI points to `localhost`. If the container runs elsewhere, either open an SSH tunnel (`ssh -L 8077:localhost:8077 your-server`) or copy the full address from the browser bar after signing in (the page itself will not load) and paste it under "The redirect after sign-in does not land here?".
+
+### 5. Book invoices in Home Assistant
+
+1. Create two **Number** helpers (Settings → Devices & services → Helpers), e.g. "Charging energy total" (kWh) and "Charging cost total". Set the **maximum high** (e.g. 1000000), the default of 100 is reached quickly. Optionally add a **Text** helper for the last session.
+2. Import the blueprint:
+
+   [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fuekala%2Fladecockpit%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fladecockpit%2Fbook_invoice.yaml)
+
+3. Create an automation from it and pick your helpers. Under *Additional actions* you can add a notification. The variables `site`, `kwh`, `total`, `price_per_kwh`, `idle_fee`, `currency` and `text` are available there.
+4. Set `HA_ENT_COST_TOTAL` and `HA_ENT_KWH_TOTAL` to the two helpers to see the reconciliation in the app.
+
+Optional: [`homeassistant/ladecockpit_package.yaml`](homeassistant/ladecockpit_package.yaml) adds sensors for the forecast and the price tip, and a `rest_command` to trigger the invoice lookup yourself.
+
+## Event data
+
+`ladecockpit_invoice` carries:
+
+| Field | Example |
+|---|---|
+| `session_id` | `"1234567"` |
+| `site` | `"Northgate"` |
+| `start`, `end` | ISO timestamps in your time zone |
+| `kwh` | `18.0` (billed) |
+| `charge_cost`, `idle_fee`, `total` | `6.66`, `0.0`, `6.66` |
+| `price_per_kwh` | `0.37` |
+| `currency` | `"EUR"` |
+| `text` | `"18.0 kWh · €6.66 · €0.37/kWh · Oct 21, 18:18"` |
+
+## API
+
+| Path | Purpose |
+|---|---|
+| `/` | Web app |
+| `GET /api/dashboard` | Everything the web app shows, as JSON |
+| `GET /api/ha` | Flat values for REST sensors |
+| `POST /api/sync` | Look for a new invoice at short intervals |
+| `POST /api/sync/now` | Sync now |
+| `GET /api/invoice/<id>` | Invoice PDF (cached locally) |
+| `GET /api/debug/raw` | Last raw Tesla response, to check field names |
+| `GET /healthz` | Health check |
+
+## Costs
+
+The Fleet API is billed per request. Ladecockpit only uses data requests for the charging history and invoices. With default settings that is a few dozen requests per month, well inside the monthly credit Tesla gives every developer account. `API_BUDGET_REQUESTS` (default 1500) is a hard stop. The app shows the count of the current month.
+
+## Privacy and security
+
+- Everything stays on your machine: tokens, invoices and readings live in the Docker volume `ladecockpit-data` (SQLite and a PDF cache).
+- Ladecockpit talks only to Tesla and your Home Assistant.
+- Run it in your LAN or behind a reverse proxy with authentication. `APP_PASSWORD` adds simple HTTP Basic protection.
+- Never commit your `.env`. It is already in `.gitignore`.
+
+## Troubleshooting
+
+- **"Entity not found in Home Assistant"**: check the `HA_ENT_…` settings in Developer tools → States.
+- **Invoice amounts are 0 or missing**: open `/api/debug/raw` and compare the fields with what `app/tesla.py` reads. Please open an issue with an anonymised sample.
+- **"Tesla sign-in expired"**: refresh tokens are single-use and expire after a while without use. Connect again.
+
+## Development
+
+```bash
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+pytest
+APP_MODE=demo uvicorn app.main:app --reload --port 8077
+python -m scripts.build_preview preview.html    # standalone page with demo data
+```
+
+## Disclaimer
+
+Ladecockpit is a community project and not affiliated with or endorsed by Tesla, Inc. Tesla and Supercharger are trademarks of Tesla, Inc. Use at your own risk and check your invoices in the Tesla app when in doubt.
+
+## License
+
+[MIT](LICENSE)

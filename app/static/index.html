@@ -1,0 +1,1028 @@
+<title>Ladecockpit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#0d1214">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: "charging slip" – battery band with charging window and next stop on top,
+   then the last invoice as a receipt next to the month, price radar, session list, operations. */
+:root {
+  --bg: #edf1f1;
+  --panel: #ffffff;
+  --sunk: #e2e8e9;
+  --line: #cfd8da;
+  --ink: #10181a;
+  --ink-2: #3a484b;
+  --mute: #5d6d71;
+  --accent: #0b7fa8;
+  --accent-soft: #d5edf5;
+  --on-accent: #ffffff;
+  --good: #1d8550;
+  --good-soft: #daf0e2;
+  --warn: #9c6400;
+  --warn-soft: #f6e8cc;
+  --bad: #bd3727;
+  --bad-soft: #f8deda;
+  --shadow: 0 1px 2px rgba(16, 24, 26, .06), 0 6px 20px rgba(16, 24, 26, .05);
+
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --r: 14px;
+  --gap: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1214;
+    --panel: #141b1e;
+    --sunk: #0f1517;
+    --line: #253135;
+    --ink: #e5ecec;
+    --ink-2: #b4c2c4;
+    --mute: #84969a;
+    --accent: #4cc3ea;
+    --accent-soft: #11313d;
+    --on-accent: #052029;
+    --good: #5fcf8e;
+    --good-soft: #13301f;
+    --warn: #f0b440;
+    --warn-soft: #362a10;
+    --bad: #f0705f;
+    --bad-soft: #3a1915;
+    --shadow: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 8px 24px rgba(0, 0, 0, .35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1214;
+  --panel: #141b1e;
+  --sunk: #0f1517;
+  --line: #253135;
+  --ink: #e5ecec;
+  --ink-2: #b4c2c4;
+  --mute: #84969a;
+  --accent: #4cc3ea;
+  --accent-soft: #11313d;
+  --on-accent: #052029;
+  --good: #5fcf8e;
+  --good-soft: #13301f;
+  --warn: #f0b440;
+  --warn-soft: #362a10;
+  --bad: #f0705f;
+  --bad-soft: #3a1915;
+  --shadow: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 8px 24px rgba(0, 0, 0, .35);
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+  display: grid;
+  gap: 20px;
+}
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+a { color: var(--accent); }
+.num, td.n, .mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+/* --- Kopf ------------------------------------------------------------------- */
+.top {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px;
+  justify-content: space-between;
+}
+.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.brand h1 {
+  font-family: var(--f-display);
+  font-stretch: 125%;
+  font-weight: 800;
+  font-size: 1.55rem;
+  letter-spacing: -.01em;
+}
+.brand h1 span { color: var(--accent); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .78rem; font-weight: 600; letter-spacing: .02em;
+  padding: 3px 10px; border-radius: 999px;
+  background: var(--sunk); color: var(--ink-2);
+  white-space: nowrap;
+}
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .9; }
+.chip.plain::before { display: none; }
+.chip.good { background: var(--good-soft); color: var(--good); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.info { background: var(--accent-soft); color: var(--accent); }
+.chip.pulse::before { animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+
+.btn {
+  font: inherit; font-weight: 650; font-size: .9rem;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 16px; min-height: 40px;
+  border-radius: 10px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink);
+  cursor: pointer; text-decoration: none;
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.btn:hover { border-color: var(--accent); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.btn[disabled], .btn.is-disabled { opacity: .5; cursor: not-allowed; pointer-events: none; }
+.btn:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+.banner {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 16px; border-radius: 12px;
+  background: var(--warn-soft); color: var(--ink);
+  font-size: .92rem;
+}
+.banner strong { color: var(--warn); }
+.banner.bad { background: var(--bad-soft); }
+.banner.bad strong { color: var(--bad); }
+
+/* --- Panels ------------------------------------------------------------------- */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+.eyebrow {
+  font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--mute);
+}
+.panel h2 {
+  font-family: var(--f-display); font-stretch: 112%;
+  font-weight: 700; font-size: 1.12rem;
+}
+.sub { color: var(--mute); font-size: .88rem; }
+.grid-2 { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+.grid-hero { display: grid; gap: 20px; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
+@media (max-width: 820px) { .grid-hero { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- Akku-Band ---------------------------------------------------------------- */
+.battery-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 20px; }
+.big {
+  font-family: var(--f-display); font-stretch: 125%; font-weight: 800;
+  font-size: clamp(2.8rem, 9vw, 4.2rem); line-height: .95; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.big small { font-size: .42em; font-weight: 700; margin-left: 4px; color: var(--ink-2); letter-spacing: 0; }
+.range { font-family: var(--f-display); font-stretch: 110%; font-weight: 650; font-size: 1.35rem; }
+.range small { color: var(--mute); font-weight: 500; font-size: .8rem; display: block; font-stretch: 100%; text-align: right; }
+
+.gauge { position: relative; padding-top: 30px; padding-bottom: 22px; }
+.gauge-window {
+  position: absolute; top: 0; height: 22px;
+  border: 1.5px solid var(--accent); border-bottom: none; border-radius: 6px 6px 0 0;
+  display: flex; justify-content: center;
+}
+.gauge-window span {
+  position: relative; top: -10px; padding: 0 8px;
+  background: var(--panel); color: var(--accent);
+  font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+}
+.gauge-body { position: relative; display: flex; align-items: center; gap: 4px; }
+.gauge-track {
+  position: relative; flex: 1; height: 30px; border-radius: 8px;
+  background: var(--sunk); border: 1px solid var(--line); overflow: hidden;
+}
+.gauge-nub { width: 6px; height: 14px; border-radius: 0 3px 3px 0; background: var(--line); }
+.gauge-fill {
+  position: absolute; inset: 0 auto 0 0; border-radius: 7px 4px 4px 7px;
+  background: var(--accent);
+  transition: width .8s cubic-bezier(.2, .8, .2, 1);
+}
+.gauge-fill.warn { background: var(--warn); }
+.gauge-fill.bad { background: var(--bad); }
+.gauge-floor { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); opacity: .55; }
+.gauge-scale { position: absolute; left: 0; right: 10px; bottom: 0; height: 18px; }
+.gauge-scale span {
+  position: absolute; transform: translateX(-50%);
+  font-family: var(--f-mono); font-size: .72rem; color: var(--mute); white-space: nowrap;
+}
+.gauge-scale span:first-child { transform: none; }
+.gauge-scale span:last-child { transform: translateX(-100%); }
+.stamp { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; color: var(--mute); font-size: .86rem; }
+
+/* --- Nächster Ladestopp ---------------------------------------------------------- */
+.next-date {
+  font-family: var(--f-display); font-stretch: 118%; font-weight: 800;
+  font-size: clamp(2rem, 6vw, 2.7rem); line-height: 1; letter-spacing: -.01em;
+}
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.fact { background: var(--sunk); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.fact b { display: block; font-family: var(--f-mono); font-weight: 500; font-size: 1.02rem; font-variant-numeric: tabular-nums; }
+.fact span { font-size: .74rem; color: var(--mute); }
+.tip {
+  display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start;
+  padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); font-size: .9rem;
+}
+.tip svg { color: var(--accent); margin-top: 2px; }
+
+/* --- Beleg -------------------------------------------------------------------------- */
+.receipt {
+  position: relative;
+  background: var(--sunk);
+  border-radius: 10px 10px 0 0;
+  padding: 18px 18px 26px;
+  font-family: var(--f-mono); font-size: .88rem;
+  display: grid; gap: 4px;
+  --tooth: 9px;
+  -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth)) no-repeat,
+                conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--tooth) * 2) var(--tooth) repeat-x;
+          mask: linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth)) no-repeat,
+                conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--tooth) * 2) var(--tooth) repeat-x;
+}
+.receipt .site { font-family: var(--f-display); font-stretch: 110%; font-weight: 750; font-size: 1.05rem; }
+.receipt .when { color: var(--mute); margin-bottom: 8px; font-size: .8rem; }
+.line { display: flex; align-items: baseline; gap: 8px; }
+.line .lbl { white-space: nowrap; }
+.line .dots { flex: 1; border-bottom: 1.5px dotted var(--line); transform: translateY(-4px); min-width: 12px; }
+.line .val { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.line.total { margin-top: 8px; padding-top: 10px; border-top: 1.5px dashed var(--mute); font-weight: 500; font-size: 1rem; }
+.line.total .dots { border: none; }
+.line.zero .val { color: var(--mute); }
+.receipt-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* --- Monat ------------------------------------------------------------------------------ */
+.month-total { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.month-total .big { font-size: clamp(2.2rem, 7vw, 3.1rem); }
+.delta { font-size: .85rem; color: var(--mute); }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 520px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kpi { border-top: 2px solid var(--line); padding-top: 8px; min-width: 0; }
+.kpi b { display: block; font-family: var(--f-mono); font-weight: 500; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.kpi span { font-size: .74rem; color: var(--mute); }
+.compare { display: grid; gap: 8px; font-size: .9rem; }
+.compare .line .val { font-family: var(--f-mono); }
+
+/* --- Preis-Radar ---------------------------------------------------------------------- */
+.radar { display: grid; gap: 10px; position: relative; }
+.radar-row {
+  display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 7.2rem; gap: 12px; align-items: center;
+  border-radius: 8px; padding: 2px 0;
+}
+.radar-row .who b { display: block; font-size: .92rem; }
+.radar-row .who span { font-size: .76rem; color: var(--mute); font-family: var(--f-mono); }
+.radar-track { position: relative; height: 26px; }
+.radar-bar {
+  position: absolute; left: 0; top: 3px; bottom: 3px;
+  background: var(--accent); border-radius: 0 4px 4px 0;
+  transition: width .7s cubic-bezier(.2, .8, .2, 1);
+}
+.radar-row.best .radar-bar { background: var(--good); }
+.radar-empty {
+  position: absolute; inset: 3px 0; border-radius: 4px;
+  background: repeating-linear-gradient(135deg, var(--sunk) 0 6px, transparent 6px 12px);
+  border: 1px dashed var(--line);
+}
+.radar-avg { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 1.5px dashed var(--ink-2); opacity: .7; }
+.radar-val { text-align: right; font-family: var(--f-mono); font-size: .86rem; font-variant-numeric: tabular-nums; }
+.radar-val small { display: block; color: var(--mute); font-size: .72rem; font-family: var(--f-body); }
+.radar-axis { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 7.2rem; gap: 12px; }
+.radar-axis .ticks { position: relative; height: 16px; border-top: 1px solid var(--line); }
+.radar-axis .ticks span { position: absolute; top: 2px; transform: translateX(-50%); font-family: var(--f-mono); font-size: .7rem; color: var(--mute); }
+.radar-axis .ticks span.avg { color: var(--ink-2); font-weight: 500; }
+@media (max-width: 560px) {
+  .radar-row, .radar-axis { grid-template-columns: 6.6rem minmax(0, 1fr) 5.8rem; gap: 8px; }
+}
+.insights { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.insights li {
+  display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start;
+  font-size: .9rem; padding: 10px 12px; background: var(--sunk); border-radius: 10px;
+}
+.insights li svg { color: var(--accent); margin-top: 2px; }
+.insights li.idle svg { color: var(--warn); }
+
+/* --- Tabellen -------------------------------------------------------------------------- */
+.scroll { overflow-x: auto; margin-inline: -4px; padding-inline: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th {
+  text-align: left; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--mute); padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+th.n, td.n { text-align: right; }
+td.site { white-space: normal; min-width: 8rem; }
+td .when-sub { display: block; color: var(--mute); font-size: .76rem; font-family: var(--f-mono); }
+.minibar { display: inline-block; width: 64px; height: 6px; border-radius: 3px; background: var(--sunk); vertical-align: middle; margin-right: 8px; position: relative; overflow: hidden; }
+.minibar i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 3px; }
+.link-btn { font: inherit; font-size: .85rem; font-weight: 600; color: var(--accent); background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.muted { color: var(--mute); }
+
+/* --- Monatsverlauf ------------------------------------------------------------------------ */
+.cols { display: flex; align-items: flex-end; gap: 14px; height: 170px; padding-top: 22px; border-bottom: 1px solid var(--line); position: relative; }
+.col { flex: 1; max-width: 90px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; position: relative; }
+.col .bar { width: 100%; max-width: 46px; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 2px; transition: height .7s cubic-bezier(.2, .8, .2, 1); }
+.col.cur .bar {
+  background: repeating-linear-gradient(135deg, var(--accent) 0 5px, color-mix(in srgb, var(--accent) 70%, var(--panel)) 5px 10px);
+}
+.col .v { font-family: var(--f-mono); font-size: .74rem; color: var(--ink-2); margin-bottom: 4px; white-space: nowrap; }
+.col-labels { display: flex; gap: 14px; }
+.col-labels span { flex: 1; max-width: 90px; text-align: center; font-size: .76rem; color: var(--mute); }
+
+/* --- Abgleich / Betrieb ----------------------------------------------------------------------- */
+.meter { height: 8px; border-radius: 4px; background: var(--sunk); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.status-list { display: grid; gap: 8px; font-size: .9rem; }
+.status-list div { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.setup-steps { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; font-size: .92rem; }
+form.code { display: flex; gap: 8px; flex-wrap: wrap; }
+form.code input {
+  flex: 1; min-width: 0; font: inherit; font-size: .88rem; padding: 9px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--sunk); color: var(--ink);
+}
+details summary { cursor: pointer; font-weight: 600; font-size: .9rem; color: var(--ink-2); }
+details[open] summary { margin-bottom: 10px; }
+
+/* --- Tooltip & Toast ------------------------------------------------------------------------- */
+.tt {
+  position: fixed; z-index: 30; pointer-events: none;
+  background: var(--ink); color: var(--bg);
+  font-size: .8rem; line-height: 1.4; padding: 7px 10px; border-radius: 8px;
+  max-width: 240px; box-shadow: var(--shadow);
+}
+.toast {
+  position: fixed; z-index: 40; left: 50%; transform: translateX(-50%);
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px;
+  font-size: .9rem; font-weight: 600; box-shadow: var(--shadow); max-width: calc(100% - 32px);
+}
+.skeleton { color: var(--mute); padding: 40px 0; text-align: center; }
+footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="brand">
+      <h1>Lade<span>cockpit</span></h1>
+      <span class="sub" id="tagline"></span>
+    </div>
+    <div class="chips" id="chips"></div>
+  </header>
+  <div id="banners"></div>
+  <div id="content"><p class="skeleton">…</p></div>
+  <footer id="footer"></footer>
+</div>
+<div class="tt" id="tt" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script type="application/json" id="preview-data"></script>
+<script>
+(() => {
+  "use strict";
+
+  const $ = (sel) => document.querySelector(sel);
+  const state = { data: null, preview: false, busy: false };
+
+  // --- Texts -----------------------------------------------------------------------
+  const TEXT = {
+    en: {
+      tagline: "Supercharger invoices for Home Assistant",
+      preview: "Preview · demo data", demoMode: "Demo mode", live: "Live",
+      searching: "Looking for invoice …", syncBroken: "Sync failed", synced: "Synced {when}",
+      syncNow: "Sync now", syncing: "Syncing …", connectFirst: "Connect to Tesla first", syncTitle: "Fetch invoices from Tesla now",
+      previewBanner: "<strong>Preview.</strong> All figures are made-up example data. On your own server the page shows your real invoices and Home Assistant values.",
+      missingEntities: "Entity not found in Home Assistant:", missingHint: "Check the HA_ENT_… settings.",
+      authExpired: "Tesla sign-in expired.", lastSyncFailed: "Last sync failed.", haDown: "Home Assistant not reachable.", haHint: "Check HA_URL and HA_TOKEN.",
+      noService: "No connection to the Ladecockpit service.", noServiceHint: "Is the container running?",
+      setup: "Setup", teslaMissing: "Tesla access missing",
+      teslaMissingText: "Add <code>TESLA_CLIENT_ID</code> and <code>TESLA_CLIENT_SECRET</code> of your developer app to <code>.env</code> and restart the container.",
+      connectTitle: "Connect to Tesla",
+      connectText: "Sign in once so Ladecockpit may read your Supercharger invoices. It only reads and never sends commands to the car.",
+      signIn: "Sign in with Tesla", redirectHelp: "The redirect after sign-in does not land here?",
+      redirectText: "After signing in, copy the full address from the browser bar (it contains <code>code=…</code>) and paste it here. Expected redirect:",
+      connect: "Connect", addrOrCode: "Address or code",
+      battery: "Battery", noBattery: "No battery data", carOnline: "Car online", liveFromHa: "Live from Home Assistant",
+      carOffline: "Car offline", lastValue: "Last value {when}", rangeLabel: "Range reported by car",
+      window: "Charging window {a}–{b} %", gaugeAria: "Battery {soc}, charging window {a} to {b} percent",
+      nextStop: "Next charging stop", soon: "Charge soon", reachesToday: "The battery reaches {floor} % today.",
+      reachesTomorrow: "The battery reaches {floor} % tomorrow.", reachesIn: "In about {days} days the battery is at {floor} %.",
+      perDay: "used per day", distPerDay: "driven per day", basis: "history used", days: "{n} days",
+      lastCharge: "Last session · from invoice", noCharge: "No invoice fetched yet. After the first sync the latest Supercharger session with its real price shows up here.",
+      supercharger: "Supercharger {site}", energy: "Energy", price: "Price", charging: "Charging", idleFee: "Idle fee", total: "Total",
+      invoicePdf: "Invoice (PDF)", notInPreview: "Not available in the preview",
+      pushed: "Sent to HA", backfill: "Imported", pending: "Sending to HA", stale: "Too old to send",
+      pushedShort: "sent", backfillShort: "imported", pendingShort: "pending", staleShort: "too old",
+      thisMonth: "This month", avgDelta: "avg price {sign}{d}/kWh vs. {month}",
+      kwhCharged: "kWh charged", avgPerKwh: "avg per kWh", per100: "per 100 {unit}", sessionsWord: "sessions", feeWord: "fees",
+      atReference: "At reference price {p}", perInvoices: "Per invoices (without fees)",
+      radar: "Price radar", radarTitle: "What a kWh costs you by time of day", radarSub: "Average from your invoices", yourAvg: "dashed: your average {p}",
+      cheapest: "cheapest", noSession: "no session", oneSession: "1 session", nSessions: "{n} sessions",
+      tipSlot: "{label} ({range}): avg {p}/kWh from {n}, {kwh} kWh", tipEmpty: "{label}: no session in this time window yet",
+      sites: "Sites", sitesTitle: "Where you charge", noSessions: "No sessions yet.",
+      thSite: "Supercharger", thSessions: "Sessions", thKwh: "kWh", thAvg: "avg /kWh",
+      history: "History", historyTitle: "Charging cost per month", current: "(current)",
+      allSessions: "All sessions", sinceDate: "since {d}", thDate: "Date", thAmount: "Amount", thHa: "HA", thInvoice: "Invoice",
+      open: "open", plusIdle: "+ {p} idle fee", noneYet: "No sessions fetched yet.",
+      reconcile: "Reconciliation", reconcileTitle: "Home Assistant vs. invoices", haCost: "Charging cost in HA", perNInvoices: "Per {n} invoices",
+      haKwh: "Energy in HA", billedKwh: "Billed kWh", matches: "Matches", haAbove: "HA is {p} higher", haBelow: "HA is {p} lower",
+      reconcileText: "Differences come from estimated prices in manual bookings and from the car reporting fewer kWh than the Supercharger bills. Sessions sent from now on are booked with invoice values.",
+      ops: "Operation", opsTitle: "Connections & API cost", tesla: "Tesla", ha: "Home Assistant",
+      connected: "connected", notConnected: "not connected", unreachable: "unreachable", notSetUp: "not set up",
+      entities: "HA entities", lastSync: "Last sync", nextSync: "Next sync", requests: "Tesla requests this month",
+      apiCost: "≈ ${usd} – covered by Tesla's monthly ${credit} credit.", disconnect: "Disconnect Tesla", confirmDisconnect: "Really disconnect? Tap again",
+      footerSrc: "Invoices: Tesla Fleet API · Battery & distance: Home Assistant", stand: "As of {d}",
+      toastSynced: "Synced – {n} new", toastNothing: "Synced – nothing new", toastFailed: "Sync failed: {e}",
+      toastConnected: "Connected to Tesla – first sync running", toastDisconnected: "Tesla disconnected",
+      unknown: "unknown", justNow: "just now", minAgo: "{n} min ago", hAgo: "{n} h ago", yesterday: "yesterday {t}",
+      inMin: "in {n} min", inH: "in {n} h", onDate: "on {d}", perMonthAria: "Charging cost per month",
+    },
+    de: {
+      tagline: "Supercharger-Rechnungen für Home Assistant",
+      preview: "Vorschau · Demo-Daten", demoMode: "Demo-Modus", live: "Live",
+      searching: "Sucht neue Rechnung …", syncBroken: "Abgleich gestört", synced: "Abgleich {when}",
+      syncNow: "Jetzt abgleichen", syncing: "Gleiche ab …", connectFirst: "Erst mit Tesla verbinden", syncTitle: "Rechnungen jetzt bei Tesla abrufen",
+      previewBanner: "<strong>Vorschau.</strong> Alle Zahlen sind erfundene Beispieldaten. Auf deinem eigenen Server zeigt die Seite deine echten Rechnungen und HA-Werte.",
+      missingEntities: "Entität in Home Assistant nicht gefunden:", missingHint: "Prüfe die HA_ENT_…-Einstellungen.",
+      authExpired: "Tesla-Anmeldung abgelaufen.", lastSyncFailed: "Letzter Abgleich fehlgeschlagen.", haDown: "Home Assistant nicht erreichbar.", haHint: "Prüfe HA_URL und HA_TOKEN.",
+      noService: "Keine Verbindung zum Ladecockpit-Dienst.", noServiceHint: "Läuft der Container?",
+      setup: "Einrichtung", teslaMissing: "Tesla-Zugang fehlt",
+      teslaMissingText: "Trage <code>TESLA_CLIENT_ID</code> und <code>TESLA_CLIENT_SECRET</code> deiner Developer-App in die <code>.env</code> ein und starte den Container neu.",
+      connectTitle: "Mit Tesla verbinden",
+      connectText: "Einmal anmelden, damit Ladecockpit deine Supercharger-Rechnungen abrufen darf. Es liest nur und schickt keine Befehle ans Auto.",
+      signIn: "Bei Tesla anmelden", redirectHelp: "Die Weiterleitung nach der Anmeldung landet nicht hier?",
+      redirectText: "Kopiere nach der Anmeldung die komplette Adresse aus der Browserzeile (sie enthält <code>code=…</code>) und füge sie hier ein. Erwartete Weiterleitung:",
+      connect: "Verbinden", addrOrCode: "Adresse oder Code",
+      battery: "Akku", noBattery: "Keine Akkudaten", carOnline: "Auto online", liveFromHa: "Live aus Home Assistant",
+      carOffline: "Auto offline", lastValue: "Letzter Stand {when}", rangeLabel: "Reichweite laut Auto",
+      window: "Ladefenster {a}–{b} %", gaugeAria: "Akku {soc}, Ladefenster {a} bis {b} Prozent",
+      nextStop: "Nächster Ladestopp", soon: "Bald laden", reachesToday: "Der Akku erreicht heute {floor} %.",
+      reachesTomorrow: "Der Akku erreicht morgen {floor} %.", reachesIn: "In etwa {days} Tagen ist der Akku bei {floor} %.",
+      perDay: "Verbrauch pro Tag", distPerDay: "gefahren pro Tag", basis: "Verlauf als Basis", days: "{n} Tage",
+      lastCharge: "Letzte Ladung · laut Rechnung", noCharge: "Noch keine Rechnung abgerufen. Nach dem ersten Abgleich steht hier die letzte Supercharger-Ladung mit echtem Preis.",
+      supercharger: "Supercharger {site}", energy: "Energie", price: "Preis", charging: "Laden", idleFee: "Blockiergebühr", total: "Summe",
+      invoicePdf: "Rechnung (PDF)", notInPreview: "In der Vorschau nicht verfügbar",
+      pushed: "An HA gemeldet", backfill: "Übernommen", pending: "Wird an HA gemeldet", stale: "Zu alt zum Melden",
+      pushedShort: "gemeldet", backfillShort: "übernommen", pendingShort: "offen", staleShort: "zu alt",
+      thisMonth: "Dieser Monat", avgDelta: "Ø-Preis {sign}{d}/kWh ggü. {month}",
+      kwhCharged: "kWh geladen", avgPerKwh: "Ø pro kWh", per100: "pro 100 {unit}", sessionsWord: "Ladungen", feeWord: "Gebühr",
+      atReference: "Mit Referenzpreis {p}", perInvoices: "Laut Rechnungen (ohne Gebühren)",
+      radar: "Preis-Radar", radarTitle: "Was dich eine kWh je nach Uhrzeit kostet", radarSub: "Ø aus deinen Rechnungen", yourAvg: "gestrichelt: dein Schnitt {p}",
+      cheapest: "am günstigsten", noSession: "keine Ladung", oneSession: "1 Ladung", nSessions: "{n} Ladungen",
+      tipSlot: "{label} ({range}): Ø {p}/kWh aus {n}, {kwh} kWh", tipEmpty: "{label}: noch keine Ladung in diesem Zeitfenster",
+      sites: "Standorte", sitesTitle: "Wo du lädst", noSessions: "Noch keine Ladungen.",
+      thSite: "Supercharger", thSessions: "Ladungen", thKwh: "kWh", thAvg: "Ø /kWh",
+      history: "Verlauf", historyTitle: "Ladekosten pro Monat", current: "(lfd.)",
+      allSessions: "Alle Ladungen", sinceDate: "seit {d}", thDate: "Datum", thAmount: "Betrag", thHa: "HA", thInvoice: "Rechnung",
+      open: "offen", plusIdle: "+ {p} Blockiergebühr", noneYet: "Noch keine Ladungen abgerufen.",
+      reconcile: "Abgleich", reconcileTitle: "Home Assistant vs. Rechnungen", haCost: "Ladekosten in HA", perNInvoices: "Laut {n} Rechnungen",
+      haKwh: "Lademenge in HA", billedKwh: "Abgerechnete kWh", matches: "Passt", haAbove: "HA liegt {p} darüber", haBelow: "HA liegt {p} darunter",
+      reconcileText: "Abweichungen kommen von geschätzten Preisen bei manuellen Buchungen und davon, dass das Auto weniger kWh meldet, als der Supercharger abrechnet. Ab jetzt gemeldete Ladungen werden mit Rechnungswerten gebucht.",
+      ops: "Betrieb", opsTitle: "Verbindungen & API-Kosten", tesla: "Tesla", ha: "Home Assistant",
+      connected: "verbunden", notConnected: "nicht verbunden", unreachable: "nicht erreichbar", notSetUp: "nicht eingerichtet",
+      entities: "HA-Entitäten", lastSync: "Letzter Abgleich", nextSync: "Nächster Abgleich", requests: "Tesla-Abfragen diesen Monat",
+      apiCost: "≈ {usd} $ – das monatliche Tesla-Guthaben von {credit} $ deckt das ab.", disconnect: "Tesla-Verbindung trennen", confirmDisconnect: "Wirklich trennen? Nochmal tippen",
+      footerSrc: "Rechnungsdaten: Tesla Fleet API · Akku & Strecke: Home Assistant", stand: "Stand {d}",
+      toastSynced: "Abgeglichen – {n} neu", toastNothing: "Abgeglichen – nichts Neues", toastFailed: "Abgleich fehlgeschlagen: {e}",
+      toastConnected: "Mit Tesla verbunden – erster Abgleich läuft", toastDisconnected: "Tesla-Verbindung getrennt",
+      unknown: "unbekannt", justNow: "gerade eben", minAgo: "vor {n} Min.", hAgo: "vor {n} Std.", yesterday: "gestern {t}",
+      inMin: "in {n} Min.", inH: "in {n} Std.", onDate: "am {d}", perMonthAria: "Ladekosten pro Monat",
+    },
+  };
+  const lang = () => (state.data?.lang === "de" ? "de" : "en");
+  const T = (key, vars = {}) => (TEXT[lang()][key] ?? TEXT.en[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
+
+  // --- Formatting ----------------------------------------------------------------------
+  const locale = () => state.data?.locale || (lang() === "de" ? "de-DE" : "en-US");
+  const nfCache = {};
+  const nf = (d) => (nfCache[locale() + d] ||= new Intl.NumberFormat(locale(), { minimumFractionDigits: d, maximumFractionDigits: d }));
+  const num = (v, d = 1) => (v == null || Number.isNaN(v) ? "–" : nf(d).format(v));
+  const cfCache = {};
+  const money = (v, d = 2) => {
+    if (v == null || Number.isNaN(v)) return "–";
+    const key = locale() + (state.data?.currency || "EUR") + d;
+    cfCache[key] ||= new Intl.NumberFormat(locale(), { style: "currency", currency: state.data?.currency || "EUR", minimumFractionDigits: d, maximumFractionDigits: d });
+    return cfCache[key].format(v);
+  };
+  const ppk = (v) => (v == null ? "–" : money(v) + "/kWh");
+  const unit = () => state.data?.distance_unit || "km";
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const sessionsText = (n) => (n === 1 ? T("oneSession") : T("nSessions", { n }));
+
+  function fmtDate(iso, opts) {
+    if (!iso) return "–";
+    return new Intl.DateTimeFormat(locale(), { timeZone: state.data?.tz || undefined, ...opts }).format(new Date(iso));
+  }
+  const dShort = (iso) => fmtDate(iso, { weekday: "short", day: "2-digit", month: "2-digit" });
+  const tShort = (iso) => fmtDate(iso, { hour: "2-digit", minute: "2-digit" });
+
+  function relTime(iso) {
+    if (!iso) return T("unknown");
+    const diff = (Date.now() - new Date(iso).getTime()) / 60000;
+    if (diff < 0) {
+      const m = -diff;
+      if (m < 60) return T("inMin", { n: Math.round(m) });
+      if (m < 60 * 36) return T("inH", { n: Math.round(m / 60) });
+      return T("onDate", { d: dShort(iso) });
+    }
+    if (diff < 2) return T("justNow");
+    if (diff < 60) return T("minAgo", { n: Math.round(diff) });
+    if (diff < 60 * 24) return T("hAgo", { n: Math.round(diff / 60) });
+    if (diff < 60 * 48) return T("yesterday", { t: tShort(iso) });
+    return `${dShort(iso)} ${tShort(iso)}`;
+  }
+
+  // --- Icons ------------------------------------------------------------------------------
+  const ico = {
+    clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    pin: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+    plug: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0V8zM12 17v5"/></svg>',
+    tag: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>',
+    bolt: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>',
+  };
+  const insightIcon = { slot: ico.clock, site: ico.pin, idle: ico.plug, reference: ico.tag };
+
+  // --- Loading -------------------------------------------------------------------------------
+  async function load() {
+    try {
+      const r = await fetch("api/dashboard", { cache: "no-store", headers: { Accept: "application/json" } });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      state.data = await r.json();
+      state.preview = false;
+    } catch (err) {
+      const el = document.getElementById("preview-data");
+      const raw = el && el.textContent.trim();
+      if (raw) {
+        state.data = JSON.parse(raw);
+        state.preview = true;
+      } else if (!state.data) {
+        $("#content").innerHTML = `<div class="banner bad"><div><strong>${T("noService")}</strong> ${T("noServiceHint")} (${esc(err.message)})</div></div>`;
+        return;
+      }
+    }
+    render();
+  }
+
+  async function post(url, body) {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    let data = {};
+    try { data = await r.json(); } catch { /* empty body */ }
+    if (!r.ok) throw new Error(data.detail || "HTTP " + r.status);
+    return data;
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $("#toast");
+    t.textContent = msg;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (t.hidden = true), 3600);
+  }
+
+  // --- Render ------------------------------------------------------------------------------------
+  function render() {
+    const d = state.data;
+    document.documentElement.lang = lang();
+    $("#tagline").textContent = T("tagline");
+    renderChips(d);
+    renderBanners(d);
+    $("#content").innerHTML = `
+      <div style="display:grid;gap:20px">
+        ${setupPanel(d)}
+        <div class="grid-hero">${batteryPanel(d)}${nextStopPanel(d)}</div>
+        <div class="grid-2">${receiptPanel(d)}${monthPanel(d)}</div>
+        ${radarPanel(d)}
+        <div class="grid-2">${sitesPanel(d)}${historyPanel(d)}</div>
+        ${sessionsPanel(d)}
+        <div class="grid-2">${d.reconcile ? reconcilePanel(d) : ""}${opsPanel(d)}</div>
+      </div>`;
+    $("#footer").innerHTML = `<span>${T("footerSrc")}</span>
+      <span>${esc(T("stand", { d: fmtDate(d.generated_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) }))}</span>`;
+    bindTooltips();
+    bindActions();
+  }
+
+  const offline = () => state.preview || state.data?.mode === "demo";
+
+  function renderChips(d) {
+    const chips = [];
+    if (state.preview) chips.push(`<span class="chip warn">${T("preview")}</span>`);
+    else if (d.mode === "demo") chips.push(`<span class="chip warn">${T("demoMode")}</span>`);
+    else chips.push(`<span class="chip good">${T("live")}</span>`);
+    const s = d.sync || {};
+    if (s.burst) chips.push(`<span class="chip info pulse">${T("searching")}</span>`);
+    else if (s.error) chips.push(`<span class="chip bad">${T("syncBroken")}</span>`);
+    else if (s.last) chips.push(`<span class="chip plain">${esc(T("synced", { when: relTime(s.last) }))}</span>`);
+    const dis = offline() || !d.setup?.tesla_connected ? "disabled" : "";
+    chips.push(`<button class="btn" id="btn-sync" ${dis} title="${dis ? T("connectFirst") : T("syncTitle")}">${T("syncNow")}</button>`);
+    $("#chips").innerHTML = chips.join("");
+  }
+
+  function renderBanners(d) {
+    const out = [];
+    if (state.preview) out.push(`<div class="banner"><div>${T("previewBanner")}</div></div>`);
+    const st = d.setup || {};
+    if (st.tesla_auth_error) out.push(`<div class="banner bad"><div><strong>${T("authExpired")}</strong> ${esc(st.tesla_auth_error)}</div></div>`);
+    if (d.sync?.error && !st.tesla_auth_error) out.push(`<div class="banner bad"><div><strong>${T("lastSyncFailed")}</strong> ${esc(d.sync.error)}</div></div>`);
+    if (st.ha_configured && (st.entities || []).length && !st.ha_ok) out.push(`<div class="banner bad"><div><strong>${T("haDown")}</strong> ${esc(st.ha_error || T("haHint"))}</div></div>`);
+    if ((st.missing_entities || []).length) out.push(`<div class="banner"><div><strong>${T("missingEntities")}</strong> <span class="mono">${esc(st.missing_entities.join(", "))}</span>. ${T("missingHint")}</div></div>`);
+    $("#banners").innerHTML = out.join("");
+    $("#banners").hidden = out.length === 0;
+  }
+
+  function setupPanel(d) {
+    const st = d.setup || {};
+    if (offline() || (st.tesla_connected && !st.tesla_auth_error)) return "";
+    if (!st.tesla_configured) {
+      return `<section class="panel"><span class="eyebrow">${T("setup")}</span><h2>${T("teslaMissing")}</h2><p class="sub">${T("teslaMissingText")}</p></section>`;
+    }
+    return `<section class="panel">
+      <span class="eyebrow">${T("setup")}</span>
+      <h2>${T("connectTitle")}</h2>
+      <p class="sub">${T("connectText")}</p>
+      <div><a class="btn primary" href="auth/login">${T("signIn")}</a></div>
+      <details>
+        <summary>${T("redirectHelp")}</summary>
+        <p class="sub" style="margin-bottom:10px">${T("redirectText")} <span class="mono">${esc(st.redirect_uri || "")}</span></p>
+        <form class="code" id="code-form">
+          <label for="code-input" hidden>${T("addrOrCode")}</label>
+          <input id="code-input" name="code" placeholder="https://…/auth/callback?code=…" autocomplete="off" required>
+          <button class="btn" type="submit">${T("connect")}</button>
+        </form>
+      </details>
+    </section>`;
+  }
+
+  function batteryPanel(d) {
+    const s = d.status || {};
+    const soc = s.soc;
+    const floor = s.floor ?? 10, target = s.target ?? 80;
+    const fillCls = soc == null ? "" : soc <= floor ? "bad" : soc <= floor + 8 ? "warn" : "";
+    const stamp = soc == null
+      ? `<span class="chip bad">${T("noBattery")}</span>`
+      : s.soc_source === "live"
+        ? `<span class="chip good">${T("carOnline")}</span><span>${T("liveFromHa")}</span>`
+        : `<span class="chip">${T("carOffline")}</span><span>${esc(T("lastValue", { when: relTime(s.as_of) }))}</span>`;
+    const socTxt = soc == null ? T("unknown") : num(soc, 0) + " %";
+    return `<section class="panel" aria-labelledby="h-batt">
+      <div class="battery-head">
+        <div>
+          <span class="eyebrow" id="h-batt">${T("battery")}</span>
+          <div class="big">${soc == null ? "–" : num(soc, 0)}<small>%</small></div>
+        </div>
+        <div class="range">${s.range == null ? "–" : "≈ " + num(s.range, 0) + " " + unit()}<small>${T("rangeLabel")}</small></div>
+      </div>
+      <div class="gauge" role="img" aria-label="${esc(T("gaugeAria", { soc: socTxt, a: floor, b: target }))}">
+        <div class="gauge-window" style="left:calc(${floor}% - ${floor * 0.1}px);width:calc(${target - floor}% - ${(target - floor) * 0.1}px)"><span>${esc(T("window", { a: floor, b: target }))}</span></div>
+        <div class="gauge-body">
+          <div class="gauge-track">
+            <div class="gauge-fill ${fillCls}" style="width:${Math.max(0, Math.min(100, soc ?? 0))}%"></div>
+            <div class="gauge-floor" style="left:${floor}%"></div>
+          </div>
+          <div class="gauge-nub"></div>
+        </div>
+        <div class="gauge-scale">
+          <span style="left:0">0</span><span style="left:${floor}%">${floor}</span><span style="left:${target}%">${target}</span><span style="left:100%">100 %</span>
+        </div>
+      </div>
+      <div class="stamp">${stamp}</div>
+    </section>`;
+  }
+
+  function nextStopPanel(d) {
+    const f = d.forecast || {};
+    const slotTip = (d.insights || []).find((i) => i.kind === "slot");
+    const floor = d.status?.floor ?? 10;
+    const days = f.calendar_days;
+    const subline = days == null ? (f.text || "")
+      : days <= 0 ? T("reachesToday", { floor })
+      : days === 1 ? T("reachesTomorrow", { floor })
+      : T("reachesIn", { days: num(days, 0), floor });
+    return `<section class="panel" aria-labelledby="h-next">
+      <span class="eyebrow" id="h-next">${T("nextStop")}</span>
+      <div>
+        <div class="next-date">${f.date_label ? esc(f.date_label) : "–"}</div>
+        <p class="sub" style="margin-top:6px">${esc(subline)}</p>
+      </div>
+      ${days != null && days < 2 ? `<span class="chip warn" style="justify-self:start">${T("soon")}</span>` : ""}
+      <div class="facts">
+        <div class="fact"><b>${f.rate_pct_day == null ? "–" : num(f.rate_pct_day, 1) + " %"}</b><span>${T("perDay")}</span></div>
+        <div class="fact"><b>${f.dist_day == null ? "–" : num(f.dist_day, 0) + " " + unit()}</b><span>${T("distPerDay")}</span></div>
+        <div class="fact"><b>${f.basis_days ? T("days", { n: num(f.basis_days, 0) }) : "–"}</b><span>${T("basis")}</span></div>
+      </div>
+      ${slotTip ? `<div class="tip">${ico.clock}<span>${esc(slotTip.text)}</span></div>` : ""}
+    </section>`;
+  }
+
+  const pushChip = (st) => ({
+    pushed: `<span class="chip good">${T("pushed")}</span>`,
+    backfill: `<span class="chip plain">${T("backfill")}</span>`,
+    new: `<span class="chip info">${T("pending")}</span>`,
+    stale: `<span class="chip warn">${T("stale")}</span>`,
+  }[st] || "");
+  const pushChipShort = (st) => ({
+    pushed: `<span class="chip good">${T("pushedShort")}</span>`,
+    backfill: `<span class="chip plain">${T("backfillShort")}</span>`,
+    new: `<span class="chip info">${T("pendingShort")}</span>`,
+    stale: `<span class="chip warn">${T("staleShort")}</span>`,
+  }[st] || "");
+
+  function receiptPanel(d) {
+    const c = d.last_charge;
+    if (!c) return `<section class="panel"><span class="eyebrow">${T("lastCharge")}</span><p class="sub">${T("noCharge")}</p></section>`;
+    const canPdf = c.has_invoice && !offline();
+    const dur = c.duration_min != null ? ` (${c.duration_min} min)` : "";
+    const line = (lbl, val, cls = "") => `<div class="line ${cls}"><span class="lbl">${lbl}</span><span class="dots"></span><span class="val">${val}</span></div>`;
+    return `<section class="panel" aria-labelledby="h-last">
+      <span class="eyebrow" id="h-last">${T("lastCharge")}</span>
+      <div class="receipt">
+        <div class="site">${esc(T("supercharger", { site: c.site }))}</div>
+        <div class="when">${esc(dShort(c.start))} · ${esc(tShort(c.start))}–${esc(tShort(c.end))}${dur}</div>
+        ${line(T("energy"), num(c.kwh, 1) + " kWh")}
+        ${line(T("price"), ppk(c.price))}
+        ${line(T("charging"), money(c.charge_cost))}
+        ${line(T("idleFee"), money(c.idle), c.idle ? "" : "zero")}
+        ${line(T("total"), money(c.cost), "total")}
+      </div>
+      <div class="receipt-actions">
+        ${canPdf ? `<a class="btn" href="api/invoice/${encodeURIComponent(c.id)}" target="_blank" rel="noopener">${T("invoicePdf")}</a>` : `<span class="btn is-disabled" title="${T("notInPreview")}">${T("invoicePdf")}</span>`}
+        ${pushChip(c.push_state)}
+      </div>
+    </section>`;
+  }
+
+  function monthPanel(d) {
+    const m = d.month || {};
+    const c = d.compare || {};
+    const prev = m.prev || {};
+    let delta = "";
+    if (prev.avg_price && m.avg_price) {
+      const diff = m.avg_price - prev.avg_price;
+      delta = T("avgDelta", { sign: diff <= 0 ? "−" : "+", d: money(Math.abs(diff)), month: prev.label });
+    } else if (prev.sessions) {
+      delta = `${prev.label}: ${money(prev.cost)}`;
+    }
+    const line = (lbl, val) => `<div class="line"><span class="lbl">${lbl}</span><span class="dots"></span><span class="val">${val}</span></div>`;
+    const cmp = [];
+    if (c.reference_cost != null) cmp.push(line(esc(T("atReference", { p: ppk(c.reference_price) })), money(c.reference_cost)));
+    if (c.actual_cost != null && c.reference_cost != null) cmp.push(line(T("perInvoices"), money(c.actual_cost)));
+    if (c.fuel_month != null) cmp.push(line(esc(c.fuel_label), money(c.fuel_month)));
+    return `<section class="panel" aria-labelledby="h-month">
+      <span class="eyebrow" id="h-month">${esc(m.label || T("thisMonth"))}</span>
+      <div class="month-total"><div class="big">${money(m.cost)}</div><span class="delta">${esc(delta)}</span></div>
+      <div class="kpis">
+        <div class="kpi"><b>${num(m.kwh, 1)}</b><span>${T("kwhCharged")}</span></div>
+        <div class="kpi"><b>${m.avg_price == null ? "–" : money(m.avg_price)}</b><span>${T("avgPerKwh")}</span></div>
+        <div class="kpi"><b>${m.per_100 == null ? "–" : money(m.per_100)}</b><span>${T("per100", { unit: unit() })}</span></div>
+        <div class="kpi"><b>${m.sessions ?? 0}</b><span>${T("sessionsWord")}${m.idle ? " · " + money(m.idle) + " " + T("feeWord") : ""}</span></div>
+      </div>
+      ${cmp.length ? `<div class="compare">${cmp.join("")}</div>` : ""}
+    </section>`;
+  }
+
+  function radarPanel(d) {
+    const slots = d.slots || [];
+    const avg = d.totals?.avg_price;
+    const priced = slots.filter((s) => s.avg_price != null);
+    const maxP = Math.max(0.6, ...priced.map((s) => s.avg_price));
+    const step = maxP > 1.2 ? 0.5 : 0.2;
+    const top = Math.ceil(maxP / step) * step;
+    const pct = (v) => (v / top) * 100;
+    const best = priced.length >= 2 ? priced.reduce((a, b) => (b.avg_price < a.avg_price ? b : a)) : null;
+    const ticks = [];
+    for (let t = 0; t <= top + 1e-9; t += step) ticks.push(t);
+    const rows = slots.map((s) => {
+      const has = s.avg_price != null;
+      const isBest = best && s.id === best.id;
+      const tip = has
+        ? T("tipSlot", { label: s.label, range: s.range, p: money(s.avg_price), n: sessionsText(s.sessions), kwh: num(s.kwh, 1) })
+        : T("tipEmpty", { label: s.label });
+      return `<div class="radar-row ${isBest ? "best" : ""}" data-tip="${esc(tip)}" tabindex="0">
+        <div class="who"><b>${esc(s.label)}</b><span>${esc(s.range)}</span></div>
+        <div class="radar-track">
+          ${has ? `<div class="radar-bar" style="width:${pct(s.avg_price)}%"></div>` : '<div class="radar-empty"></div>'}
+          ${avg ? `<div class="radar-avg" style="left:${pct(avg)}%"></div>` : ""}
+        </div>
+        <div class="radar-val">${has ? money(s.avg_price) : '<span class="muted">–</span>'}<small>${has ? (isBest ? T("cheapest") : sessionsText(s.sessions)) : T("noSession")}</small></div>
+      </div>`;
+    }).join("");
+    const insights = (d.insights || []).filter((i) => i.kind !== "slot");
+    return `<section class="panel" aria-labelledby="h-radar">
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline">
+        <div><span class="eyebrow">${T("radar")}</span><h2 id="h-radar">${T("radarTitle")}</h2></div>
+        <span class="sub">${T("radarSub")}${avg ? " · " + esc(T("yourAvg", { p: money(avg) })) : ""}</span>
+      </div>
+      <div class="radar">
+        ${rows}
+        <div class="radar-axis" aria-hidden="true"><span></span><div class="ticks">${ticks.map((t) => `<span style="left:${pct(t)}%">${num(t, 1)}</span>`).join("")}</div><span class="sub" style="font-size:.72rem;text-align:right">/kWh</span></div>
+      </div>
+      ${insights.length ? `<ul class="insights">${insights.map((i) => `<li class="${esc(i.kind)}">${insightIcon[i.kind] || ico.bolt}<span>${esc(i.text)}</span></li>`).join("")}</ul>` : ""}
+    </section>`;
+  }
+
+  function sitesPanel(d) {
+    const sites = d.sites || [];
+    if (!sites.length) return `<section class="panel"><span class="eyebrow">${T("sites")}</span><p class="sub">${T("noSessions")}</p></section>`;
+    const maxP = Math.max(...sites.map((s) => s.avg_price || 0)) || 1;
+    return `<section class="panel" aria-labelledby="h-sites">
+      <div><span class="eyebrow">${T("sites")}</span><h2 id="h-sites">${T("sitesTitle")}</h2></div>
+      <div class="scroll"><table>
+        <thead><tr><th>${T("thSite")}</th><th class="n">${T("thSessions")}</th><th class="n">${T("thKwh")}</th><th class="n">${T("thAvg")}</th></tr></thead>
+        <tbody>${sites.map((s) => `<tr>
+          <td class="site">${esc(s.site)}</td>
+          <td class="n">${s.sessions}</td>
+          <td class="n">${num(s.kwh, 1)}</td>
+          <td class="n"><span class="minibar" aria-hidden="true"><i style="width:${((s.avg_price || 0) / maxP) * 100}%"></i></span>${s.avg_price == null ? "–" : money(s.avg_price)}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>
+    </section>`;
+  }
+
+  function historyPanel(d) {
+    const months = d.monthly || [];
+    const max = Math.max(1, ...months.map((m) => m.cost || 0));
+    const curKey = d.month?.key;
+    return `<section class="panel" aria-labelledby="h-hist">
+      <div><span class="eyebrow">${T("history")}</span><h2 id="h-hist">${T("historyTitle")}</h2></div>
+      <div class="cols" role="img" aria-label="${T("perMonthAria")}">
+        ${months.map((m) => `<div class="col ${m.key === curKey ? "cur" : ""}" tabindex="0" data-tip="${esc(`${m.label}: ${money(m.cost)} · ${num(m.kwh, 1)} kWh · ${sessionsText(m.sessions)}${m.avg_price ? " · " + ppk(m.avg_price) : ""}`)}">
+          <span class="v">${m.cost ? money(m.cost, 0) : ""}</span>
+          <div class="bar" style="height:${((m.cost || 0) / max) * 100 * 0.82}%"></div>
+        </div>`).join("")}
+      </div>
+      <div class="col-labels">${months.map((m) => `<span>${esc(m.label)}${m.key === curKey ? " " + T("current") : ""}</span>`).join("")}</div>
+    </section>`;
+  }
+
+  function sessionsPanel(d) {
+    const list = d.sessions || [];
+    const t = d.totals || {};
+    return `<section class="panel" aria-labelledby="h-list">
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline">
+        <div><span class="eyebrow">${T("allSessions")}</span><h2 id="h-list">${esc(sessionsText(t.sessions || 0))} · ${money(t.cost || 0)}</h2></div>
+        <span class="sub">${t.since ? esc(T("sinceDate", { d: fmtDate(t.since, { day: "2-digit", month: "2-digit", year: "numeric" }) })) : ""}${t.avg_price ? " · " + ppk(t.avg_price) : ""}</span>
+      </div>
+      ${list.length ? `<div class="scroll"><table>
+        <thead><tr><th>${T("thDate")}</th><th>${T("thSite")}</th><th class="n">kWh</th><th class="n">/kWh</th><th class="n">${T("thAmount")}</th><th>${T("thHa")}</th><th>${T("thInvoice")}</th></tr></thead>
+        <tbody>${list.map((s) => `<tr>
+          <td>${esc(dShort(s.start))}<span class="when-sub">${esc(tShort(s.start))}${s.duration_min != null ? " · " + s.duration_min + " min" : ""}</span></td>
+          <td class="site">${esc(s.site)}${s.idle ? `<span class="when-sub" style="color:var(--warn)">${esc(T("plusIdle", { p: money(s.idle) }))}</span>` : ""}</td>
+          <td class="n">${s.kwh == null ? `<span class="muted">${T("open")}</span>` : num(s.kwh, 1)}</td>
+          <td class="n">${s.price == null ? "–" : money(s.price)}</td>
+          <td class="n">${money(s.cost)}</td>
+          <td>${pushChipShort(s.push_state)}</td>
+          <td>${s.has_invoice ? (!offline() ? `<a href="api/invoice/${encodeURIComponent(s.id)}" target="_blank" rel="noopener">PDF</a>` : `<span class="muted" title="${T("notInPreview")}">PDF</span>`) : '<span class="muted">–</span>'}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>` : `<p class="sub">${T("noneYet")}</p>`}
+    </section>`;
+  }
+
+  function reconcilePanel(d) {
+    const r = d.reconcile || {};
+    const line = (lbl, val) => `<div class="line"><span class="lbl">${lbl}</span><span class="dots"></span><span class="val mono">${val}</span></div>`;
+    let verdict = "";
+    if (r.diff != null) {
+      const abs = Math.abs(r.diff);
+      verdict = abs < 0.5 ? `<span class="chip good">${T("matches")}</span>`
+        : `<span class="chip warn">${esc(T(r.diff > 0 ? "haAbove" : "haBelow", { p: money(abs) }))}</span>`;
+    }
+    return `<section class="panel" aria-labelledby="h-rec">
+      <div><span class="eyebrow">${T("reconcile")}</span><h2 id="h-rec">${T("reconcileTitle")}</h2></div>
+      <div class="compare">
+        ${line(T("haCost"), money(r.ha_cost))}
+        ${line(esc(T("perNInvoices", { n: r.inv_sessions || 0 })), money(r.inv_cost))}
+        ${line(T("haKwh"), r.ha_kwh == null ? "–" : num(r.ha_kwh, 1) + " kWh")}
+        ${line(T("billedKwh"), r.inv_kwh == null ? "–" : num(r.inv_kwh, 1) + " kWh")}
+      </div>
+      <div>${verdict}</div>
+      <p class="sub">${T("reconcileText")}</p>
+    </section>`;
+  }
+
+  function opsPanel(d) {
+    const a = d.api || {};
+    const st = d.setup || {};
+    const s = d.sync || {};
+    const usedPct = a.budget ? Math.min(100, (a.calls / a.budget) * 100) : 0;
+    const connected = st.tesla_connected && !st.tesla_auth_error;
+    const ents = (st.entities || []).join(", ");
+    const haChip = st.ha_ok ? `<span class="chip good">${T("connected")}</span>`
+      : st.ha_configured ? `<span class="chip bad">${T("unreachable")}</span>` : `<span class="chip warn">${T("notSetUp")}</span>`;
+    return `<section class="panel" aria-labelledby="h-ops">
+      <div><span class="eyebrow">${T("ops")}</span><h2 id="h-ops">${T("opsTitle")}</h2></div>
+      <div class="status-list">
+        <div><span>${T("tesla")}</span>${connected ? `<span class="chip good">${T("connected")}</span>` : `<span class="chip bad">${T("notConnected")}</span>`}</div>
+        <div><span>${T("ha")}</span>${haChip}</div>
+        ${ents ? `<div><span>${T("entities")}</span><span class="mono">${esc(ents)}</span></div>` : ""}
+        <div><span>${T("lastSync")}</span><span class="mono">${esc(relTime(s.last))}</span></div>
+        <div><span>${T("nextSync")}</span><span class="mono">${s.next ? esc(relTime(s.next)) : "–"}</span></div>
+      </div>
+      <div style="display:grid;gap:6px">
+        <div style="display:flex;justify-content:space-between;gap:8px;font-size:.88rem"><span>${T("requests")}</span><span class="mono">${a.calls ?? 0} / ${a.budget ?? "–"}</span></div>
+        <div class="meter" role="img" aria-label="${a.calls ?? 0} / ${a.budget}"><i style="width:${usedPct}%"></i></div>
+        <span class="sub">${esc(T("apiCost", { usd: num(a.cost_usd, 2), credit: num(a.credit_usd, 0) }))}</span>
+      </div>
+      ${connected && !offline() ? `<div><button class="link-btn" id="btn-logout" type="button">${T("disconnect")}</button></div>` : ""}
+    </section>`;
+  }
+
+  // --- Interaction ---------------------------------------------------------------------------------
+  function bindTooltips() {
+    const tt = $("#tt");
+    const show = (el, x, y) => {
+      tt.textContent = el.dataset.tip;
+      tt.hidden = false;
+      const w = tt.offsetWidth, h = tt.offsetHeight;
+      tt.style.left = Math.min(window.innerWidth - w - 8, Math.max(8, x + 12)) + "px";
+      tt.style.top = (y - h - 12 < 8 ? y + 16 : y - h - 12) + "px";
+    };
+    document.querySelectorAll("[data-tip]").forEach((el) => {
+      el.addEventListener("pointermove", (e) => show(el, e.clientX, e.clientY));
+      el.addEventListener("pointerleave", () => (tt.hidden = true));
+      el.addEventListener("focus", () => {
+        const r = el.getBoundingClientRect();
+        show(el, r.left + r.width / 2, r.top);
+      });
+      el.addEventListener("blur", () => (tt.hidden = true));
+    });
+  }
+
+  function bindActions() {
+    const syncBtn = $("#btn-sync");
+    if (syncBtn) syncBtn.onclick = async () => {
+      if (state.busy) return;
+      state.busy = true;
+      syncBtn.disabled = true;
+      syncBtn.textContent = T("syncing");
+      try {
+        const res = await post("api/sync/now");
+        toast(res.new ? T("toastSynced", { n: res.new }) : T("toastNothing"));
+        await load();
+      } catch (e) {
+        toast(T("toastFailed", { e: e.message }));
+        syncBtn.disabled = false;
+        syncBtn.textContent = T("syncNow");
+      } finally {
+        state.busy = false;
+      }
+    };
+    const form = $("#code-form");
+    if (form) form.onsubmit = async (e) => {
+      e.preventDefault();
+      const value = $("#code-input").value.trim();
+      if (!value) return;
+      try {
+        await post("auth/code", { value });
+        toast(T("toastConnected"));
+        setTimeout(load, 4000);
+      } catch (err) {
+        toast(err.message);
+      }
+    };
+    const logout = $("#btn-logout");
+    if (logout) logout.onclick = async () => {
+      if (logout.dataset.armed !== "1") {
+        logout.dataset.armed = "1";
+        logout.textContent = T("confirmDisconnect");
+        setTimeout(() => { logout.dataset.armed = ""; logout.textContent = T("disconnect"); }, 4000);
+        return;
+      }
+      try { await post("auth/logout"); toast(T("toastDisconnected")); load(); } catch (e) { toast(e.message); }
+    };
+  }
+
+  load().then(() => {
+    if (new URLSearchParams(location.search).get("connected")) {
+      toast(T("toastConnected"));
+      history.replaceState(null, "", location.pathname);
+    }
+  });
+  setInterval(() => { if (!state.preview && !document.hidden) load(); }, 60000);
+})();
+</script>

@@ -1,0 +1,4 @@
+fastapi==0.161.1
+uvicorn[standard]==0.54.0
+httpx==0.28.1
+tzdata>=2024.1

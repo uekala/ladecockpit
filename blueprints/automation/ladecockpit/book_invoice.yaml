@@ -1,0 +1,105 @@
+blueprint:
+  name: Ladecockpit – book Supercharger invoice
+  description: >-
+    Books every Supercharger invoice that Ladecockpit reports (event
+    `ladecockpit_invoice`) into your own helpers: billed kWh and the total
+    amount (incl. idle fees) are added to two `input_number` totals, and an
+    optional `input_text` gets a one-line summary of the session.
+    Ladecockpit sends each invoice exactly once.
+  domain: automation
+  author: Ladecockpit contributors
+  source_url: https://github.com/uekala/ladecockpit/blob/main/blueprints/automation/ladecockpit/book_invoice.yaml
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    totals:
+      name: Totals
+      icon: mdi:counter
+      input:
+        kwh_total:
+          name: Energy total (kWh)
+          description: input_number that collects all charged kWh.
+          selector:
+            entity:
+              domain: input_number
+        cost_total:
+          name: Cost total
+          description: input_number that collects all charging costs.
+          selector:
+            entity:
+              domain: input_number
+    options:
+      name: Options
+      icon: mdi:cog
+      collapsed: true
+      input:
+        last_charge_text:
+          name: Last session text (optional)
+          description: >-
+            input_text that receives a summary such as
+            "18.0 kWh · €6.66 · €0.37/kWh · Oct 21, 18:18".
+          default: ""
+          selector:
+            entity:
+              domain: input_text
+        enable_switch:
+          name: Only when this switch is on (optional)
+          description: Leave empty to always book.
+          default: ""
+          selector:
+            entity:
+              domain: input_boolean
+        extra_actions:
+          name: Additional actions (optional)
+          description: >-
+            E.g. a notification. Available variables: site, kwh, total,
+            price_per_kwh, idle_fee, currency, text.
+          default: []
+          selector:
+            action: {}
+
+mode: queued
+max: 10
+
+variables:
+  kwh_total: !input kwh_total
+  cost_total: !input cost_total
+  last_charge_text: !input last_charge_text
+  enable_switch: !input enable_switch
+  site: "{{ trigger.event.data.site | default('Supercharger') }}"
+  kwh: "{{ trigger.event.data.kwh | float(0) | round(2) }}"
+  total: "{{ trigger.event.data.total | float(0) | round(2) }}"
+  price_per_kwh: "{{ trigger.event.data.price_per_kwh | float(0) }}"
+  idle_fee: "{{ trigger.event.data.idle_fee | float(0) }}"
+  currency: "{{ trigger.event.data.currency | default('EUR') }}"
+  text: "{{ (trigger.event.data.text | default(''))[:255] }}"
+
+triggers:
+  - trigger: event
+    event_type: ladecockpit_invoice
+
+conditions:
+  - "{{ enable_switch == '' or is_state(enable_switch, 'on') }}"
+  - "{{ kwh > 0 }}"
+
+actions:
+  - action: input_number.set_value
+    target:
+      entity_id: !input kwh_total
+    data:
+      value: "{{ (states(kwh_total) | float(0) + kwh) | round(2) }}"
+  - action: input_number.set_value
+    target:
+      entity_id: !input cost_total
+    data:
+      value: "{{ (states(cost_total) | float(0) + total) | round(2) }}"
+  - if:
+      - "{{ last_charge_text != '' }}"
+    then:
+      - action: input_text.set_value
+        target:
+          entity_id: "{{ last_charge_text }}"
+        data:
+          value: "{{ text }}"
+  - choose: []
+    default: !input extra_actions

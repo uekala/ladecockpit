@@ -1,0 +1,58 @@
+from pathlib import Path
+
+import yaml
+from fastapi.testclient import TestClient
+
+from app.main import app
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def test_demo_endpoints():
+    with TestClient(app) as client:
+        assert client.get("/healthz").json()["mode"] == "demo"
+        page = client.get("/")
+        assert page.status_code == 200 and page.text.startswith("<!doctype html>")
+        d = client.get("/api/dashboard").json()
+        assert d["mode"] == "demo" and d["sessions"]
+        flat = client.get("/api/ha").json()
+        assert flat["month_cost"] is not None and flat["currency"] == "EUR"
+        assert client.post("/api/sync").json()["demo"] is True
+        assert client.get("/api/invoice/demo-1000").status_code == 404
+
+
+class _Loader(yaml.SafeLoader):
+    pass
+
+
+_Loader.add_constructor("!input", lambda loader, node: {"__input__": loader.construct_scalar(node)})
+
+
+def _inputs(section):
+    found = {}
+    for key, value in section.items():
+        if "input" in value and "selector" not in value:
+            found.update(_inputs(value["input"]))
+        else:
+            found[key] = value
+    return found
+
+
+def _refs(node):
+    if isinstance(node, dict):
+        if "__input__" in node:
+            yield node["__input__"]
+        for v in node.values():
+            yield from _refs(v)
+    elif isinstance(node, list):
+        for v in node:
+            yield from _refs(v)
+
+
+def test_blueprint_is_consistent():
+    bp = yaml.load((ROOT / "blueprints/automation/ladecockpit/book_invoice.yaml").read_text(), Loader=_Loader)
+    declared = _inputs(bp["blueprint"]["input"])
+    body = {k: v for k, v in bp.items() if k != "blueprint"}
+    used = set(_refs(body))
+    assert used == set(declared), (used, set(declared))
+    assert bp["triggers"][0]["event_type"] == "ladecockpit_invoice"
