@@ -148,6 +148,8 @@ Ladecockpit legt diese Entitäten in Home Assistant selbst an (abschaltbar mit d
 | `sensor.ladecockpit_month_cost` | Ladekosten im laufenden Monat | `energy_kwh`, `price_per_kwh`, `cost_per_100`, `kwh_per_100`, `multipass_cost`, `savings`, `projected_year_cost`, `previous_cost` |
 | `sensor.ladecockpit_last_charge` | Kosten der letzten Ladung | `network`, `site`, `energy_kwh`, `price_per_kwh`, `avg_power_kw`, `text` |
 | `sensor.ladecockpit_price_tip` | deine günstigste Uhrzeit als Satz | `best_time`, `best_site`, `insights` |
+| `sensor.ladecockpit_range_at_100` | Reichweite bei 100 % (Langzeitstatistik) | `change_pct`, `since`, `supercharger_share` |
+| `sensor.ladecockpit_consumption` | abgerechnete kWh pro 100 km/mi diesen Monat | `by_temperature`, `temperature_tip` |
 | `binary_sensor.ladecockpit_problem` | `on`, wenn die Tesla-Anmeldung abgelaufen ist, der Abgleich fehlschlägt oder eine Entität fehlt | `kind`, `message`, `last_sync` |
 
 Sie werden über die REST-API geschrieben und haben keine eindeutige ID, lassen sich also nicht in der Oberfläche umbenennen. Nach einem Neustart von Home Assistant sind sie nach wenigen Minuten wieder da. Eine fertige Dashboard-Sektion steht in [`homeassistant/dashboard_card.yaml`](homeassistant/dashboard_card.yaml).

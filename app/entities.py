@@ -30,6 +30,8 @@ ENTITY_IDS = (
     "sensor.ladecockpit_month_cost",
     "sensor.ladecockpit_last_charge",
     "sensor.ladecockpit_price_tip",
+    "sensor.ladecockpit_range_at_100",
+    "sensor.ladecockpit_consumption",
     "binary_sensor.ladecockpit_problem",
 )
 
@@ -148,6 +150,26 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         "best_site": best_site["site"] if best_site else None,
         "best_site_price": _round(best_site["avg_price"], 4) if best_site else None,
         "insights": [i["text"] for i in insights],
+    })
+
+    # --- battery health (long-term statistics: state_class measurement) ------------------------------
+    h = d.get("battery_health") or {}
+    out["sensor.ladecockpit_range_at_100"] = (_state(h.get("range_at_100"), 0), {
+        "friendly_name": name("range_at_100"), "unit_of_measurement": unit, "device_class": "distance",
+        "state_class": "measurement", "icon": "mdi:battery-heart-variant",
+        "change_pct": h.get("change_pct"), "since": h.get("since"), "baseline": h.get("baseline"),
+        "samples": h.get("samples"), "supercharger_share": h.get("dc_share"),
+    })
+
+    # --- consumption: this month, and by outside temperature ------------------------------------------
+    climate = d.get("climate") or {}
+    bands = [{"label": i18n.temp_band(lang, b["from"], b["to"]), "days": b["days"], "distance": b["distance"],
+              "pct_per_100": b["pct_per_100"], "kwh_per_100": b["kwh_per_100"]} for b in climate.get("bands") or []]
+    tip = next((i["text"] for i in insights if i.get("kind") == "climate"), None)
+    out["sensor.ladecockpit_consumption"] = (_state(m.get("kwh_per_100"), 1), {
+        "friendly_name": name("consumption"), "unit_of_measurement": f"kWh/100 {unit}",
+        "state_class": "measurement", "icon": "mdi:thermometer-lines",
+        "note": i18n.t(lang, "ent_consumption_note"), "by_temperature": bands, "temperature_tip": tip,
     })
 
     # --- problems ------------------------------------------------------------------------------------

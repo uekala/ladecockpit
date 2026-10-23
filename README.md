@@ -146,6 +146,8 @@ Ladecockpit creates these entities in Home Assistant itself (switch off with the
 | `sensor.ladecockpit_month_cost` | charging cost this month | `energy_kwh`, `price_per_kwh`, `cost_per_100`, `kwh_per_100`, `multipass_cost`, `savings`, `projected_year_cost`, `previous_cost` |
 | `sensor.ladecockpit_last_charge` | cost of the last session | `network`, `site`, `energy_kwh`, `price_per_kwh`, `avg_power_kw`, `text` |
 | `sensor.ladecockpit_price_tip` | your cheapest time of day, as a sentence | `best_time`, `best_site`, `insights` |
+| `sensor.ladecockpit_range_at_100` | range at 100 % (long-term statistics) | `change_pct`, `since`, `supercharger_share` |
+| `sensor.ladecockpit_consumption` | billed kWh per 100 km/mi this month | `by_temperature`, `temperature_tip` |
 | `binary_sensor.ladecockpit_problem` | `on` when the Tesla sign-in expired, syncing fails or an entity is missing | `kind`, `message`, `last_sync` |
 
 They are written through the REST API and have no unique ID, so they cannot be renamed in the UI. After a Home Assistant restart they are back within a few minutes. A ready-made dashboard section is in [`homeassistant/dashboard_card.yaml`](homeassistant/dashboard_card.yaml).

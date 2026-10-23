@@ -68,6 +68,9 @@ TEXTS = {
         "ent_last_charge": "Letzte Ladung",
         "ent_price_tip": "Preistipp",
         "ent_problem": "Problem",
+        "ent_range_at_100": "Reichweite bei 100 %",
+        "ent_consumption": "Verbrauch",
+        "ent_consumption_note": "Abgerechnete kWh pro 100 km diesen Monat, inklusive Ladeverlusten.",
         "csv_header": "Datum;Start;Ende;Standort;kWh;Preis pro kWh;Ladekosten;Blockiergebühr;Summe;Währung;Ø kW;Ladung-ID;Netz;Listenpreis pro kWh;Gutschrift;Netto",
     },
     "en": {
@@ -116,6 +119,9 @@ TEXTS = {
         "ent_last_charge": "Last charge",
         "ent_price_tip": "Price tip",
         "ent_problem": "Problem",
+        "ent_range_at_100": "Range at 100 %",
+        "ent_consumption": "Consumption",
+        "ent_consumption_note": "Billed kWh per 100 km/mi this month, including charging losses.",
         "csv_header": "Date,Start,End,Site,kWh,Price per kWh,Charging cost,Idle fee,Total,Currency,Avg kW,Session ID,Network,List price per kWh,Credit,Net",
     },
 }

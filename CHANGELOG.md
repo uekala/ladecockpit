@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1 – 2026-10-23
+
+- New entities `sensor.ladecockpit_range_at_100` (with long-term statistics, for a graph of the battery health over months) and `sensor.ladecockpit_consumption` (billed kWh per 100 km/mi this month, plus the consumption by outside temperature as attribute `by_temperature`).
+
 ## 0.4.0 – 2026-10-23
 
 - **MultiPass**: sessions at third-party chargers paid through Tesla MultiPass are recognised in the Tesla charging history and shown separately (session list, sites, month, price comparison). The event `ladecockpit_invoice`, the blueprint and `sensor.ladecockpit_last_charge` carry `network` (`supercharger` or `multipass`); `sensor.ladecockpit_month_cost` has `multipass_cost` and `multipass_sessions`. The CSV export has a new last column.

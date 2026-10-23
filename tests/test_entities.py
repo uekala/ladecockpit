@@ -99,3 +99,16 @@ def test_set_state_posts_to_states_api(settings):
     assert asyncio.run(ha.set_state("sensor.ladecockpit_battery", "66", {"unit_of_measurement": "%"}))
     assert seen == {"path": "/api/states/sensor.ladecockpit_battery",
                     "body": {"state": "66", "attributes": {"unit_of_measurement": "%"}}}
+
+
+def test_health_and_consumption_entities(settings):
+    d = demo.build_demo(dataclasses.replace(settings, lang="de"))
+    states = build_states(d, "de")
+    r100, attrs = states["sensor.ladecockpit_range_at_100"]
+    assert r100 == str(d["battery_health"]["range_at_100"]) and attrs["state_class"] == "measurement"
+    cons, attrs = states["sensor.ladecockpit_consumption"]
+    assert float(cons) == d["month"]["kwh_per_100"] and attrs["unit_of_measurement"] == "kWh/100 km"
+    assert attrs["by_temperature"][0]["label"] == "0 bis 10 °C" and attrs["temperature_tip"]
+    empty = build_states({}, "de")
+    assert empty["sensor.ladecockpit_range_at_100"][0] == "unknown"
+    assert empty["sensor.ladecockpit_consumption"][1]["by_temperature"] == []
