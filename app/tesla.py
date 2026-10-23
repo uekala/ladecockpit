@@ -16,6 +16,7 @@ import httpx
 
 from .config import AUTH_AUTHORIZE_URL, SCOPES, Settings
 from .db import DB, utcnow_iso
+from .pricing import fee_total
 
 log = logging.getLogger("ladecockpit.tesla")
 
@@ -237,12 +238,7 @@ def parse_session(raw: dict) -> dict | None:
 
     for fee in raw.get("fees") or []:
         ftype = str(fee.get("feeType") or "").upper()
-        total = _num(fee.get("totalDue"))
-        if total is None:
-            total = _num(fee.get("netDue"))
-        if total is None:
-            total = sum(_num(fee.get(k)) or 0.0 for k in
-                        ("totalBase", "totalTier1", "totalTier2", "totalTier3", "totalTier4"))
+        total = fee_total(fee)
         currency = currency or fee.get("currencyCode")
         if ftype == "CHARGING":
             has_charging_fee = True

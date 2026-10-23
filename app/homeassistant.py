@@ -62,6 +62,8 @@ class HAClient:
             "charging": s.ent_charging, "cost_total": s.ent_cost_total, "kwh_total": s.ent_kwh_total,
             "reference_price": s.ent_reference_price, "fuel_month": s.ent_fuel_month,
             "fuel_consumption": s.ent_fuel_consumption, "fuel_price": s.ent_fuel_price,
+            "outside_temp": s.ent_outside_temp,
+            "home_energy": s.ent_home_energy, "home_price": s.ent_home_price,
         }
         return {k: v for k, v in roles.items() if v}
 
@@ -92,9 +94,12 @@ class HAClient:
             if not item:
                 missing.append(eid)
                 continue
+            attrs = item.get("attributes") or {}
             raw[role] = str(item.get("state", ""))
             values[role] = as_float(item.get("state"))
-            unit = (item.get("attributes") or {}).get("unit_of_measurement")
+            if eid.startswith("weather."):  # a weather entity keeps the temperature in an attribute
+                values[role] = as_float(attrs.get("temperature"))
+            unit = attrs.get("unit_of_measurement") or attrs.get("temperature_unit")
             if unit:
                 units[role] = unit
         reachable = self.last_error is None

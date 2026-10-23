@@ -65,6 +65,42 @@ def test_network_flows_into_db_event_and_csv(settings, tmp_path):
     json.dumps(payload)
 
     from app.export import sessions_csv
-    rows = sessions_csv(db.sessions(), settings).lstrip("﻿").splitlines()
-    assert rows[0].endswith(",Network")
-    assert {r.split(",")[-1] for r in rows[1:]} == {"Supercharger", "MultiPass"}
+    import csv
+    rows = list(csv.reader(sessions_csv(db.sessions(), settings).lstrip("﻿").splitlines()))
+    col = rows[0].index("Network")
+    assert {r[col] for r in rows[1:]} == {"Supercharger", "MultiPass"}
+
+
+def test_credit_from_real_shape(settings, tmp_path):
+    """A session partly paid with Tesla credits: 58.1 kWh at a list rate of 0.45/kWh,
+    12.65 paid (gross), 10.63 net."""
+    from app.analytics import build_dashboard
+    from app.pricing import price_details
+
+    raw = {**SUPERCHARGER_RAW, "sessionId": 50, "siteLocationName": "Krefeld, Germany",
+           "chargeStartDateTime": "2026-09-29T21:36:57+02:00", "chargeStopDateTime": "2026-09-29T22:10:00+02:00",
+           "fees": [{"feeType": "CHARGING", "pricingType": "CREDIT_PARTIAL_PAYMENT", "currencyCode": "EUR",
+                     "uom": "kwh", "usageBase": 58.1123, "rateBase": 0.45, "totalBase": 12.65,
+                     "totalDue": 12.65, "netDue": 10.63}],
+           "credit": {"energyApplied": 30, "distance": 150, "distanceUnit": "km"}}
+    details = price_details(raw)
+    assert details == {"list_cost": 26.15, "credit": 13.5, "credit_kwh": 30.0, "net_total": 10.63}
+    assert classify(raw) == (SUPERCHARGER, None) and unknown_keys(raw) == []
+    plain = price_details(SUPERCHARGER_RAW)
+    assert plain["credit"] == 0.0 and plain["list_cost"] == 2.24      # 6.05 × 0.37, rounding is no credit
+
+    db = DB(tmp_path / "c.db")
+    db.upsert_session(parse_session(raw), "backfill")
+    s = db.sessions()[0]
+    assert s["price"] == 0.2177 and s["list_price"] == 0.45 and s["credit"] == 13.5
+
+    payload = SyncService(settings, db, tesla=None, ha=None).event_payload(s)
+    assert payload["list_price_per_kwh"] == 0.45 and payload["credit"] == 13.5
+
+    from datetime import datetime, timezone
+    d = build_dashboard(sessions=db.sessions(), live={"values": {}, "units": {}}, readings={},
+                        settings=settings, meta={}, now=datetime(2026, 10, 2, tzinfo=timezone.utc))
+    assert d["sites"][0]["avg_price"] == 0.45                          # comparisons use the list price
+    assert d["totals"]["credit"] == 13.5 and d["totals"]["avg_price"] == 0.2177
+    assert d["sessions"][0]["credit"] == 13.5 and d["sessions"][0]["net"] == 10.63
+    assert any(i["kind"] == "credit" for i in d["insights"])

@@ -34,6 +34,7 @@ TEXTS = {
         "in_slot_wait": "Nach ein paar weiteren Ladungen zeigt der Preis-Radar, welche Uhrzeit für dich am günstigsten ist.",
         "in_site": "Am günstigsten warst du in {lo} (Ø {lo_price}/kWh), am teuersten in {hi} (Ø {hi_price}/kWh).",
         "in_network": "MultiPass-Ladungen ({n}) kosten dich im Schnitt {mp}/kWh, am Supercharger sind es {sc}/kWh.",
+        "in_credit": "Tesla-Gutschriften haben bisher {amount} übernommen. Gezahlt hast du Ø {paid}/kWh, der Listenpreis lag bei Ø {listed}/kWh – Preisvergleiche nutzen den Listenpreis.",
         "in_idle_one": "Blockiergebühren bisher: {amount} bei 1 Ladung – rechtzeitig abstecken spart Geld.",
         "in_idle_many": "Blockiergebühren bisher: {amount} bei {n} Ladungen – rechtzeitig abstecken spart Geld.",
         "in_reference": "Mit dem Referenzpreis von {ref}/kWh wären es diesen Monat {ref_cost} gewesen – laut Rechnungen sind es {actual} ({sign}{delta}).",
@@ -46,7 +47,13 @@ TEXTS = {
         "report_distance": "{dist} km gefahren, {per100} pro 100 km.",
         "report_fuel": "Mit dem Verbrenner wären es etwa {fuel} gewesen – gespart: {saved}.",
         "report_multipass": "Davon MultiPass: {cost}.",
+        "report_home": "Zu Hause geladen: {kwh} kWh für {cost}.",
+        "report_home_kwh": "Zu Hause geladen: {kwh} kWh.",
         "report_idle": "Blockiergebühren: {cost}.",
+        "in_climate": "Bei {cold} braucht dein Tesla rund {more} % mehr Akku pro 100 {unit} als bei {warm}.",
+        "band_below": "unter {hi} °C",
+        "band_above": "über {lo} °C",
+        "band_range": "{lo} bis {hi} °C",
         "fuel_default": "Sprit diesen Monat",
         "unknown_site": "Unbekannter Supercharger",
         "problem_title": "Ladecockpit",
@@ -61,7 +68,7 @@ TEXTS = {
         "ent_last_charge": "Letzte Ladung",
         "ent_price_tip": "Preistipp",
         "ent_problem": "Problem",
-        "csv_header": "Datum;Start;Ende;Standort;kWh;Preis pro kWh;Ladekosten;Blockiergebühr;Summe;Währung;Ø kW;Ladung-ID;Netz",
+        "csv_header": "Datum;Start;Ende;Standort;kWh;Preis pro kWh;Ladekosten;Blockiergebühr;Summe;Währung;Ø kW;Ladung-ID;Netz;Listenpreis pro kWh;Gutschrift;Netto",
     },
     "en": {
         "fc_no_soc": "No battery level from Home Assistant – no forecast possible.",
@@ -75,6 +82,7 @@ TEXTS = {
         "in_slot_wait": "After a few more sessions the price radar shows which time of day is cheapest for you.",
         "in_site": "Cheapest so far: {lo} (avg {lo_price}/kWh). Most expensive: {hi} (avg {hi_price}/kWh).",
         "in_network": "MultiPass sessions ({n}) cost you avg {mp}/kWh, Superchargers {sc}/kWh.",
+        "in_credit": "Tesla credits covered {amount} so far. You paid avg {paid}/kWh, the list price was avg {listed}/kWh – price comparisons use the list price.",
         "in_idle_one": "Idle fees so far: {amount} in 1 session – unplugging on time saves money.",
         "in_idle_many": "Idle fees so far: {amount} in {n} sessions – unplugging on time saves money.",
         "in_reference": "At your reference price of {ref}/kWh this month would have cost {ref_cost} – the invoices say {actual} ({sign}{delta}).",
@@ -87,7 +95,13 @@ TEXTS = {
         "report_distance": "{dist} {unit} driven, {per100} per 100 {unit}.",
         "report_fuel": "A combustion car would have cost about {fuel} – saved: {saved}.",
         "report_multipass": "Of which MultiPass: {cost}.",
+        "report_home": "Charged at home: {kwh} kWh for {cost}.",
+        "report_home_kwh": "Charged at home: {kwh} kWh.",
         "report_idle": "Idle fees: {cost}.",
+        "in_climate": "At {cold} your Tesla uses about {more} % more battery per 100 {unit} than at {warm}.",
+        "band_below": "below {hi} °C",
+        "band_above": "above {lo} °C",
+        "band_range": "{lo} to {hi} °C",
         "fuel_default": "Fuel this month",
         "unknown_site": "Unknown Supercharger",
         "problem_title": "Ladecockpit",
@@ -102,7 +116,7 @@ TEXTS = {
         "ent_last_charge": "Last charge",
         "ent_price_tip": "Price tip",
         "ent_problem": "Problem",
-        "csv_header": "Date,Start,End,Site,kWh,Price per kWh,Charging cost,Idle fee,Total,Currency,Avg kW,Session ID,Network",
+        "csv_header": "Date,Start,End,Site,kWh,Price per kWh,Charging cost,Idle fee,Total,Currency,Avg kW,Session ID,Network,List price per kWh,Credit,Net",
     },
 }
 
@@ -148,3 +162,11 @@ def date_label(lang: str, dt) -> str:
     if lang == "de":
         return f"{wd}, {dt:%d.%m.}"
     return f"{wd}, {dt:%b} {dt.day}"
+
+
+def temp_band(lang: str, lo: float | None, hi: float | None) -> str:
+    if lo is None:
+        return t(lang, "band_below", hi=f"{hi:g}")
+    if hi is None:
+        return t(lang, "band_above", lo=f"{lo:g}")
+    return t(lang, "band_range", lo=f"{lo:g}", hi=f"{hi:g}")

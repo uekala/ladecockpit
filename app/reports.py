@@ -44,6 +44,11 @@ def build_report(d: dict, month_key: str, lang: str) -> dict | None:
                             per100=money(entry["per_100"]), unit=unit))
     if entry.get("savings") is not None:
         parts.append(i18n.t(lang, "report_fuel", fuel=money(entry["fuel_equivalent"]), saved=money(entry["savings"])))
+    if entry.get("home_kwh"):
+        if entry.get("home_cost") is not None:
+            parts.append(i18n.t(lang, "report_home", kwh=i18n.num(lang, entry["home_kwh"], 0), cost=money(entry["home_cost"])))
+        else:
+            parts.append(i18n.t(lang, "report_home_kwh", kwh=i18n.num(lang, entry["home_kwh"], 0)))
     if entry.get("multipass_cost"):
         parts.append(i18n.t(lang, "report_multipass", cost=money(entry["multipass_cost"])))
     if entry.get("idle"):
@@ -55,6 +60,7 @@ def build_report(d: dict, month_key: str, lang: str) -> dict | None:
         "distance": entry.get("distance"), "cost_per_100": entry.get("per_100"),
         "kwh_per_100": entry.get("kwh_per_100"), "multipass_cost": entry.get("multipass_cost"),
         "fuel_equivalent": entry.get("fuel_equivalent"), "savings": entry.get("savings"),
+        "home_kwh": entry.get("home_kwh"), "home_cost": entry.get("home_cost"),
         "title": i18n.t(lang, "report_title", month=label),
         "text": " ".join(parts),
     }

@@ -17,6 +17,11 @@ Viele Home-Assistant-Setups schätzen die Supercharger-Kosten aus den kWh des Au
 - **Monatsübersicht.** Kosten, kWh, Ø-Preis, Kosten pro 100 km/mi, optional Vergleich mit einem Referenzpreis oder den Spritkosten eines zweiten Autos.
 - **Ersparnis ggü. Verbrenner.** Was dieselbe Strecke mit Benzin oder Diesel gekostet hätte (feste Werte oder live aus Home Assistant, z. B. ein Spritpreis-Sensor), pro Monat und aufs Jahr hochgerechnet.
 - **Monatsbericht.** Am Monatsersten eine Zusammenfassung des Vormonats als Event und Benachrichtigung in Home Assistant.
+- **Tesla-Gutschriften richtig verbucht.** Ladungen, die teilweise mit Tesla-Gutschriften bezahlt wurden (z. B. Gratis-Supercharging zum Neuwagen), zeigen Gezahltes, Listenpreis und Gutschrift. Preisvergleiche nutzen den Listenpreis, eine Gutschrift lässt also keinen Supercharger billig aussehen.
+- **Laden zu Hause.** Mit dem Energiezähler deiner Wallbox und deinem Strompreis (auch dynamische Tarife) fließt das Laden zu Hause in Kosten pro 100 km/mi und Ersparnis ein.
+- **Akku-Gesundheit.** Reichweite bei 100 % im Zeitverlauf, aus den Messwerten, die Ladecockpit ohnehin speichert, dazu der Supercharger-Anteil.
+- **Verbrauch nach Außentemperatur.** Wie viel mehr Akku das Auto bei Kälte braucht.
+- **Monats-PDF.** Deckblatt mit allen Ladungen (netto, MwSt., brutto, Gutschriften) plus alle Rechnungen eines Monats in einer PDF – für Steuer oder Arbeitgeber.
 - **Ladeleistung und Verbrauch.** Ø kW pro Ladung und pro Supercharger, kWh pro 100 km/mi inklusive Ladeverlusten.
 - **Abgleich.** Vergleicht deine Summen in Home Assistant mit den Rechnungen.
 - **Export.** Alle Ladungen als CSV, alle Rechnungen eines Monats als ein ZIP.
@@ -97,6 +102,9 @@ Mindestens nötig: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN
 | `HA_ENT_RANGE` | `sensor.my_tesla_battery_range` | Reichweite |
 | `HA_ENT_ODOMETER` | `sensor.my_tesla_odometer` | Strecke pro Monat, Kosten pro 100 km/mi |
 | `HA_ENT_CHARGING` | `sensor.my_tesla_charging` | Rechnung direkt nach dem Ladeende |
+| `HA_ENT_FUEL_CONSUMPTION` / `FUEL_CONSUMPTION`, `HA_ENT_FUEL_PRICE` / `FUEL_PRICE` | `7.5`, `sensor.spritpreis` | Ersparnis ggü. Verbrenner |
+| `HA_ENT_HOME_ENERGY`, `HA_ENT_HOME_PRICE` / `HOME_PRICE` | `sensor.wall_connector_energy`, `0.32` | Laden zu Hause |
+| `HA_ENT_OUTSIDE_TEMP` | `weather.home` | Verbrauch nach Temperatur |
 
 Für die deutsche Oberfläche `APP_LANG=de` setzen. Bei `HA_URL` die IP von Home Assistant eintragen, denn `.local`-Namen werden im Container oft nicht aufgelöst. Alle Einstellungen stehen in [.env.example](.env.example).
 

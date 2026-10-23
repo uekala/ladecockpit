@@ -21,7 +21,8 @@ def test_states_from_demo_data(settings):
         assert attributes["friendly_name"].startswith("Ladecockpit ")
         json.dumps(attributes)                                   # must be JSON for the REST API
     cost, attrs = states["sensor.ladecockpit_month_cost"]
-    assert float(cost) == d["month"]["cost"] and attrs["unit_of_measurement"] == d["currency"]
+    assert float(cost) == d["month"]["total_cost"] and attrs["invoice_cost"] == d["month"]["cost"]
+    assert attrs["unit_of_measurement"] == d["currency"] and attrs["home_kwh"] == d["month"]["home"]["kwh"]
     battery, attrs = states["sensor.ladecockpit_battery"]
     assert battery == str(round(d["status"]["soc"])) and attrs["device_class"] == "battery"
     last, attrs = states["sensor.ladecockpit_last_charge"]

@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from . import networks
+from .pricing import price_details
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS kv (
@@ -164,6 +165,10 @@ class DB:
             except json.JSONDecodeError:
                 record = None
             d["network"], d["network_reason"] = networks.classify(record)
+            d.update(price_details(record))
+            if d["list_cost"] is None and d.get("charge_cost") is not None:
+                d["list_cost"] = d["charge_cost"]
+            d["list_price"] = round(d["list_cost"] / d["kwh"], 4) if d.get("kwh") and d["list_cost"] is not None else None
         return d
 
     # --- readings (battery, range, odometer) --------------------------------

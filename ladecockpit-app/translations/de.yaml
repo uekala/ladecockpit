@@ -64,6 +64,18 @@ configuration:
   entity_fuel_price:
     name: Spritpreis aus Entität
     description: Statt des festen Preises, z. B. der günstigste E10-Preis aus Tankerkönig.
+  entity_home_energy:
+    name: Wallbox-Zähler (kWh)
+    description: Energiezähler deiner Wallbox in kWh, der nur steigt (z. B. vom Tesla Wall Connector oder einem Zwischenzähler). Damit rechnet Ladecockpit das Laden zu Hause mit ein.
+  home_price:
+    name: Strompreis zu Hause (pro kWh)
+    description: Fester Strompreis für das Laden zu Hause, z. B. 0,32.
+  entity_home_price:
+    name: Strompreis aus Entität
+    description: Statt des festen Preises, z. B. ein dynamischer Tarif (Tibber, aWATTar). Ladecockpit nimmt den Preis zum Zeitpunkt des Ladens.
+  entity_outside_temp:
+    name: Außentemperatur
+    description: Sensor oder Wetter-Entität. Damit zeigt Ladecockpit den Verbrauch je nach Temperatur.
   soc_floor:
     name: Untergrenze Akku (%)
     description: Die Prognose sagt, wann dieser Stand erreicht wird.

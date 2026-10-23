@@ -20,8 +20,11 @@ from .sync import SyncService
 log = logging.getLogger("ladecockpit.watcher")
 
 # Store a new reading when the value moved at least this much, or an hour passed.
-MIN_DELTA = {"soc": 1.0, "range": 2.0, "odometer": 0.5}
+MIN_DELTA = {"soc": 1.0, "range": 2.0, "odometer": 0.5, "temp": 0.5}
+ROLE = {"soc": "soc", "range": "range", "odometer": "odometer", "temp": "outside_temp"}
 MAX_AGE = timedelta(hours=1)
+HOME_MIN_STEP_KWH = 0.05
+HOME_MAX_STEP_KWH = 100.0
 KEEP_DAYS = 400
 
 
@@ -52,8 +55,8 @@ class Watcher:
         self.latest = live
         values = live.get("values", {})
 
-        for key in ("soc", "range", "odometer"):
-            value = values.get(key)
+        for key in ("soc", "range", "odometer", "temp"):
+            value = values.get(ROLE[key])
             if value is None:
                 continue
             last = self.db.last_reading(key)
@@ -61,6 +64,7 @@ class Watcher:
                 self.db.add_reading(key, value, now)
 
         self._check_charging(live.get("raw", {}).get("charging"))
+        self._track_home(values, live.get("units", {}), now)
 
         if self._last_prune is None or now - self._last_prune > timedelta(days=1):
             self.db.prune_readings(now - timedelta(days=KEEP_DAYS))
@@ -73,9 +77,9 @@ class Watcher:
         now = now or datetime.now(timezone.utc)
         roles = self.ha.entities()
         added = 0
-        for key in ("soc", "range", "odometer"):
-            entity = roles.get(key)
-            if not entity or self.db.last_reading(key) is not None:
+        for key in ("soc", "range", "odometer", "temp"):
+            entity = roles.get(ROLE[key])
+            if not entity or entity.startswith("weather.") or self.db.last_reading(key) is not None:
                 continue
             kept: list[tuple[datetime, float]] = []
             for ts, value in await self.ha.history(entity, now - timedelta(days=10)):
@@ -87,6 +91,30 @@ class Watcher:
             if kept:
                 log.info("Took %d %s values from the Home Assistant history", len(kept), key)
         return added
+
+    def _track_home(self, values: dict, units: dict, now: datetime) -> None:
+        """Charging at home: store what the wallbox meter added since the last poll, with the
+        electricity price of that moment (so dynamic tariffs are priced correctly)."""
+        meter = values.get("home_energy")
+        if meter is None:
+            return
+        unit = (units.get("home_energy") or "kWh").lower()
+        meter *= {"wh": 0.001, "mwh": 1000.0}.get(unit, 1.0)
+        last = self.db.kv_get("home_meter")
+        if last is None:
+            self.db.kv_set("home_meter", str(meter))
+            return
+        delta = meter - float(last)
+        if delta < 0 or delta > HOME_MAX_STEP_KWH:
+            self.db.kv_set("home_meter", str(meter))  # meter replaced or reset: start again from here
+            return
+        if delta < HOME_MIN_STEP_KWH:
+            return  # keep the old mark, small steps add up
+        self.db.kv_set("home_meter", str(meter))
+        self.db.add_reading("home_kwh", delta, now)
+        price = values.get("home_price") or self.s.home_price
+        if price is not None:
+            self.db.add_reading("home_cost", delta * price, now)
 
     def _check_charging(self, state: str | None) -> None:
         if not state or state.lower() in INVALID_STATES:

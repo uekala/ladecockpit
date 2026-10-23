@@ -290,6 +290,7 @@ a { color: var(--accent); }
 .kpi span { font-size: .74rem; color: var(--mute); }
 .compare { display: grid; gap: 8px; font-size: .9rem; }
 .compare .line .val { font-family: var(--f-mono); }
+.compare .line .lbl { white-space: normal; min-width: 0; }  /* long labels wrap on phones */
 
 /* --- Preis-Radar ---------------------------------------------------------------------- */
 .radar { display: grid; gap: 10px; position: relative; }
@@ -442,6 +443,13 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       lastCharge: "Last session · from invoice", noCharge: "No invoice fetched yet. After the first sync the latest Supercharger session with its real price shows up here.",
       supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", ofWhichMp: "of which MultiPass ({n})", thSiteAny: "Site", energy: "Energy",
       fuelCompare: "With a combustion car ({c} L/100 km · {p}/L)", saved: "Saved",
+      credit: "Tesla credit", listPrice: "List price", creditsUsed: "Tesla credits used", plusCredit: "− {p} Tesla credit",
+      invoicesLine: "Superchargers & MultiPass (invoices)", homeLine: "At home ({kwh} kWh · {p}/kWh)", homeLineNoPrice: "At home ({kwh} kWh, no price set)",
+      health: "Battery health", healthTitle: "Range at 100 %", healthSub: "The car's own estimate, from {n} readings with the battery above 50 %.",
+      healthSince: "since {d}: {sign}{p} %", healthWait: "A trend shows after 30 days of data.", dcShare: "Supercharger share of charged energy (12 months)",
+      climate: "Consumption", climateTitle: "By outside temperature", thTemp: "Outside", thDays: "Days", thPct: "% / 100 {unit}", thKwh100: "kWh / 100 {unit}",
+      climateSub: "Battery used per day, grouped by the day's mean temperature. kWh include charging losses.",
+      bandBelow: "below {hi} °C", bandAbove: "above {lo} °C", bandRange: "{lo} to {hi} °C",
       projection: "Projected for a year: ≈ {cost} for ≈ {dist} {unit}", projectionFuel: " · combustion car ≈ {fuel}, saved ≈ {saved}", projectionBasis: " (based on the last {n} days)", price: "Price", charging: "Charging", idleFee: "Idle fee", total: "Total",
       invoicePdf: "Invoice (PDF)", notInPreview: "Not available in the preview",
       pushed: "Sent to HA", backfill: "Imported", pending: "Sending to HA", stale: "Too old to send",
@@ -449,13 +457,13 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       thisMonth: "This month", avgDelta: "avg price {sign}{d}/kWh vs. {month}",
       kwhCharged: "kWh charged", avgPerKwh: "avg per kWh", per100: "per 100 {unit}", sessionsWord: "sessions", feeWord: "fees",
       kwh100: "kWh per 100 {unit}", power: "Avg power", thKw: "kW", kwTip: "avg charging power {kw} kW",
-      exportLabel: "Export", csvAll: "CSV – all sessions", zipMonth: "Invoices {month} (ZIP)",
+      exportLabel: "Export", csvAll: "CSV – all sessions", zipMonth: "Invoices {month} (ZIP)", pdfMonth: "Report {month} (PDF, with invoices)",
       addonStepsTitle: "Sign in with Tesla in three steps",
       addonStep1: "Click <strong>Sign in with Tesla</strong> – Tesla opens in a new tab.",
       addonStep2: "After signing in, Tesla redirects to <span class=\"mono\">{uri}</span>. That page does not load – that is expected.",
       addonStep3: "Copy the full address from the browser bar of that tab and paste it here.",
       atReference: "At reference price {p}", perInvoices: "Per invoices (without fees)",
-      radar: "Price radar", radarTitle: "What a kWh costs you by time of day", radarSub: "Average from your invoices", yourAvg: "dashed: your average {p}",
+      radar: "Price radar", radarTitle: "What a kWh costs you by time of day", radarSub: "Average list price from your invoices", yourAvg: "dashed: your average {p}",
       cheapest: "cheapest", noSession: "no session", oneSession: "1 session", nSessions: "{n} sessions",
       tipSlot: "{label} ({range}): avg {p}/kWh from {n}, {kwh} kWh", tipEmpty: "{label}: no session in this time window yet",
       sites: "Sites", sitesTitle: "Where you charge", noSessions: "No sessions yet.",
@@ -501,6 +509,13 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       lastCharge: "Letzte Ladung · laut Rechnung", noCharge: "Noch keine Rechnung abgerufen. Nach dem ersten Abgleich steht hier die letzte Supercharger-Ladung mit echtem Preis.",
       supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", ofWhichMp: "davon MultiPass ({n})", thSiteAny: "Standort", energy: "Energie",
       fuelCompare: "Mit dem Verbrenner ({c} L/100 km · {p}/L)", saved: "Gespart",
+      credit: "Tesla-Gutschrift", listPrice: "Listenpreis", creditsUsed: "Tesla-Gutschriften genutzt", plusCredit: "− {p} Tesla-Gutschrift",
+      invoicesLine: "Supercharger & MultiPass (Rechnungen)", homeLine: "Zu Hause ({kwh} kWh · {p}/kWh)", homeLineNoPrice: "Zu Hause ({kwh} kWh, kein Preis hinterlegt)",
+      health: "Akku-Gesundheit", healthTitle: "Reichweite bei 100 %", healthSub: "Schätzung des Autos, aus {n} Messungen mit Akku über 50 %.",
+      healthSince: "seit {d}: {sign}{p} %", healthWait: "Ein Trend zeigt sich nach 30 Tagen Daten.", dcShare: "Supercharger-Anteil der geladenen Energie (12 Monate)",
+      climate: "Verbrauch", climateTitle: "Je nach Außentemperatur", thTemp: "Außen", thDays: "Tage", thPct: "% / 100 {unit}", thKwh100: "kWh / 100 {unit}",
+      climateSub: "Akkuverbrauch pro Tag, eingeteilt nach der Durchschnittstemperatur des Tages. kWh inklusive Ladeverlusten.",
+      bandBelow: "unter {hi} °C", bandAbove: "über {lo} °C", bandRange: "{lo} bis {hi} °C",
       projection: "Aufs Jahr hochgerechnet: ≈ {cost} bei ≈ {dist} {unit}", projectionFuel: " · Verbrenner ≈ {fuel}, gespart ≈ {saved}", projectionBasis: " (Basis: letzte {n} Tage)", price: "Preis", charging: "Laden", idleFee: "Blockiergebühr", total: "Summe",
       invoicePdf: "Rechnung (PDF)", notInPreview: "In der Vorschau nicht verfügbar",
       pushed: "An HA gemeldet", backfill: "Übernommen", pending: "Wird an HA gemeldet", stale: "Zu alt zum Melden",
@@ -508,13 +523,13 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       thisMonth: "Dieser Monat", avgDelta: "Ø-Preis {sign}{d}/kWh ggü. {month}",
       kwhCharged: "kWh geladen", avgPerKwh: "Ø pro kWh", per100: "pro 100 {unit}", sessionsWord: "Ladungen", feeWord: "Gebühr",
       kwh100: "kWh pro 100 {unit}", power: "Ø Leistung", thKw: "kW", kwTip: "Ø Ladeleistung {kw} kW",
-      exportLabel: "Export", csvAll: "CSV – alle Ladungen", zipMonth: "Rechnungen {month} (ZIP)",
+      exportLabel: "Export", csvAll: "CSV – alle Ladungen", zipMonth: "Rechnungen {month} (ZIP)", pdfMonth: "Monatsbericht {month} (PDF mit Rechnungen)",
       addonStepsTitle: "Mit Tesla verbinden in drei Schritten",
       addonStep1: "Auf <strong>Bei Tesla anmelden</strong> klicken – Tesla öffnet sich in einem neuen Tab.",
       addonStep2: "Nach der Anmeldung leitet Tesla zu <span class=\"mono\">{uri}</span> weiter. Die Seite lädt nicht – das ist so gewollt.",
       addonStep3: "Die komplette Adresse aus der Browserzeile dieses Tabs kopieren und hier einfügen.",
       atReference: "Mit Referenzpreis {p}", perInvoices: "Laut Rechnungen (ohne Gebühren)",
-      radar: "Preis-Radar", radarTitle: "Was dich eine kWh je nach Uhrzeit kostet", radarSub: "Ø aus deinen Rechnungen", yourAvg: "gestrichelt: dein Schnitt {p}",
+      radar: "Preis-Radar", radarTitle: "Was dich eine kWh je nach Uhrzeit kostet", radarSub: "Ø Listenpreis aus deinen Rechnungen", yourAvg: "gestrichelt: dein Schnitt {p}",
       cheapest: "am günstigsten", noSession: "keine Ladung", oneSession: "1 Ladung", nSessions: "{n} Ladungen",
       tipSlot: "{label} ({range}): Ø {p}/kWh aus {n}, {kwh} kWh", tipEmpty: "{label}: noch keine Ladung in diesem Zeitfenster",
       sites: "Standorte", sitesTitle: "Wo du lädst", noSessions: "Noch keine Ladungen.",
@@ -648,6 +663,7 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
         <div class="grid-2">${receiptPanel(d)}${monthPanel(d)}</div>
         ${radarPanel(d)}
         <div class="grid-2">${sitesPanel(d)}${historyPanel(d)}</div>
+        ${d.battery_health || d.climate ? `<div class="grid-2">${healthPanel(d)}${climatePanel(d)}</div>` : ""}
         ${sessionsPanel(d)}
         <div class="grid-2">${d.reconcile ? reconcilePanel(d) : ""}${opsPanel(d)}</div>
       </div>`;
@@ -805,8 +821,10 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
         <div class="when">${esc(dShort(c.start))} · ${esc(tShort(c.start))}–${esc(tShort(c.end))}${dur}</div>
         ${line(T("energy"), num(c.kwh, 1) + " kWh")}
         ${line(T("price"), ppk(c.price))}
+        ${c.credit ? line(T("listPrice"), ppk(c.list_price)) : ""}
         ${c.avg_kw ? line(T("power"), num(c.avg_kw, 0) + " kW") : ""}
         ${line(T("charging"), money(c.charge_cost))}
+        ${c.credit ? line(T("credit"), "−" + money(c.credit)) : ""}
         ${line(T("idleFee"), money(c.idle), c.idle ? "" : "zero")}
         ${line(T("total"), money(c.cost), "total")}
       </div>
@@ -822,8 +840,9 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
     const c = d.compare || {};
     const prev = m.prev || {};
     let delta = "";
-    if (prev.avg_price && m.avg_price) {
-      const diff = m.avg_price - prev.avg_price;
+    const cur = m.list_price ?? m.avg_price, before = prev.list_price ?? prev.avg_price;
+    if (before && cur) {
+      const diff = cur - before;
       delta = T("avgDelta", { sign: diff <= 0 ? "−" : "+", d: money(Math.abs(diff)), month: prev.label });
     } else if (prev.sessions) {
       delta = `${prev.label}: ${money(prev.cost)}`;
@@ -832,6 +851,10 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
     const cmp = [];
     if (c.reference_cost != null) cmp.push(line(esc(T("atReference", { p: ppk(c.reference_price) })), money(c.reference_cost)));
     if (c.actual_cost != null && c.reference_cost != null) cmp.push(line(T("perInvoices"), money(c.actual_cost)));
+    if (m.home) {
+      cmp.push(line(esc(T("invoicesLine")), money(m.cost)));
+      cmp.push(line(esc(m.home.cost != null ? T("homeLine", { kwh: num(m.home.kwh, 1), p: money(m.home.avg_price) }) : T("homeLineNoPrice", { kwh: num(m.home.kwh, 1) })), money(m.home.cost)));
+    }
     const fuel = c.fuel;
     if (fuel && m.fuel_equivalent != null) {
       cmp.push(line(esc(T("fuelCompare", { c: num(fuel.consumption, 1), p: money(fuel.price, 3) })), money(m.fuel_equivalent)));
@@ -839,11 +862,12 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
     }
     const mp = (m.by_network || {}).multipass;
     if (mp && mp.sessions && (m.by_network || {}).supercharger) cmp.push(line(esc(T("ofWhichMp", { n: mp.sessions })), `${money(mp.cost)} · ${ppk(mp.avg_price)}`));
+    if (m.credit) cmp.push(line(T("creditsUsed"), money(m.credit)));
     if (m.idle) cmp.push(line(T("idleFee"), money(m.idle)));
     if (c.fuel_month != null) cmp.push(line(esc(c.fuel_label), money(c.fuel_month)));
     return `<section class="panel" aria-labelledby="h-month">
       <span class="eyebrow" id="h-month">${esc(m.label || T("thisMonth"))} · ${esc(sessionsText(m.sessions || 0))}</span>
-      <div class="month-total"><div class="big">${money(m.cost)}</div><span class="delta">${esc(delta)}</span></div>
+      <div class="month-total"><div class="big">${money(m.home ? m.total_cost : m.cost)}</div><span class="delta">${esc(delta)}</span></div>
       <div class="kpis">
         <div class="kpi"><b>${num(m.kwh, 1)}</b><span>${T("kwhCharged")}</span></div>
         <div class="kpi"><b>${m.avg_price == null ? "–" : money(m.avg_price)}</b><span>${T("avgPerKwh")}</span></div>
@@ -856,7 +880,7 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
 
   function radarPanel(d) {
     const slots = d.slots || [];
-    const avg = d.totals?.avg_price;
+    const avg = d.totals?.list_price ?? d.totals?.avg_price;
     const priced = slots.filter((s) => s.avg_price != null);
     const maxP = Math.max(0.6, ...priced.map((s) => s.avg_price));
     const step = maxP > 1.2 ? 0.5 : 0.2;
@@ -880,7 +904,7 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
         <div class="radar-val">${has ? money(s.avg_price) : '<span class="muted">–</span>'}<small>${has ? (isBest ? T("cheapest") : sessionsText(s.sessions)) : T("noSession")}</small></div>
       </div>`;
     }).join("");
-    const insights = (d.insights || []).filter((i) => i.kind !== "slot" && i.kind !== "fuel");
+    const insights = (d.insights || []).filter((i) => !["slot", "fuel", "climate"].includes(i.kind));
     return `<section class="panel" aria-labelledby="h-radar">
       <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline">
         <div><span class="eyebrow">${T("radar")}</span><h2 id="h-radar">${T("radarTitle")}</h2></div>
@@ -891,6 +915,51 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
         <div class="radar-axis" aria-hidden="true"><span></span><div class="ticks">${ticks.map((t) => `<span style="left:${pct(t)}%">${num(t, 1)}</span>`).join("")}</div><span class="sub" style="font-size:.72rem;text-align:right">/kWh</span></div>
       </div>
       ${insights.length ? `<ul class="insights">${insights.map((i) => `<li class="${esc(i.kind)}">${insightIcon[i.kind] || ico.bolt}<span>${esc(i.text)}</span></li>`).join("")}</ul>` : ""}
+    </section>`;
+  }
+
+  function bandLabel(b) {
+    if (b.from == null) return T("bandBelow", { hi: num(b.to, 0) });
+    if (b.to == null) return T("bandAbove", { lo: num(b.from, 0) });
+    return T("bandRange", { lo: num(b.from, 0), hi: num(b.to, 0) });
+  }
+
+  function sparkline(values) {
+    if (values.length < 2) return "";
+    const w = 260, h = 46, lo = Math.min(...values), hi = Math.max(...values), span = hi - lo || 1;
+    const pts = values.map((v, i) => `${(i / (values.length - 1)) * w},${h - 4 - ((v - lo) / span) * (h - 8)}`).join(" ");
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" aria-hidden="true" style="margin-top:10px"><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+  }
+
+  function healthPanel(d) {
+    const h = d.battery_health;
+    if (!h) return "";
+    let delta = T("healthWait");
+    if (h.change_pct != null) {
+      delta = T("healthSince", { d: fmtDate(h.since + "T12:00:00Z", { day: "2-digit", month: "2-digit", year: "numeric" }), sign: h.change_pct > 0 ? "+" : h.change_pct < 0 ? "−" : "±", p: num(Math.abs(h.change_pct), 1) });
+    }
+    const line = (lbl, val) => `<div class="line"><span class="lbl">${lbl}</span><span class="dots"></span><span class="val">${val}</span></div>`;
+    return `<section class="panel" aria-labelledby="h-health">
+      <div><span class="eyebrow">${T("health")}</span><h2 id="h-health">${T("healthTitle")}</h2></div>
+      <div class="month-total"><div class="big">${num(h.range_at_100, 0)} ${unit()}</div><span class="delta">${esc(delta)}</span></div>
+      ${sparkline((h.weeks || []).map((w) => w.value))}
+      <p class="sub">${esc(T("healthSub", { n: h.samples }))}</p>
+      ${h.dc_share != null ? `<div class="compare">${line(esc(T("dcShare")), num(h.dc_share, 0) + " %")}</div>` : ""}
+    </section>`;
+  }
+
+  function climatePanel(d) {
+    const c = d.climate;
+    if (!c) return "";
+    const tip = (d.insights || []).find((i) => i.kind === "climate");
+    return `<section class="panel" aria-labelledby="h-climate">
+      <div><span class="eyebrow">${T("climate")}</span><h2 id="h-climate">${T("climateTitle")}</h2></div>
+      <div class="scroll"><table>
+        <thead><tr><th>${T("thTemp")}</th><th class="n">${T("thDays")}</th><th class="n">${unit()}</th><th class="n">${T("thPct", { unit: unit() })}</th><th class="n">${T("thKwh100", { unit: unit() })}</th></tr></thead>
+        <tbody>${c.bands.map((b) => `<tr><td>${esc(bandLabel(b))}</td><td class="n">${b.days}</td><td class="n">${num(b.distance, 0)}</td><td class="n">${num(b.pct_per_100, 1)}</td><td class="n">${b.kwh_per_100 == null ? "–" : num(b.kwh_per_100, 1)}</td></tr>`).join("")}</tbody>
+      </table></div>
+      ${tip ? `<div class="tip">${ico.bolt}<span>${esc(tip.text)}</span></div>` : ""}
+      <p class="sub">${T("climateSub")}</p>
     </section>`;
   }
 
@@ -924,14 +993,15 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
 
   function historyPanel(d) {
     const months = d.monthly || [];
-    const max = Math.max(1, ...months.map((m) => m.cost || 0));
+    const mc = (m) => (m.cost || 0) + (m.home_cost || 0);
+    const max = Math.max(1, ...months.map(mc));
     const curKey = d.month?.key;
     return `<section class="panel" aria-labelledby="h-hist">
       <div><span class="eyebrow">${T("history")}</span><h2 id="h-hist">${T("historyTitle")}</h2>${projectionLine(d)}</div>
       <div class="cols" role="img" aria-label="${T("perMonthAria")}">
         ${months.map((m) => `<div class="col ${m.key === curKey ? "cur" : ""}" tabindex="0" data-tip="${esc(`${m.label}: ${money(m.cost)} · ${num(m.kwh, 1)} kWh · ${sessionsText(m.sessions)}${m.avg_price ? " · " + ppk(m.avg_price) : ""}${m.kwh_per_100 ? " · " + num(m.kwh_per_100, 1) + " kWh/100 " + unit() : ""}`)}">
-          <span class="v">${m.cost ? money(m.cost, 0) : ""}</span>
-          <div class="bar" style="height:${((m.cost || 0) / max) * 100 * 0.82}%"></div>
+          <span class="v">${mc(m) ? money(mc(m), 0) : ""}</span>
+          <div class="bar" style="height:${(mc(m) / max) * 100 * 0.82}%"></div>
         </div>`).join("")}
       </div>
       <div class="col-labels">${months.map((m) => `<span>${esc(m.label)}${m.key === curKey ? " " + T("current") : ""}</span>`).join("")}</div>
@@ -951,7 +1021,7 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
         <thead><tr><th>${T("thDate")}</th><th>${siteHead(d)}</th><th class="n">kWh</th><th class="n">/kWh</th><th class="n">${T("thKw")}</th><th class="n">${T("thAmount")}</th><th>${T("thHa")}</th><th>${T("thInvoice")}</th></tr></thead>
         <tbody>${list.map((s) => `<tr>
           <td>${esc(dShort(s.start))}<span class="when-sub">${esc(tShort(s.start))}${s.duration_min != null ? " · " + s.duration_min + " min" : ""}</span></td>
-          <td class="site">${esc(s.site)}${mpChip(s)}${s.idle ? `<span class="when-sub" style="color:var(--warn)">${esc(T("plusIdle", { p: money(s.idle) }))}</span>` : ""}</td>
+          <td class="site">${esc(s.site)}${mpChip(s)}${s.idle ? `<span class="when-sub" style="color:var(--warn)">${esc(T("plusIdle", { p: money(s.idle) }))}</span>` : ""}${s.credit ? `<span class="when-sub" style="color:var(--good)">${esc(T("plusCredit", { p: money(s.credit) }))}</span>` : ""}</td>
           <td class="n">${s.kwh == null ? `<span class="muted">${T("open")}</span>` : num(s.kwh, 1)}</td>
           <td class="n">${s.price == null ? "–" : money(s.price)}</td>
           <td class="n">${s.avg_kw == null ? "–" : num(s.avg_kw, 0)}</td>
@@ -969,6 +1039,7 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
     return `<div class="exports">
       <span class="label">${T("exportLabel")}</span>
       <a href="api/export.csv" target="_blank" rel="noopener">${T("csvAll")}</a>
+      ${months.map((m) => `<a href="api/report/${m.key}.pdf" target="_blank" rel="noopener">${esc(T("pdfMonth", { month: monthName(m.key) }))}</a>`).join("")}
       ${months.map((m) => `<a href="api/invoices/${m.key}.zip" target="_blank" rel="noopener">${esc(T("zipMonth", { month: monthName(m.key) }))}</a>`).join("")}
     </div>`;
   }

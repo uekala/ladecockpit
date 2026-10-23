@@ -80,16 +80,21 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         "state_class": "measurement", "range": _round(st.get("range"), 0), "distance_unit": unit,
         "last_known": last_known, "as_of": st.get("as_of") if last_known else None,
         "target": st.get("target"),
+        "range_at_100": (d.get("battery_health") or {}).get("range_at_100"),
+        "range_at_100_change_pct": (d.get("battery_health") or {}).get("change_pct"),
     })
 
     # --- this month -----------------------------------------------------------------------------
     m = d.get("month") or {}
     prev = m.get("prev") or {}
-    out["sensor.ladecockpit_month_cost"] = (_state(m.get("cost") or 0.0), {
+    home = m.get("home") or {}
+    out["sensor.ladecockpit_month_cost"] = (_state(m.get("total_cost", m.get("cost")) or 0.0), {
         "friendly_name": name("month_cost"), "unit_of_measurement": cur, "device_class": "monetary",
         "icon": "mdi:cash-multiple", "month": m.get("label"), "sessions": m.get("sessions"),
+        "invoice_cost": m.get("cost"), "home_kwh": home.get("kwh"), "home_cost": home.get("cost"),
         "energy_kwh": m.get("kwh"), "price_per_kwh": _round(m.get("avg_price"), 4),
-        "idle_fees": m.get("idle"), "distance": m.get("distance"), "distance_unit": unit,
+        "idle_fees": m.get("idle"), "credits": m.get("credit"), "list_price_per_kwh": _round(m.get("list_price"), 4),
+        "distance": m.get("distance"), "distance_unit": unit,
         "cost_per_100": m.get("per_100"), "kwh_per_100": m.get("kwh_per_100"),
         "avg_power_kw": m.get("avg_kw"),
         "multipass_cost": (m.get("by_network") or {}).get("multipass", {}).get("cost"),
@@ -119,7 +124,8 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
             "icon": "mdi:ev-plug-ccs2" if multipass else "mdi:ev-plug-tesla", "network": last.get("network"),
             "site": last.get("site"), "start": last.get("start"),
             "end": last.get("end"), "energy_kwh": _round(last.get("kwh"), 2),
-            "price_per_kwh": _round(last.get("price"), 4), "idle_fee": last.get("idle"),
+            "price_per_kwh": _round(last.get("price"), 4), "list_price_per_kwh": _round(last.get("list_price"), 4),
+            "credit": last.get("credit"), "idle_fee": last.get("idle"),
             "avg_power_kw": last.get("avg_kw"), "duration_min": last.get("duration_min"),
             "text": text[:MAX_STATE_LEN], "session_id": last.get("id"),
         })

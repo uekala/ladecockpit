@@ -18,7 +18,7 @@ MULTIPASS = "multipass"
 SUPERCHARGER_BILLING = {"IMMEDIATE"}
 # Fields of a plain Supercharger record. Anything else is logged, so new formats get noticed.
 KNOWN_KEYS = {
-    "billingType", "chargeStartDateTime", "chargeStopDateTime", "countryCode", "fees",
+    "billingType", "chargeStartDateTime", "chargeStopDateTime", "countryCode", "credit", "fees",
     "invoices", "sessionId", "siteLocationName", "unlatchDateTime", "vehicleMakeType", "vin",
 }
 

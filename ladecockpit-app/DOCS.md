@@ -35,6 +35,11 @@ Import the blueprint `blueprints/automation/ladecockpit/book_invoice.yaml` from 
 
 Enter the consumption (L/100 km) and fuel price of a comparison car, either as fixed values or as entities (e.g. the average consumption of your other car and a fuel price sensor). Ladecockpit then shows what the same distance would have cost and what you saved, per month and projected for a year.
 
+## More options
+
+- **Charging at home**: the energy meter of your wallbox (kWh, only increasing) and your electricity price, fixed or from an entity such as a dynamic tariff. The price at the time of charging is used.
+- **Outside temperature**: a sensor or a weather entity, for the consumption by temperature.
+
 ## Sensors
 
 Ladecockpit creates its own entities: `sensor.ladecockpit_next_charge`, `sensor.ladecockpit_battery`, `sensor.ladecockpit_month_cost`, `sensor.ladecockpit_last_charge`, `sensor.ladecockpit_price_tip` and `binary_sensor.ladecockpit_problem`. Use them in dashboards and automations. A ready-made dashboard section is in `homeassistant/dashboard_card.yaml` in the repository. Turn this off with **Create sensors in Home Assistant**.

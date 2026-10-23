@@ -49,6 +49,10 @@ ADDON_OPTION_MAP = {
     "fuel_price": "FUEL_PRICE",
     "entity_fuel_price": "HA_ENT_FUEL_PRICE",
     "month_report": "MONTH_REPORT",
+    "entity_outside_temp": "HA_ENT_OUTSIDE_TEMP",
+    "entity_home_energy": "HA_ENT_HOME_ENERGY",
+    "home_price": "HOME_PRICE",
+    "entity_home_price": "HA_ENT_HOME_PRICE",
     "soc_floor": "SOC_FLOOR",
     "soc_target": "SOC_TARGET",
     "notify_problems": "NOTIFY_PROBLEMS",
@@ -148,6 +152,11 @@ class Settings:
     ent_fuel_consumption: str
     fuel_price: float | None
     ent_fuel_price: str
+    ent_outside_temp: str
+    # Charging at home: an energy meter of the wallbox (kWh, increasing) and the electricity price
+    ent_home_energy: str
+    home_price: float | None
+    ent_home_price: str
     # Behaviour
     soc_floor: int
     soc_target: int
@@ -222,6 +231,10 @@ def load() -> Settings:
         ent_fuel_consumption=_env("HA_ENT_FUEL_CONSUMPTION"),
         fuel_price=_float("FUEL_PRICE", None),
         ent_fuel_price=_env("HA_ENT_FUEL_PRICE"),
+        ent_outside_temp=_env("HA_ENT_OUTSIDE_TEMP"),
+        ent_home_energy=_env("HA_ENT_HOME_ENERGY"),
+        home_price=_float("HOME_PRICE", None),
+        ent_home_price=_env("HA_ENT_HOME_PRICE"),
         soc_floor=_int("SOC_FLOOR", 10),
         soc_target=_int("SOC_TARGET", 80),
         sync_interval_h=_float("SYNC_INTERVAL_H", 6) or 6,

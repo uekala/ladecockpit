@@ -64,6 +64,18 @@ configuration:
   entity_fuel_price:
     name: Fuel price from an entity
     description: Instead of the fixed price, e.g. a fuel price sensor.
+  entity_home_energy:
+    name: Wallbox energy meter (kWh)
+    description: Energy meter of your wallbox in kWh that only increases (e.g. from the Tesla Wall Connector or a sub-meter). Ladecockpit then includes charging at home.
+  home_price:
+    name: Electricity price at home (per kWh)
+    description: Fixed electricity price for charging at home, e.g. 0.32.
+  entity_home_price:
+    name: Electricity price from an entity
+    description: Instead of the fixed price, e.g. a dynamic tariff (Tibber, aWATTar). Ladecockpit uses the price at the time of charging.
+  entity_outside_temp:
+    name: Outside temperature
+    description: Sensor or weather entity. Ladecockpit then shows the consumption by temperature.
   soc_floor:
     name: Lowest battery level (%)
     description: The forecast says when this level is reached.

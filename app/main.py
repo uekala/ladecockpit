@@ -18,7 +18,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel
 
-from . import __version__, demo
+from . import __version__, demo, monthpdf
 from .analytics import build_dashboard
 from .export import sessions_csv
 from .config import settings
@@ -116,6 +116,12 @@ async def _live() -> dict:
     return data
 
 
+def _home(since: datetime) -> list[tuple[datetime, float, float | None]]:
+    """Home charging steps: (time, kWh, cost or None without a price)."""
+    costs = dict(db.readings_since("home_cost", since))
+    return [(ts, kwh, costs.get(ts)) for ts, kwh in db.readings_since("home_kwh", since)]
+
+
 async def _readings(now: datetime) -> dict:
     month_start = now.astimezone(settings.tz).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     odo_since = min(month_start - timedelta(days=160), now - timedelta(days=14))
@@ -124,7 +130,11 @@ async def _readings(now: datetime) -> dict:
         "soc": soc,
         "soc_last": db.last_reading("soc"),
         "range_last": db.last_reading("range"),
-        "odometer": db.readings_since("odometer", odo_since),
+        "odometer": db.readings_since("odometer", min(odo_since, now - timedelta(days=365))),
+        "soc_long": db.readings_since("soc", now - timedelta(days=365)),
+        "range_long": db.readings_since("range", now - timedelta(days=365)),
+        "temp": db.readings_since("temp", now - timedelta(days=365)),
+        "home": _home(min(odo_since, now - timedelta(days=365))),
     }
     if len(soc) < 3 and settings.ent_soc:
         # Fresh install: fall back to Home Assistant's own history for the forecast.
@@ -262,6 +272,36 @@ async def invoices_zip(month: str):
                 raise HTTPException(502, str(e)) from e
     return Response(buffer.getvalue(), media_type="application/zip",
                     headers={"Content-Disposition": f'attachment; filename="supercharger-{month}.zip"'})
+
+
+@app.get("/api/report/{month}.pdf")
+async def month_report_pdf(month: str):
+    """Cover sheet with all sessions of a month (net, VAT, gross, credits) plus Tesla's invoices."""
+    if not re.fullmatch(r"\d{4}-\d{2}", month):
+        raise HTTPException(400, "Use the format YYYY-MM.")
+    now = datetime.now(timezone.utc)
+    sessions = demo.demo_sessions(settings, now) if settings.demo else db.sessions()
+    chosen = sorted((s for s in sessions if s.get("start_ts") and s.get("total") is not None
+                     and datetime.fromisoformat(s["start_ts"]).astimezone(settings.tz).strftime("%Y-%m") == month),
+                    key=lambda s: s["start_ts"])
+    d = await dashboard()
+    entry = next((m for m in d.get("monthly") or [] if m["key"] == month), {})
+    if not chosen and not entry.get("home_kwh"):
+        raise HTTPException(404, "No sessions in this month.")
+    home = {"kwh": entry.get("home_kwh"), "cost": entry.get("home_cost")} if entry.get("home_kwh") else None
+    cover = monthpdf.cover(month, chosen, lang=settings.lang, tz=settings.tz, currency=d.get("currency") or "EUR",
+                           home=home, distance=entry.get("distance"), unit=d.get("distance_unit") or "km", now=now)
+    invoices = []
+    if not settings.demo:
+        for s in chosen:
+            if s.get("invoices"):
+                try:
+                    invoices.append((await _invoice_pdf(s)).read_bytes())
+                except TeslaError as e:
+                    raise HTTPException(502, str(e)) from e
+    name = f"ladekosten-{month}.pdf" if settings.lang == "de" else f"charging-{month}.pdf"
+    return Response(monthpdf.merge(cover, invoices), media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
 
 @app.get("/api/export.csv")

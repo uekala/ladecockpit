@@ -7,7 +7,14 @@
 - **Projection**: cost and distance per year from the last 90 days, with the savings vs. the combustion car.
 - **Charging plan**: the next-stop card tells you when and where to charge before the battery reaches the floor – the cheapest Supercharger and time window from your own invoices, with the expected saving (`plan` on `sensor.ladecockpit_next_charge`).
 - **Monthly report**: on the first of the month the event `ladecockpit_month_report` with last month's figures and a ready text, plus a notification in Home Assistant (option `month_report`).
+- **Tesla credits**: sessions partly paid with Tesla credits (e.g. free Supercharging with a new car) now show the list price and the credit. Price radar, sites, charging plan and MultiPass comparison use the list price, so a credit no longer makes a Supercharger look cheap. Paid amounts are unchanged. The CSV export has list price, credit and net amount.
+- **Charging at home**: optional wallbox energy meter and electricity price (fixed or an entity, priced at the time of charging). Included in the month, cost per 100 km/mi, savings and projection (`entity_home_energy`, `home_price`, `entity_home_price`). `sensor.ladecockpit_month_cost` is now the total incl. charging at home (`invoice_cost`, `home_cost` as attributes).
+- **Battery health**: range at 100 % over time and the Supercharger share of the charged energy (`range_at_100` on `sensor.ladecockpit_battery`).
+- **Consumption by outside temperature** (`entity_outside_temp`, sensor or weather entity).
+- **Monthly PDF** `/api/report/<YYYY-MM>.pdf`: cover sheet with net, VAT, gross and credits, followed by all invoices of the month.
 - The log notes fields in Tesla's charging history that Ladecockpit does not know yet.
+- Price tips only appear for differences of at least €0.03/kWh.
+- Fix: the web app no longer scrolls sideways on narrow phones.
 
 ## 0.3.0 – 2026-10-23
 

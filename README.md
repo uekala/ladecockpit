@@ -17,6 +17,11 @@ Most Home Assistant setups estimate Supercharger costs from the car's kWh and a 
 - **Monthly view.** Cost, kWh, average price, cost per 100 km/mi, optional comparison with a reference price or the fuel cost of another car.
 - **Savings vs. a combustion car.** What the same distance would have cost with petrol or diesel (fixed values or live from Home Assistant, e.g. a fuel price sensor), per month and projected for a year.
 - **Monthly report.** On the first of the month a summary of the previous month as an event and a notification in Home Assistant.
+- **Tesla credits handled correctly.** Sessions partly paid with Tesla credits (e.g. free Supercharging with a new car) show what you paid, the list price and the credit. Price comparisons use the list price, so a credit never makes a Supercharger look cheap.
+- **Charging at home.** With the energy meter of your wallbox and your electricity price (also dynamic tariffs), cost per 100 km/mi and the savings include charging at home.
+- **Battery health.** Range at 100 % over time, from the readings Ladecockpit keeps anyway, and the Supercharger share of your charging.
+- **Consumption by outside temperature.** How much more battery your car uses when it is cold.
+- **Monthly PDF.** A cover sheet with all sessions (net, VAT, gross, credits) plus all invoices of a month in one PDF – for tax or your employer.
 - **Charging power and efficiency.** Average kW per session and per Supercharger, kWh per 100 km/mi including charging losses.
 - **Reconciliation.** Compares your Home Assistant totals with the invoices.
 - **Export.** All sessions as CSV, all invoices of a month as one ZIP file.
@@ -97,6 +102,9 @@ Minimum: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN` (Home As
 | `HA_ENT_RANGE` | `sensor.my_tesla_battery_range` | range |
 | `HA_ENT_ODOMETER` | `sensor.my_tesla_odometer` | distance per month, cost per 100 km/mi |
 | `HA_ENT_CHARGING` | `sensor.my_tesla_charging` | invoice right after a session ends |
+| `HA_ENT_FUEL_CONSUMPTION` / `FUEL_CONSUMPTION`, `HA_ENT_FUEL_PRICE` / `FUEL_PRICE` | `7.5`, `sensor.fuel_price` | savings vs. a combustion car |
+| `HA_ENT_HOME_ENERGY`, `HA_ENT_HOME_PRICE` / `HOME_PRICE` | `sensor.wall_connector_energy`, `0.32` | charging at home |
+| `HA_ENT_OUTSIDE_TEMP` | `weather.home` | consumption by temperature |
 
 Use the IP of Home Assistant in `HA_URL`. `.local` names often do not resolve inside containers. All settings are listed in [.env.example](.env.example).
 
@@ -190,6 +198,7 @@ If a MultiPass session is shown as Supercharger (or the other way round), please
 | `POST /api/sync/now` | Sync now |
 | `GET /api/invoice/<id>` | Invoice PDF (cached locally) |
 | `GET /api/invoices/<YYYY-MM>.zip` | All invoices of a month |
+| `GET /api/report/<YYYY-MM>.pdf` | Cover sheet plus all invoices of a month in one PDF |
 | `GET /api/export.csv` | All sessions as CSV |
 | `GET /api/debug/raw` | Last raw Tesla response, to check field names |
 | `GET /healthz` | Health check |

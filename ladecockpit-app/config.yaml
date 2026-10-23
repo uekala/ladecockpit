@@ -57,6 +57,10 @@ schema:
   entity_fuel_consumption: str?
   fuel_price: float(0,10)?
   entity_fuel_price: str?
+  entity_home_energy: str?
+  home_price: float(0,5)?
+  entity_home_price: str?
+  entity_outside_temp: str?
   soc_floor: int(0,50)
   soc_target: int(50,100)
   notify_problems: bool

@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 
-from . import i18n
+from . import i18n, vehicle
 from .config import Settings
 from .networks import MULTIPASS, SUPERCHARGER
 
@@ -22,17 +22,23 @@ def _month_key(dt: datetime) -> str:
 
 
 def _stats(items: list[dict]) -> dict:
+    """Totals of sessions. avg_price is what you paid per kWh; list_price is the Supercharger's
+    own rate before credits – use it whenever prices are compared."""
     kwh = sum(i["kwh"] for i in items)
     charge = sum(i["charge_cost"] or 0.0 for i in items)
     total = sum(i["total"] for i in items)
     idle = sum(i["idle_fee"] or 0.0 for i in items)
+    listed = sum(i["list_cost"] if i.get("list_cost") is not None else (i["charge_cost"] or 0.0) for i in items)
+    credit = sum(i.get("credit") or 0.0 for i in items)
     return {
         "sessions": len(items),
         "kwh": round(kwh, 1),
         "cost": round(total, 2),
         "charge_cost": round(charge, 2),
         "idle": round(idle, 2),
+        "credit": round(credit, 2),
         "avg_price": round(charge / kwh, 4) if kwh else None,
+        "list_price": round(listed / kwh, 4) if kwh else None,
     }
 
 
@@ -51,8 +57,20 @@ def _avg_kw(items: list[dict]) -> float | None:
     return round(sum(k for k, _ in timed) / hours) if hours else None
 
 
-def _distance(odo: list[tuple[datetime, float]], items: list[dict]) -> dict:
-    """Distance from odometer readings and the cost/energy of the sessions in the same window."""
+def _home_sum(home: list, start: datetime | None = None, end: datetime | None = None) -> dict:
+    """Home charging in a window: kWh, cost (of the steps that had a price) and avg price."""
+    steps = [h for h in home if (start is None or h[0] >= start) and (end is None or h[0] < end)]
+    kwh = sum(h[1] for h in steps)
+    priced = [h for h in steps if h[2] is not None]
+    cost = sum(h[2] for h in priced)
+    priced_kwh = sum(h[1] for h in priced)
+    return {"kwh": round(kwh, 1), "cost": round(cost, 2) if priced else None,
+            "avg_price": round(cost / priced_kwh, 4) if priced_kwh else None}
+
+
+def _distance(odo: list[tuple[datetime, float]], items: list[dict], home: list | None = None) -> dict:
+    """Distance from odometer readings and the cost/energy of all charging in the same window
+    (invoices plus charging at home)."""
     out = {"distance": None, "distance_since": None, "per_100": None, "kwh_per_100": None}
     if len(odo) < 2:
         return out
@@ -61,9 +79,12 @@ def _distance(odo: list[tuple[datetime, float]], items: list[dict]) -> dict:
     out["distance"] = round(dist)
     out["distance_since"] = since
     covered = [x for x in items if x["_local"] >= since]
-    if dist >= 50 and covered:
-        out["per_100"] = round(sum(x["total"] for x in covered) / dist * 100, 2)
-        out["kwh_per_100"] = round(sum(x["kwh"] for x in covered) / dist * 100, 1)
+    at_home = _home_sum(home or [], since, odo[-1][0] + timedelta(seconds=1))
+    if dist >= 50 and (covered or at_home["kwh"]):
+        cost = sum(x["total"] for x in covered) + (at_home["cost"] or 0.0)
+        kwh = sum(x["kwh"] for x in covered) + at_home["kwh"]
+        out["per_100"] = round(cost / dist * 100, 2)
+        out["kwh_per_100"] = round(kwh / dist * 100, 1)
     return out
 
 
@@ -124,13 +145,14 @@ def _forecast(lang, history, soc, floor, now_utc, tz, odometer_14d) -> dict:
     return out
 
 
+MIN_PRICE_GAP = 0.03       # €/kWh: smaller differences are not worth a tip
 PROJECTION_DAYS = 90       # look-back for the yearly projection
 PROJECTION_MIN_DAYS = 7
 PROJECTION_MIN_DIST = 200
 
 
 def _projection(odo: list[tuple[datetime, float]], priced: list[dict], now_utc: datetime,
-                fuel: dict | None) -> dict | None:
+                fuel: dict | None, home: list | None = None) -> dict | None:
     """Cost and distance per year, from the last PROJECTION_DAYS days."""
     window = [p for p in odo if p[0] >= now_utc - timedelta(days=PROJECTION_DAYS)]
     if len(window) < 2:
@@ -138,9 +160,10 @@ def _projection(odo: list[tuple[datetime, float]], priced: list[dict], now_utc: 
     days = (window[-1][0] - window[0][0]).total_seconds() / 86400
     dist = window[-1][1] - window[0][1]
     covered = [x for x in priced if x["_local"] >= window[0][0]]
-    if days < PROJECTION_MIN_DAYS or dist < PROJECTION_MIN_DIST or not covered:
+    at_home = _home_sum(home or [], window[0][0])
+    if days < PROJECTION_MIN_DAYS or dist < PROJECTION_MIN_DIST or not (covered or at_home["kwh"]):
         return None
-    per_100 = sum(x["total"] for x in covered) / dist * 100
+    per_100 = (sum(x["total"] for x in covered) + (at_home["cost"] or 0.0)) / dist * 100
     per_year = dist / days * 365
     out = {"basis_days": round(days), "distance": int(round(per_year, -2)),
            "cost": int(round(per_100 * per_year / 100, -1)), "per_100": round(per_100, 2),
@@ -149,6 +172,11 @@ def _projection(odo: list[tuple[datetime, float]], priced: list[dict], now_utc: 
         out["fuel_cost"] = int(round(fuel["per_100"] * per_year / 100, -1))
         out["savings"] = int(round((fuel["per_100"] - per_100) * per_year / 100, -1))
     return out
+
+
+def _place(site: str) -> str:
+    """"Willich, Germany" → "Willich" for running text."""
+    return site.rsplit(", ", 1)[0] if site and site.count(", ") == 1 else site
 
 
 def _plan(lang: str, forecast: dict, priced: list[dict], overall_price: float | None,
@@ -163,17 +191,17 @@ def _plan(lang: str, forecast: dict, priced: list[dict], overall_price: float | 
         slot = next(i for i, (_, a, b) in enumerate(SLOT_HOURS) if a <= x["_local"].hour < b)
         pairs.setdefault((x.get("site") or "", slot), []).append(x)
     stats = [(k, _stats(v)) for k, v in pairs.items() if k[0]]
-    stats = [(k, s) for k, s in stats if s["avg_price"]]
+    stats = [(k, s) for k, s in stats if s["list_price"]]
     if not stats:
         return None
-    (site, slot), best = min(stats, key=lambda kv: kv[1]["avg_price"])
-    if overall_price - best["avg_price"] < 0.02:
+    (site, slot), best = min(stats, key=lambda kv: kv[1]["list_price"])
+    if overall_price - best["list_price"] < MIN_PRICE_GAP:
         return None
     _, a, b = SLOT_HOURS[slot]
     now_local = now_utc.astimezone(tz)
     floor_at = (now_utc + timedelta(days=days)).astimezone(tz)
     chosen = None
-    for offset in range(0, int(days) + 2):
+    for offset in range(int(days) + 2):
         day = (now_local + timedelta(days=offset)).date()
         start = datetime(day.year, day.month, day.day, a, tzinfo=tz)
         end = start + timedelta(hours=b - a)
@@ -183,17 +211,17 @@ def _plan(lang: str, forecast: dict, priced: list[dict], overall_price: float | 
         return None
     recent = [x["kwh"] for x in priced[:5]]
     kwh = sorted(recent)[len(recent) // 2]
-    saving = (overall_price - best["avg_price"]) * kwh
+    saving = (overall_price - best["list_price"]) * kwh
     label, rng = (i18n.SLOTS.get(lang) or i18n.SLOTS["en"])[slot]
     offset = (chosen.date() - now_local.date()).days
     day = i18n.t(lang, "today") if offset == 0 else i18n.t(lang, "tomorrow") if offset == 1 else i18n.date_label(lang, chosen)
     when = f"{day}, {rng}"
-    place = site.rsplit(", ", 1)[0] if site.count(", ") == 1 else site
+    place = _place(site)
     return {
         "date": chosen.date().isoformat(), "when": when, "slot": label, "range": rng, "site": site,
-        "price": best["avg_price"], "average": overall_price, "kwh": round(kwh), "saving": round(saving, 2),
+        "price": best["list_price"], "average": overall_price, "kwh": round(kwh), "saving": round(saving, 2),
         "sessions": best["sessions"],
-        "text": i18n.t(lang, "plan", when=when, site=place, best=money(best["avg_price"]),
+        "text": i18n.t(lang, "plan", when=when, site=place, best=money(best["list_price"]),
                        avg=money(overall_price), saving=money(saving), kwh=round(kwh)),
     }
 
@@ -211,6 +239,9 @@ def _session_view(x: dict, tz, lang: str) -> dict:
         "charge_cost": x.get("charge_cost"),
         "idle": x.get("idle_fee") or 0.0,
         "price": x.get("price"),
+        "list_price": x.get("list_price") if x.get("list_price") is not None else x.get("price"),
+        "credit": x.get("credit") or 0.0,
+        "net": x.get("net_total"),
         "duration_min": round((stop - start).total_seconds() / 60) if (start and stop) else None,
         "avg_kw": round(x["kwh"] / _hours(x)) if x.get("kwh") and _hours(x) else None,
         "has_invoice": bool(x.get("invoices")),
@@ -288,19 +319,30 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
 
     month = _stats(by_month.get(cur_key, []))
     month.update(key=cur_key, label=i18n.month_label(lang, cur_key))
+    home = readings.get("home") or []
+
     def month_distance(key: str) -> dict:
         start, end = _month_bounds(key, tz)
         odo = [p for p in odo_all if start <= p[0] < end]
-        return _distance(odo, by_month.get(key, []))
+        return _distance(odo, by_month.get(key, []), home)
+
+    def month_home(key: str) -> dict | None:
+        if not home:
+            return None
+        start, end = _month_bounds(key, tz)
+        return _home_sum(home, start, end)
 
     dist = month_distance(cur_key)
     month.update(dist, distance_since=_iso(dist["distance_since"].astimezone(tz)) if dist["distance_since"] else None)
     month["avg_kw"] = _avg_kw(by_month.get(cur_key, []))
     month["by_network"] = _by_network(by_month.get(cur_key, []))
+    month["home"] = month_home(cur_key)
+    month["total_cost"] = round(month["cost"] + ((month["home"] or {}).get("cost") or 0.0), 2)
     with_fuel(month)
     prev = _stats(by_month.get(prev_key, []))
     month["prev"] = {"label": i18n.month_label(lang, prev_key, with_year=False),
-                     "cost": prev["cost"], "avg_price": prev["avg_price"], "sessions": prev["sessions"]}
+                     "cost": prev["cost"], "avg_price": prev["avg_price"], "list_price": prev["list_price"],
+                     "sessions": prev["sessions"]}
 
     monthly = []
     cursor = now_local.replace(day=1)
@@ -315,10 +357,11 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
             "sessions": st["sessions"], "distance": md["distance"],
             "per_100": md["per_100"], "kwh_per_100": md["kwh_per_100"],
             "multipass_cost": nets.get(MULTIPASS, {}).get("cost"),
-            "multipass_sessions": nets.get(MULTIPASS, {}).get("sessions")}))
+            "multipass_sessions": nets.get(MULTIPASS, {}).get("sessions"),
+            "home_kwh": (month_home(key) or {}).get("kwh"), "home_cost": (month_home(key) or {}).get("cost")}))
         cursor = (cursor - timedelta(days=1)).replace(day=1)
     monthly.reverse()
-    first = next((i for i, m in enumerate(monthly) if m["sessions"]), len(monthly) - 1)
+    first = next((i for i, m in enumerate(monthly) if m["sessions"] or m.get("home_kwh")), len(monthly) - 1)
     monthly = monthly[first:]
 
     # --- price radar ----------------------------------------------------------------------
@@ -327,13 +370,14 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     for (sid, a, b), (label, rng) in zip(SLOT_HOURS, i18n.SLOTS.get(lang, i18n.SLOTS["en"])):
         st = _stats([x for x in priced if a <= x["_local"].hour < b])
         slots.append({"id": sid, "label": label, "range": rng,
-                      "avg_price": st["avg_price"], "sessions": st["sessions"], "kwh": st["kwh"]})
+                      "avg_price": st["list_price"], "sessions": st["sessions"], "kwh": st["kwh"]})
 
     groups: dict[str, list[dict]] = {}
     for x in priced:
         groups.setdefault(x.get("site") or i18n.t(lang, "unknown_site"), []).append(x)
     sites = sorted(
-        ({"site": k, **{f: _stats(v)[f] for f in ("sessions", "kwh", "avg_price", "cost")}, "avg_kw": _avg_kw(v),
+        ({"site": k, **{f: _stats(v)[f] for f in ("sessions", "kwh", "cost", "credit")},
+          "avg_price": _stats(v)["list_price"], "avg_kw": _avg_kw(v),
           "network": Counter(x.get("network") or SUPERCHARGER for x in v).most_common(1)[0][0]}
          for k, v in groups.items()),
         key=lambda r: (-r["sessions"], r["avg_price"] or 9),
@@ -341,10 +385,10 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
 
     insights: list[dict] = []
     used = [s for s in slots if s["sessions"]]
-    if len(priced) >= 4 and len(used) >= 2 and overall["avg_price"]:
+    if len(priced) >= 4 and len(used) >= 2 and overall["list_price"]:
         best = min(used, key=lambda s: s["avg_price"])
-        diff = overall["avg_price"] - best["avg_price"]
-        if diff >= 0.01:
+        diff = overall["list_price"] - best["avg_price"]
+        if diff >= MIN_PRICE_GAP:
             insights.append({"kind": "slot", "text": i18n.t(
                 lang, "in_slot_best", label=best["label"], range=best["range"],
                 price=money(best["avg_price"]), diff=money(diff))})
@@ -359,15 +403,20 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         hi = max(priced_sites, key=lambda r: r["avg_price"])
         if hi["avg_price"] - lo["avg_price"] >= 0.01:
             insights.append({"kind": "site", "text": i18n.t(
-                lang, "in_site", lo=lo["site"], lo_price=money(lo["avg_price"]),
-                hi=hi["site"], hi_price=money(hi["avg_price"]))})
+                lang, "in_site", lo=_place(lo["site"]), lo_price=money(lo["avg_price"]),
+                hi=_place(hi["site"]), hi_price=money(hi["avg_price"]))})
 
     nets = _by_network(priced)
     mp, sc = nets.get(MULTIPASS), nets.get(SUPERCHARGER)
-    if mp and sc and mp["avg_price"] and sc["avg_price"]:
+    if mp and sc and mp["list_price"] and sc["list_price"]:
         insights.append({"kind": "network", "text": i18n.t(
-            lang, "in_network", mp=money(mp["avg_price"]), sc=money(sc["avg_price"]),
+            lang, "in_network", mp=money(mp["list_price"]), sc=money(sc["list_price"]),
             n=mp["sessions"])})
+
+    if overall["credit"] > 0:
+        insights.append({"kind": "credit", "text": i18n.t(
+            lang, "in_credit", amount=money(overall["credit"]),
+            paid=money(overall["avg_price"]), listed=money(overall["list_price"]))})
 
     if overall["idle"] > 0:
         n_idle = sum(1 for x in priced if (x.get("idle_fee") or 0) > 0)
@@ -396,8 +445,26 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
             saved=money(month["savings"]),
             consumption=i18n.num(lang, fuel["consumption"], 1), price=money(fuel["price"]), unit=unit)})
 
-    forecast["plan"] = _plan(lang, forecast, priced, overall["avg_price"], now_utc, tz, money)
-    projection = _projection(odo_all, priced, now_utc, fuel)
+    health = vehicle.battery_health(readings.get("soc_long") or [], readings.get("range_long") or [], tz)
+    kwh_pct = vehicle.kwh_per_percent(priced, readings.get("soc_long") or [])
+    climate = vehicle.consumption_by_temperature(readings.get("soc_long") or [], odo_all,
+                                                 readings.get("temp") or [], tz, kwh_pct)
+    if climate and len(climate["bands"]) >= 2:
+        cold, warm = climate["bands"][0], climate["bands"][-1]
+        more = (cold["pct_per_100"] / warm["pct_per_100"] - 1) * 100 if warm["pct_per_100"] else 0
+        if more >= 5:
+            insights.append({"kind": "climate", "text": i18n.t(
+                lang, "in_climate", cold=i18n.temp_band(lang, cold["from"], cold["to"]),
+                warm=i18n.temp_band(lang, warm["from"], warm["to"]), more=round(more), unit=unit)})
+
+    forecast["plan"] = _plan(lang, forecast, priced, overall["list_price"], now_utc, tz, money)
+    projection = _projection(odo_all, priced, now_utc, fuel, home)
+    if health and home:
+        year_start = now_utc - timedelta(days=365)
+        dc = sum(x["kwh"] for x in priced if x["_local"] >= year_start and (x.get("network") or SUPERCHARGER) == SUPERCHARGER)
+        home_kwh = _home_sum(home, year_start)["kwh"]
+        all_kwh = sum(x["kwh"] for x in priced if x["_local"] >= year_start) + home_kwh
+        health["dc_share"] = round(dc / all_kwh * 100) if all_kwh else None
 
     reconcile = None
     if settings.ent_cost_total or settings.ent_kwh_total:
@@ -438,6 +505,8 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         "insights": insights,
         "compare": compare,
         "projection": projection,
+        "battery_health": health,
+        "climate": climate,
         "reconcile": reconcile,
         "totals": totals,
         "sessions": [_session_view(x, tz, lang) for x in sessions[:40]],

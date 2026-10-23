@@ -199,6 +199,8 @@ class SyncService:
             "idle_fee": round(s["idle_fee"] or 0.0, 2),
             "total": round(s["total"], 2),
             "price_per_kwh": round(price, 4),
+            "list_price_per_kwh": round(s["list_price"], 4) if s.get("list_price") is not None else round(price, 4),
+            "credit": round(s.get("credit") or 0.0, 2),
             "currency": cur,
             "network": network,
             "text": text[:255],
