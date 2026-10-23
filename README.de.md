@@ -28,7 +28,7 @@ Viele Home-Assistant-Setups schätzen die Supercharger-Kosten aus den kWh des Au
 - **Problem-Meldung.** Benachrichtigung in Home Assistant, wenn die Tesla-Anmeldung abläuft oder der Abgleich wiederholt fehlschlägt.
 - **Sensoren fürs Dashboard.** Nächster Ladestopp, Akku, Monatskosten, letzte Ladung und Preistipp als Entitäten in Home Assistant, dazu eine fertige Dashboard-Sektion.
 - **Funktioniert auch offline.** Speichert einen eigenen Verlauf von Akkustand und Kilometerstand, z. B. für ein Auto in der Tiefgarage ohne Empfang.
-- **Sparsam bei der Tesla-API.** Live-Daten kommen aus Home Assistant. Tesla wird nur nach der Ladehistorie gefragt, ein paar Dutzend Abfragen im Monat.
+- **Sparsam bei der Tesla-API.** Live-Daten kommen aus Home Assistant. Tesla wird nur nach der Ladehistorie gefragt, etwa 150–200 Abfragen im Monat (≈ 0,40 $).
 - **Nur lesend.** Es gibt keinen Code, der Befehle ans Auto schickt oder es weckt.
 - **Läuft als Home-Assistant-App** (Seitenleiste, kein extra Server) oder als Docker-Container überall.
 - Deutsch und Englisch, Demo-Modus ohne Zugangsdaten, als App auf den Handy-Startbildschirm legbar.
@@ -177,7 +177,7 @@ Wird eine MultiPass-Ladung als Supercharger angezeigt (oder umgekehrt), bitte ei
 
 ## Kosten
 
-Die Fleet API wird pro Abfrage abgerechnet. Ladecockpit nutzt nur Datenabfragen für Ladehistorie und Rechnungen. Mit den Standardeinstellungen sind das ein paar Dutzend Abfragen im Monat, weit innerhalb des monatlichen Guthabens, das Tesla jedem Entwicklerkonto gibt. `API_BUDGET_REQUESTS` (Standard 1500) ist eine harte Obergrenze. Die App zeigt den Zählerstand des laufenden Monats.
+Die Fleet API wird pro Abfrage abgerechnet. Ladecockpit nutzt nur Datenabfragen für Ladehistorie und Rechnungen. Mit den Standardeinstellungen sind das etwa 150–200 Abfragen im Monat: ein Abgleich alle 6 Stunden plus ein paar Abfragen nach jeder Ladung (≈ 0,40 $ bei 0,002 $ pro Abfrage), weit innerhalb des monatlichen Guthabens von 10 $, das Tesla jedem Entwicklerkonto gibt. `API_BUDGET_REQUESTS` (Standard 1500) ist eine harte Obergrenze. Die App zeigt den Zählerstand des laufenden Monats.
 
 ## Datenschutz und Sicherheit
 

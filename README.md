@@ -28,7 +28,7 @@ Most Home Assistant setups estimate Supercharger costs from the car's kWh and a 
 - **Problem alerts.** A notification in Home Assistant when the Tesla sign-in expired or syncing keeps failing.
 - **Sensors for your dashboard.** Next charging stop, battery, monthly cost, last session and price tip as Home Assistant entities, with a ready-made dashboard section.
 - **Works while the car is offline.** Keeps its own history of battery level and odometer, e.g. for a car parked without reception.
-- **Cheap on the Tesla API.** Live data comes from Home Assistant. Tesla is only asked for the charging history, a few dozen requests per month.
+- **Cheap on the Tesla API.** Live data comes from Home Assistant. Tesla is only asked for the charging history, about 150–200 requests per month (≈ $0.40).
 - **Read-only.** There is no code that sends commands to the car or wakes it.
 - **Runs as a Home Assistant app** (sidebar, no extra server) or as a Docker container anywhere.
 - English and German, demo mode without any credentials, installable on the phone's home screen.
@@ -207,7 +207,7 @@ If a MultiPass session is shown as Supercharger (or the other way round), please
 
 ## Costs
 
-The Fleet API is billed per request. Ladecockpit only uses data requests for the charging history and invoices. With default settings that is a few dozen requests per month, well inside the monthly credit Tesla gives every developer account. `API_BUDGET_REQUESTS` (default 1500) is a hard stop. The app shows the count of the current month.
+The Fleet API is billed per request. Ladecockpit only uses data requests for the charging history and invoices. With default settings that is about 150–200 requests per month: a sync every 6 hours plus a few checks after each session (≈ $0.40 at $0.002 per request), well inside the $10 monthly credit Tesla gives every developer account. `API_BUDGET_REQUESTS` (default 1500) is a hard stop. The app shows the count of the current month.
 
 ## Privacy and security
 
