@@ -1,0 +1,68 @@
+configuration:
+  language:
+    name: Sprache
+    description: Sprache der Web-App und der Texte, die an Home Assistant gehen.
+  locale:
+    name: Zahlen- und Datumsformat
+    description: Optional, z. B. de-DE, en-GB oder en-US.
+  tesla_client_id:
+    name: Tesla Client ID
+    description: Aus deiner App auf developer.tesla.com.
+  tesla_client_secret:
+    name: Tesla Client Secret
+    description: Aus deiner App auf developer.tesla.com.
+  tesla_region:
+    name: Tesla-Region
+    description: eu für Europa, Naher Osten und Afrika – na für Nordamerika und Asien-Pazifik.
+  tesla_redirect_uri:
+    name: Redirect-URI
+    description: Muss genau so unter „Zulässige Weiterleitungs-URI(s)“ in deiner Tesla-App stehen.
+  tesla_vin:
+    name: FIN
+    description: Optional, nur bei mehreren Autos im Konto nötig.
+  entity_battery:
+    name: Entität Akkustand
+    description: z. B. sensor.mein_tesla_batteriestand – Akku-Anzeige und Ladestopp-Prognose.
+  entity_range:
+    name: Entität Reichweite
+    description: z. B. sensor.mein_tesla_batteriereichweite
+  entity_odometer:
+    name: Entität Kilometerstand
+    description: z. B. sensor.mein_tesla_kilometerzahler – Strecke und Kosten pro 100 km.
+  entity_charging:
+    name: Entität Ladestatus
+    description: z. B. sensor.mein_tesla_ladestatus – die Rechnung wird direkt nach dem Ladeende geholt.
+  charging_state:
+    name: Zustand beim Laden
+    description: Zustand der Ladestatus-Entität, während das Auto lädt.
+  entity_cost_total:
+    name: Helfer Ladekosten gesamt
+    description: input_number, in den der Blueprint bucht – für den Abgleich „HA vs. Rechnungen“.
+  entity_kwh_total:
+    name: Helfer Lademenge gesamt
+    description: input_number, in den der Blueprint bucht – für den Abgleich „HA vs. Rechnungen“.
+  entity_reference_price:
+    name: Entität Referenzpreis
+    description: Rechnungen mit einem Preis vergleichen, mit dem du bisher geschätzt hast.
+  reference_price:
+    name: Referenzpreis pro kWh
+    description: Feste Zahl statt einer Entität.
+  entity_fuel_month:
+    name: Spritkosten diesen Monat
+    description: Spritkosten eines anderen Autos, neben den Ladekosten angezeigt.
+  fuel_label:
+    name: Bezeichnung für Spritkosten
+  soc_floor:
+    name: Untergrenze Akku (%)
+    description: Die Prognose sagt, wann dieser Stand erreicht wird.
+  soc_target:
+    name: Ladelimit (%)
+  notify_problems:
+    name: Bei Problemen benachrichtigen
+    description: Benachrichtigung in Home Assistant, wenn die Tesla-Anmeldung abläuft oder der Abgleich fehlschlägt.
+  sync_interval_hours:
+    name: Regelmäßiger Abgleich (Stunden)
+  api_budget_requests:
+    name: Monatslimit Tesla-Abfragen
+network:
+  8077/tcp: Web-App außerhalb von Home Assistant (optional)

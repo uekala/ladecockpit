@@ -19,6 +19,13 @@ def test_demo_endpoints():
         assert flat["month_cost"] is not None and flat["currency"] == "EUR"
         assert client.post("/api/sync").json()["demo"] is True
         assert client.get("/api/invoice/demo-1000").status_code == 404
+        assert client.get("/api/invoices/2026-10.zip").status_code == 404
+        assert client.get("/api/invoices/oops.zip").status_code == 400
+        csv_text = client.get("/api/export.csv").text
+        assert csv_text.lstrip("\ufeff").startswith("Date,Start") and csv_text.count("\n") >= 8
+        assert client.get("/manifest.webmanifest").json()["short_name"] == "Ladecockpit"
+        assert client.get("/icon-192.png").headers["content-type"] == "image/png"
+        assert client.get("/icon-64.png").status_code == 404
 
 
 class _Loader(yaml.SafeLoader):

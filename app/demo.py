@@ -124,6 +124,7 @@ def build_demo(settings: Settings) -> dict:
             "redirect_uri": settings.tesla_redirect_uri,
             "push_since": (now - timedelta(days=5)).isoformat(timespec="seconds"),
             "entities": ["soc", "range", "odometer", "charging"],
+            "addon": False,
         },
         "sync": {
             "last": (now - timedelta(hours=2)).isoformat(timespec="seconds"),

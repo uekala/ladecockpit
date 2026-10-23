@@ -136,3 +136,12 @@ class HAClient:
             self.last_error = f"Home Assistant rejected the event (HTTP {r.status_code})"
             return False
         return True
+
+    async def call_service(self, domain: str, service: str, data: dict) -> bool:
+        if not self._http:
+            return False
+        try:
+            r = await self._http.post(f"/api/services/{domain}/{service}", json=data)
+        except httpx.HTTPError:
+            return False
+        return r.status_code < 400

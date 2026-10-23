@@ -38,6 +38,11 @@ TEXTS = {
         "in_reference": "Mit dem Referenzpreis von {ref}/kWh wären es diesen Monat {ref_cost} gewesen – laut Rechnungen sind es {actual} ({sign}{delta}).",
         "fuel_default": "Sprit diesen Monat",
         "unknown_site": "Unbekannter Supercharger",
+        "problem_title": "Ladecockpit",
+        "problem_auth": "Die Tesla-Anmeldung ist abgelaufen. Öffne Ladecockpit und verbinde dich neu mit Tesla, sonst werden keine Rechnungen mehr gebucht.",
+        "problem_sync": "Der Abgleich mit Tesla schlägt seit mehreren Versuchen fehl: {detail}",
+        "problem_budget": "Das Monatsbudget für Tesla-Abfragen ist erreicht. Bis Monatsende werden keine Rechnungen mehr geholt.",
+        "csv_header": "Datum;Start;Ende;Standort;kWh;Preis pro kWh;Ladekosten;Blockiergebühr;Summe;Währung;Ø kW;Ladung-ID",
     },
     "en": {
         "fc_no_soc": "No battery level from Home Assistant – no forecast possible.",
@@ -55,6 +60,11 @@ TEXTS = {
         "in_reference": "At your reference price of {ref}/kWh this month would have cost {ref_cost} – the invoices say {actual} ({sign}{delta}).",
         "fuel_default": "Fuel this month",
         "unknown_site": "Unknown Supercharger",
+        "problem_title": "Ladecockpit",
+        "problem_auth": "The Tesla sign-in expired. Open Ladecockpit and connect to Tesla again, otherwise no invoices are booked.",
+        "problem_sync": "Syncing with Tesla has failed several times in a row: {detail}",
+        "problem_budget": "The monthly budget for Tesla requests is used up. No invoices are fetched until next month.",
+        "csv_header": "Date,Start,End,Site,kWh,Price per kWh,Charging cost,Idle fee,Total,Currency,Avg kW,Session ID",
     },
 }
 

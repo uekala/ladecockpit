@@ -14,11 +14,15 @@ Most Home Assistant setups estimate Supercharger costs from the car's kWh and a 
 - **Price radar.** Shows, from your own invoices, which time of day and which Supercharger is cheapest for you.
 - **Next charging stop.** Forecasts when the battery reaches your floor (default 10 %) based on your recent consumption.
 - **Monthly view.** Cost, kWh, average price, cost per 100 km/mi, optional comparison with a reference price or the fuel cost of another car.
+- **Charging power and efficiency.** Average kW per session and per Supercharger, kWh per 100 km/mi including charging losses.
 - **Reconciliation.** Compares your Home Assistant totals with the invoices.
+- **Export.** All sessions as CSV, all invoices of a month as one ZIP file.
+- **Problem alerts.** A notification in Home Assistant when the Tesla sign-in expired or syncing keeps failing.
 - **Works while the car is offline.** Keeps its own history of battery level and odometer, e.g. for a car parked without reception.
 - **Cheap on the Tesla API.** Live data comes from Home Assistant. Tesla is only asked for the charging history, a few dozen requests per month.
 - **Read-only.** There is no code that sends commands to the car or wakes it.
-- English and German, demo mode without any credentials.
+- **Runs as a Home Assistant app** (sidebar, no extra server) or as a Docker container anywhere.
+- English and German, demo mode without any credentials, installable on the phone's home screen.
 
 ## How it works
 
@@ -36,11 +40,22 @@ Home Assistant ──(battery, odometer, charging state)──► Ladecockpit �
 
 ## Requirements
 
-- Docker (any machine that runs 24/7 is best, e.g. a small VM or NAS)
+- Home Assistant OS or Supervised (for the app), **or** Docker on any machine that runs 24/7
 - A Tesla account and a **Tesla developer app** with Fleet API access
 - Optional but recommended: Home Assistant with an integration that exposes your car's entities (Tesla Fleet, Teslemetry, Tessie, …)
 
-## Quick start (demo)
+## Install as Home Assistant app (recommended)
+
+[![Add the Ladecockpit repository to your Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fuekala%2Fladecockpit)
+
+1. Click the button above, or add `https://github.com/uekala/ladecockpit` under Settings → Apps → App store → ⋮ → Repositories.
+2. Install **Ladecockpit**, enter your Tesla client ID/secret and your car's entities on the **Configuration** tab, and start it.
+3. Open **Ladecockpit** in the sidebar and follow the three sign-in steps shown there.
+4. Book the invoices with the blueprint (see [step 5](#5-book-invoices-in-home-assistant)).
+
+Run only one Ladecockpit at a time. Two instances would report every invoice twice. The [app documentation](ladecockpit-app/DOCS.md) has the details.
+
+## Quick start with Docker (demo)
 
 ```bash
 git clone https://github.com/uekala/ladecockpit.git
@@ -133,6 +148,8 @@ Optional: [`homeassistant/ladecockpit_package.yaml`](homeassistant/ladecockpit_p
 | `POST /api/sync` | Look for a new invoice at short intervals |
 | `POST /api/sync/now` | Sync now |
 | `GET /api/invoice/<id>` | Invoice PDF (cached locally) |
+| `GET /api/invoices/<YYYY-MM>.zip` | All invoices of a month |
+| `GET /api/export.csv` | All sessions as CSV |
 | `GET /api/debug/raw` | Last raw Tesla response, to check field names |
 | `GET /healthz` | Health check |
 

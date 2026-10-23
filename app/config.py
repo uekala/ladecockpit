@@ -1,6 +1,8 @@
-"""Settings – everything comes from environment variables (see .env.example)."""
+"""Settings – from environment variables (see .env.example), or from the
+Home Assistant app options (/data/options.json) when running as an HA app."""
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,12 +22,74 @@ SCOPES = "openid offline_access vehicle_charging_cmds"
 
 DEFAULT_LOCALES = {"de": "de-DE", "en": "en-US"}
 
+ADDON_OPTIONS_PATH = Path(os.environ.get("ADDON_OPTIONS_PATH", "/data/options.json"))
+
+# Option name of the Home Assistant app → environment variable
+ADDON_OPTION_MAP = {
+    "language": "APP_LANG",
+    "locale": "APP_LOCALE",
+    "tesla_client_id": "TESLA_CLIENT_ID",
+    "tesla_client_secret": "TESLA_CLIENT_SECRET",
+    "tesla_redirect_uri": "TESLA_REDIRECT_URI",
+    "tesla_region": "TESLA_REGION",
+    "tesla_vin": "TESLA_VIN",
+    "entity_battery": "HA_ENT_SOC",
+    "entity_range": "HA_ENT_RANGE",
+    "entity_odometer": "HA_ENT_ODOMETER",
+    "entity_charging": "HA_ENT_CHARGING",
+    "charging_state": "HA_CHARGING_STATE",
+    "entity_cost_total": "HA_ENT_COST_TOTAL",
+    "entity_kwh_total": "HA_ENT_KWH_TOTAL",
+    "entity_reference_price": "HA_ENT_REFERENCE_PRICE",
+    "reference_price": "REFERENCE_PRICE",
+    "entity_fuel_month": "HA_ENT_FUEL_MONTH",
+    "fuel_label": "FUEL_LABEL",
+    "soc_floor": "SOC_FLOOR",
+    "soc_target": "SOC_TARGET",
+    "notify_problems": "NOTIFY_PROBLEMS",
+    "sync_interval_hours": "SYNC_INTERVAL_H",
+    "api_budget_requests": "API_BUDGET_REQUESTS",
+}
+
+
+def addon_overlay() -> dict[str, str]:
+    """When running as a Home Assistant app: map its options to our settings."""
+    token = os.environ.get("SUPERVISOR_TOKEN")
+    if not token or not ADDON_OPTIONS_PATH.exists():
+        return {}
+    try:
+        options = json.loads(ADDON_OPTIONS_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    env = {"HA_URL": "http://supervisor/core", "HA_TOKEN": token,
+           "DATA_DIR": str(ADDON_OPTIONS_PATH.parent), "ADDON": "1"}
+    for key, var in ADDON_OPTION_MAP.items():
+        value = options.get(key)
+        if value is None or value == "":
+            continue
+        if isinstance(value, bool):
+            value = "1" if value else "0"
+        env[var] = str(value)
+    return env
+
+
+_OVERLAY: dict[str, str] = {}
+
 
 def _env(name: str, default: str = "") -> str:
-    value = os.environ.get(name)
+    value = _OVERLAY.get(name)
+    if value is None:
+        value = os.environ.get(name)
     if value is None or value.strip() == "":
         return default
     return value.strip()
+
+
+def _bool(name: str, default: bool) -> bool:
+    raw = _env(name).lower()
+    if raw == "":
+        return default
+    return raw in ("1", "true", "yes", "on")
 
 
 def _float(name: str, default: float | None) -> float | None:
@@ -83,6 +147,8 @@ class Settings:
     api_budget: int
     app_password: str
     force_demo: bool
+    addon: bool
+    notify_problems: bool
     # Development only: point the app at a mock server
     api_base_override: str = ""
     token_url_override: str = ""
@@ -109,6 +175,8 @@ class Settings:
 
 
 def load() -> Settings:
+    global _OVERLAY
+    _OVERLAY = addon_overlay()
     lang = _env("APP_LANG", "en").lower()[:2]
     if lang not in DEFAULT_LOCALES:
         lang = "en"
@@ -146,6 +214,8 @@ def load() -> Settings:
         api_budget=_int("API_BUDGET_REQUESTS", 1500),
         app_password=_env("APP_PASSWORD"),
         force_demo=_env("APP_MODE", "").lower() == "demo",
+        addon=_env("ADDON") == "1",
+        notify_problems=_bool("NOTIFY_PROBLEMS", True),
         api_base_override=_env("TESLA_API_BASE_OVERRIDE").rstrip("/"),
         token_url_override=_env("TESLA_TOKEN_URL_OVERRIDE"),
     )

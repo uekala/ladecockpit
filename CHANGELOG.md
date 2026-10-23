@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 – 2026-10-23
+
+- **Runs as a Home Assistant app**: install it from this repository in Home Assistant, the web app opens from the sidebar. No separate server or PC needed.
+- Charging power (average kW) per session and per site.
+- kWh per 100 km/mi (billed energy incl. charging losses) per month.
+- Export: all sessions as CSV, all invoices of a month as a ZIP file.
+- Notification in Home Assistant when the Tesla sign-in expired or syncing keeps failing (event `ladecockpit_problem`).
+- On a fresh install the battery level, range and odometer are taken from the Home Assistant history, so they show up right away.
+- The web app can be added to a phone's home screen with its own icon.
+- The container now runs as root (needed for the Home Assistant app).
+
 ## 0.1.0 – 2026-10-23
 
 First public version.

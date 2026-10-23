@@ -14,11 +14,15 @@ Viele Home-Assistant-Setups schätzen die Supercharger-Kosten aus den kWh des Au
 - **Preis-Radar.** Zeigt aus deinen eigenen Rechnungen, zu welcher Uhrzeit und an welchem Supercharger du am günstigsten lädst.
 - **Nächster Ladestopp.** Sagt anhand deines Verbrauchs voraus, wann der Akku die Untergrenze erreicht (Standard: 10 %).
 - **Monatsübersicht.** Kosten, kWh, Ø-Preis, Kosten pro 100 km/mi, optional Vergleich mit einem Referenzpreis oder den Spritkosten eines zweiten Autos.
+- **Ladeleistung und Verbrauch.** Ø kW pro Ladung und pro Supercharger, kWh pro 100 km/mi inklusive Ladeverlusten.
 - **Abgleich.** Vergleicht deine Summen in Home Assistant mit den Rechnungen.
+- **Export.** Alle Ladungen als CSV, alle Rechnungen eines Monats als ein ZIP.
+- **Problem-Meldung.** Benachrichtigung in Home Assistant, wenn die Tesla-Anmeldung abläuft oder der Abgleich wiederholt fehlschlägt.
 - **Funktioniert auch offline.** Speichert einen eigenen Verlauf von Akkustand und Kilometerstand, z. B. für ein Auto in der Tiefgarage ohne Empfang.
 - **Sparsam bei der Tesla-API.** Live-Daten kommen aus Home Assistant. Tesla wird nur nach der Ladehistorie gefragt, ein paar Dutzend Abfragen im Monat.
 - **Nur lesend.** Es gibt keinen Code, der Befehle ans Auto schickt oder es weckt.
-- Deutsch und Englisch, Demo-Modus ohne Zugangsdaten.
+- **Läuft als Home-Assistant-App** (Seitenleiste, kein extra Server) oder als Docker-Container überall.
+- Deutsch und Englisch, Demo-Modus ohne Zugangsdaten, als App auf den Handy-Startbildschirm legbar.
 
 ## So funktioniert es
 
@@ -36,11 +40,22 @@ Home Assistant ──(Akku, Kilometerstand, Ladestatus)──► Ladecockpit ─
 
 ## Voraussetzungen
 
-- Docker, am besten auf einem Gerät, das rund um die Uhr läuft (z. B. kleine VM oder NAS)
+- Home Assistant OS oder Supervised (für die App), **oder** Docker auf einem Gerät, das rund um die Uhr läuft
 - Ein Tesla-Konto und eine **Tesla Developer App** mit Fleet-API-Zugang
 - Optional, aber empfohlen: Home Assistant mit einer Integration, die die Entitäten deines Autos bereitstellt (Tesla Fleet, Teslemetry, Tessie, …)
 
-## Schnellstart (Demo)
+## Als Home-Assistant-App installieren (empfohlen)
+
+[![Ladecockpit-Repository zu Home Assistant hinzufügen](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fuekala%2Fladecockpit)
+
+1. Auf den Button klicken oder `https://github.com/uekala/ladecockpit` unter Einstellungen → Apps → App Store → ⋮ → Repositories hinzufügen.
+2. **Ladecockpit** installieren. Im Reiter **Konfiguration** Tesla Client ID/Secret und die Entitäten deines Autos eintragen, dann starten.
+3. **Ladecockpit** in der Seitenleiste öffnen und den drei Anmelde-Schritten dort folgen.
+4. Rechnungen mit dem Blueprint buchen (siehe [Schritt 5](#5-rechnungen-in-home-assistant-buchen)).
+
+Immer nur ein Ladecockpit gleichzeitig betreiben. Zwei Instanzen würden jede Rechnung doppelt melden. Details stehen in der [App-Dokumentation](ladecockpit-app/DOCS.md).
+
+## Schnellstart mit Docker (Demo)
 
 ```bash
 git clone https://github.com/uekala/ladecockpit.git

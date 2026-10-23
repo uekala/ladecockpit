@@ -3,9 +3,12 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import io
 import logging
+import re
 import secrets
 import time
+import zipfile
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -17,6 +20,7 @@ from pydantic import BaseModel
 
 from . import __version__, demo
 from .analytics import build_dashboard
+from .export import sessions_csv
 from .config import settings
 from .db import DB
 from .homeassistant import HAClient
@@ -108,7 +112,7 @@ async def _live() -> dict:
 
 async def _readings(now: datetime) -> dict:
     month_start = now.astimezone(settings.tz).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    odo_since = min(month_start, now - timedelta(days=14))
+    odo_since = min(month_start - timedelta(days=160), now - timedelta(days=14))
     soc = db.readings_since("soc", now - timedelta(days=14))
     readings = {
         "soc": soc,
@@ -141,6 +145,7 @@ async def dashboard():
             "redirect_uri": settings.tesla_redirect_uri,
             "push_since": db.kv_get("push_since"),
             "entities": sorted(ha.entities()),
+            "addon": settings.addon,
         },
         "sync": {"last": sync.last_sync, "next": sync.next_sync,
                  "error": sync.last_error, "burst": sync.bursting},
@@ -200,6 +205,22 @@ async def sync_now():
 
 
 # --- invoices ------------------------------------------------------------------------------
+async def _invoice_pdf(s: dict) -> Path:
+    """Path of the cached invoice PDF of a session (fetched from Tesla on first use)."""
+    cache_dir = settings.data_dir / "invoices"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    safe_id = "".join(c for c in s["session_id"] if c.isalnum() or c in "-_")
+    path = cache_dir / f"{safe_id}.pdf"
+    if not path.exists():
+        path.write_bytes(await tesla.invoice_pdf(s["invoices"][0]["id"]))
+    return path
+
+
+def _pdf_name(s: dict) -> str:
+    site = re.sub(r"[^A-Za-z0-9]+", "-", (s.get("site") or "supercharger")).strip("-")[:40]
+    return f"supercharger-{(s.get('start_ts') or '')[:10]}-{site}-{s['session_id']}.pdf"
+
+
 @app.get("/api/invoice/{session_id}")
 async def invoice(session_id: str):
     if settings.demo:
@@ -207,18 +228,59 @@ async def invoice(session_id: str):
     s = db.session(session_id)
     if not s or not s["invoices"]:
         raise HTTPException(404, "No invoice for this session (yet).")
-    cache_dir = settings.data_dir / "invoices"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    safe_id = "".join(c for c in session_id if c.isalnum() or c in "-_")
-    path = cache_dir / f"{safe_id}.pdf"
-    if not path.exists():
-        try:
-            pdf = await tesla.invoice_pdf(s["invoices"][0]["id"])
-        except TeslaError as e:
-            raise HTTPException(502, str(e)) from e
-        path.write_bytes(pdf)
-    return FileResponse(path, media_type="application/pdf",
-                        filename=f"supercharger-{(s['start_ts'] or '')[:10]}-{safe_id}.pdf")
+    try:
+        path = await _invoice_pdf(s)
+    except TeslaError as e:
+        raise HTTPException(502, str(e)) from e
+    return FileResponse(path, media_type="application/pdf", filename=_pdf_name(s))
+
+
+@app.get("/api/invoices/{month}.zip")
+async def invoices_zip(month: str):
+    """All invoices of one month (YYYY-MM, local time) as a ZIP file."""
+    if not re.fullmatch(r"\d{4}-\d{2}", month):
+        raise HTTPException(400, "Use the format YYYY-MM.")
+    if settings.demo:
+        raise HTTPException(404, "The demo has no real invoices.")
+    chosen = [s for s in db.sessions() if s.get("invoices") and s.get("start_ts")
+              and datetime.fromisoformat(s["start_ts"]).astimezone(settings.tz).strftime("%Y-%m") == month]
+    if not chosen:
+        raise HTTPException(404, "No invoices in this month.")
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for s in chosen:
+            try:
+                zf.write(await _invoice_pdf(s), _pdf_name(s))
+            except TeslaError as e:
+                raise HTTPException(502, str(e)) from e
+    return Response(buffer.getvalue(), media_type="application/zip",
+                    headers={"Content-Disposition": f'attachment; filename="supercharger-{month}.zip"'})
+
+
+@app.get("/api/export.csv")
+async def export_csv():
+    sessions = demo.demo_sessions(settings, datetime.now(timezone.utc)) if settings.demo else db.sessions()
+    return Response(sessions_csv(sessions, settings), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="ladecockpit-sessions.csv"'})
+
+
+# --- installable web app (icon on the home screen) ----------------------------------------
+@app.get("/manifest.webmanifest", include_in_schema=False)
+async def manifest():
+    return JSONResponse({
+        "name": "Ladecockpit", "short_name": "Ladecockpit", "start_url": ".", "scope": ".",
+        "display": "standalone", "background_color": "#0d1214", "theme_color": "#0d1214",
+        "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+                  {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}],
+    }, media_type="application/manifest+json")
+
+
+@app.get("/icon-{size}.png", include_in_schema=False)
+async def icon(size: int):
+    if size not in (192, 512):
+        raise HTTPException(404)
+    return FileResponse(STATIC / f"icon-{size}.png", media_type="image/png",
+                        headers={"Cache-Control": "max-age=86400"})
 
 
 # --- Tesla connection -------------------------------------------------------------------------

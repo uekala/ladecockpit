@@ -23,6 +23,8 @@ from .tesla import BudgetExceeded, NotConnected, TeslaClient, parse_session
 log = logging.getLogger("ladecockpit.sync")
 
 BURST_START_DELAY_S = 5
+PROBLEM_ID = "ladecockpit_problem"
+FAILURES_BEFORE_ALERT = 3
 
 
 class SyncService:
@@ -37,6 +39,7 @@ class SyncService:
         self.last_sync: str | None = db.kv_get("last_sync")
         self.last_error: str | None = None
         self.next_sync: str | None = None
+        self.failures = 0
 
     # --- control -------------------------------------------------------------
     def trigger_burst(self) -> None:
@@ -53,23 +56,66 @@ class SyncService:
 
     async def run_forever(self) -> None:
         while True:
-            if self.tesla.connected and not self.tesla.auth_error:
-                try:
-                    new = await self.sync_once()
-                    if new and self.bursting:
-                        self.burst_until = 0.0  # invoice arrived – back to the normal rhythm
-                except (NotConnected, BudgetExceeded) as e:
-                    self.last_error = str(e)
-                except Exception as e:  # noqa: BLE001 – keep the service running
-                    log.exception("Sync failed")
-                    self.last_error = str(e)
+            await self.tick()
             wait_s = self.s.burst_interval_min * 60 if self.bursting else self.s.sync_interval_h * 3600
+            if self.failures and not self.bursting:
+                wait_s = min(wait_s, 1800)  # retry sooner after an error
             self.next_sync = datetime.fromtimestamp(time.time() + wait_s, timezone.utc).isoformat(timespec="seconds")
             try:
                 await asyncio.wait_for(self._wake.wait(), timeout=wait_s)
             except asyncio.TimeoutError:
                 pass
             self._wake.clear()
+
+    async def tick(self) -> None:
+        """One round: sync if possible and keep the problem notification up to date."""
+        if self.tesla.auth_error:
+            await self.report("auth")
+            return
+        if not self.tesla.connected:
+            return
+        try:
+            new = await self.sync_once()
+        except NotConnected as e:
+            self.last_error = str(e)
+            return
+        except BudgetExceeded as e:
+            self.last_error = str(e)
+            await self.report("budget")
+            return
+        except Exception as e:  # noqa: BLE001 – keep the service running
+            log.exception("Sync failed")
+            self.last_error = str(e)
+            self.failures += 1
+            if self.tesla.auth_error:
+                await self.report("auth")
+            elif self.failures >= FAILURES_BEFORE_ALERT:
+                await self.report("sync", str(e))
+            return
+        self.failures = 0
+        await self.report(None)
+        if new and self.bursting:
+            self.burst_until = 0.0  # invoice arrived – back to the normal rhythm
+
+    async def report(self, kind: str | None, detail: str = "") -> None:
+        """Raise or clear the problem notification in Home Assistant (shown once per problem)."""
+        current = self.db.kv_get("problem_kind")
+        if kind == current:
+            return
+        enabled = self.ha.configured and self.s.notify_problems
+        if kind is None:
+            self.db.kv_del("problem_kind")
+            if enabled:
+                await self.ha.call_service("persistent_notification", "dismiss", {"notification_id": PROBLEM_ID})
+            return
+        self.db.kv_set("problem_kind", kind)
+        if not enabled:
+            return
+        message = i18n.t(self.s.lang, f"problem_{kind}", detail=detail[:200])
+        await self.ha.call_service("persistent_notification", "create", {
+            "notification_id": PROBLEM_ID, "title": i18n.t(self.s.lang, "problem_title"), "message": message,
+        })
+        await self.ha.fire_event("ladecockpit_problem", {"kind": kind, "message": message})
 
     # --- sync -------------------------------------------------------------------
     async def sync_once(self) -> int:

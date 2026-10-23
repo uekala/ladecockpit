@@ -35,6 +35,44 @@ def _stats(items: list[dict]) -> dict:
     }
 
 
+def _hours(x: dict) -> float | None:
+    """Charging duration in hours (start to stop), only for sessions of at least 3 minutes."""
+    if not (x.get("start_ts") and x.get("stop_ts")):
+        return None
+    h = (datetime.fromisoformat(x["stop_ts"]) - datetime.fromisoformat(x["start_ts"])).total_seconds() / 3600
+    return h if h >= 0.05 else None
+
+
+def _avg_kw(items: list[dict]) -> float | None:
+    timed = [(x["kwh"], _hours(x)) for x in items if x.get("kwh")]
+    timed = [(k, h) for k, h in timed if h]
+    hours = sum(h for _, h in timed)
+    return round(sum(k for k, _ in timed) / hours) if hours else None
+
+
+def _distance(odo: list[tuple[datetime, float]], items: list[dict]) -> dict:
+    """Distance from odometer readings and the cost/energy of the sessions in the same window."""
+    out = {"distance": None, "distance_since": None, "per_100": None, "kwh_per_100": None}
+    if len(odo) < 2:
+        return out
+    dist = odo[-1][1] - odo[0][1]
+    since = odo[0][0]
+    out["distance"] = round(dist)
+    out["distance_since"] = since
+    covered = [x for x in items if x["_local"] >= since]
+    if dist >= 50 and covered:
+        out["per_100"] = round(sum(x["total"] for x in covered) / dist * 100, 2)
+        out["kwh_per_100"] = round(sum(x["kwh"] for x in covered) / dist * 100, 1)
+    return out
+
+
+def _month_bounds(key: str, tz) -> tuple[datetime, datetime]:
+    y, m = (int(v) for v in key.split("-"))
+    start = datetime(y, m, 1, tzinfo=tz)
+    end = datetime(y + (m == 12), m % 12 + 1, 1, tzinfo=tz)
+    return start, end
+
+
 def _per_day(points: list[tuple[datetime, float]], now: datetime) -> float | None:
     if len(points) < 2:
         return None
@@ -99,6 +137,7 @@ def _session_view(x: dict, tz, lang: str) -> dict:
         "idle": x.get("idle_fee") or 0.0,
         "price": x.get("price"),
         "duration_min": round((stop - start).total_seconds() / 60) if (start and stop) else None,
+        "avg_kw": round(x["kwh"] / _hours(x)) if x.get("kwh") and _hours(x) else None,
         "has_invoice": bool(x.get("invoices")),
         "push_state": x.get("push_state"),
         "currency": x.get("currency") or "EUR",
@@ -151,17 +190,14 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
 
     month = _stats(by_month.get(cur_key, []))
     month.update(key=cur_key, label=i18n.month_label(lang, cur_key))
-    month_start = now_local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    odo_month = [p for p in odo_all if p[0] >= month_start]
-    month["distance"] = month["per_100"] = month["distance_since"] = None
-    if len(odo_month) >= 2:
-        dist = odo_month[-1][1] - odo_month[0][1]
-        since = odo_month[0][0]
-        month["distance"] = round(dist)
-        month["distance_since"] = _iso(since.astimezone(tz))
-        covered = [x for x in by_month.get(cur_key, []) if x["_local"] >= since]
-        if dist >= 50 and covered:
-            month["per_100"] = round(sum(x["total"] for x in covered) / dist * 100, 2)
+    def month_distance(key: str) -> dict:
+        start, end = _month_bounds(key, tz)
+        odo = [p for p in odo_all if start <= p[0] < end]
+        return _distance(odo, by_month.get(key, []))
+
+    dist = month_distance(cur_key)
+    month.update(dist, distance_since=_iso(dist["distance_since"].astimezone(tz)) if dist["distance_since"] else None)
+    month["avg_kw"] = _avg_kw(by_month.get(cur_key, []))
     prev = _stats(by_month.get(prev_key, []))
     month["prev"] = {"label": i18n.month_label(lang, prev_key, with_year=False),
                      "cost": prev["cost"], "avg_price": prev["avg_price"], "sessions": prev["sessions"]}
@@ -171,9 +207,11 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     for _ in range(6):
         key = _month_key(cursor)
         st = _stats(by_month.get(key, []))
+        md = month_distance(key)
         monthly.append({"key": key, "label": i18n.month_label(lang, key, with_year=False)[:3],
                         "cost": st["cost"], "kwh": st["kwh"], "avg_price": st["avg_price"],
-                        "sessions": st["sessions"]})
+                        "sessions": st["sessions"], "distance": md["distance"],
+                        "per_100": md["per_100"], "kwh_per_100": md["kwh_per_100"]})
         cursor = (cursor - timedelta(days=1)).replace(day=1)
     monthly.reverse()
     first = next((i for i, m in enumerate(monthly) if m["sessions"]), len(monthly) - 1)
@@ -191,7 +229,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     for x in priced:
         groups.setdefault(x.get("site") or i18n.t(lang, "unknown_site"), []).append(x)
     sites = sorted(
-        ({"site": k, **{f: _stats(v)[f] for f in ("sessions", "kwh", "avg_price", "cost")}}
+        ({"site": k, **{f: _stats(v)[f] for f in ("sessions", "kwh", "avg_price", "cost")}, "avg_kw": _avg_kw(v)}
          for k, v in groups.items()),
         key=lambda r: (-r["sessions"], r["avg_price"] or 9),
     )

@@ -10,3 +10,5 @@ homeassistant
 *.md
 preview.html
 vorschau.html
+ladecockpit-app
+repository.yaml

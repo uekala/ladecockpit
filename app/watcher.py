@@ -35,6 +35,10 @@ class Watcher:
         self._last_prune: datetime | None = None
 
     async def run_forever(self) -> None:
+        try:
+            await self.seed_from_history()
+        except Exception:  # noqa: BLE001
+            log.exception("Could not read history from Home Assistant")
         while True:
             try:
                 await self.poll_once()
@@ -62,6 +66,27 @@ class Watcher:
             self.db.prune_readings(now - timedelta(days=KEEP_DAYS))
             self._last_prune = now
         return live
+
+    async def seed_from_history(self, now: datetime | None = None) -> int:
+        """Fresh install: take the last days from HA's own history, so the battery level,
+        the forecast and the distance show up right away instead of after the car was online."""
+        now = now or datetime.now(timezone.utc)
+        roles = self.ha.entities()
+        added = 0
+        for key in ("soc", "range", "odometer"):
+            entity = roles.get(key)
+            if not entity or self.db.last_reading(key) is not None:
+                continue
+            kept: list[tuple[datetime, float]] = []
+            for ts, value in await self.ha.history(entity, now - timedelta(days=10)):
+                if not kept or abs(kept[-1][1] - value) >= MIN_DELTA[key] or ts - kept[-1][0] >= MAX_AGE:
+                    kept.append((ts, value))
+            for ts, value in kept:
+                self.db.add_reading(key, value, ts)
+            added += len(kept)
+            if kept:
+                log.info("Took %d %s values from the Home Assistant history", len(kept), key)
+        return added
 
     def _check_charging(self, state: str | None) -> None:
         if not state or state.lower() in INVALID_STATES:

@@ -1,6 +1,11 @@
 <title>Ladecockpit</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#0d1214">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ladecockpit">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -274,7 +279,12 @@ a { color: var(--accent); }
 .month-total .big { font-size: clamp(2.2rem, 7vw, 3.1rem); }
 .delta { font-size: .85rem; color: var(--mute); }
 .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-@media (max-width: 520px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.exports { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .86rem; }
+.exports .label { color: var(--mute); font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-right: 4px; }
+.exports a { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px; background: var(--sunk); color: var(--ink); text-decoration: none; font-weight: 600; }
+.exports a:hover { background: var(--accent-soft); color: var(--accent); }
+.steps { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; font-size: .92rem; }
 .kpi { border-top: 2px solid var(--line); padding-top: 8px; min-width: 0; }
 .kpi b { display: block; font-family: var(--f-mono); font-weight: 500; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
 .kpi span { font-size: .74rem; color: var(--mute); }
@@ -436,6 +446,12 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       pushedShort: "sent", backfillShort: "imported", pendingShort: "pending", staleShort: "too old",
       thisMonth: "This month", avgDelta: "avg price {sign}{d}/kWh vs. {month}",
       kwhCharged: "kWh charged", avgPerKwh: "avg per kWh", per100: "per 100 {unit}", sessionsWord: "sessions", feeWord: "fees",
+      kwh100: "kWh per 100 {unit}", power: "Avg power", thKw: "kW", kwTip: "avg charging power {kw} kW",
+      exportLabel: "Export", csvAll: "CSV – all sessions", zipMonth: "Invoices {month} (ZIP)",
+      addonStepsTitle: "Sign in with Tesla in three steps",
+      addonStep1: "Click <strong>Sign in with Tesla</strong> – Tesla opens in a new tab.",
+      addonStep2: "After signing in, Tesla redirects to <span class=\"mono\">{uri}</span>. That page does not load – that is expected.",
+      addonStep3: "Copy the full address from the browser bar of that tab and paste it here.",
       atReference: "At reference price {p}", perInvoices: "Per invoices (without fees)",
       radar: "Price radar", radarTitle: "What a kWh costs you by time of day", radarSub: "Average from your invoices", yourAvg: "dashed: your average {p}",
       cheapest: "cheapest", noSession: "no session", oneSession: "1 session", nSessions: "{n} sessions",
@@ -487,6 +503,12 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       pushedShort: "gemeldet", backfillShort: "übernommen", pendingShort: "offen", staleShort: "zu alt",
       thisMonth: "Dieser Monat", avgDelta: "Ø-Preis {sign}{d}/kWh ggü. {month}",
       kwhCharged: "kWh geladen", avgPerKwh: "Ø pro kWh", per100: "pro 100 {unit}", sessionsWord: "Ladungen", feeWord: "Gebühr",
+      kwh100: "kWh pro 100 {unit}", power: "Ø Leistung", thKw: "kW", kwTip: "Ø Ladeleistung {kw} kW",
+      exportLabel: "Export", csvAll: "CSV – alle Ladungen", zipMonth: "Rechnungen {month} (ZIP)",
+      addonStepsTitle: "Mit Tesla verbinden in drei Schritten",
+      addonStep1: "Auf <strong>Bei Tesla anmelden</strong> klicken – Tesla öffnet sich in einem neuen Tab.",
+      addonStep2: "Nach der Anmeldung leitet Tesla zu <span class=\"mono\">{uri}</span> weiter. Die Seite lädt nicht – das ist so gewollt.",
+      addonStep3: "Die komplette Adresse aus der Browserzeile dieses Tabs kopieren und hier einfügen.",
       atReference: "Mit Referenzpreis {p}", perInvoices: "Laut Rechnungen (ohne Gebühren)",
       radar: "Preis-Radar", radarTitle: "Was dich eine kWh je nach Uhrzeit kostet", radarSub: "Ø aus deinen Rechnungen", yourAvg: "gestrichelt: dein Schnitt {p}",
       cheapest: "am günstigsten", noSession: "keine Ladung", oneSession: "1 Ladung", nSessions: "{n} Ladungen",
@@ -666,17 +688,26 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       <span class="eyebrow">${T("setup")}</span>
       <h2>${T("connectTitle")}</h2>
       <p class="sub">${T("connectText")}</p>
-      <div><a class="btn primary" href="auth/login">${T("signIn")}</a></div>
-      <details>
+      ${st.addon ? `<ol class="steps">
+        <li>${T("addonStep1")}</li>
+        <li>${T("addonStep2", { uri: esc(st.redirect_uri || "") })}</li>
+        <li>${T("addonStep3")}</li>
+      </ol>` : ""}
+      <div><a class="btn primary" href="auth/login" target="${st.addon ? "_blank" : "_self"}" rel="noopener">${T("signIn")}</a></div>
+      ${st.addon ? codeForm() : `<details>
         <summary>${T("redirectHelp")}</summary>
         <p class="sub" style="margin-bottom:10px">${T("redirectText")} <span class="mono">${esc(st.redirect_uri || "")}</span></p>
-        <form class="code" id="code-form">
-          <label for="code-input" hidden>${T("addrOrCode")}</label>
-          <input id="code-input" name="code" placeholder="https://…/auth/callback?code=…" autocomplete="off" required>
-          <button class="btn" type="submit">${T("connect")}</button>
-        </form>
-      </details>
+        ${codeForm()}
+      </details>`}
     </section>`;
+  }
+
+  function codeForm() {
+    return `<form class="code" id="code-form">
+      <label for="code-input" hidden>${T("addrOrCode")}</label>
+      <input id="code-input" name="code" placeholder="http://localhost:8077/auth/callback?code=…" autocomplete="off" required>
+      <button class="btn" type="submit">${T("connect")}</button>
+    </form>`;
   }
 
   function batteryPanel(d) {
@@ -766,6 +797,7 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
         <div class="when">${esc(dShort(c.start))} · ${esc(tShort(c.start))}–${esc(tShort(c.end))}${dur}</div>
         ${line(T("energy"), num(c.kwh, 1) + " kWh")}
         ${line(T("price"), ppk(c.price))}
+        ${c.avg_kw ? line(T("power"), num(c.avg_kw, 0) + " kW") : ""}
         ${line(T("charging"), money(c.charge_cost))}
         ${line(T("idleFee"), money(c.idle), c.idle ? "" : "zero")}
         ${line(T("total"), money(c.cost), "total")}
@@ -792,15 +824,16 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
     const cmp = [];
     if (c.reference_cost != null) cmp.push(line(esc(T("atReference", { p: ppk(c.reference_price) })), money(c.reference_cost)));
     if (c.actual_cost != null && c.reference_cost != null) cmp.push(line(T("perInvoices"), money(c.actual_cost)));
+    if (m.idle) cmp.push(line(T("idleFee"), money(m.idle)));
     if (c.fuel_month != null) cmp.push(line(esc(c.fuel_label), money(c.fuel_month)));
     return `<section class="panel" aria-labelledby="h-month">
-      <span class="eyebrow" id="h-month">${esc(m.label || T("thisMonth"))}</span>
+      <span class="eyebrow" id="h-month">${esc(m.label || T("thisMonth"))} · ${esc(sessionsText(m.sessions || 0))}</span>
       <div class="month-total"><div class="big">${money(m.cost)}</div><span class="delta">${esc(delta)}</span></div>
       <div class="kpis">
         <div class="kpi"><b>${num(m.kwh, 1)}</b><span>${T("kwhCharged")}</span></div>
         <div class="kpi"><b>${m.avg_price == null ? "–" : money(m.avg_price)}</b><span>${T("avgPerKwh")}</span></div>
         <div class="kpi"><b>${m.per_100 == null ? "–" : money(m.per_100)}</b><span>${T("per100", { unit: unit() })}</span></div>
-        <div class="kpi"><b>${m.sessions ?? 0}</b><span>${T("sessionsWord")}${m.idle ? " · " + money(m.idle) + " " + T("feeWord") : ""}</span></div>
+        <div class="kpi"><b>${m.kwh_per_100 == null ? "–" : num(m.kwh_per_100, 1)}</b><span>${T("kwh100", { unit: unit() })}</span></div>
       </div>
       ${cmp.length ? `<div class="compare">${cmp.join("")}</div>` : ""}
     </section>`;
@@ -853,12 +886,13 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
     return `<section class="panel" aria-labelledby="h-sites">
       <div><span class="eyebrow">${T("sites")}</span><h2 id="h-sites">${T("sitesTitle")}</h2></div>
       <div class="scroll"><table>
-        <thead><tr><th>${T("thSite")}</th><th class="n">${T("thSessions")}</th><th class="n">${T("thKwh")}</th><th class="n">${T("thAvg")}</th></tr></thead>
+        <thead><tr><th>${T("thSite")}</th><th class="n">${T("thSessions")}</th><th class="n">${T("thKwh")}</th><th class="n">${T("thAvg")}</th><th class="n">Ø ${T("thKw")}</th></tr></thead>
         <tbody>${sites.map((s) => `<tr>
           <td class="site">${esc(s.site)}</td>
           <td class="n">${s.sessions}</td>
           <td class="n">${num(s.kwh, 1)}</td>
           <td class="n"><span class="minibar" aria-hidden="true"><i style="width:${((s.avg_price || 0) / maxP) * 100}%"></i></span>${s.avg_price == null ? "–" : money(s.avg_price)}</td>
+          <td class="n">${s.avg_kw == null ? "–" : num(s.avg_kw, 0)}</td>
         </tr>`).join("")}</tbody>
       </table></div>
     </section>`;
@@ -871,7 +905,7 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
     return `<section class="panel" aria-labelledby="h-hist">
       <div><span class="eyebrow">${T("history")}</span><h2 id="h-hist">${T("historyTitle")}</h2></div>
       <div class="cols" role="img" aria-label="${T("perMonthAria")}">
-        ${months.map((m) => `<div class="col ${m.key === curKey ? "cur" : ""}" tabindex="0" data-tip="${esc(`${m.label}: ${money(m.cost)} · ${num(m.kwh, 1)} kWh · ${sessionsText(m.sessions)}${m.avg_price ? " · " + ppk(m.avg_price) : ""}`)}">
+        ${months.map((m) => `<div class="col ${m.key === curKey ? "cur" : ""}" tabindex="0" data-tip="${esc(`${m.label}: ${money(m.cost)} · ${num(m.kwh, 1)} kWh · ${sessionsText(m.sessions)}${m.avg_price ? " · " + ppk(m.avg_price) : ""}${m.kwh_per_100 ? " · " + num(m.kwh_per_100, 1) + " kWh/100 " + unit() : ""}`)}">
           <span class="v">${m.cost ? money(m.cost, 0) : ""}</span>
           <div class="bar" style="height:${((m.cost || 0) / max) * 100 * 0.82}%"></div>
         </div>`).join("")}
@@ -888,19 +922,31 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
         <div><span class="eyebrow">${T("allSessions")}</span><h2 id="h-list">${esc(sessionsText(t.sessions || 0))} · ${money(t.cost || 0)}</h2></div>
         <span class="sub">${t.since ? esc(T("sinceDate", { d: fmtDate(t.since, { day: "2-digit", month: "2-digit", year: "numeric" }) })) : ""}${t.avg_price ? " · " + ppk(t.avg_price) : ""}</span>
       </div>
+      ${list.length && !offline() ? exportsRow(d) : ""}
       ${list.length ? `<div class="scroll"><table>
-        <thead><tr><th>${T("thDate")}</th><th>${T("thSite")}</th><th class="n">kWh</th><th class="n">/kWh</th><th class="n">${T("thAmount")}</th><th>${T("thHa")}</th><th>${T("thInvoice")}</th></tr></thead>
+        <thead><tr><th>${T("thDate")}</th><th>${T("thSite")}</th><th class="n">kWh</th><th class="n">/kWh</th><th class="n">${T("thKw")}</th><th class="n">${T("thAmount")}</th><th>${T("thHa")}</th><th>${T("thInvoice")}</th></tr></thead>
         <tbody>${list.map((s) => `<tr>
           <td>${esc(dShort(s.start))}<span class="when-sub">${esc(tShort(s.start))}${s.duration_min != null ? " · " + s.duration_min + " min" : ""}</span></td>
           <td class="site">${esc(s.site)}${s.idle ? `<span class="when-sub" style="color:var(--warn)">${esc(T("plusIdle", { p: money(s.idle) }))}</span>` : ""}</td>
           <td class="n">${s.kwh == null ? `<span class="muted">${T("open")}</span>` : num(s.kwh, 1)}</td>
           <td class="n">${s.price == null ? "–" : money(s.price)}</td>
+          <td class="n">${s.avg_kw == null ? "–" : num(s.avg_kw, 0)}</td>
           <td class="n">${money(s.cost)}</td>
           <td>${pushChipShort(s.push_state)}</td>
           <td>${s.has_invoice ? (!offline() ? `<a href="api/invoice/${encodeURIComponent(s.id)}" target="_blank" rel="noopener">PDF</a>` : `<span class="muted" title="${T("notInPreview")}">PDF</span>`) : '<span class="muted">–</span>'}</td>
         </tr>`).join("")}</tbody>
       </table></div>` : `<p class="sub">${T("noneYet")}</p>`}
     </section>`;
+  }
+
+  function exportsRow(d) {
+    const months = (d.monthly || []).filter((m) => m.sessions).reverse();
+    const monthName = (key) => fmtDate(key + "-15T12:00:00Z", { month: "short", year: "numeric" });
+    return `<div class="exports">
+      <span class="label">${T("exportLabel")}</span>
+      <a href="api/export.csv" target="_blank" rel="noopener">${T("csvAll")}</a>
+      ${months.map((m) => `<a href="api/invoices/${m.key}.zip" target="_blank" rel="noopener">${esc(T("zipMonth", { month: monthName(m.key) }))}</a>`).join("")}
+    </div>`;
   }
 
   function reconcilePanel(d) {
