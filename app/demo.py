@@ -9,7 +9,10 @@ from .config import Settings
 
 # Price per time window and per-site surcharge (demo assumptions, not real Tesla prices)
 _SLOT_PRICE = [(0, 6, 0.34), (6, 11, 0.45), (11, 16, 0.49), (16, 20, 0.53), (20, 24, 0.37)]
-_SITE_ADJ = {"Northgate": 0.0, "Riverside": -0.02, "Airport West": 0.03, "Old Town": -0.01, "Hillcrest": 0.02}
+_SITE_ADJ = {"Northgate": 0.0, "Riverside": -0.02, "Airport West": 0.03, "Old Town": -0.01, "Hillcrest": 0.02,
+             "IONITY Lakeside": 0.10}
+# Sites that stand for a third-party charger paid with Tesla MultiPass
+_MULTIPASS = {"IONITY Lakeside"}
 
 # (days ago, hour, minute, site, kWh, duration in min, idle fee)
 _PLAN = [
@@ -20,6 +23,7 @@ _PLAN = [
     (11, 14, 20, "Hillcrest", 29.7, 22, 0.0),
     (9, 7, 50, "Old Town", 35.9, 27, 0.0),
     (6, 22, 10, "Riverside", 46.1, 34, 0.0),
+    (4, 13, 5, "IONITY Lakeside", 31.5, 26, 0.0),
     (2, 18, 18, "Northgate", 18.0, 14, 0.0),
 ]
 PACK_KWH = 75.0
@@ -58,6 +62,7 @@ def demo_sessions(settings: Settings, now: datetime) -> list[dict]:
             "price": price,
             "invoices": [{"id": f"demo-inv-{i}", "name": f"invoice-{i}.pdf", "type": "IMMEDIATE"}],
             "push_state": "pushed" if start_utc >= push_since else "backfill",
+            "network": "multipass" if site in _MULTIPASS else "supercharger",
         })
     out.sort(key=lambda s: s["start_ts"], reverse=True)
     return out

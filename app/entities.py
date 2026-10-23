@@ -89,14 +89,19 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         "energy_kwh": m.get("kwh"), "price_per_kwh": _round(m.get("avg_price"), 4),
         "idle_fees": m.get("idle"), "distance": m.get("distance"), "distance_unit": unit,
         "cost_per_100": m.get("per_100"), "kwh_per_100": m.get("kwh_per_100"),
-        "avg_power_kw": m.get("avg_kw"), "previous_month": prev.get("label"),
+        "avg_power_kw": m.get("avg_kw"),
+        "multipass_cost": (m.get("by_network") or {}).get("multipass", {}).get("cost"),
+        "multipass_sessions": (m.get("by_network") or {}).get("multipass", {}).get("sessions"),
+        "previous_month": prev.get("label"),
         "previous_cost": prev.get("cost"), "previous_price_per_kwh": _round(prev.get("avg_price"), 4),
     })
 
     # --- last session -------------------------------------------------------------------------
     last = d.get("last_charge")
     if last:
+        multipass = last.get("network") == "multipass"
         text = " · ".join(p for p in (
+            "MultiPass" if multipass else None,
             last.get("site"),
             f"{i18n.num(lang, last['kwh'], 1)} kWh" if last.get("kwh") is not None else None,
             money(last["cost"]) if last.get("cost") is not None else None,
@@ -105,7 +110,8 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         ) if p)
         out["sensor.ladecockpit_last_charge"] = (_state(last.get("cost")), {
             "friendly_name": name("last_charge"), "unit_of_measurement": cur, "device_class": "monetary",
-            "icon": "mdi:ev-plug-tesla", "site": last.get("site"), "start": last.get("start"),
+            "icon": "mdi:ev-plug-ccs2" if multipass else "mdi:ev-plug-tesla", "network": last.get("network"),
+            "site": last.get("site"), "start": last.get("start"),
             "end": last.get("end"), "energy_kwh": _round(last.get("kwh"), 2),
             "price_per_kwh": _round(last.get("price"), 4), "idle_fee": last.get("idle"),
             "avg_power_kw": last.get("avg_kw"), "duration_min": last.get("duration_min"),

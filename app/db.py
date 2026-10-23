@@ -7,6 +7,8 @@ import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
+from . import networks
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS kv (
     key   TEXT PRIMARY KEY,
@@ -155,7 +157,13 @@ class DB:
             d["invoices"] = json.loads(d.get("invoices") or "[]")
         except json.JSONDecodeError:
             d["invoices"] = []
-        d.pop("raw", None)
+        raw = d.pop("raw", None)
+        if "raw" in row.keys():
+            try:
+                record = json.loads(raw) if raw else None
+            except json.JSONDecodeError:
+                record = None
+            d["network"], d["network_reason"] = networks.classify(record)
         return d
 
     # --- readings (battery, range, odometer) --------------------------------

@@ -22,8 +22,9 @@ def test_demo_dashboard_en_and_de(settings):
         assert d["forecast"]["days_to_floor"] is not None
         assert len(d["slots"]) == 5
         # (month-dependent values are not asserted: the demo is relative to "now")
-        assert {i["kind"] for i in d["insights"]} >= {"slot", "site", "idle"}
-        assert d["reconcile"]["inv_sessions"] == 8
+        assert {i["kind"] for i in d["insights"]} >= {"slot", "site", "idle", "network"}
+        assert d["reconcile"]["inv_sessions"] == 9
+        assert set(d["totals"]["by_network"]) == {"supercharger", "multipass"}
 
 
 def _session(sid, start, kwh, total):

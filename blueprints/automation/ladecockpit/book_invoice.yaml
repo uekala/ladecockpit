@@ -53,7 +53,7 @@ blueprint:
           name: Additional actions (optional)
           description: >-
             E.g. a notification. Available variables: site, kwh, total,
-            price_per_kwh, idle_fee, currency, text.
+            price_per_kwh, idle_fee, currency, network (supercharger or multipass), text.
           default: []
           selector:
             action: {}
@@ -73,6 +73,7 @@ variables:
   idle_fee: "{{ trigger.event.data.idle_fee | float(0) }}"
   currency: "{{ trigger.event.data.currency | default('EUR') }}"
   text: "{{ (trigger.event.data.text | default(''))[:255] }}"
+  network: "{{ trigger.event.data.network | default('supercharger') }}"
 
 triggers:
   - trigger: event

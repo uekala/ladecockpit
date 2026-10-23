@@ -46,5 +46,6 @@ def sessions_csv(sessions: list[dict], settings: Settings) -> str:
             s.get("currency") or "",
             dec(s["kwh"] / hours, 0) if s.get("kwh") and hours else "",
             s.get("session_id", ""),
+            "MultiPass" if s.get("network") == "multipass" else "Supercharger",
         ])
     return "﻿" + out.getvalue()  # BOM so Excel detects UTF-8

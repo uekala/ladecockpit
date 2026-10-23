@@ -14,7 +14,7 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 
-from . import i18n
+from . import i18n, networks
 from .config import Settings
 from .db import DB, utcnow_iso
 from .homeassistant import HAClient
@@ -139,12 +139,24 @@ class SyncService:
                 backfill = bool(session["start_ts"] and session["start_ts"] < push_since)
                 if self.db.upsert_session(session, "backfill" if backfill else "new"):
                     new_count += 1
+                    self._log_format(raw, session["session_id"])
 
             await self.push_pending()
             self.last_sync = utcnow_iso()
             self.db.kv_set("last_sync", self.last_sync)
             self.last_error = None
             return new_count
+
+    @staticmethod
+    def _log_format(raw: dict, session_id: str) -> None:
+        """Note what Tesla sent for sessions that are not plain Supercharger records
+        (no personal data: field names and the rule that matched only)."""
+        network, reason = networks.classify(raw)
+        if network != networks.SUPERCHARGER:
+            log.info("Session %s looks like %s (%s)", session_id, network, reason)
+        extra = networks.unknown_keys(raw)
+        if extra:
+            log.info("Session %s has fields Ladecockpit does not know yet: %s", session_id, ", ".join(extra))
 
     async def push_pending(self) -> int:
         if not self.ha.configured:
@@ -172,8 +184,11 @@ class SyncService:
         price = s["price"] or 0.0
         cur = s["currency"]
         when = (start.strftime("%d.%m. %H:%M") if lang == "de" else start.strftime("%b %d, %H:%M")) if start else "–"
+        network = s.get("network") or networks.SUPERCHARGER
         text = (f"{i18n.num(lang, s['kwh'], 1)} kWh · {i18n.money(lang, s['total'], cur)} · "
                 f"{i18n.money(lang, price, cur)}/kWh · {when}")
+        if network == networks.MULTIPASS:
+            text = "MultiPass · " + text
         return {
             "session_id": s["session_id"],
             "site": s["site"] or i18n.t(lang, "unknown_site"),
@@ -185,5 +200,6 @@ class SyncService:
             "total": round(s["total"], 2),
             "price_per_kwh": round(price, 4),
             "currency": cur,
+            "network": network,
             "text": text[:255],
         }

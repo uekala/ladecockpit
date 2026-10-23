@@ -33,6 +33,7 @@ TEXTS = {
         "in_slot_flat": "Die Uhrzeit macht bei deinen Ladungen bisher kaum einen Unterschied.",
         "in_slot_wait": "Nach ein paar weiteren Ladungen zeigt der Preis-Radar, welche Uhrzeit für dich am günstigsten ist.",
         "in_site": "Am günstigsten warst du in {lo} (Ø {lo_price}/kWh), am teuersten in {hi} (Ø {hi_price}/kWh).",
+        "in_network": "MultiPass-Ladungen ({n}) kosten dich im Schnitt {mp}/kWh, am Supercharger sind es {sc}/kWh.",
         "in_idle_one": "Blockiergebühren bisher: {amount} bei 1 Ladung – rechtzeitig abstecken spart Geld.",
         "in_idle_many": "Blockiergebühren bisher: {amount} bei {n} Ladungen – rechtzeitig abstecken spart Geld.",
         "in_reference": "Mit dem Referenzpreis von {ref}/kWh wären es diesen Monat {ref_cost} gewesen – laut Rechnungen sind es {actual} ({sign}{delta}).",
@@ -50,7 +51,7 @@ TEXTS = {
         "ent_last_charge": "Letzte Ladung",
         "ent_price_tip": "Preistipp",
         "ent_problem": "Problem",
-        "csv_header": "Datum;Start;Ende;Standort;kWh;Preis pro kWh;Ladekosten;Blockiergebühr;Summe;Währung;Ø kW;Ladung-ID",
+        "csv_header": "Datum;Start;Ende;Standort;kWh;Preis pro kWh;Ladekosten;Blockiergebühr;Summe;Währung;Ø kW;Ladung-ID;Netz",
     },
     "en": {
         "fc_no_soc": "No battery level from Home Assistant – no forecast possible.",
@@ -63,6 +64,7 @@ TEXTS = {
         "in_slot_flat": "Time of day hardly makes a difference for your sessions so far.",
         "in_slot_wait": "After a few more sessions the price radar shows which time of day is cheapest for you.",
         "in_site": "Cheapest so far: {lo} (avg {lo_price}/kWh). Most expensive: {hi} (avg {hi_price}/kWh).",
+        "in_network": "MultiPass sessions ({n}) cost you avg {mp}/kWh, Superchargers {sc}/kWh.",
         "in_idle_one": "Idle fees so far: {amount} in 1 session – unplugging on time saves money.",
         "in_idle_many": "Idle fees so far: {amount} in {n} sessions – unplugging on time saves money.",
         "in_reference": "At your reference price of {ref}/kWh this month would have cost {ref_cost} – the invoices say {actual} ({sign}{delta}).",
@@ -80,7 +82,7 @@ TEXTS = {
         "ent_last_charge": "Last charge",
         "ent_price_tip": "Price tip",
         "ent_problem": "Problem",
-        "csv_header": "Date,Start,End,Site,kWh,Price per kWh,Charging cost,Idle fee,Total,Currency,Avg kW,Session ID",
+        "csv_header": "Date,Start,End,Site,kWh,Price per kWh,Charging cost,Idle fee,Total,Currency,Avg kW,Session ID,Network",
     },
 }
 

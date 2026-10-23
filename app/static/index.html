@@ -440,7 +440,7 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       reachesTomorrow: "The battery reaches {floor} % tomorrow.", reachesIn: "In about {days} days the battery is at {floor} %.",
       perDay: "used per day", distPerDay: "driven per day", basis: "history used", days: "{n} days",
       lastCharge: "Last session · from invoice", noCharge: "No invoice fetched yet. After the first sync the latest Supercharger session with its real price shows up here.",
-      supercharger: "Supercharger {site}", energy: "Energy", price: "Price", charging: "Charging", idleFee: "Idle fee", total: "Total",
+      supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", ofWhichMp: "of which MultiPass ({n})", thSiteAny: "Site", energy: "Energy", price: "Price", charging: "Charging", idleFee: "Idle fee", total: "Total",
       invoicePdf: "Invoice (PDF)", notInPreview: "Not available in the preview",
       pushed: "Sent to HA", backfill: "Imported", pending: "Sending to HA", stale: "Too old to send",
       pushedShort: "sent", backfillShort: "imported", pendingShort: "pending", staleShort: "too old",
@@ -497,7 +497,7 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       reachesTomorrow: "Der Akku erreicht morgen {floor} %.", reachesIn: "In etwa {days} Tagen ist der Akku bei {floor} %.",
       perDay: "Verbrauch pro Tag", distPerDay: "gefahren pro Tag", basis: "Verlauf als Basis", days: "{n} Tage",
       lastCharge: "Letzte Ladung · laut Rechnung", noCharge: "Noch keine Rechnung abgerufen. Nach dem ersten Abgleich steht hier die letzte Supercharger-Ladung mit echtem Preis.",
-      supercharger: "Supercharger {site}", energy: "Energie", price: "Preis", charging: "Laden", idleFee: "Blockiergebühr", total: "Summe",
+      supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", ofWhichMp: "davon MultiPass ({n})", thSiteAny: "Standort", energy: "Energie", price: "Preis", charging: "Laden", idleFee: "Blockiergebühr", total: "Summe",
       invoicePdf: "Rechnung (PDF)", notInPreview: "In der Vorschau nicht verfügbar",
       pushed: "An HA gemeldet", backfill: "Übernommen", pending: "Wird an HA gemeldet", stale: "Zu alt zum Melden",
       pushedShort: "gemeldet", backfillShort: "übernommen", pendingShort: "offen", staleShort: "zu alt",
@@ -583,7 +583,10 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
     tag: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>',
     bolt: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>',
   };
-  const insightIcon = { slot: ico.clock, site: ico.pin, idle: ico.plug, reference: ico.tag };
+  const insightIcon = { slot: ico.clock, site: ico.pin, idle: ico.plug, reference: ico.tag, network: ico.bolt };
+  const isMp = (x) => x && x.network === "multipass";
+  const mpChip = (x) => (isMp(x) ? ` <span class="chip info">${T("mpChip")}</span>` : "");
+  const siteHead = (d) => ((d.sites || []).some(isMp) ? T("thSiteAny") : T("thSite"));
 
   // --- Loading -------------------------------------------------------------------------------
   async function load() {
@@ -793,7 +796,7 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
     return `<section class="panel" aria-labelledby="h-last">
       <span class="eyebrow" id="h-last">${T("lastCharge")}</span>
       <div class="receipt">
-        <div class="site">${esc(T("supercharger", { site: c.site }))}</div>
+        <div class="site">${esc(T(isMp(c) ? "multipass" : "supercharger", { site: c.site }))}</div>
         <div class="when">${esc(dShort(c.start))} · ${esc(tShort(c.start))}–${esc(tShort(c.end))}${dur}</div>
         ${line(T("energy"), num(c.kwh, 1) + " kWh")}
         ${line(T("price"), ppk(c.price))}
@@ -824,6 +827,8 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
     const cmp = [];
     if (c.reference_cost != null) cmp.push(line(esc(T("atReference", { p: ppk(c.reference_price) })), money(c.reference_cost)));
     if (c.actual_cost != null && c.reference_cost != null) cmp.push(line(T("perInvoices"), money(c.actual_cost)));
+    const mp = (m.by_network || {}).multipass;
+    if (mp && mp.sessions && (m.by_network || {}).supercharger) cmp.push(line(esc(T("ofWhichMp", { n: mp.sessions })), `${money(mp.cost)} · ${ppk(mp.avg_price)}`));
     if (m.idle) cmp.push(line(T("idleFee"), money(m.idle)));
     if (c.fuel_month != null) cmp.push(line(esc(c.fuel_label), money(c.fuel_month)));
     return `<section class="panel" aria-labelledby="h-month">
@@ -886,9 +891,9 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
     return `<section class="panel" aria-labelledby="h-sites">
       <div><span class="eyebrow">${T("sites")}</span><h2 id="h-sites">${T("sitesTitle")}</h2></div>
       <div class="scroll"><table>
-        <thead><tr><th>${T("thSite")}</th><th class="n">${T("thSessions")}</th><th class="n">${T("thKwh")}</th><th class="n">${T("thAvg")}</th><th class="n">Ø ${T("thKw")}</th></tr></thead>
+        <thead><tr><th>${siteHead(d)}</th><th class="n">${T("thSessions")}</th><th class="n">${T("thKwh")}</th><th class="n">${T("thAvg")}</th><th class="n">Ø ${T("thKw")}</th></tr></thead>
         <tbody>${sites.map((s) => `<tr>
-          <td class="site">${esc(s.site)}</td>
+          <td class="site">${esc(s.site)}${mpChip(s)}</td>
           <td class="n">${s.sessions}</td>
           <td class="n">${num(s.kwh, 1)}</td>
           <td class="n"><span class="minibar" aria-hidden="true"><i style="width:${((s.avg_price || 0) / maxP) * 100}%"></i></span>${s.avg_price == null ? "–" : money(s.avg_price)}</td>
@@ -924,10 +929,10 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       </div>
       ${list.length && !offline() ? exportsRow(d) : ""}
       ${list.length ? `<div class="scroll"><table>
-        <thead><tr><th>${T("thDate")}</th><th>${T("thSite")}</th><th class="n">kWh</th><th class="n">/kWh</th><th class="n">${T("thKw")}</th><th class="n">${T("thAmount")}</th><th>${T("thHa")}</th><th>${T("thInvoice")}</th></tr></thead>
+        <thead><tr><th>${T("thDate")}</th><th>${siteHead(d)}</th><th class="n">kWh</th><th class="n">/kWh</th><th class="n">${T("thKw")}</th><th class="n">${T("thAmount")}</th><th>${T("thHa")}</th><th>${T("thInvoice")}</th></tr></thead>
         <tbody>${list.map((s) => `<tr>
           <td>${esc(dShort(s.start))}<span class="when-sub">${esc(tShort(s.start))}${s.duration_min != null ? " · " + s.duration_min + " min" : ""}</span></td>
-          <td class="site">${esc(s.site)}${s.idle ? `<span class="when-sub" style="color:var(--warn)">${esc(T("plusIdle", { p: money(s.idle) }))}</span>` : ""}</td>
+          <td class="site">${esc(s.site)}${mpChip(s)}${s.idle ? `<span class="when-sub" style="color:var(--warn)">${esc(T("plusIdle", { p: money(s.idle) }))}</span>` : ""}</td>
           <td class="n">${s.kwh == null ? `<span class="muted">${T("open")}</span>` : num(s.kwh, 1)}</td>
           <td class="n">${s.price == null ? "–" : money(s.price)}</td>
           <td class="n">${s.avg_kw == null ? "–" : num(s.avg_kw, 0)}</td>

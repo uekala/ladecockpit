@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 from . import i18n
 from .config import Settings
+from .networks import MULTIPASS, SUPERCHARGER
 
 SLOT_HOURS = [("night", 0, 6), ("morning", 6, 11), ("midday", 11, 16), ("afternoon", 16, 20), ("evening", 20, 24)]
 USD_PER_DATA_CALL = 0.002
@@ -141,7 +142,15 @@ def _session_view(x: dict, tz, lang: str) -> dict:
         "has_invoice": bool(x.get("invoices")),
         "push_state": x.get("push_state"),
         "currency": x.get("currency") or "EUR",
+        "network": x.get("network") or SUPERCHARGER,
     }
+
+
+def _by_network(items: list[dict]) -> dict:
+    groups: dict[str, list[dict]] = {}
+    for x in items:
+        groups.setdefault(x.get("network") or SUPERCHARGER, []).append(x)
+    return {k: _stats(v) for k, v in groups.items()}
 
 
 def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, settings: Settings,
@@ -198,6 +207,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     dist = month_distance(cur_key)
     month.update(dist, distance_since=_iso(dist["distance_since"].astimezone(tz)) if dist["distance_since"] else None)
     month["avg_kw"] = _avg_kw(by_month.get(cur_key, []))
+    month["by_network"] = _by_network(by_month.get(cur_key, []))
     prev = _stats(by_month.get(prev_key, []))
     month["prev"] = {"label": i18n.month_label(lang, prev_key, with_year=False),
                      "cost": prev["cost"], "avg_price": prev["avg_price"], "sessions": prev["sessions"]}
@@ -229,7 +239,8 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     for x in priced:
         groups.setdefault(x.get("site") or i18n.t(lang, "unknown_site"), []).append(x)
     sites = sorted(
-        ({"site": k, **{f: _stats(v)[f] for f in ("sessions", "kwh", "avg_price", "cost")}, "avg_kw": _avg_kw(v)}
+        ({"site": k, **{f: _stats(v)[f] for f in ("sessions", "kwh", "avg_price", "cost")}, "avg_kw": _avg_kw(v),
+          "network": Counter(x.get("network") or SUPERCHARGER for x in v).most_common(1)[0][0]}
          for k, v in groups.items()),
         key=lambda r: (-r["sessions"], r["avg_price"] or 9),
     )
@@ -256,6 +267,13 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
             insights.append({"kind": "site", "text": i18n.t(
                 lang, "in_site", lo=lo["site"], lo_price=money(lo["avg_price"]),
                 hi=hi["site"], hi_price=money(hi["avg_price"]))})
+
+    nets = _by_network(priced)
+    mp, sc = nets.get(MULTIPASS), nets.get(SUPERCHARGER)
+    if mp and sc and mp["avg_price"] and sc["avg_price"]:
+        insights.append({"kind": "network", "text": i18n.t(
+            lang, "in_network", mp=money(mp["avg_price"]), sc=money(sc["avg_price"]),
+            n=mp["sessions"])})
 
     if overall["idle"] > 0:
         n_idle = sum(1 for x in priced if (x.get("idle_fee") or 0) > 0)
@@ -294,6 +312,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
            "budget": settings.api_budget, "credit_usd": MONTHLY_CREDIT_USD}
 
     totals = dict(overall)
+    totals["by_network"] = nets
     totals["since"] = _iso(priced[-1]["_local"]) if priced else None
 
     return {

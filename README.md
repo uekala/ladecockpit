@@ -12,6 +12,7 @@ Most Home Assistant setups estimate Supercharger costs from the car's kWh and a 
 
 - **Exact invoices, automatically.** Ladecockpit notices the end of a session, picks up the invoice within minutes and sends it once to Home Assistant. A blueprint books it into your own helpers.
 - **Price radar.** Shows, from your own invoices, which time of day and which Supercharger is cheapest for you.
+- **MultiPass.** Third-party chargers paid through Tesla MultiPass are recognised in the Tesla invoices and shown separately, with their own average price.
 - **Next charging stop.** Forecasts when the battery reaches your floor (default 10 %) based on your recent consumption.
 - **Monthly view.** Cost, kWh, average price, cost per 100 km/mi, optional comparison with a reference price or the fuel cost of another car.
 - **Charging power and efficiency.** Average kW per session and per Supercharger, kWh per 100 km/mi including charging losses.
@@ -119,7 +120,7 @@ The redirect URI points to `localhost`. If the container runs elsewhere, either 
 
    [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fuekala%2Fladecockpit%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fladecockpit%2Fbook_invoice.yaml)
 
-3. Create an automation from it and pick your helpers. Under *Additional actions* you can add a notification. The variables `site`, `kwh`, `total`, `price_per_kwh`, `idle_fee`, `currency` and `text` are available there.
+3. Create an automation from it and pick your helpers. Under *Additional actions* you can add a notification. The variables `site`, `kwh`, `total`, `price_per_kwh`, `idle_fee`, `currency`, `network` and `text` are available there.
 4. Set `HA_ENT_COST_TOTAL` and `HA_ENT_KWH_TOTAL` to the two helpers to see the reconciliation in the app.
 
 Optional: [`homeassistant/ladecockpit_package.yaml`](homeassistant/ladecockpit_package.yaml) adds a `rest_command` to trigger the invoice lookup yourself.
@@ -132,8 +133,8 @@ Ladecockpit creates these entities in Home Assistant itself (switch off with the
 |---|---|---|
 | `sensor.ladecockpit_next_charge` | date of the next charging stop | `text`, `days`, `battery_drop_per_day` |
 | `sensor.ladecockpit_battery` | battery level in %, the last known value while the car is offline | `range`, `last_known`, `as_of` |
-| `sensor.ladecockpit_month_cost` | charging cost this month | `energy_kwh`, `price_per_kwh`, `cost_per_100`, `kwh_per_100`, `previous_cost` |
-| `sensor.ladecockpit_last_charge` | cost of the last session | `site`, `energy_kwh`, `price_per_kwh`, `avg_power_kw`, `text` |
+| `sensor.ladecockpit_month_cost` | charging cost this month | `energy_kwh`, `price_per_kwh`, `cost_per_100`, `kwh_per_100`, `multipass_cost`, `previous_cost` |
+| `sensor.ladecockpit_last_charge` | cost of the last session | `network`, `site`, `energy_kwh`, `price_per_kwh`, `avg_power_kw`, `text` |
 | `sensor.ladecockpit_price_tip` | your cheapest time of day, as a sentence | `best_time`, `best_site`, `insights` |
 | `binary_sensor.ladecockpit_problem` | `on` when the Tesla sign-in expired, syncing fails or an entity is missing | `kind`, `message`, `last_sync` |
 
@@ -152,7 +153,14 @@ They are written through the REST API and have no unique ID, so they cannot be r
 | `charge_cost`, `idle_fee`, `total` | `6.66`, `0.0`, `6.66` |
 | `price_per_kwh` | `0.37` |
 | `currency` | `"EUR"` |
+| `network` | `"supercharger"` or `"multipass"` |
 | `text` | `"18.0 kWh · €6.66 · €0.37/kWh · Oct 21, 18:18"` |
+
+## MultiPass
+
+Tesla bills MultiPass sessions (third-party chargers paid through your Tesla account) through the same charging history as Supercharger sessions. The Fleet API has no field that names the network, and Tesla has not documented how these sessions look. Ladecockpit therefore goes by hints: a billing or invoice type other than the one Supercharger sessions have, words like "roaming" or "partner" in Tesla's fields, or the name of a known operator (IONITY, EnBW, Fastned, …) in the site name. The rule is applied whenever sessions are read, so an improved rule in a later version also re-classifies older sessions.
+
+If a MultiPass session is shown as Supercharger (or the other way round), please open an issue with the anonymised output of `/api/debug/raw` for that session. The log also notes fields Ladecockpit does not know yet.
 
 ## API
 
