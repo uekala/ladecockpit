@@ -23,6 +23,9 @@ cards:
     text_only: true
     content: >-
       **{{ state_attr('sensor.ladecockpit_next_charge', 'text') or '–' }}**
+      {% set plan = state_attr('sensor.ladecockpit_next_charge', 'plan') %}{% if plan %}
+
+      ⚡ {{ plan }}{% endif %}
   - type: tile
     entity: sensor.ladecockpit_battery
     name: Battery
@@ -56,4 +59,6 @@ cards:
       {{ state_attr(m, 'sessions') or 0 }} sessions · {{ state_attr(m, 'energy_kwh') or 0 }} kWh ·
       {{ state_attr(m, 'kwh_per_100') or '–' }} kWh/100 {{ state_attr(m, 'distance_unit') }}
 
-      💡 {{ states('sensor.ladecockpit_price_tip') }}
+      {% set s = state_attr(m, 'savings') %}{% if s is number %}🌱 Saved vs. a combustion car: {{ s }} {{ state_attr(m, 'unit_of_measurement') }}
+
+      {% endif %}💡 {{ states('sensor.ladecockpit_price_tip') }}

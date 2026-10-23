@@ -124,6 +124,80 @@ def _forecast(lang, history, soc, floor, now_utc, tz, odometer_14d) -> dict:
     return out
 
 
+PROJECTION_DAYS = 90       # look-back for the yearly projection
+PROJECTION_MIN_DAYS = 7
+PROJECTION_MIN_DIST = 200
+
+
+def _projection(odo: list[tuple[datetime, float]], priced: list[dict], now_utc: datetime,
+                fuel: dict | None) -> dict | None:
+    """Cost and distance per year, from the last PROJECTION_DAYS days."""
+    window = [p for p in odo if p[0] >= now_utc - timedelta(days=PROJECTION_DAYS)]
+    if len(window) < 2:
+        return None
+    days = (window[-1][0] - window[0][0]).total_seconds() / 86400
+    dist = window[-1][1] - window[0][1]
+    covered = [x for x in priced if x["_local"] >= window[0][0]]
+    if days < PROJECTION_MIN_DAYS or dist < PROJECTION_MIN_DIST or not covered:
+        return None
+    per_100 = sum(x["total"] for x in covered) / dist * 100
+    per_year = dist / days * 365
+    out = {"basis_days": round(days), "distance": int(round(per_year, -2)),
+           "cost": int(round(per_100 * per_year / 100, -1)), "per_100": round(per_100, 2),
+           "fuel_cost": None, "savings": None}
+    if fuel:
+        out["fuel_cost"] = int(round(fuel["per_100"] * per_year / 100, -1))
+        out["savings"] = int(round((fuel["per_100"] - per_100) * per_year / 100, -1))
+    return out
+
+
+def _plan(lang: str, forecast: dict, priced: list[dict], overall_price: float | None,
+          now_utc: datetime, tz, money) -> dict | None:
+    """When and where to charge before the battery reaches the floor: the cheapest
+    combination of Supercharger and time window from your own invoices."""
+    days = forecast.get("days_to_floor")
+    if days is None or not overall_price or len(priced) < 4:
+        return None
+    pairs: dict[tuple[str, int], list[dict]] = {}
+    for x in priced:
+        slot = next(i for i, (_, a, b) in enumerate(SLOT_HOURS) if a <= x["_local"].hour < b)
+        pairs.setdefault((x.get("site") or "", slot), []).append(x)
+    stats = [(k, _stats(v)) for k, v in pairs.items() if k[0]]
+    stats = [(k, s) for k, s in stats if s["avg_price"]]
+    if not stats:
+        return None
+    (site, slot), best = min(stats, key=lambda kv: kv[1]["avg_price"])
+    if overall_price - best["avg_price"] < 0.02:
+        return None
+    _, a, b = SLOT_HOURS[slot]
+    now_local = now_utc.astimezone(tz)
+    floor_at = (now_utc + timedelta(days=days)).astimezone(tz)
+    chosen = None
+    for offset in range(0, int(days) + 2):
+        day = (now_local + timedelta(days=offset)).date()
+        start = datetime(day.year, day.month, day.day, a, tzinfo=tz)
+        end = start + timedelta(hours=b - a)
+        if end > now_local and start < floor_at:
+            chosen = max(start, now_local)
+    if chosen is None:
+        return None
+    recent = [x["kwh"] for x in priced[:5]]
+    kwh = sorted(recent)[len(recent) // 2]
+    saving = (overall_price - best["avg_price"]) * kwh
+    label, rng = (i18n.SLOTS.get(lang) or i18n.SLOTS["en"])[slot]
+    offset = (chosen.date() - now_local.date()).days
+    day = i18n.t(lang, "today") if offset == 0 else i18n.t(lang, "tomorrow") if offset == 1 else i18n.date_label(lang, chosen)
+    when = f"{day}, {rng}"
+    place = site.rsplit(", ", 1)[0] if site.count(", ") == 1 else site
+    return {
+        "date": chosen.date().isoformat(), "when": when, "slot": label, "range": rng, "site": site,
+        "price": best["avg_price"], "average": overall_price, "kwh": round(kwh), "saving": round(saving, 2),
+        "sessions": best["sessions"],
+        "text": i18n.t(lang, "plan", when=when, site=place, best=money(best["avg_price"]),
+                       avg=money(overall_price), saving=money(saving), kwh=round(kwh)),
+    }
+
+
 def _session_view(x: dict, tz, lang: str) -> dict:
     start = datetime.fromisoformat(x["start_ts"]).astimezone(tz) if x.get("start_ts") else None
     stop = datetime.fromisoformat(x["stop_ts"]).astimezone(tz) if x.get("stop_ts") else None
@@ -190,6 +264,21 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     odo_14d = [p for p in odo_all if p[0] >= now_utc - timedelta(days=14)]
     forecast = _forecast(lang, soc_hist, soc, settings.soc_floor, now_utc, tz, odo_14d)
 
+    # --- comparison with a combustion car ------------------------------------------------------
+    consumption = values.get("fuel_consumption") or settings.fuel_consumption
+    fuel_price = values.get("fuel_price") or settings.fuel_price
+    fuel = None
+    if consumption and fuel_price:
+        fuel = {"consumption": round(consumption, 1), "price": round(fuel_price, 3),
+                "per_100": round(consumption * fuel_price, 2)}
+
+    def with_fuel(entry: dict) -> dict:
+        entry["fuel_equivalent"] = entry["savings"] = None
+        if fuel and entry.get("distance") and entry.get("per_100") is not None:
+            entry["fuel_equivalent"] = round(fuel["per_100"] * entry["distance"] / 100, 2)
+            entry["savings"] = round((fuel["per_100"] - entry["per_100"]) * entry["distance"] / 100, 2)
+        return entry
+
     # --- this month ------------------------------------------------------------------
     cur_key = _month_key(now_local)
     prev_key = _month_key(now_local.replace(day=1) - timedelta(days=1))
@@ -208,6 +297,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     month.update(dist, distance_since=_iso(dist["distance_since"].astimezone(tz)) if dist["distance_since"] else None)
     month["avg_kw"] = _avg_kw(by_month.get(cur_key, []))
     month["by_network"] = _by_network(by_month.get(cur_key, []))
+    with_fuel(month)
     prev = _stats(by_month.get(prev_key, []))
     month["prev"] = {"label": i18n.month_label(lang, prev_key, with_year=False),
                      "cost": prev["cost"], "avg_price": prev["avg_price"], "sessions": prev["sessions"]}
@@ -218,10 +308,14 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         key = _month_key(cursor)
         st = _stats(by_month.get(key, []))
         md = month_distance(key)
-        monthly.append({"key": key, "label": i18n.month_label(lang, key, with_year=False)[:3],
-                        "cost": st["cost"], "kwh": st["kwh"], "avg_price": st["avg_price"],
-                        "sessions": st["sessions"], "distance": md["distance"],
-                        "per_100": md["per_100"], "kwh_per_100": md["kwh_per_100"]})
+        nets = _by_network(by_month.get(key, []))
+        monthly.append(with_fuel({
+            "key": key, "label": i18n.month_label(lang, key, with_year=False)[:3],
+            "cost": st["cost"], "kwh": st["kwh"], "avg_price": st["avg_price"], "idle": st["idle"],
+            "sessions": st["sessions"], "distance": md["distance"],
+            "per_100": md["per_100"], "kwh_per_100": md["kwh_per_100"],
+            "multipass_cost": nets.get(MULTIPASS, {}).get("cost"),
+            "multipass_sessions": nets.get(MULTIPASS, {}).get("sessions")}))
         cursor = (cursor - timedelta(days=1)).replace(day=1)
     monthly.reverse()
     first = next((i for i, m in enumerate(monthly) if m["sessions"]), len(monthly) - 1)
@@ -284,7 +378,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     reference = values.get("reference_price")
     if reference is None:
         reference = settings.reference_price
-    compare = {"reference_price": reference, "reference_cost": None,
+    compare = {"fuel": fuel, "reference_price": reference, "reference_cost": None,
                "actual_cost": month["charge_cost"] if month["sessions"] else None,
                "fuel_month": values.get("fuel_month"),
                "fuel_label": settings.fuel_label or i18n.t(lang, "fuel_default")}
@@ -295,6 +389,15 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
             insights.append({"kind": "reference", "text": i18n.t(
                 lang, "in_reference", ref=money(reference), ref_cost=money(compare["reference_cost"]),
                 actual=money(month["charge_cost"]), sign="+" if delta < 0 else "−", delta=money(abs(delta)))})
+
+    if month.get("savings") is not None and month["savings"] >= 1:
+        insights.append({"kind": "fuel", "text": i18n.t(
+            lang, "in_fuel", dist=i18n.num(lang, month["distance"], 0), fuel=money(month["fuel_equivalent"]),
+            saved=money(month["savings"]),
+            consumption=i18n.num(lang, fuel["consumption"], 1), price=money(fuel["price"]), unit=unit)})
+
+    forecast["plan"] = _plan(lang, forecast, priced, overall["avg_price"], now_utc, tz, money)
+    projection = _projection(odo_all, priced, now_utc, fuel)
 
     reconcile = None
     if settings.ent_cost_total or settings.ent_kwh_total:
@@ -334,6 +437,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         "sites": sites,
         "insights": insights,
         "compare": compare,
+        "projection": projection,
         "reconcile": reconcile,
         "totals": totals,
         "sessions": [_session_view(x, tz, lang) for x in sessions[:40]],

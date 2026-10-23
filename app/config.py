@@ -44,6 +44,11 @@ ADDON_OPTION_MAP = {
     "reference_price": "REFERENCE_PRICE",
     "entity_fuel_month": "HA_ENT_FUEL_MONTH",
     "fuel_label": "FUEL_LABEL",
+    "fuel_consumption": "FUEL_CONSUMPTION",
+    "entity_fuel_consumption": "HA_ENT_FUEL_CONSUMPTION",
+    "fuel_price": "FUEL_PRICE",
+    "entity_fuel_price": "HA_ENT_FUEL_PRICE",
+    "month_report": "MONTH_REPORT",
     "soc_floor": "SOC_FLOOR",
     "soc_target": "SOC_TARGET",
     "notify_problems": "NOTIFY_PROBLEMS",
@@ -138,6 +143,11 @@ class Settings:
     reference_price: float | None
     ent_fuel_month: str
     fuel_label: str
+    # Comparison with a combustion car (both optional: entity wins over the fixed value)
+    fuel_consumption: float | None
+    ent_fuel_consumption: str
+    fuel_price: float | None
+    ent_fuel_price: str
     # Behaviour
     soc_floor: int
     soc_target: int
@@ -151,6 +161,7 @@ class Settings:
     addon: bool
     notify_problems: bool
     publish_entities: bool
+    month_report: bool
     # Development only: point the app at a mock server
     api_base_override: str = ""
     token_url_override: str = ""
@@ -207,6 +218,10 @@ def load() -> Settings:
         reference_price=_float("REFERENCE_PRICE", None),
         ent_fuel_month=_env("HA_ENT_FUEL_MONTH"),
         fuel_label=_env("FUEL_LABEL"),
+        fuel_consumption=_float("FUEL_CONSUMPTION", None),
+        ent_fuel_consumption=_env("HA_ENT_FUEL_CONSUMPTION"),
+        fuel_price=_float("FUEL_PRICE", None),
+        ent_fuel_price=_env("HA_ENT_FUEL_PRICE"),
         soc_floor=_int("SOC_FLOOR", 10),
         soc_target=_int("SOC_TARGET", 80),
         sync_interval_h=_float("SYNC_INTERVAL_H", 6) or 6,
@@ -219,6 +234,7 @@ def load() -> Settings:
         addon=_env("ADDON") == "1",
         notify_problems=_bool("NOTIFY_PROBLEMS", True),
         publish_entities=_bool("PUBLISH_ENTITIES", True),
+        month_report=_bool("MONTH_REPORT", True),
         api_base_override=_env("TESLA_API_BASE_OVERRIDE").rstrip("/"),
         token_url_override=_env("TESLA_TOKEN_URL_OVERRIDE"),
     )

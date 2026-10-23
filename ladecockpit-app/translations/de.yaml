@@ -52,6 +52,18 @@ configuration:
     description: Spritkosten eines anderen Autos, neben den Ladekosten angezeigt.
   fuel_label:
     name: Bezeichnung für Spritkosten
+  fuel_consumption:
+    name: Verbrauch Vergleichsauto (L/100 km)
+    description: Für den Vergleich „Was hätte die Strecke mit einem Verbrenner gekostet“. Fester Wert, z. B. 7,5.
+  entity_fuel_consumption:
+    name: Verbrauch Vergleichsauto aus Entität
+    description: Statt des festen Werts, z. B. der Durchschnittsverbrauch deines Verbrenners in L/100 km.
+  fuel_price:
+    name: Spritpreis (pro Liter)
+    description: Fester Spritpreis für den Vergleich, z. B. 1,79.
+  entity_fuel_price:
+    name: Spritpreis aus Entität
+    description: Statt des festen Preises, z. B. der günstigste E10-Preis aus Tankerkönig.
   soc_floor:
     name: Untergrenze Akku (%)
     description: Die Prognose sagt, wann dieser Stand erreicht wird.
@@ -63,6 +75,9 @@ configuration:
   publish_entities:
     name: Sensoren in Home Assistant anlegen
     description: Legt sensor.ladecockpit_* und binary_sensor.ladecockpit_problem an (nächste Ladung, Akku, Monatskosten, letzte Ladung, Preistipp) – für Dashboards und Automationen.
+  month_report:
+    name: Monatsbericht
+    description: Am Monatsersten eine Benachrichtigung in Home Assistant mit Kosten, Strecke und Ersparnis des Vormonats. Das Event ladecockpit_month_report kommt immer.
   sync_interval_hours:
     name: Regelmäßiger Abgleich (Stunden)
   api_budget_requests:

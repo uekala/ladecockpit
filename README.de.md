@@ -13,8 +13,10 @@ Viele Home-Assistant-Setups schätzen die Supercharger-Kosten aus den kWh des Au
 - **Echte Rechnungen, automatisch.** Ladecockpit erkennt das Ladeende, holt die Rechnung innerhalb weniger Minuten und meldet sie genau einmal an Home Assistant. Ein Blueprint bucht sie in deine eigenen Helfer.
 - **Preis-Radar.** Zeigt aus deinen eigenen Rechnungen, zu welcher Uhrzeit und an welchem Supercharger du am günstigsten lädst.
 - **MultiPass.** Fremde Ladesäulen, die über Tesla MultiPass bezahlt werden, erkennt Ladecockpit in den Tesla-Rechnungen und weist sie getrennt aus, mit eigenem Ø-Preis.
-- **Nächster Ladestopp.** Sagt anhand deines Verbrauchs voraus, wann der Akku die Untergrenze erreicht (Standard: 10 %).
+- **Nächster Ladestopp.** Sagt anhand deines Verbrauchs voraus, wann der Akku die Untergrenze erreicht (Standard: 10 %), und wann und wo du vorher am günstigsten lädst: die beste Kombination aus Supercharger und Uhrzeit aus deinen eigenen Rechnungen.
 - **Monatsübersicht.** Kosten, kWh, Ø-Preis, Kosten pro 100 km/mi, optional Vergleich mit einem Referenzpreis oder den Spritkosten eines zweiten Autos.
+- **Ersparnis ggü. Verbrenner.** Was dieselbe Strecke mit Benzin oder Diesel gekostet hätte (feste Werte oder live aus Home Assistant, z. B. ein Spritpreis-Sensor), pro Monat und aufs Jahr hochgerechnet.
+- **Monatsbericht.** Am Monatsersten eine Zusammenfassung des Vormonats als Event und Benachrichtigung in Home Assistant.
 - **Ladeleistung und Verbrauch.** Ø kW pro Ladung und pro Supercharger, kWh pro 100 km/mi inklusive Ladeverlusten.
 - **Abgleich.** Vergleicht deine Summen in Home Assistant mit den Rechnungen.
 - **Export.** Alle Ladungen als CSV, alle Rechnungen eines Monats als ein ZIP.
@@ -133,14 +135,29 @@ Ladecockpit legt diese Entitäten in Home Assistant selbst an (abschaltbar mit d
 
 | Entität | Zustand | Nützliche Attribute |
 |---|---|---|
-| `sensor.ladecockpit_next_charge` | Datum des nächsten Ladestopps | `text`, `days`, `battery_drop_per_day` |
+| `sensor.ladecockpit_next_charge` | Datum des nächsten Ladestopps | `text`, `days`, `plan` (wann und wo laden), `plan_saving` |
 | `sensor.ladecockpit_battery` | Akkustand in %, bei Funkstille der letzte bekannte Wert | `range`, `last_known`, `as_of` |
-| `sensor.ladecockpit_month_cost` | Ladekosten im laufenden Monat | `energy_kwh`, `price_per_kwh`, `cost_per_100`, `kwh_per_100`, `multipass_cost`, `previous_cost` |
+| `sensor.ladecockpit_month_cost` | Ladekosten im laufenden Monat | `energy_kwh`, `price_per_kwh`, `cost_per_100`, `kwh_per_100`, `multipass_cost`, `savings`, `projected_year_cost`, `previous_cost` |
 | `sensor.ladecockpit_last_charge` | Kosten der letzten Ladung | `network`, `site`, `energy_kwh`, `price_per_kwh`, `avg_power_kw`, `text` |
 | `sensor.ladecockpit_price_tip` | deine günstigste Uhrzeit als Satz | `best_time`, `best_site`, `insights` |
 | `binary_sensor.ladecockpit_problem` | `on`, wenn die Tesla-Anmeldung abgelaufen ist, der Abgleich fehlschlägt oder eine Entität fehlt | `kind`, `message`, `last_sync` |
 
 Sie werden über die REST-API geschrieben und haben keine eindeutige ID, lassen sich also nicht in der Oberfläche umbenennen. Nach einem Neustart von Home Assistant sind sie nach wenigen Minuten wieder da. Eine fertige Dashboard-Sektion steht in [`homeassistant/dashboard_card.yaml`](homeassistant/dashboard_card.yaml).
+
+### Monatsbericht
+
+Am Monatsersten feuert Ladecockpit `ladecockpit_month_report` mit den Zahlen des Vormonats: `label`, `sessions`, `kwh`, `cost`, `price_per_kwh`, `distance`, `cost_per_100`, `kwh_per_100`, `multipass_cost`, `idle_fees`, `fuel_equivalent`, `savings`, `title` und `text` (ein fertiger Satz). Mit der Option `month_report` bzw. `MONTH_REPORT` gibt es zusätzlich eine Benachrichtigung in Home Assistant. Aufs Handy:
+
+```yaml
+triggers:
+  - trigger: event
+    event_type: ladecockpit_month_report
+actions:
+  - action: notify.mobile_app_dein_handy
+    data:
+      title: "{{ trigger.event.data.title }}"
+      message: "{{ trigger.event.data.text }}"
+```
 
 ### MultiPass
 

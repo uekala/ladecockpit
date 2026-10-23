@@ -3,6 +3,10 @@
 ## 0.4.0 – 2026-10-23
 
 - **MultiPass**: sessions at third-party chargers paid through Tesla MultiPass are recognised in the Tesla charging history and shown separately (session list, sites, month, price comparison). The event `ladecockpit_invoice`, the blueprint and `sensor.ladecockpit_last_charge` carry `network` (`supercharger` or `multipass`); `sensor.ladecockpit_month_cost` has `multipass_cost` and `multipass_sessions`. The CSV export has a new last column.
+- **Savings vs. a combustion car**: with a consumption and a fuel price (fixed or from entities), the month shows what the distance would have cost with petrol or diesel and what you saved. New options `fuel_consumption`, `entity_fuel_consumption`, `fuel_price`, `entity_fuel_price`.
+- **Projection**: cost and distance per year from the last 90 days, with the savings vs. the combustion car.
+- **Charging plan**: the next-stop card tells you when and where to charge before the battery reaches the floor – the cheapest Supercharger and time window from your own invoices, with the expected saving (`plan` on `sensor.ladecockpit_next_charge`).
+- **Monthly report**: on the first of the month the event `ladecockpit_month_report` with last month's figures and a ready text, plus a notification in Home Assistant (option `month_report`).
 - The log notes fields in Tesla's charging history that Ladecockpit does not know yet.
 
 ## 0.3.0 – 2026-10-23

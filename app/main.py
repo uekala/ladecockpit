@@ -25,6 +25,7 @@ from .config import settings
 from .db import DB
 from .entities import EntityPublisher
 from .homeassistant import HAClient
+from .reports import MonthReporter
 from .sync import SyncService
 from .tesla import TeslaClient, TeslaError
 from .watcher import Watcher
@@ -52,6 +53,8 @@ async def lifespan(_app: FastAPI):
             tasks.append(asyncio.create_task(watcher.run_forever()))
         if ha.configured and settings.publish_entities:
             tasks.append(asyncio.create_task(EntityPublisher(settings, ha, dashboard).run_forever()))
+        if ha.configured:
+            tasks.append(asyncio.create_task(MonthReporter(settings, db, ha, dashboard).run_forever()))
     log.info("Ladecockpit %s started (%s, language %s)", __version__,
              "demo mode" if settings.demo else "live", settings.lang)
     yield

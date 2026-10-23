@@ -69,6 +69,8 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         "days": fc.get("days_to_floor"), "calendar_days": fc.get("calendar_days"),
         "battery_drop_per_day": fc.get("rate_pct_day"), "distance_per_day": fc.get("dist_day"),
         "distance_unit": unit, "battery_floor": st.get("floor"),
+        "plan": (fc.get("plan") or {}).get("text"), "plan_date": (fc.get("plan") or {}).get("date"),
+        "plan_site": (fc.get("plan") or {}).get("site"), "plan_saving": (fc.get("plan") or {}).get("saving"),
     })
 
     # --- battery (also the last known value while the car is offline) -----------------------
@@ -92,6 +94,10 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         "avg_power_kw": m.get("avg_kw"),
         "multipass_cost": (m.get("by_network") or {}).get("multipass", {}).get("cost"),
         "multipass_sessions": (m.get("by_network") or {}).get("multipass", {}).get("sessions"),
+        "fuel_equivalent": m.get("fuel_equivalent"), "savings": m.get("savings"),
+        "projected_year_cost": (d.get("projection") or {}).get("cost"),
+        "projected_year_distance": (d.get("projection") or {}).get("distance"),
+        "projected_year_savings": (d.get("projection") or {}).get("savings"),
         "previous_month": prev.get("label"),
         "previous_cost": prev.get("cost"), "previous_price_per_kwh": _round(prev.get("avg_price"), 4),
     })

@@ -52,6 +52,18 @@ configuration:
     description: Fuel cost of another car, shown next to the charging cost.
   fuel_label:
     name: Label for fuel cost
+  fuel_consumption:
+    name: Consumption of a comparison car (L/100 km)
+    description: For the comparison "what the distance would have cost with a combustion car". Fixed value, e.g. 7.5.
+  entity_fuel_consumption:
+    name: Consumption of the comparison car from an entity
+    description: Instead of the fixed value, e.g. the average consumption of your combustion car in L/100 km.
+  fuel_price:
+    name: Fuel price (per litre)
+    description: Fixed fuel price for the comparison, e.g. 1.79.
+  entity_fuel_price:
+    name: Fuel price from an entity
+    description: Instead of the fixed price, e.g. a fuel price sensor.
   soc_floor:
     name: Lowest battery level (%)
     description: The forecast says when this level is reached.
@@ -63,6 +75,9 @@ configuration:
   publish_entities:
     name: Create sensors in Home Assistant
     description: Creates sensor.ladecockpit_* and binary_sensor.ladecockpit_problem (next charge, battery, monthly cost, last charge, price tip) for dashboards and automations.
+  month_report:
+    name: Monthly report
+    description: On the first of the month a notification in Home Assistant with cost, distance and savings of the previous month. The event ladecockpit_month_report is always fired.
   sync_interval_hours:
     name: Regular sync (hours)
   api_budget_requests:

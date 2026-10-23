@@ -440,7 +440,9 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       reachesTomorrow: "The battery reaches {floor} % tomorrow.", reachesIn: "In about {days} days the battery is at {floor} %.",
       perDay: "used per day", distPerDay: "driven per day", basis: "history used", days: "{n} days",
       lastCharge: "Last session · from invoice", noCharge: "No invoice fetched yet. After the first sync the latest Supercharger session with its real price shows up here.",
-      supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", ofWhichMp: "of which MultiPass ({n})", thSiteAny: "Site", energy: "Energy", price: "Price", charging: "Charging", idleFee: "Idle fee", total: "Total",
+      supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", ofWhichMp: "of which MultiPass ({n})", thSiteAny: "Site", energy: "Energy",
+      fuelCompare: "With a combustion car ({c} L/100 km · {p}/L)", saved: "Saved",
+      projection: "Projected for a year: ≈ {cost} for ≈ {dist} {unit}", projectionFuel: " · combustion car ≈ {fuel}, saved ≈ {saved}", projectionBasis: " (based on the last {n} days)", price: "Price", charging: "Charging", idleFee: "Idle fee", total: "Total",
       invoicePdf: "Invoice (PDF)", notInPreview: "Not available in the preview",
       pushed: "Sent to HA", backfill: "Imported", pending: "Sending to HA", stale: "Too old to send",
       pushedShort: "sent", backfillShort: "imported", pendingShort: "pending", staleShort: "too old",
@@ -497,7 +499,9 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       reachesTomorrow: "Der Akku erreicht morgen {floor} %.", reachesIn: "In etwa {days} Tagen ist der Akku bei {floor} %.",
       perDay: "Verbrauch pro Tag", distPerDay: "gefahren pro Tag", basis: "Verlauf als Basis", days: "{n} Tage",
       lastCharge: "Letzte Ladung · laut Rechnung", noCharge: "Noch keine Rechnung abgerufen. Nach dem ersten Abgleich steht hier die letzte Supercharger-Ladung mit echtem Preis.",
-      supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", ofWhichMp: "davon MultiPass ({n})", thSiteAny: "Standort", energy: "Energie", price: "Preis", charging: "Laden", idleFee: "Blockiergebühr", total: "Summe",
+      supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", ofWhichMp: "davon MultiPass ({n})", thSiteAny: "Standort", energy: "Energie",
+      fuelCompare: "Mit dem Verbrenner ({c} L/100 km · {p}/L)", saved: "Gespart",
+      projection: "Aufs Jahr hochgerechnet: ≈ {cost} bei ≈ {dist} {unit}", projectionFuel: " · Verbrenner ≈ {fuel}, gespart ≈ {saved}", projectionBasis: " (Basis: letzte {n} Tage)", price: "Preis", charging: "Laden", idleFee: "Blockiergebühr", total: "Summe",
       invoicePdf: "Rechnung (PDF)", notInPreview: "In der Vorschau nicht verfügbar",
       pushed: "An HA gemeldet", backfill: "Übernommen", pending: "Wird an HA gemeldet", stale: "Zu alt zum Melden",
       pushedShort: "gemeldet", backfillShort: "übernommen", pendingShort: "offen", staleShort: "zu alt",
@@ -770,7 +774,8 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
         <div class="fact"><b>${f.dist_day == null ? "–" : num(f.dist_day, 0) + " " + unit()}</b><span>${T("distPerDay")}</span></div>
         <div class="fact"><b>${f.basis_days ? T("days", { n: num(f.basis_days, 0) }) : "–"}</b><span>${T("basis")}</span></div>
       </div>
-      ${slotTip ? `<div class="tip">${ico.clock}<span>${esc(slotTip.text)}</span></div>` : ""}
+      ${f.plan ? `<div class="tip">${ico.bolt}<span>${esc(f.plan.text)}</span></div>`
+        : slotTip ? `<div class="tip">${ico.clock}<span>${esc(slotTip.text)}</span></div>` : ""}
     </section>`;
   }
 
@@ -827,6 +832,11 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
     const cmp = [];
     if (c.reference_cost != null) cmp.push(line(esc(T("atReference", { p: ppk(c.reference_price) })), money(c.reference_cost)));
     if (c.actual_cost != null && c.reference_cost != null) cmp.push(line(T("perInvoices"), money(c.actual_cost)));
+    const fuel = c.fuel;
+    if (fuel && m.fuel_equivalent != null) {
+      cmp.push(line(esc(T("fuelCompare", { c: num(fuel.consumption, 1), p: money(fuel.price, 3) })), money(m.fuel_equivalent)));
+      cmp.push(`<div class="line"><span class="lbl">${T("saved")}</span><span class="dots"></span><span class="val" style="color:var(${m.savings >= 0 ? "--good" : "--bad"})">${money(m.savings)}</span></div>`);
+    }
     const mp = (m.by_network || {}).multipass;
     if (mp && mp.sessions && (m.by_network || {}).supercharger) cmp.push(line(esc(T("ofWhichMp", { n: mp.sessions })), `${money(mp.cost)} · ${ppk(mp.avg_price)}`));
     if (m.idle) cmp.push(line(T("idleFee"), money(m.idle)));
@@ -870,7 +880,7 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
         <div class="radar-val">${has ? money(s.avg_price) : '<span class="muted">–</span>'}<small>${has ? (isBest ? T("cheapest") : sessionsText(s.sessions)) : T("noSession")}</small></div>
       </div>`;
     }).join("");
-    const insights = (d.insights || []).filter((i) => i.kind !== "slot");
+    const insights = (d.insights || []).filter((i) => i.kind !== "slot" && i.kind !== "fuel");
     return `<section class="panel" aria-labelledby="h-radar">
       <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline">
         <div><span class="eyebrow">${T("radar")}</span><h2 id="h-radar">${T("radarTitle")}</h2></div>
@@ -903,12 +913,21 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
     </section>`;
   }
 
+  function projectionLine(d) {
+    const p = d.projection;
+    if (!p) return "";
+    let s = T("projection", { cost: money(p.cost, 0), dist: num(p.distance, 0), unit: unit() });
+    if (p.savings != null) s += T("projectionFuel", { fuel: money(p.fuel_cost, 0), saved: money(p.savings, 0) });
+    s += T("projectionBasis", { n: p.basis_days });
+    return `<p class="sub" style="margin-top:6px">${esc(s)}</p>`;
+  }
+
   function historyPanel(d) {
     const months = d.monthly || [];
     const max = Math.max(1, ...months.map((m) => m.cost || 0));
     const curKey = d.month?.key;
     return `<section class="panel" aria-labelledby="h-hist">
-      <div><span class="eyebrow">${T("history")}</span><h2 id="h-hist">${T("historyTitle")}</h2></div>
+      <div><span class="eyebrow">${T("history")}</span><h2 id="h-hist">${T("historyTitle")}</h2>${projectionLine(d)}</div>
       <div class="cols" role="img" aria-label="${T("perMonthAria")}">
         ${months.map((m) => `<div class="col ${m.key === curKey ? "cur" : ""}" tabindex="0" data-tip="${esc(`${m.label}: ${money(m.cost)} · ${num(m.kwh, 1)} kWh · ${sessionsText(m.sessions)}${m.avg_price ? " · " + ppk(m.avg_price) : ""}${m.kwh_per_100 ? " · " + num(m.kwh_per_100, 1) + " kWh/100 " + unit() : ""}`)}">
           <span class="v">${m.cost ? money(m.cost, 0) : ""}</span>

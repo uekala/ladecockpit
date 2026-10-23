@@ -61,6 +61,7 @@ class HAClient:
             "soc": s.ent_soc, "range": s.ent_range, "odometer": s.ent_odometer,
             "charging": s.ent_charging, "cost_total": s.ent_cost_total, "kwh_total": s.ent_kwh_total,
             "reference_price": s.ent_reference_price, "fuel_month": s.ent_fuel_month,
+            "fuel_consumption": s.ent_fuel_consumption, "fuel_price": s.ent_fuel_price,
         }
         return {k: v for k, v in roles.items() if v}
 
