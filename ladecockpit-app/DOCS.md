@@ -31,6 +31,12 @@ The first sync starts right away. Invoices from before are only imported and **n
 
 Import the blueprint `blueprints/automation/ladecockpit/book_invoice.yaml` from the repository. It adds every invoice to your helpers and can send a notification.
 
+## Sensors
+
+Ladecockpit creates its own entities: `sensor.ladecockpit_next_charge`, `sensor.ladecockpit_battery`, `sensor.ladecockpit_month_cost`, `sensor.ladecockpit_last_charge`, `sensor.ladecockpit_price_tip` and `binary_sensor.ladecockpit_problem`. Use them in dashboards and automations. A ready-made dashboard section is in `homeassistant/dashboard_card.yaml` in the repository. Turn this off with **Create sensors in Home Assistant**.
+
+These entities have no unique ID, so they cannot be renamed in the UI. After a Home Assistant restart they are back within a few minutes.
+
 ## Problems
 
 If the Tesla sign-in expires or syncing keeps failing, Ladecockpit creates a notification in Home Assistant and fires the event `ladecockpit_problem`. You can turn this off with **Notify about problems**.

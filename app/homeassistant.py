@@ -148,3 +148,17 @@ class HAClient:
         except httpx.HTTPError:
             return False
         return r.status_code < 400
+
+    async def set_state(self, entity_id: str, state: str, attributes: dict) -> bool:
+        """Create or update an entity of our own (see entities.py)."""
+        if not self._http:
+            return False
+        try:
+            r = await self._http.post(f"/api/states/{entity_id}",
+                                      json={"state": state, "attributes": attributes})
+        except httpx.HTTPError:
+            return False
+        if r.status_code >= 400:
+            log.warning("Home Assistant rejected %s (HTTP %s)", entity_id, r.status_code)
+            return False
+        return True

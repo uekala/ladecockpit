@@ -60,6 +60,9 @@ configuration:
   notify_problems:
     name: Notify about problems
     description: Notification in Home Assistant when the Tesla sign-in expired or syncing fails.
+  publish_entities:
+    name: Create sensors in Home Assistant
+    description: Creates sensor.ladecockpit_* and binary_sensor.ladecockpit_problem (next charge, battery, monthly cost, last charge, price tip) for dashboards and automations.
   sync_interval_hours:
     name: Regular sync (hours)
   api_budget_requests:

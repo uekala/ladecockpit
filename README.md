@@ -18,6 +18,7 @@ Most Home Assistant setups estimate Supercharger costs from the car's kWh and a 
 - **Reconciliation.** Compares your Home Assistant totals with the invoices.
 - **Export.** All sessions as CSV, all invoices of a month as one ZIP file.
 - **Problem alerts.** A notification in Home Assistant when the Tesla sign-in expired or syncing keeps failing.
+- **Sensors for your dashboard.** Next charging stop, battery, monthly cost, last session and price tip as Home Assistant entities, with a ready-made dashboard section.
 - **Works while the car is offline.** Keeps its own history of battery level and odometer, e.g. for a car parked without reception.
 - **Cheap on the Tesla API.** Live data comes from Home Assistant. Tesla is only asked for the charging history, a few dozen requests per month.
 - **Read-only.** There is no code that sends commands to the car or wakes it.
@@ -121,7 +122,22 @@ The redirect URI points to `localhost`. If the container runs elsewhere, either 
 3. Create an automation from it and pick your helpers. Under *Additional actions* you can add a notification. The variables `site`, `kwh`, `total`, `price_per_kwh`, `idle_fee`, `currency` and `text` are available there.
 4. Set `HA_ENT_COST_TOTAL` and `HA_ENT_KWH_TOTAL` to the two helpers to see the reconciliation in the app.
 
-Optional: [`homeassistant/ladecockpit_package.yaml`](homeassistant/ladecockpit_package.yaml) adds sensors for the forecast and the price tip, and a `rest_command` to trigger the invoice lookup yourself.
+Optional: [`homeassistant/ladecockpit_package.yaml`](homeassistant/ladecockpit_package.yaml) adds a `rest_command` to trigger the invoice lookup yourself.
+
+### 6. Sensors and dashboard
+
+Ladecockpit creates these entities in Home Assistant itself (switch off with the app option `publish_entities` or `PUBLISH_ENTITIES=false`):
+
+| Entity | State | Useful attributes |
+|---|---|---|
+| `sensor.ladecockpit_next_charge` | date of the next charging stop | `text`, `days`, `battery_drop_per_day` |
+| `sensor.ladecockpit_battery` | battery level in %, the last known value while the car is offline | `range`, `last_known`, `as_of` |
+| `sensor.ladecockpit_month_cost` | charging cost this month | `energy_kwh`, `price_per_kwh`, `cost_per_100`, `kwh_per_100`, `previous_cost` |
+| `sensor.ladecockpit_last_charge` | cost of the last session | `site`, `energy_kwh`, `price_per_kwh`, `avg_power_kw`, `text` |
+| `sensor.ladecockpit_price_tip` | your cheapest time of day, as a sentence | `best_time`, `best_site`, `insights` |
+| `binary_sensor.ladecockpit_problem` | `on` when the Tesla sign-in expired, syncing fails or an entity is missing | `kind`, `message`, `last_sync` |
+
+They are written through the REST API and have no unique ID, so they cannot be renamed in the UI. After a Home Assistant restart they are back within a few minutes. A ready-made dashboard section is in [`homeassistant/dashboard_card.yaml`](homeassistant/dashboard_card.yaml).
 
 ## Event data
 

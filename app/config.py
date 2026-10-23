@@ -47,6 +47,7 @@ ADDON_OPTION_MAP = {
     "soc_floor": "SOC_FLOOR",
     "soc_target": "SOC_TARGET",
     "notify_problems": "NOTIFY_PROBLEMS",
+    "publish_entities": "PUBLISH_ENTITIES",
     "sync_interval_hours": "SYNC_INTERVAL_H",
     "api_budget_requests": "API_BUDGET_REQUESTS",
 }
@@ -149,6 +150,7 @@ class Settings:
     force_demo: bool
     addon: bool
     notify_problems: bool
+    publish_entities: bool
     # Development only: point the app at a mock server
     api_base_override: str = ""
     token_url_override: str = ""
@@ -216,6 +218,7 @@ def load() -> Settings:
         force_demo=_env("APP_MODE", "").lower() == "demo",
         addon=_env("ADDON") == "1",
         notify_problems=_bool("NOTIFY_PROBLEMS", True),
+        publish_entities=_bool("PUBLISH_ENTITIES", True),
         api_base_override=_env("TESLA_API_BASE_OVERRIDE").rstrip("/"),
         token_url_override=_env("TESLA_TOKEN_URL_OVERRIDE"),
     )

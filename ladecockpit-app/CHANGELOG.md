@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 – 2026-10-23
+
+- **Sensors in Home Assistant**: Ladecockpit now creates `sensor.ladecockpit_next_charge`, `sensor.ladecockpit_battery`, `sensor.ladecockpit_month_cost`, `sensor.ladecockpit_last_charge`, `sensor.ladecockpit_price_tip` and `binary_sensor.ladecockpit_problem` itself. No YAML needed. Option `publish_entities` / `PUBLISH_ENTITIES`.
+- Ready-made dashboard section with built-in cards: `homeassistant/dashboard_card.yaml`.
+- The REST sensors in `homeassistant/ladecockpit_package.yaml` are gone. If you copied them, remove them, they would clash with the new entities.
+
 ## 0.2.1 – 2026-10-23
 
 - Fix: on a fresh install the battery level, range and odometer were not taken from the Home Assistant history (only the first of the ten days was requested). They now show up right away, also while the car is asleep and its entities are `unknown`.

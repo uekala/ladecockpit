@@ -23,6 +23,7 @@ from .analytics import build_dashboard
 from .export import sessions_csv
 from .config import settings
 from .db import DB
+from .entities import EntityPublisher
 from .homeassistant import HAClient
 from .sync import SyncService
 from .tesla import TeslaClient, TeslaError
@@ -49,6 +50,8 @@ async def lifespan(_app: FastAPI):
         tasks.append(asyncio.create_task(sync.run_forever()))
         if ha.configured and ha.entities():
             tasks.append(asyncio.create_task(watcher.run_forever()))
+        if ha.configured and settings.publish_entities:
+            tasks.append(asyncio.create_task(EntityPublisher(settings, ha, dashboard).run_forever()))
     log.info("Ladecockpit %s started (%s, language %s)", __version__,
              "demo mode" if settings.demo else "live", settings.lang)
     yield
@@ -148,7 +151,8 @@ async def dashboard():
             "addon": settings.addon,
         },
         "sync": {"last": sync.last_sync, "next": sync.next_sync,
-                 "error": sync.last_error, "burst": sync.bursting},
+                 "error": sync.last_error, "burst": sync.bursting,
+                 "problem": db.kv_get("problem_kind")},
         "api_calls": db.calls_this_month(),
     }
     return build_dashboard(sessions=db.sessions(), live=live, readings=await _readings(now),

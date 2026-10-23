@@ -1,0 +1,59 @@
+# Ladecockpit section for a "sections" dashboard. Built-in cards only, no HACS needed.
+# Dashboard → Edit → Create section → ⋮ on the new section → Edit in YAML → paste this.
+# The entities are created by Ladecockpit itself (option publish_entities / PUBLISH_ENTITIES).
+type: grid
+cards:
+  - type: heading
+    heading: Ladecockpit
+    icon: mdi:ev-station
+    badges:
+      - type: entity
+        entity: binary_sensor.ladecockpit_problem
+        name: Problem
+        show_name: true
+        show_state: false
+        color: red
+        tap_action:
+          action: more-info
+        visibility:
+          - condition: state
+            entity: binary_sensor.ladecockpit_problem
+            state: "on"
+  - type: markdown
+    text_only: true
+    content: >-
+      **{{ state_attr('sensor.ladecockpit_next_charge', 'text') or '–' }}**
+  - type: tile
+    entity: sensor.ladecockpit_battery
+    name: Battery
+    color: green
+    grid_options:
+      columns: 6
+  - type: tile
+    entity: sensor.ladecockpit_next_charge
+    name: Next charging stop
+    color: amber
+    grid_options:
+      columns: 6
+  - type: tile
+    entity: sensor.ladecockpit_month_cost
+    name: This month
+    color: red
+    grid_options:
+      columns: 6
+  - type: tile
+    entity: sensor.ladecockpit_last_charge
+    name: Last charge
+    state_content:
+      - state
+      - site
+    color: orange
+    grid_options:
+      columns: 6
+  - type: markdown
+    content: >-
+      {% set m = 'sensor.ladecockpit_month_cost' %}
+      {{ state_attr(m, 'sessions') or 0 }} sessions · {{ state_attr(m, 'energy_kwh') or 0 }} kWh ·
+      {{ state_attr(m, 'kwh_per_100') or '–' }} kWh/100 {{ state_attr(m, 'distance_unit') }}
+
+      💡 {{ states('sensor.ladecockpit_price_tip') }}

@@ -60,6 +60,9 @@ configuration:
   notify_problems:
     name: Bei Problemen benachrichtigen
     description: Benachrichtigung in Home Assistant, wenn die Tesla-Anmeldung abläuft oder der Abgleich fehlschlägt.
+  publish_entities:
+    name: Sensoren in Home Assistant anlegen
+    description: Legt sensor.ladecockpit_* und binary_sensor.ladecockpit_problem an (nächste Ladung, Akku, Monatskosten, letzte Ladung, Preistipp) – für Dashboards und Automationen.
   sync_interval_hours:
     name: Regelmäßiger Abgleich (Stunden)
   api_budget_requests:

@@ -1,5 +1,5 @@
 name: Ladecockpit
-version: "0.2.1"
+version: "0.3.0"
 slug: ladecockpit
 description: Real Tesla Supercharger invoices in Home Assistant – price radar, next charging stop and a small web app.
 url: https://github.com/uekala/ladecockpit
@@ -32,6 +32,7 @@ options:
   soc_floor: 10
   soc_target: 80
   notify_problems: true
+  publish_entities: true
 schema:
   language: list(en|de)
   locale: str?
@@ -54,5 +55,6 @@ schema:
   soc_floor: int(0,50)
   soc_target: int(50,100)
   notify_problems: bool
+  publish_entities: bool
   sync_interval_hours: float(1,24)?
   api_budget_requests: int(100,10000)?

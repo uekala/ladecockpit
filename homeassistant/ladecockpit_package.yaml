@@ -4,9 +4,12 @@
 #     packages: !include_dir_named packages
 # ), replace LADECOCKPIT_HOST, check the configuration and restart or reload.
 #
-# You do NOT need this for the basics: Ladecockpit reads your car's entities and detects the
-# end of a charging session on its own. Use it if you want the forecast and price tip as
-# sensors, or want to trigger the invoice lookup yourself.
+# You do NOT need this for the basics: Ladecockpit reads your car's entities, detects the
+# end of a charging session and creates its own sensor.ladecockpit_* entities. Use it only
+# if you want to trigger the invoice lookup yourself.
+#
+# Ladecockpit < 0.3 had REST sensors here. Remove them if you copied them: they would clash
+# with the entities Ladecockpit now creates itself.
 
 rest_command:
   # Optional: look for the invoice right away (e.g. from your own automation).
@@ -17,25 +20,3 @@ rest_command:
     # Only if APP_PASSWORD is set:
     # username: ladecockpit
     # password: !secret ladecockpit_password
-
-rest:
-  - resource: "http://LADECOCKPIT_HOST:8077/api/ha"
-    scan_interval: 900
-    # username: ladecockpit
-    # password: !secret ladecockpit_password
-    sensor:
-      - name: "Ladecockpit next charge"
-        unique_id: ladecockpit_next_charge
-        value_template: "{{ value_json.next_charge_date }}"
-        device_class: date
-      - name: "Ladecockpit days to next charge"
-        unique_id: ladecockpit_days_to_next_charge
-        value_template: "{{ value_json.days_to_next_charge }}"
-        unit_of_measurement: "d"
-      - name: "Ladecockpit price this month"
-        unique_id: ladecockpit_month_price
-        value_template: "{{ value_json.month_price_per_kwh }}"
-        unit_of_measurement: "/kWh"
-      - name: "Ladecockpit tip"
-        unique_id: ladecockpit_tip
-        value_template: "{{ (value_json.tip or '')[:250] }}"
