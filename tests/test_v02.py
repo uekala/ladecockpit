@@ -98,6 +98,31 @@ class HistoryHA:
         return [(base, 1000.0), (base + timedelta(hours=3), 1040.0)]
 
 
+def test_history_asks_until_now(settings):
+    from app.homeassistant import HAClient
+    import httpx
+
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["path"], seen["params"] = request.url.path, dict(request.url.params)
+        return httpx.Response(200, json=[[
+            {"entity_id": "sensor.battery", "state": "66", "last_changed": "2026-10-22T20:25:00+00:00"},
+            {"state": "unknown", "last_changed": "2026-10-23T06:31:20+00:00"},
+            {"state": "64.5", "last_changed": "2026-10-23T07:00:00+00:00"},
+        ]])
+
+    s = dataclasses.replace(settings, ha_url="http://ha.test", ha_token="t")
+    ha = HAClient(s, transport=httpx.MockTransport(handler))
+    start = datetime.now(timezone.utc) - timedelta(days=10)
+    points = asyncio.run(ha.history("sensor.battery", start))
+    assert [v for _, v in points] == [66.0, 64.5]
+    assert seen["path"].startswith("/api/history/period/")
+    end = datetime.fromisoformat(seen["params"]["end_time"])
+    assert end - start > timedelta(days=9)                 # HA's default would be start + 1 day
+    assert seen["params"]["filter_entity_id"] == "sensor.battery"
+
+
 def test_seed_from_history_once(settings, db):
     watcher = Watcher(settings, db, HistoryHA(), sync=None)
     now = datetime(2026, 10, 12, tzinfo=timezone.utc)

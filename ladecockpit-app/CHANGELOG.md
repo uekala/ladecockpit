@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 – 2026-10-23
+
+- Fix: on a fresh install the battery level, range and odometer were not taken from the Home Assistant history (only the first of the ten days was requested). They now show up right away, also while the car is asleep and its entities are `unknown`.
+
 ## 0.2.0 – 2026-10-23
 
 - **Runs as a Home Assistant app**: install it from this repository in Home Assistant, the web app opens from the sidebar. No separate server or PC needed.

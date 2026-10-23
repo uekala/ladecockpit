@@ -105,10 +105,13 @@ class HAClient:
         if not self._http or not entity_id:
             return []
         ts = quote(start.astimezone(timezone.utc).isoformat(timespec="seconds"), safe="")
+        # Without end_time Home Assistant returns only the first day after start.
+        end = datetime.now(timezone.utc).isoformat(timespec="seconds")
         try:
             r = await self._http.get(
                 f"/api/history/period/{ts}",
-                params={"filter_entity_id": entity_id, "minimal_response": "", "no_attributes": ""},
+                params={"filter_entity_id": entity_id, "end_time": end,
+                        "minimal_response": "", "no_attributes": ""},
             )
         except httpx.HTTPError:
             return []
