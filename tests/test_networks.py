@@ -77,7 +77,7 @@ def test_credit_from_real_shape(settings, tmp_path):
     from app.analytics import build_dashboard
     from app.pricing import price_details
 
-    raw = {**SUPERCHARGER_RAW, "sessionId": 50, "siteLocationName": "Krefeld, Germany",
+    raw = {**SUPERCHARGER_RAW, "sessionId": 50, "siteLocationName": "Hillcrest, Germany",
            "chargeStartDateTime": "2026-09-29T21:36:57+02:00", "chargeStopDateTime": "2026-09-29T22:10:00+02:00",
            "fees": [{"feeType": "CHARGING", "pricingType": "CREDIT_PARTIAL_PAYMENT", "currencyCode": "EUR",
                      "uom": "kwh", "usageBase": 58.1123, "rateBase": 0.45, "totalBase": 12.65,

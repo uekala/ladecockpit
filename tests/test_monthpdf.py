@@ -19,7 +19,7 @@ def _invoice() -> bytes:
 
 
 SESSIONS = [
-    {"session_id": "1", "vin": "TESTVIN0000000001", "site": "Krefeld, Germany", "start_ts": "2026-09-29T19:36:57+00:00",
+    {"session_id": "1", "vin": "TESTVIN0000000001", "site": "Hillcrest, Germany", "start_ts": "2026-09-29T19:36:57+00:00",
      "kwh": 58.112, "price": 0.2177, "total": 12.65, "net_total": 10.63, "credit": 13.5, "invoices": [{"id": "a"}]},
     {"session_id": "2", "vin": "TESTVIN0000000001", "site": "IONITY Musterstadt", "network": "multipass",
      "start_ts": "2026-09-30T10:00:00+00:00", "kwh": 20.0, "price": 0.59, "total": 11.8, "net_total": 9.92,
@@ -32,7 +32,7 @@ def test_cover_and_merge():
                            home={"kwh": 42.0, "cost": 13.02}, distance=1234, unit="km",
                            now=datetime(2026, 10, 1, tzinfo=timezone.utc))
     text = PdfReader(io.BytesIO(cover)).pages[0].extract_text()
-    for needle in ("Ladekosten September 2026", "TESTVIN0000000001", "29.09.2026", "Krefeld",
+    for needle in ("Ladekosten September 2026", "TESTVIN0000000001", "29.09.2026", "Hillcrest",
                    "MultiPass", "13,50 EUR", "24,45 EUR", "20,55 EUR", "42,0 kWh", "1.234 km",
                    "Anhang: 1 Rechnung", "Für 1 Ladung"):
         assert needle in text, needle

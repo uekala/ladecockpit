@@ -4,7 +4,7 @@
 
 [Deutsch](README.de.md)
 
-![Ladecockpit web app with demo data](docs/screenshot.png)
+![Ladecockpit on desktop and phone with demo data: picture of the car, battery, next charging stop, last invoice, month, price radar and the car picker](docs/screenshot.png)
 
 Most Home Assistant setups estimate Supercharger costs from the car's kWh and a fixed price, or ask you to type the price in after every session. Ladecockpit fetches the actual invoice from the Tesla Fleet API instead (billed kWh, price per kWh, idle fees, site, PDF) and hands it to Home Assistant.
 

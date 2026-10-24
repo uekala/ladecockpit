@@ -9,7 +9,7 @@ from app.reports import EVENT, MonthReporter, build_report
 NOW = datetime(2026, 10, 23, 12, tzinfo=timezone.utc)
 
 
-def _s(sid, start, kwh, price, site="Krefeld, Germany", minutes=30):
+def _s(sid, start, kwh, price, site="Hillcrest, Germany", minutes=30):
     total = round(kwh * price, 2)
     return {"session_id": sid, "site": site, "start_ts": start.isoformat(timespec="seconds"),
             "stop_ts": (start + timedelta(minutes=minutes)).isoformat(timespec="seconds"),
@@ -63,9 +63,9 @@ def test_plan_picks_cheapest_site_and_window_before_floor(settings):
     f = d["forecast"]
     assert f["days_to_floor"] == 2.0                                   # 30 % → 10 % at 10 %/day
     plan = f["plan"]
-    assert plan["site"] == "Krefeld, Germany" and plan["range"] == "20–24 Uhr"
+    assert plan["site"] == "Hillcrest, Germany" and plan["range"] == "20–24 Uhr"
     assert plan["date"] == "2026-10-24"                                # last evening before the floor
-    assert "Krefeld laden" in plan["text"] and "Germany" not in plan["text"]
+    assert "Hillcrest laden" in plan["text"] and "Germany" not in plan["text"]
     assert plan["saving"] > 0
     states = build_states(d, "de")
     assert states["sensor.ladecockpit_next_charge"][1]["plan"] == plan["text"]
