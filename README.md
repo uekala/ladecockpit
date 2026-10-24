@@ -27,6 +27,7 @@ Most Home Assistant setups estimate Supercharger costs from the car's kWh and a 
 - **Export.** All sessions as CSV, all invoices of a month as one ZIP file.
 - **Problem alerts.** A notification in Home Assistant when the Tesla sign-in expired or syncing keeps failing.
 - **Sensors for your dashboard.** Next charging stop, battery, monthly cost, last session and price tip as Home Assistant entities, with a ready-made dashboard section.
+- **Your car, as it looks.** A picture of your Tesla from Tesla's own configurator, for every Model S, 3, X, Y and the Cybertruck: pick generation, trim, paint, wheels and view in the web app (the model is recognised from the VIN). The picture also goes to Home Assistant as `sensor.ladecockpit_car`.
 - **Works while the car is offline.** Keeps its own history of battery level and odometer, e.g. for a car parked without reception.
 - **Cheap on the Tesla API.** Live data comes from Home Assistant. Tesla is only asked for the charging history, about 150–200 requests per month (≈ $0.40).
 - **Read-only.** There is no code that sends commands to the car or wakes it.
@@ -148,9 +149,23 @@ Ladecockpit creates these entities in Home Assistant itself (switch off with the
 | `sensor.ladecockpit_price_tip` | your cheapest time of day, as a sentence | `best_time`, `best_site`, `insights` |
 | `sensor.ladecockpit_range_at_100` | range at 100 % (long-term statistics) | `change_pct`, `since`, `supercharger_share` |
 | `sensor.ladecockpit_consumption` | billed kWh per 100 km/mi this month | `by_temperature`, `temperature_tip` |
+| `sensor.ladecockpit_car` | name of the car, e.g. `Model 3 Performance`; its picture is the entity picture | `image`, `image_front`, `image_side`, `image_rear`, `model`, `trim`, `paint`, `wheels` |
 | `binary_sensor.ladecockpit_problem` | `on` when the Tesla sign-in expired, syncing fails or an entity is missing | `kind`, `message`, `last_sync` |
 
 They are written through the REST API and have no unique ID, so they cannot be renamed in the UI. After a Home Assistant restart they are back within a few minutes. A ready-made dashboard section is in [`homeassistant/dashboard_card.yaml`](homeassistant/dashboard_card.yaml).
+
+### Picture of your car
+
+The web app shows your Tesla at the top. Without a choice it guesses model and generation from the VIN in the charging history (or `TESLA_VIN`). Click **Customise** to pick model and generation, trim, wheels, paint and view – Model S, 3, X and Y of every generation since 2012 and the Cybertruck. Only combinations Tesla's configurator can render are offered, so the picture is never half-drawn. The choice is saved in Ladecockpit, not in the car: it is just a picture.
+
+The pictures are loaded straight from Tesla's image server (`static-assets.tesla.com`) by your browser. They cost no Fleet API requests. In Home Assistant, `sensor.ladecockpit_car` carries the picture as entity picture (tile cards with `show_entity_picture: true`) and as attributes for every view, e.g. for a markdown card:
+
+```yaml
+type: markdown
+text_only: true
+content: >-
+  <img src="{{ state_attr('sensor.ladecockpit_car', 'image') }}" width="100%">
+```
 
 ## Event data
 
@@ -202,6 +217,9 @@ If a MultiPass session is shown as Supercharger (or the other way round), please
 | `GET /api/invoices/<YYYY-MM>.zip` | All invoices of a month |
 | `GET /api/report/<YYYY-MM>.pdf` | Cover sheet plus all invoices of a month in one PDF |
 | `GET /api/export.csv` | All sessions as CSV |
+| `GET /api/car` | Picture of the car with everything that can be chosen |
+| `POST /api/car/preview` | Picture for a choice, nothing is saved |
+| `PUT /api/car` / `DELETE /api/car` | Save the choice / recognise the car from the VIN again |
 | `GET /api/debug/raw` | Last raw Tesla response, to check field names |
 | `GET /healthz` | Health check |
 
@@ -212,7 +230,7 @@ The Fleet API is billed per request. Ladecockpit only uses data requests for the
 ## Privacy and security
 
 - Everything stays on your machine: tokens, invoices and readings live in the Docker volume `ladecockpit-data` (SQLite and a PDF cache).
-- Ladecockpit talks only to Tesla and your Home Assistant.
+- Ladecockpit talks only to Tesla and your Home Assistant. The web app also loads the picture of your car from Tesla's image server and the fonts from Google Fonts.
 - Run it in your LAN or behind a reverse proxy with authentication. `APP_PASSWORD` adds simple HTTP Basic protection.
 - Never commit your `.env`. It is already in `.gitignore`.
 

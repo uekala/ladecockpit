@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 – 2026-10-24
+
+- **Picture of your car.** The web app shows your Tesla, rendered by Tesla's own configurator. Pick model and generation (Model S, 3, X and Y since 2012, Cybertruck), trim (e.g. Performance or Plaid), wheels, paint and view under **Customise**. Only combinations Tesla can render are offered. Without a choice, model and generation are recognised from the VIN.
+- New entity `sensor.ladecockpit_car`: the car's name as state, its picture as entity picture, plus `image`, `image_front`, `image_side` and `image_rear` for dashboards. The ready-made dashboard section shows it.
+- New API: `GET /api/car`, `POST /api/car/preview`, `PUT /api/car`, `DELETE /api/car`.
+
 ## 0.4.1 – 2026-10-23
 
 - New entities `sensor.ladecockpit_range_at_100` (with long-term statistics, for a graph of the battery health over months) and `sensor.ladecockpit_consumption` (billed kWh per 100 km/mi this month, plus the consumption by outside temperature as attribute `by_temperature`).

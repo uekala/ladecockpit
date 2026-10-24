@@ -5,6 +5,7 @@ import dataclasses
 import math
 from datetime import datetime, timedelta, timezone
 
+from . import carimage
 from .analytics import build_dashboard
 from .config import Settings
 
@@ -173,5 +174,7 @@ def build_demo(settings: Settings) -> dict:
         },
         "api_calls": {"data": 38},
     }
-    return build_dashboard(sessions=sessions, live=live, readings=readings,
-                           settings=demo_settings, meta=meta, now=now)
+    d = build_dashboard(sessions=sessions, live=live, readings=readings,
+                        settings=demo_settings, meta=meta, now=now)
+    d["car"] = carimage.describe(carimage.normalize(None), settings.lang, auto=True)
+    return d

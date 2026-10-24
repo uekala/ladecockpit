@@ -1,5 +1,5 @@
 name: Ladecockpit
-version: "0.4.1"
+version: "0.5.0"
 slug: ladecockpit
 description: Real Tesla Supercharger invoices in Home Assistant – price radar, next charging stop and a small web app.
 url: https://github.com/uekala/ladecockpit

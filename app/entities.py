@@ -32,6 +32,7 @@ ENTITY_IDS = (
     "sensor.ladecockpit_price_tip",
     "sensor.ladecockpit_range_at_100",
     "sensor.ladecockpit_consumption",
+    "sensor.ladecockpit_car",
     "binary_sensor.ladecockpit_problem",
 )
 
@@ -171,6 +172,18 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         "state_class": "measurement", "icon": "mdi:thermometer-lines",
         "note": i18n.t(lang, "ent_consumption_note"), "by_temperature": bands, "temperature_tip": tip,
     })
+
+    # --- picture of the car (Tesla's configurator image, chosen in the web app) ----------------------
+    car = d.get("car")
+    if car:
+        labels, views = car.get("labels") or {}, car.get("views") or {}
+        out["sensor.ladecockpit_car"] = (car["name"][:MAX_STATE_LEN], {
+            "friendly_name": name("car"), "icon": "mdi:car-electric",
+            "entity_picture": car.get("thumb"), "image": car.get("url"),
+            **{f"image_{v}": u for v, u in views.items()},
+            "model": labels.get("generation"), "trim": labels.get("trim"), "paint": labels.get("paint"),
+            "wheels": labels.get("wheel"), "view": labels.get("view"), "auto_detected": car.get("auto"),
+        })
 
     # --- problems ------------------------------------------------------------------------------------
     setup, sync = d.get("setup") or {}, d.get("sync") or {}

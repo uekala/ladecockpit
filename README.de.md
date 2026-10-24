@@ -27,6 +27,7 @@ Viele Home-Assistant-Setups schätzen die Supercharger-Kosten aus den kWh des Au
 - **Export.** Alle Ladungen als CSV, alle Rechnungen eines Monats als ein ZIP.
 - **Problem-Meldung.** Benachrichtigung in Home Assistant, wenn die Tesla-Anmeldung abläuft oder der Abgleich wiederholt fehlschlägt.
 - **Sensoren fürs Dashboard.** Nächster Ladestopp, Akku, Monatskosten, letzte Ladung und Preistipp als Entitäten in Home Assistant, dazu eine fertige Dashboard-Sektion.
+- **Dein Auto, wie es aussieht.** Ein Bild deines Teslas aus Teslas eigenem Konfigurator, für jedes Model S, 3, X, Y und den Cybertruck: Generation, Ausstattung, Farbe, Felgen und Ansicht in der Web-App wählen (das Modell wird aus der FIN erkannt). Das Bild geht als `sensor.ladecockpit_car` auch an Home Assistant.
 - **Funktioniert auch offline.** Speichert einen eigenen Verlauf von Akkustand und Kilometerstand, z. B. für ein Auto in der Tiefgarage ohne Empfang.
 - **Sparsam bei der Tesla-API.** Live-Daten kommen aus Home Assistant. Tesla wird nur nach der Ladehistorie gefragt, etwa 150–200 Abfragen im Monat (≈ 0,40 $).
 - **Nur lesend.** Es gibt keinen Code, der Befehle ans Auto schickt oder es weckt.
@@ -150,9 +151,23 @@ Ladecockpit legt diese Entitäten in Home Assistant selbst an (abschaltbar mit d
 | `sensor.ladecockpit_price_tip` | deine günstigste Uhrzeit als Satz | `best_time`, `best_site`, `insights` |
 | `sensor.ladecockpit_range_at_100` | Reichweite bei 100 % (Langzeitstatistik) | `change_pct`, `since`, `supercharger_share` |
 | `sensor.ladecockpit_consumption` | abgerechnete kWh pro 100 km/mi diesen Monat | `by_temperature`, `temperature_tip` |
+| `sensor.ladecockpit_car` | Name des Autos, z. B. `Model 3 Performance`; sein Bild ist das Entitätsbild | `image`, `image_front`, `image_side`, `image_rear`, `model`, `trim`, `paint`, `wheels` |
 | `binary_sensor.ladecockpit_problem` | `on`, wenn die Tesla-Anmeldung abgelaufen ist, der Abgleich fehlschlägt oder eine Entität fehlt | `kind`, `message`, `last_sync` |
 
 Sie werden über die REST-API geschrieben und haben keine eindeutige ID, lassen sich also nicht in der Oberfläche umbenennen. Nach einem Neustart von Home Assistant sind sie nach wenigen Minuten wieder da. Eine fertige Dashboard-Sektion steht in [`homeassistant/dashboard_card.yaml`](homeassistant/dashboard_card.yaml).
+
+### Bild deines Autos
+
+Oben in der Web-App steht dein Tesla. Ohne eigene Auswahl errät Ladecockpit Modell und Generation aus der FIN in der Ladehistorie (oder `TESLA_VIN`). Über **Anpassen** wählst du Modell und Generation, Ausstattung, Felgen, Farbe und Ansicht – Model S, 3, X und Y aller Generationen seit 2012 und den Cybertruck. Angeboten werden nur Kombinationen, die Teslas Konfigurator darstellen kann, das Bild ist also nie halb leer. Die Auswahl wird in Ladecockpit gespeichert, nicht im Auto: Es ist nur ein Bild.
+
+Die Bilder lädt dein Browser direkt von Teslas Bildserver (`static-assets.tesla.com`). Sie kosten keine Fleet-API-Abfragen. In Home Assistant trägt `sensor.ladecockpit_car` das Bild als Entitätsbild (Kachel-Karten mit `show_entity_picture: true`) und als Attribut je Ansicht, z. B. für eine Markdown-Karte:
+
+```yaml
+type: markdown
+text_only: true
+content: >-
+  <img src="{{ state_attr('sensor.ladecockpit_car', 'image') }}" width="100%">
+```
 
 ### Monatsbericht
 
@@ -182,7 +197,7 @@ Die Fleet API wird pro Abfrage abgerechnet. Ladecockpit nutzt nur Datenabfragen 
 ## Datenschutz und Sicherheit
 
 - Alles bleibt bei dir: Tokens, Rechnungen und Messwerte liegen im Docker-Volume `ladecockpit-data` (SQLite und PDF-Cache).
-- Ladecockpit spricht nur mit Tesla und deinem Home Assistant.
+- Ladecockpit spricht nur mit Tesla und deinem Home Assistant. Die Web-App lädt außerdem das Bild deines Autos von Teslas Bildserver und die Schriften von Google Fonts.
 - Im LAN oder hinter einem Reverse-Proxy mit Anmeldung betreiben. `APP_PASSWORD` gibt einen einfachen HTTP-Basic-Schutz.
 - Die eigene `.env` nie committen. Sie steht bereits in `.gitignore`.
 

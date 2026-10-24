@@ -19,6 +19,15 @@ cards:
           - condition: state
             entity: binary_sensor.ladecockpit_problem
             state: "on"
+  # Picture of the car, chosen in the web app (Customise). Remove if you do not want it.
+  - type: markdown
+    text_only: true
+    content: >-
+      <img src="{{ state_attr('sensor.ladecockpit_car', 'image') }}" alt="{{ states('sensor.ladecockpit_car') }}" width="100%">
+    visibility:
+      - condition: state
+        entity: sensor.ladecockpit_car
+        state_not: unavailable
   - type: markdown
     text_only: true
     content: >-

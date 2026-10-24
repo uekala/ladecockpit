@@ -18,7 +18,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel
 
-from . import __version__, demo, monthpdf
+from . import __version__, carimage, demo, monthpdf
 from .analytics import build_dashboard
 from .export import sessions_csv
 from .config import settings
@@ -142,10 +142,21 @@ async def _readings(now: datetime) -> dict:
     return readings
 
 
+def _vin(sessions: list[dict] | None = None) -> str | None:
+    """The car's VIN: from the settings, else from the newest session in the charging history."""
+    if settings.tesla_vin:
+        return settings.tesla_vin
+    return next((s["vin"] for s in (db.sessions() if sessions is None else sessions) if s.get("vin")), None)
+
+
+def _car(sessions: list[dict] | None = None) -> dict:
+    return carimage.current(db, None if settings.demo else _vin(sessions), settings.lang)
+
+
 @app.get("/api/dashboard")
 async def dashboard():
     if settings.demo:
-        return demo.build_demo(settings)
+        return {**demo.build_demo(settings), "car": _car()}
     now = datetime.now(timezone.utc)
     live = await _live() if ha.configured else {"available": False, "values": {}, "units": {}}
     meta = {
@@ -168,8 +179,51 @@ async def dashboard():
                  "problem": db.kv_get("problem_kind")},
         "api_calls": db.calls_this_month(),
     }
-    return build_dashboard(sessions=db.sessions(), live=live, readings=await _readings(now),
-                           settings=settings, meta=meta, now=now)
+    sessions = db.sessions()
+    d = build_dashboard(sessions=sessions, live=live, readings=await _readings(now),
+                        settings=settings, meta=meta, now=now)
+    d["car"] = _car(sessions)
+    return d
+
+
+# --- picture of the car --------------------------------------------------------------------------
+class CarIn(BaseModel):
+    generation: str | None = None
+    trim: str | None = None
+    paint: str | None = None
+    wheel: str | None = None
+    view: str | None = None
+
+
+def _car_response(car: dict) -> dict:
+    return {**car, "catalog": carimage.catalog(settings.lang)}
+
+
+@app.get("/api/car")
+async def car_get():
+    """The current picture plus everything that can be chosen."""
+    return _car_response(_car())
+
+
+@app.post("/api/car/preview")
+async def car_preview(body: CarIn):
+    """What a choice would look like – nothing is saved."""
+    vin = None if settings.demo else _vin()
+    return carimage.describe(carimage.normalize(body.model_dump(), vin), settings.lang, auto=False)
+
+
+@app.put("/api/car")
+async def car_save(body: CarIn):
+    vin = None if settings.demo else _vin()
+    carimage.save_choice(db, carimage.normalize(body.model_dump(), vin))
+    return _car_response(_car())
+
+
+@app.delete("/api/car")
+async def car_reset():
+    """Back to the car recognised from the VIN."""
+    carimage.reset_choice(db)
+    return _car_response(_car())
 
 
 @app.get("/api/ha")
