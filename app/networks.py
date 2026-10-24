@@ -38,6 +38,30 @@ _BRANDS = re.compile(
 )
 
 
+# How the operators matched by _BRANDS are written (lower-case match → display name).
+_OPERATOR_NAMES = {
+    "enbw": "EnBW", "ionity": "IONITY", "fastned": "Fastned", "allego": "Allego", "aral pulse": "Aral pulse",
+    "bp pulse": "bp pulse", "shell recharge": "Shell Recharge", "ewe go": "EWE Go", "e.on": "E.ON",
+    "eon drive": "E.ON Drive", "vattenfall": "Vattenfall", "maingau": "Maingau", "pfalzwerke": "Pfalzwerke",
+    "electra": "Electra", "atlante": "Atlante", "zunder": "Zunder", "plugsurfing": "Plugsurfing",
+    "wirelane": "Wirelane", "elli": "Elli", "qwello": "Qwello", "chargepoint": "ChargePoint", "monta": "Monta",
+    "virta": "Virta", "greenway": "GreenWay", "iberdrola": "Iberdrola", "endesa": "Endesa",
+    "instavolt": "InstaVolt", "osprey": "Osprey", "gridserve": "Gridserve", "pod point": "Pod Point",
+    "totalenergies": "TotalEnergies", "lidl": "Lidl", "kaufland": "Kaufland", "aldi": "Aldi",
+    "stadtwerke": "Stadtwerke", "mobility+": "Mobility+", "be charge": "Be Charge", "ladenetz": "ladenetz.de",
+    "innogy": "innogy", "easycharger": "EasyCharger",
+}
+
+
+def operator(site: str | None) -> str | None:
+    """The charging network named in a site name ("EnBW Ladepark Hilden" → "EnBW"), if any."""
+    for match in _BRANDS.finditer(site or ""):
+        key = re.sub(r"\s+", " ", match.group(0).lower())
+        if key in _OPERATOR_NAMES:
+            return _OPERATOR_NAMES[key]
+    return None
+
+
 def _records(raw: dict):
     yield raw
     for key in ("fees", "invoices"):

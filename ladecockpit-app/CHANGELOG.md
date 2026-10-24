@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0 – 2026-10-24
+
+- **Where MultiPass has worked.** A new list of every third-party station where a MultiPass session is on your invoices: operator, sessions, average price, last use and a link that searches the station on Google Maps. The operators are shown as chips, so you see which networks already took MultiPass from you. It only regroups invoices Ladecockpit already has – no extra Tesla requests.
+- New entity `sensor.ladecockpit_multipass`: number of those stations as state, the list as attribute `stations` (with `map_url`), plus `operators` and a ready `text`. The ready-made dashboard section shows it once there is a station.
+- The demo has a second MultiPass station.
+
 ## 0.5.0 – 2026-10-24
 
 - **Picture of your car.** The web app shows your Tesla, rendered by Tesla's own configurator. Pick model and generation (Model S, 3, X and Y since 2012, Cybertruck), trim (e.g. Performance or Plaid), wheels, paint and view under **Customise**. Only combinations Tesla can render are offered. Without a choice, model and generation are recognised from the VIN.

@@ -23,6 +23,7 @@ log = logging.getLogger("ladecockpit.entities")
 PUBLISH_EVERY_S = 60
 REWRITE_ALL_S = 600     # write everything again now and then, e.g. after an HA restart
 MAX_STATE_LEN = 255     # Home Assistant rejects longer states
+MAX_STATIONS = 30       # keeps the attributes well below the recorder's 16 KB limit
 
 ENTITY_IDS = (
     "sensor.ladecockpit_next_charge",
@@ -33,6 +34,7 @@ ENTITY_IDS = (
     "sensor.ladecockpit_range_at_100",
     "sensor.ladecockpit_consumption",
     "sensor.ladecockpit_car",
+    "sensor.ladecockpit_multipass",
     "binary_sensor.ladecockpit_problem",
 )
 
@@ -184,6 +186,19 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
             "model": labels.get("generation"), "trim": labels.get("trim"), "paint": labels.get("paint"),
             "wheels": labels.get("wheel"), "view": labels.get("view"), "auto_detected": car.get("auto"),
         })
+
+    # --- third-party stations where MultiPass has worked (from the invoices) -------------------------
+    mp = d.get("multipass") or {}
+    stations = mp.get("stations") or []
+    out["sensor.ladecockpit_multipass"] = (str(len(stations)), {
+        "friendly_name": name("multipass"), "icon": "mdi:ev-plug-ccs2",
+        "text": mp.get("text") or i18n.t(lang, "mp_none"),
+        "stations": [{k: s.get(k) for k in ("site", "operator", "sessions", "kwh", "avg_price", "last", "last_label", "map_url")}
+                     for s in stations[:MAX_STATIONS]],
+        "operators": mp.get("operators") or [],
+        "sessions": mp.get("sessions") or 0, "energy_kwh": mp.get("kwh"), "cost": mp.get("cost"),
+        "price_per_kwh": _round(mp.get("avg_price"), 4), "currency": cur,
+    })
 
     # --- problems ------------------------------------------------------------------------------------
     setup, sync = d.get("setup") or {}, d.get("sync") or {}

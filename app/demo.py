@@ -12,14 +12,15 @@ from .config import Settings
 # Price per time window and per-site surcharge (demo assumptions, not real Tesla prices)
 _SLOT_PRICE = [(0, 6, 0.34), (6, 11, 0.45), (11, 16, 0.49), (16, 20, 0.53), (20, 24, 0.37)]
 _SITE_ADJ = {"Northgate": 0.0, "Riverside": -0.02, "Airport West": 0.03, "Old Town": -0.01, "Hillcrest": 0.02,
-             "IONITY Lakeside": 0.10}
+             "IONITY Lakeside": 0.10, "EnBW Riverside Park": 0.12}
 # Sites that stand for a third-party charger paid with Tesla MultiPass
-_MULTIPASS = {"IONITY Lakeside"}
+_MULTIPASS = {"IONITY Lakeside", "EnBW Riverside Park"}
 
 # (days ago, hour, minute, site, kWh, duration in min, idle fee)
 _PLAN = [
     (26, 19, 40, "Northgate", 41.8, 31, 0.0),
     (21, 12, 5, "Airport West", 38.2, 28, 0.0),
+    (19, 10, 30, "EnBW Riverside Park", 27.3, 25, 0.0),
     (16, 21, 15, "Riverside", 44.6, 33, 0.0),
     (13, 17, 30, "Northgate", 22.4, 17, 2.40),
     (11, 14, 20, "Hillcrest", 29.7, 22, 0.0),

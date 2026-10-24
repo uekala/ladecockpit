@@ -370,6 +370,18 @@ td.site { white-space: normal; min-width: 8rem; }
 td .when-sub { display: block; color: var(--mute); font-size: .76rem; font-family: var(--f-mono); }
 .minibar { display: inline-block; width: 64px; height: 6px; border-radius: 3px; background: var(--sunk); vertical-align: middle; margin-right: 8px; position: relative; overflow: hidden; }
 .minibar i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 3px; }
+.op-chips { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.mp-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.mp-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 16px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.mp-list li:last-child { border-bottom: none; }
+.mp-list .who b { display: block; font-size: .94rem; font-weight: 600; overflow-wrap: anywhere; }
+.mp-list .who span { font-size: .78rem; color: var(--mute); }
+.mp-val { text-align: right; font-family: var(--f-mono); font-size: .88rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mp-val small { display: block; color: var(--mute); font-size: .74rem; font-family: var(--f-body); }
+.map-link { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; font-size: .85rem; font-weight: 600; color: var(--accent); text-decoration: none; }
+.map-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.map-link svg { width: 16px; height: 16px; flex: none; }
+@media (max-width: 560px) { .mp-list li { gap: 10px; } .map-link span { display: none; } }
 .link-btn { font: inherit; font-size: .85rem; font-weight: 600; color: var(--accent); background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .muted { color: var(--mute); }
 
@@ -516,6 +528,10 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       carSource: "Pictures come straight from Tesla's configurator. Only combinations Tesla can render are offered.",
       carHa: "In Home Assistant: <span class=\"mono\">sensor.ladecockpit_car</span> – entity picture plus <span class=\"mono\">image_front</span>, <span class=\"mono\">image_side</span>, <span class=\"mono\">image_rear</span>.",
       carLoadFailed: "Tesla's image service did not answer.",
+      mpTitle: "Where MultiPass has worked", mpSub: "Third-party stations from your invoices, billed through Tesla",
+      mpLast: "last", mpMap: "Map", mpMapTitle: "Search {site} on Google Maps",
+      oneStation: "1 station", nStations: "{n} stations", mpOpTip: "{name}: {stations}, {sessions}, last on {d}",
+      mpNote: "Only stations where a MultiPass session is on your invoices. Whether another station takes MultiPass is shown by the Tesla app and by the car's map with third-party chargers turned on. In Home Assistant: <span class=\"mono\">sensor.ladecockpit_multipass</span>.",
     },
     de: {
       tagline: "Supercharger-Rechnungen für Home Assistant",
@@ -588,6 +604,10 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
       carSource: "Die Bilder kommen direkt aus Teslas Konfigurator. Angeboten werden nur Kombinationen, die Tesla darstellen kann.",
       carHa: "In Home Assistant: <span class=\"mono\">sensor.ladecockpit_car</span> – als Entitätsbild und in den Attributen <span class=\"mono\">image_front</span>, <span class=\"mono\">image_side</span>, <span class=\"mono\">image_rear</span>.",
       carLoadFailed: "Teslas Bildserver hat nicht geantwortet.",
+      mpTitle: "Wo MultiPass schon funktioniert hat", mpSub: "Drittanbieter-Stationen aus deinen Rechnungen, abgerechnet über Tesla",
+      mpLast: "zuletzt", mpMap: "Karte", mpMapTitle: "{site} in Google Maps suchen",
+      oneStation: "1 Station", nStations: "{n} Stationen", mpOpTip: "{name}: {stations}, {sessions}, zuletzt am {d}",
+      mpNote: "Nur Stationen, an denen eine MultiPass-Ladung auf deinen Rechnungen steht. Ob eine andere Station MultiPass annimmt, zeigen die Tesla-App und die Karte im Auto, wenn Drittanbieter-Ladestationen eingeblendet sind. In Home Assistant: <span class=\"mono\">sensor.ladecockpit_multipass</span>.",
     },
   };
   const lang = () => (state.data?.lang === "de" ? "de" : "en");
@@ -609,6 +629,7 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
   const unit = () => state.data?.distance_unit || "km";
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const sessionsText = (n) => (n === 1 ? T("oneSession") : T("nSessions", { n }));
+  const stationsText = (n) => (n === 1 ? T("oneStation") : T("nStations", { n }));
 
   function fmtDate(iso, opts) {
     if (!iso) return "–";
@@ -703,6 +724,7 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
         <div class="grid-2">${receiptPanel(d)}${monthPanel(d)}</div>
         ${radarPanel(d)}
         <div class="grid-2">${sitesPanel(d)}${historyPanel(d)}</div>
+        ${multipassPanel(d)}
         ${d.battery_health || d.climate ? `<div class="grid-2">${healthPanel(d)}${climatePanel(d)}</div>` : ""}
         ${sessionsPanel(d)}
         <div class="grid-2">${d.reconcile ? reconcilePanel(d) : ""}${opsPanel(d)}</div>
@@ -1020,6 +1042,25 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
           <td class="n">${s.avg_kw == null ? "–" : num(s.avg_kw, 0)}</td>
         </tr>`).join("")}</tbody>
       </table></div>
+    </section>`;
+  }
+
+  function multipassPanel(d) {
+    const mp = d.multipass;
+    const list = mp?.stations || [];
+    if (!list.length) return "";
+    const day = (iso) => fmtDate(iso, { day: "2-digit", month: "2-digit", year: "numeric" });
+    const ops = (mp.operators || []).map((o) => `<span class="chip info" tabindex="0" data-tip="${esc(T("mpOpTip", { name: o.name, stations: stationsText(o.stations), sessions: sessionsText(o.sessions), d: day(o.last) }))}">${esc(o.name)} · ${esc(stationsText(o.stations))}</span>`);
+    return `<section class="panel" aria-labelledby="h-mp">
+      <div><span class="eyebrow">${T("mpChip")}</span><h2 id="h-mp">${T("mpTitle")}</h2>
+        <p class="sub">${esc(T("mpSub"))} · ${esc(sessionsText(mp.sessions))}${mp.avg_price ? " · Ø " + ppk(mp.avg_price) : ""}</p></div>
+      ${ops.length ? `<div class="op-chips">${ops.join("")}</div>` : ""}
+      <ul class="mp-list">${list.map((s) => `<li>
+        <div class="who"><b>${esc(s.site)}</b><span>${esc([s.operator, sessionsText(s.sessions)].filter(Boolean).join(" · "))}</span></div>
+        <div class="mp-val">${s.avg_price == null ? "–" : ppk(s.avg_price)}<small>${esc(T("mpLast"))} ${day(s.last)}</small></div>
+        <a class="map-link" href="${esc(s.map_url)}" target="_blank" rel="noopener noreferrer" title="${esc(T("mpMapTitle", { site: s.site }))}" aria-label="${esc(T("mpMapTitle", { site: s.site }))}">${ico.pin}<span>${T("mpMap")}</span></a>
+      </li>`).join("")}</ul>
+      <p class="sub">${T("mpNote")}</p>
     </section>`;
   }
 

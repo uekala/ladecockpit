@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 
-from . import i18n, vehicle
+from . import i18n, networks, vehicle
 from .config import Settings
 from .networks import MULTIPASS, SUPERCHARGER
 
@@ -249,6 +250,53 @@ def _session_view(x: dict, tz, lang: str) -> dict:
         "currency": x.get("currency") or "EUR",
         "network": x.get("network") or SUPERCHARGER,
     }
+
+
+MAP_SEARCH = "https://www.google.com/maps/search/?api=1&query="
+
+
+def map_url(site: str) -> str:
+    """A map search for a site name. Only a link: nothing is looked up or sent by Ladecockpit."""
+    return MAP_SEARCH + quote(site)
+
+
+def _multipass(sessions: list[dict], tz, lang: str) -> dict | None:
+    """Third-party stations where paying with Tesla MultiPass has worked, from your own invoices:
+    per station sessions, energy, avg price, first and last use, plus the operators behind them.
+    Nothing is fetched for this – it only regroups the charging history."""
+    used = [x for x in sessions if (x.get("network") or SUPERCHARGER) == MULTIPASS and x.get("start_ts")]
+    if not used:
+        return None
+    groups: dict[str, list[dict]] = {}
+    for x in used:
+        groups.setdefault(x.get("site") or i18n.t(lang, "unknown_station"), []).append(x)
+    stations = []
+    for site, items in groups.items():
+        when = sorted(datetime.fromisoformat(x["start_ts"]).astimezone(tz) for x in items)
+        priced = [x for x in items if x.get("kwh") and x.get("total") is not None]
+        st = _stats(priced)
+        stations.append({
+            "site": site, "operator": networks.operator(site), "sessions": len(items),
+            "kwh": st["kwh"], "cost": st["cost"], "avg_price": st["list_price"], "avg_kw": _avg_kw(priced),
+            "first": when[0].date().isoformat(), "last": _iso(when[-1]),
+            "last_label": i18n.day_label(lang, when[-1]), "map_url": map_url(site),
+        })
+    stations.sort(key=lambda s: s["last"], reverse=True)
+    ops: dict[str, dict] = {}
+    for s in stations:
+        if not s["operator"]:
+            continue
+        o = ops.setdefault(s["operator"], {"name": s["operator"], "stations": 0, "sessions": 0, "last": s["last"]})
+        o["stations"] += 1
+        o["sessions"] += s["sessions"]
+        o["last"] = max(o["last"], s["last"])
+    operators = sorted(ops.values(), key=lambda o: (-o["sessions"], o["name"].lower()))
+    total = _stats([x for x in used if x.get("kwh") and x.get("total") is not None])
+    names = ", ".join(o["name"] for o in operators)
+    key = "mp_summary_one" if len(stations) == 1 else "mp_summary_many"
+    text = i18n.t(lang, key, n=len(stations), ops=i18n.t(lang, "mp_operators", names=names) if names else "")
+    return {"stations": stations, "operators": operators, "sessions": len(used), "kwh": total["kwh"],
+            "cost": total["cost"], "avg_price": total["list_price"], "text": text}
 
 
 def _by_network(items: list[dict]) -> dict:
@@ -502,6 +550,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         "monthly": monthly,
         "slots": slots,
         "sites": sites,
+        "multipass": _multipass(sessions, tz, lang),
         "insights": insights,
         "compare": compare,
         "projection": projection,

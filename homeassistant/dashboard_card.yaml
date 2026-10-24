@@ -71,3 +71,14 @@ cards:
       {% set s = state_attr(m, 'savings') %}{% if s is number %}🌱 Saved vs. a combustion car: {{ s }} {{ state_attr(m, 'unit_of_measurement') }}
 
       {% endif %}💡 {{ states('sensor.ladecockpit_price_tip') }}
+  # Third-party stations where MultiPass has worked for you, with map links. Hidden until there is one.
+  - type: markdown
+    content: |
+      **MultiPass** · {{ state_attr('sensor.ladecockpit_multipass', 'text') }}
+      {% for s in state_attr('sensor.ladecockpit_multipass', 'stations') or [] %}
+      - [{{ s.site }}]({{ s.map_url }}) · {{ s.sessions }}× · {{ s.last_label }}
+      {% endfor %}
+    visibility:
+      - condition: numeric_state
+        entity: sensor.ladecockpit_multipass
+        above: 0

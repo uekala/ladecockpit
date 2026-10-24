@@ -42,7 +42,7 @@ Enter the consumption (L/100 km) and fuel price of a comparison car, either as f
 
 ## Sensors
 
-Ladecockpit creates its own entities: `sensor.ladecockpit_next_charge`, `sensor.ladecockpit_battery`, `sensor.ladecockpit_month_cost`, `sensor.ladecockpit_last_charge`, `sensor.ladecockpit_price_tip`, `sensor.ladecockpit_range_at_100`, `sensor.ladecockpit_consumption`, `sensor.ladecockpit_car` (a picture of your car, chosen in the web app with **Customise**) and `binary_sensor.ladecockpit_problem`. Use them in dashboards and automations. A ready-made dashboard section is in `homeassistant/dashboard_card.yaml` in the repository. Turn this off with **Create sensors in Home Assistant**.
+Ladecockpit creates its own entities: `sensor.ladecockpit_next_charge`, `sensor.ladecockpit_battery`, `sensor.ladecockpit_month_cost`, `sensor.ladecockpit_last_charge`, `sensor.ladecockpit_price_tip`, `sensor.ladecockpit_range_at_100`, `sensor.ladecockpit_consumption`, `sensor.ladecockpit_car` (a picture of your car, chosen in the web app with **Customise**), `sensor.ladecockpit_multipass` (third-party stations where MultiPass has worked for you, with map links) and `binary_sensor.ladecockpit_problem`. Use them in dashboards and automations. A ready-made dashboard section is in `homeassistant/dashboard_card.yaml` in the repository. Turn this off with **Create sensors in Home Assistant**.
 
 These entities have no unique ID, so they cannot be renamed in the UI. After a Home Assistant restart they are back within a few minutes.
 

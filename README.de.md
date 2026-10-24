@@ -12,7 +12,7 @@ Viele Home-Assistant-Setups schätzen die Supercharger-Kosten aus den kWh des Au
 
 - **Echte Rechnungen, automatisch.** Ladecockpit erkennt das Ladeende, holt die Rechnung innerhalb weniger Minuten und meldet sie genau einmal an Home Assistant. Ein Blueprint bucht sie in deine eigenen Helfer.
 - **Preis-Radar.** Zeigt aus deinen eigenen Rechnungen, zu welcher Uhrzeit und an welchem Supercharger du am günstigsten lädst.
-- **MultiPass.** Fremde Ladesäulen, die über Tesla MultiPass bezahlt werden, erkennt Ladecockpit in den Tesla-Rechnungen und weist sie getrennt aus, mit eigenem Ø-Preis.
+- **MultiPass.** Fremde Ladesäulen, die über Tesla MultiPass bezahlt werden, erkennt Ladecockpit in den Tesla-Rechnungen und weist sie getrennt aus, mit eigenem Ø-Preis. Eine Liste zeigt jede Drittanbieter-Station, an der MultiPass bei dir schon funktioniert hat – Anbieter, Ladungen, Ø-Preis, letzte Nutzung und Kartenlink –, damit du weißt, wo die Tesla-App angenommen wird.
 - **Nächster Ladestopp.** Sagt anhand deines Verbrauchs voraus, wann der Akku die Untergrenze erreicht (Standard: 10 %), und wann und wo du vorher am günstigsten lädst: die beste Kombination aus Supercharger und Uhrzeit aus deinen eigenen Rechnungen.
 - **Monatsübersicht.** Kosten, kWh, Ø-Preis, Kosten pro 100 km/mi, optional Vergleich mit einem Referenzpreis oder den Spritkosten eines zweiten Autos.
 - **Ersparnis ggü. Verbrenner.** Was dieselbe Strecke mit Benzin oder Diesel gekostet hätte (feste Werte oder live aus Home Assistant, z. B. ein Spritpreis-Sensor), pro Monat und aufs Jahr hochgerechnet.
@@ -152,6 +152,7 @@ Ladecockpit legt diese Entitäten in Home Assistant selbst an (abschaltbar mit d
 | `sensor.ladecockpit_range_at_100` | Reichweite bei 100 % (Langzeitstatistik) | `change_pct`, `since`, `supercharger_share` |
 | `sensor.ladecockpit_consumption` | abgerechnete kWh pro 100 km/mi diesen Monat | `by_temperature`, `temperature_tip` |
 | `sensor.ladecockpit_car` | Name des Autos, z. B. `Model 3 Performance`; sein Bild ist das Entitätsbild | `image`, `image_front`, `image_side`, `image_rear`, `model`, `trim`, `paint`, `wheels` |
+| `sensor.ladecockpit_multipass` | Anzahl der Drittanbieter-Stationen, an denen MultiPass funktioniert hat | `text`, `stations` (Standort, Anbieter, Ladungen, Ø-Preis, letzte Nutzung, `map_url`), `operators`, `sessions`, `price_per_kwh` |
 | `binary_sensor.ladecockpit_problem` | `on`, wenn die Tesla-Anmeldung abgelaufen ist, der Abgleich fehlschlägt oder eine Entität fehlt | `kind`, `message`, `last_sync` |
 
 Sie werden über die REST-API geschrieben und haben keine eindeutige ID, lassen sich also nicht in der Oberfläche umbenennen. Nach einem Neustart von Home Assistant sind sie nach wenigen Minuten wieder da. Eine fertige Dashboard-Sektion steht in [`homeassistant/dashboard_card.yaml`](homeassistant/dashboard_card.yaml).
@@ -188,6 +189,18 @@ actions:
 
 Tesla rechnet MultiPass-Ladungen (fremde Ladesäulen, bezahlt über dein Tesla-Konto) über dieselbe Ladehistorie ab wie Supercharger-Ladungen. Die Fleet API hat kein Feld, das das Netz nennt, und Tesla hat nicht dokumentiert, wie solche Ladungen aussehen. Ladecockpit geht deshalb nach Hinweisen: eine andere Abrechnungs- oder Rechnungsart als bei Supercharger-Ladungen, Begriffe wie „roaming“ oder „partner“ in Teslas Feldern oder der Name eines bekannten Betreibers (IONITY, EnBW, Fastned, …) im Standortnamen. Die Regel wird bei jedem Lesen angewandt, eine verbesserte Regel in einer späteren Version ordnet also auch ältere Ladungen neu ein.
 
+**Wo MultiPass schon funktioniert hat.** Aus den Rechnungen listet Ladecockpit jede Drittanbieter-Station mit mindestens einer MultiPass-Ladung: den Anbieter (wenn der Standortname ihn nennt), Anzahl der Ladungen, Ø-Preis, das letzte Mal und einen Link, der die Station in Google Maps sucht. Die Anbieter stehen als Chips darüber, so siehst du auf einen Blick, welche Netze MultiPass bei dir schon angenommen haben. Neueste zuerst. Das sortiert nur Rechnungen um, die schon da sind – keine zusätzlichen Tesla-Abfragen. Es ist ein Protokoll deiner eigenen Ladungen, kein Verzeichnis: Ob eine Station, an der du noch nicht warst, MultiPass annimmt, zeigen die Tesla-App und die Karte im Auto, wenn Drittanbieter-Ladestationen eingeblendet sind. In Home Assistant steht dieselbe Liste in `sensor.ladecockpit_multipass`, z. B. für eine Markdown-Karte:
+
+```yaml
+type: markdown
+content: |
+  {% for s in state_attr('sensor.ladecockpit_multipass', 'stations') or [] %}
+  - [{{ s.site }}]({{ s.map_url }}) · {{ s.sessions }}× · zuletzt {{ s.last_label }}
+  {% else %}
+  {{ state_attr('sensor.ladecockpit_multipass', 'text') }}
+  {% endfor %}
+```
+
 Wird eine MultiPass-Ladung als Supercharger angezeigt (oder umgekehrt), bitte ein Issue mit der anonymisierten Ausgabe von `/api/debug/raw` für diese Ladung aufmachen. Im Log steht außerdem, welche Felder Ladecockpit noch nicht kennt.
 
 ## Kosten
@@ -197,7 +210,7 @@ Die Fleet API wird pro Abfrage abgerechnet. Ladecockpit nutzt nur Datenabfragen 
 ## Datenschutz und Sicherheit
 
 - Alles bleibt bei dir: Tokens, Rechnungen und Messwerte liegen im Docker-Volume `ladecockpit-data` (SQLite und PDF-Cache).
-- Ladecockpit spricht nur mit Tesla und deinem Home Assistant. Die Web-App lädt außerdem das Bild deines Autos von Teslas Bildserver und die Schriften von Google Fonts.
+- Ladecockpit spricht nur mit Tesla und deinem Home Assistant. Die Web-App lädt außerdem das Bild deines Autos von Teslas Bildserver und die Schriften von Google Fonts. Die Kartenlinks der MultiPass-Stationen öffnen eine Google-Maps-Suche nach dem Stationsnamen – nur wenn du einen anklickst.
 - Im LAN oder hinter einem Reverse-Proxy mit Anmeldung betreiben. `APP_PASSWORD` gibt einen einfachen HTTP-Basic-Schutz.
 - Die eigene `.env` nie committen. Sie steht bereits in `.gitignore`.
 

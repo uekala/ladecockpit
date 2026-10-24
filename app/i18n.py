@@ -71,6 +71,12 @@ TEXTS = {
         "ent_range_at_100": "Reichweite bei 100 %",
         "ent_consumption": "Verbrauch",
         "ent_car": "Fahrzeug",
+        "ent_multipass": "MultiPass-Stationen",
+        "mp_summary_one": "MultiPass hat bisher an 1 Station funktioniert{ops}.",
+        "mp_summary_many": "MultiPass hat bisher an {n} Stationen funktioniert{ops}.",
+        "mp_operators": " – Anbieter: {names}",
+        "mp_none": "Noch keine MultiPass-Ladung in deinen Rechnungen.",
+        "unknown_station": "Unbekannte Station",
         "ent_consumption_note": "Abgerechnete kWh pro 100 km diesen Monat, inklusive Ladeverlusten.",
         "csv_header": "Datum;Start;Ende;Standort;kWh;Preis pro kWh;Ladekosten;Blockiergebühr;Summe;Währung;Ø kW;Ladung-ID;Netz;Listenpreis pro kWh;Gutschrift;Netto",
     },
@@ -123,6 +129,12 @@ TEXTS = {
         "ent_range_at_100": "Range at 100 %",
         "ent_consumption": "Consumption",
         "ent_car": "Car",
+        "ent_multipass": "MultiPass stations",
+        "mp_summary_one": "MultiPass has worked at 1 station so far{ops}.",
+        "mp_summary_many": "MultiPass has worked at {n} stations so far{ops}.",
+        "mp_operators": " – operators: {names}",
+        "mp_none": "No MultiPass session in your invoices yet.",
+        "unknown_station": "Unknown station",
         "ent_consumption_note": "Billed kWh per 100 km/mi this month, including charging losses.",
         "csv_header": "Date,Start,End,Site,kWh,Price per kWh,Charging cost,Idle fee,Total,Currency,Avg kW,Session ID,Network,List price per kWh,Credit,Net",
     },
@@ -170,6 +182,11 @@ def date_label(lang: str, dt) -> str:
     if lang == "de":
         return f"{wd}, {dt:%d.%m.}"
     return f"{wd}, {dt:%b} {dt.day}"
+
+
+def day_label(lang: str, dt) -> str:
+    """A date with year: "20.10.2026" / "Oct 20, 2026"."""
+    return f"{dt:%d.%m.%Y}" if lang == "de" else f"{dt:%b} {dt.day}, {dt.year}"
 
 
 def temp_band(lang: str, lo: float | None, hi: float | None) -> str:
