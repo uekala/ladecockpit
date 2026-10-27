@@ -35,6 +35,12 @@ configuration:
   charging_state:
     name: State while charging
     description: State of the charging entity while the car is charging.
+  entity_charge_power:
+    name: Charging power entity
+    description: e.g. sensor.my_tesla_charger_power – shows the power in kW while charging.
+  entity_time_to_full:
+    name: Time to full entity
+    description: e.g. sensor.my_tesla_time_to_full_charge – shows when the charge limit is reached while charging. Without it Ladecockpit estimates the time.
   entity_cost_total:
     name: Cost total helper
     description: input_number the blueprint books into – for the "HA vs. invoices" check.

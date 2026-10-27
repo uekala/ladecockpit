@@ -4,7 +4,7 @@
 
 [English](README.md)
 
-![Ladecockpit mit Demo-Daten: am Desktop im klassischen Design mit Akku, nächstem Ladestopp, letzter Rechnung und Monat; auf zwei Handys im modernen Design, eins mit dem Preis-Radar in den Farben des Energielabels](docs/screenshot-de.png)
+![Ladecockpit mit Demo-Daten, während das Auto lädt: am Desktop im dynamischen Design mit leuchtendem Akku-Ring, Leistung, Uhrzeit und Countdown bis zum Ladelimit, nächstem Ladestopp und letzter Rechnung; auf einem Handy das Preis-Radar des dynamischen Designs mit dem aktuellen Zeitfenster; auf einem zweiten Handy das klassische Design hell](docs/screenshot-de.png)
 
 Viele Home-Assistant-Setups schätzen die Supercharger-Kosten aus den kWh des Autos und einem festen Preis oder fragen nach jeder Ladung den Preis ab. Ladecockpit holt stattdessen die echte Rechnung über die Tesla Fleet API: abgerechnete kWh, Preis pro kWh, Blockiergebühr, Standort und PDF. Diese Daten gibt es an Home Assistant weiter.
 
@@ -28,6 +28,8 @@ Viele Home-Assistant-Setups schätzen die Supercharger-Kosten aus den kWh des Au
 - **Export.** Alle Ladungen als CSV, alle Rechnungen eines Monats als ein ZIP.
 - **Problem-Meldung.** Benachrichtigung in Home Assistant, wenn die Tesla-Anmeldung abläuft oder der Abgleich wiederholt fehlschlägt.
 - **Sensoren fürs Dashboard.** Nächster Ladestopp, Akku, Monatskosten, letzte Ladung und Preistipp als Entitäten in Home Assistant, dazu eine fertige Dashboard-Sektion.
+- **Live beim Laden.** Während das Auto lädt, zeigt die Web-App die Leistung in kW, wann das Ladelimit erreicht ist und einen Countdown dorthin, und folgt dem Akku alle 15 Sekunden.
+- **Zwei Designs.** *Klassisch*, ruhig und nah an der App des Autos, oder *Dynamisch*, ein Cockpit bei Nacht: der Akku als leuchtender Ring, durch den beim Laden Energie fließt, Licht, das dem Akku und der Tageszeit folgt, Zahlen, die hochzählen, und ein Preis-Radar, das das aktuelle Zeitfenster markiert.
 - **Dein Auto, wie es aussieht.** Ein Bild deines Teslas aus Teslas eigenem Konfigurator, für jedes Model S, 3, X, Y und den Cybertruck: Generation, Ausstattung, Farbe, Felgen und Ansicht in der Web-App wählen (das Modell wird aus der FIN erkannt). Das Bild geht als `sensor.ladecockpit_car` auch an Home Assistant.
 - **Funktioniert auch offline.** Speichert einen eigenen Verlauf von Akkustand und Kilometerstand, z. B. für ein Auto in der Tiefgarage ohne Empfang.
 - **Sparsam bei der Tesla-API.** Live-Daten kommen aus Home Assistant. Tesla wird nur nach der Ladehistorie gefragt, etwa 150–200 Abfragen im Monat (≈ 0,40 $).
@@ -103,7 +105,8 @@ Mindestens nötig: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN
 | `HA_ENT_SOC` | `sensor.my_tesla_battery_level` | Akku-Anzeige, Prognose |
 | `HA_ENT_RANGE` | `sensor.my_tesla_battery_range` | Reichweite |
 | `HA_ENT_ODOMETER` | `sensor.my_tesla_odometer` | Strecke pro Monat, Kosten pro 100 km/mi |
-| `HA_ENT_CHARGING` | `sensor.my_tesla_charging` | Rechnung direkt nach dem Ladeende |
+| `HA_ENT_CHARGING` | `sensor.my_tesla_charging` | Rechnung direkt nach dem Ladeende; Live-Ansicht beim Laden |
+| `HA_ENT_CHARGE_POWER`, `HA_ENT_TIME_TO_FULL` | `sensor.my_tesla_charger_power`, `sensor.my_tesla_time_to_full_charge` | kW und Uhrzeit, wann das Ladelimit erreicht ist, beim Laden |
 | `HA_ENT_FUEL_CONSUMPTION` / `FUEL_CONSUMPTION`, `HA_ENT_FUEL_PRICE` / `FUEL_PRICE` | `7.5`, `sensor.spritpreis` | Ersparnis ggü. Verbrenner |
 | `HA_ENT_FUEL_COST_TOTAL`, `HA_ENT_FUEL_LITRES_TOTAL` | `input_number.tankkosten_gesamt`, `input_number.tankliter_gesamt` | der wirklich bezahlte Literpreis (Ø der letzten 90 Tage) statt des Spritpreises; beide Summen steigen bei jedem Tanken |
 | `HA_ENT_HOME_ENERGY`, `HA_ENT_HOME_PRICE` / `HOME_PRICE` | `sensor.wall_connector_energy`, `0.32` | Laden zu Hause |
@@ -211,9 +214,9 @@ Die Fleet API wird pro Abfrage abgerechnet. Ladecockpit nutzt nur Datenabfragen 
 
 ## Datenschutz und Sicherheit
 
-- Die Web-App lädt nichts von anderen Diensten nach, außer dem Bild deines Autos aus Teslas Konfigurator; die Schriften bringt sie selbst mit. Ganz unten auf der Seite wählst du das Design: klassisch (ruhig, nah an der App des Autos) oder modern (Preise in den Farben des Energielabels).
+- Die Web-App lädt nichts von anderen Diensten nach, außer dem Bild deines Autos aus Teslas Konfigurator; die Schriften bringt sie selbst mit. Ganz unten auf der Seite wählst du das Design: klassisch (ruhig, nah an der App des Autos) oder dynamisch (ein Cockpit bei Nacht, das sich bewegt und dem Akku folgt).
 - Alles bleibt bei dir: Tokens, Rechnungen und Messwerte liegen im Docker-Volume `ladecockpit-data` (SQLite und PDF-Cache).
-- Ladecockpit spricht nur mit Tesla und deinem Home Assistant. Die Web-App lädt außerdem das Bild deines Autos von Teslas Bildserver und die Schriften von Google Fonts. Die Kartenlinks der MultiPass-Stationen öffnen eine Google-Maps-Suche nach dem Stationsnamen – nur wenn du einen anklickst.
+- Ladecockpit spricht nur mit Tesla und deinem Home Assistant. Die Web-App lädt außerdem das Bild deines Autos von Teslas Bildserver. Die Kartenlinks der MultiPass-Stationen öffnen eine Google-Maps-Suche nach dem Stationsnamen – nur wenn du einen anklickst.
 - Im LAN oder hinter einem Reverse-Proxy mit Anmeldung betreiben. `APP_PASSWORD` gibt einen einfachen HTTP-Basic-Schutz.
 - Die eigene `.env` nie committen. Sie steht bereits in `.gitignore`.
 

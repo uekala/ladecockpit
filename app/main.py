@@ -203,12 +203,14 @@ async def dashboard():
 
 
 # --- look of the web app ---------------------------------------------------------------------------
-LOOKS = ("classic", "modern")  # the first is the default
+LOOKS = ("classic", "dynamic")  # the first is the default
+OLD_LOOKS = {"modern": "dynamic"}  # 0.9–0.10 had "modern" where "dynamic" is now
 
 
 def _look() -> str:
     """The web app's look, chosen in the web app and kept for every device."""
     look = db.kv_get("ui_look")
+    look = OLD_LOOKS.get(look, look)
     return look if look in LOOKS else LOOKS[0]
 
 
@@ -218,10 +220,11 @@ class LookIn(BaseModel):
 
 @app.put("/api/look")
 async def look_save(body: LookIn):
-    if body.look not in LOOKS:
+    look = OLD_LOOKS.get(body.look, body.look)
+    if look not in LOOKS:
         raise HTTPException(400, f"Use one of: {', '.join(LOOKS)}.")
-    db.kv_set("ui_look", body.look)
-    return {"look": body.look}
+    db.kv_set("ui_look", look)
+    return {"look": look}
 
 
 # --- picture of the car --------------------------------------------------------------------------
@@ -481,13 +484,13 @@ async def manifest():
     }, media_type="application/manifest+json")
 
 
-FONTS = ("geist-latin.woff2", "geist-latin-ext.woff2",          # classic look
-         "bricolage-latin.woff2", "bricolage-latin-ext.woff2")   # modern look
+FONTS = ("geist-latin.woff2", "geist-latin-ext.woff2",   # both looks
+         "saira-latin.woff2", "saira-latin-ext.woff2")    # figures of the dynamic look
 
 
 @app.get("/fonts/{name}", include_in_schema=False)
 async def font(name: str):
-    """The web app's typefaces (Geist, Bricolage Grotesque – SIL Open Font License, see
+    """The web app's typefaces (Geist, Saira – SIL Open Font License, see
     static/fonts/OFL-*.txt), served here so the page needs no outside font service. A browser only
     loads the files of the look in use."""
     if name not in FONTS:

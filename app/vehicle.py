@@ -216,3 +216,75 @@ def paid_fuel_price(cost: list[tuple[datetime, float]], litres: list[tuple[datet
     if not PAID_PRICE_RANGE[0] <= price <= PAID_PRICE_RANGE[1]:
         return None
     return {"price": round(price, 3), "litres": round(used, 1), "days": days}
+
+
+# --- While the car charges ------------------------------------------------------------------------
+RATE_WINDOW = timedelta(minutes=90)   # battery readings this recent give the charging rate
+RATE_MIN_SPAN = timedelta(minutes=8)
+RATE_MIN_GAIN = 1.0                    # % – less is rounding noise
+FINISH_MAX = timedelta(hours=48)       # anything later is a stale or wrong value
+
+
+def _until(raw: str | None, value: float | None, unit: str | None, now: datetime) -> datetime | None:
+    """Time-to-full as Home Assistant reports it: a timestamp (Tesla Fleet, Teslemetry) or a
+    duration with its unit (h, min, s); a bare number counts as hours."""
+    if raw and ("T" in raw or ":" in raw) and value is None:
+        try:
+            at = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        if at.tzinfo is None:
+            return None
+        return at if now < at <= now + FINISH_MAX else None
+    if value is None or value <= 0:
+        return None
+    u = (unit or "h").strip().lower()
+    factor = {"s": 1 / 3600, "sec": 1 / 3600, "min": 1 / 60, "m": 1 / 60, "d": 24.0}.get(u, 1.0)
+    span = timedelta(hours=value * factor)
+    return now + span if span <= FINISH_MAX else None
+
+
+def soc_rate(soc: list[tuple[datetime, float]], soc_now: float | None, now: datetime) -> float | None:
+    """Percent per hour the battery gained recently, from the rising run of readings up to now."""
+    pts = [p for p in soc if now - RATE_WINDOW <= p[0] <= now]
+    if soc_now is not None and (not pts or pts[-1][0] < now):
+        pts.append((now, soc_now))
+    if len(pts) < 2:
+        return None
+    start = len(pts) - 1
+    while start > 0 and pts[start - 1][1] <= pts[start][1]:
+        start -= 1
+    (t0, v0), (t1, v1) = pts[start], pts[-1]
+    if t1 - t0 < RATE_MIN_SPAN or v1 - v0 < RATE_MIN_GAIN:
+        return None
+    return round((v1 - v0) / ((t1 - t0).total_seconds() / 3600), 1)
+
+
+def live_charge(*, raw: dict, values: dict, units: dict, charging_value: str, soc: float | None,
+                target: int, soc_readings: list[tuple[datetime, float]], kwh_pct: float | None,
+                now: datetime) -> dict:
+    """What the car does right now: {"charging", "power", "rate", "finish"}.
+
+    charging is None when the state is unknown (no entity, car asleep or offline). The finish time
+    comes from the time-to-full entity, else from the charger power and the kWh one percent takes,
+    else from how fast the battery level rose in the last readings."""
+    state = (raw.get("charging") or "").strip().lower()
+    if not state or state in ("unknown", "unavailable", "none"):
+        return {"charging": None}
+    if state != charging_value.strip().lower():
+        return {"charging": False}
+    power = values.get("charge_power")
+    if power is not None and (units.get("charge_power") or "kW").strip().lower() == "w":
+        power /= 1000
+    power = round(power, 1) if power and power > 0 else None
+    rate = soc_rate(soc_readings, soc, now)
+    finish = _until(raw.get("time_to_full"), values.get("time_to_full"), units.get("time_to_full"), now)
+    if finish is None and soc is not None and soc < target:
+        if power and kwh_pct:
+            finish = now + timedelta(hours=(target - soc) * kwh_pct / power)
+        elif rate:
+            finish = now + timedelta(hours=(target - soc) / rate)
+        if finish is not None and finish - now > FINISH_MAX:
+            finish = None
+    return {"charging": True, "power": power, "rate": rate,
+            "finish": finish.isoformat(timespec="seconds") if finish else None}

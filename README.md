@@ -4,7 +4,7 @@
 
 [Deutsch](README.de.md)
 
-![Ladecockpit with demo data: on the desktop in the classic look with battery, next charging stop, last invoice and month; on two phones in the modern look, one with the price radar on the energy-label scale](docs/screenshot.png)
+![Ladecockpit with demo data while the car charges: on the desktop in the dynamic look with the glowing battery ring, power, finish time and countdown, next charging stop and last invoice; on a phone the price radar of the dynamic look with the time slot of right now; on a second phone the classic look in light mode](docs/screenshot.png)
 
 Most Home Assistant setups estimate Supercharger costs from the car's kWh and a fixed price, or ask you to type the price in after every session. Ladecockpit fetches the actual invoice from the Tesla Fleet API instead (billed kWh, price per kWh, idle fees, site, PDF) and hands it to Home Assistant.
 
@@ -28,6 +28,8 @@ Most Home Assistant setups estimate Supercharger costs from the car's kWh and a 
 - **Export.** All sessions as CSV, all invoices of a month as one ZIP file.
 - **Problem alerts.** A notification in Home Assistant when the Tesla sign-in expired or syncing keeps failing.
 - **Sensors for your dashboard.** Next charging stop, battery, monthly cost, last session and price tip as Home Assistant entities, with a ready-made dashboard section.
+- **Live while charging.** While the car charges, the web app shows the power in kW, when the charge limit is reached and a countdown to it, and follows the battery every 15 seconds.
+- **Two looks.** *Classic*, calm and close to the car's own app, or *Dynamic*, a cockpit at night: the battery as a glowing ring that energy runs through while charging, light that follows the battery and the time of day, figures that count up, and a price radar that marks the time slot you are in.
 - **Your car, as it looks.** A picture of your Tesla from Tesla's own configurator, for every Model S, 3, X, Y and the Cybertruck: pick generation, trim, paint, wheels and view in the web app (the model is recognised from the VIN). The picture also goes to Home Assistant as `sensor.ladecockpit_car`.
 - **Works while the car is offline.** Keeps its own history of battery level and odometer, e.g. for a car parked without reception.
 - **Cheap on the Tesla API.** Live data comes from Home Assistant. Tesla is only asked for the charging history, about 150–200 requests per month (≈ $0.40).
@@ -103,7 +105,8 @@ Minimum: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN` (Home As
 | `HA_ENT_SOC` | `sensor.my_tesla_battery_level` | battery card, forecast |
 | `HA_ENT_RANGE` | `sensor.my_tesla_battery_range` | range |
 | `HA_ENT_ODOMETER` | `sensor.my_tesla_odometer` | distance per month, cost per 100 km/mi |
-| `HA_ENT_CHARGING` | `sensor.my_tesla_charging` | invoice right after a session ends |
+| `HA_ENT_CHARGING` | `sensor.my_tesla_charging` | invoice right after a session ends; live view while charging |
+| `HA_ENT_CHARGE_POWER`, `HA_ENT_TIME_TO_FULL` | `sensor.my_tesla_charger_power`, `sensor.my_tesla_time_to_full_charge` | kW and the time the charge limit is reached, while charging |
 | `HA_ENT_FUEL_CONSUMPTION` / `FUEL_CONSUMPTION`, `HA_ENT_FUEL_PRICE` / `FUEL_PRICE` | `7.5`, `sensor.fuel_price` | savings vs. a combustion car |
 | `HA_ENT_FUEL_COST_TOTAL`, `HA_ENT_FUEL_LITRES_TOTAL` | `input_number.fuel_cost_total`, `input_number.fuel_litres_total` | the price per litre you actually paid (average of the last 90 days) instead of the fuel price; both totals grow with each fill-up |
 | `HA_ENT_HOME_ENERGY`, `HA_ENT_HOME_PRICE` / `HOME_PRICE` | `sensor.wall_connector_energy`, `0.32` | charging at home |
@@ -236,7 +239,7 @@ If a MultiPass session is shown as Supercharger (or the other way round), please
 | `GET /api/invoice/<id>/pages`, `GET /api/report/<YYYY-MM>/pages` | Page count of a PDF, for the PDF view in the Home Assistant app |
 | `GET /api/invoice/<id>/page/<n>.png`, `GET /api/report/<YYYY-MM>/page/<n>.png` | One page as a picture |
 | `GET /api/export.csv` | All sessions as CSV |
-| `PUT /api/look` | Look of the web app: `{"look": "classic"}` or `{"look": "modern"}` |
+| `PUT /api/look` | Look of the web app: `{"look": "classic"}` or `{"look": "dynamic"}` |
 | `GET /api/car` | Picture of the car with everything that can be chosen |
 | `POST /api/car/preview` | Picture for a choice, nothing is saved |
 | `PUT /api/car` / `DELETE /api/car` | Save the choice / recognise the car from the VIN again |
@@ -249,9 +252,9 @@ The Fleet API is billed per request. Ladecockpit only uses data requests for the
 
 ## Privacy and security
 
-- The web app loads nothing from other services except the picture of your car from Tesla's configurator; its typefaces ship with it. At the bottom of the page you pick its look: classic (calm, close to the car's app) or modern (prices coloured like an energy label).
+- The web app loads nothing from other services except the picture of your car from Tesla's configurator; its typefaces ship with it. At the bottom of the page you pick its look: classic (calm, close to the car's app) or dynamic (a cockpit at night that moves and follows the battery).
 - Everything stays on your machine: tokens, invoices and readings live in the Docker volume `ladecockpit-data` (SQLite and a PDF cache).
-- Ladecockpit talks only to Tesla and your Home Assistant. The web app also loads the picture of your car from Tesla's image server and the fonts from Google Fonts. The map links of MultiPass stations open a Google Maps search for the station's name – only when you click one.
+- Ladecockpit talks only to Tesla and your Home Assistant. The web app also loads the picture of your car from Tesla's image server. The map links of MultiPass stations open a Google Maps search for the station's name – only when you click one.
 - Run it in your LAN or behind a reverse proxy with authentication. `APP_PASSWORD` adds simple HTTP Basic protection.
 - Never commit your `.env`. It is already in `.gitignore`.
 

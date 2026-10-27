@@ -35,6 +35,12 @@ configuration:
   charging_state:
     name: Zustand beim Laden
     description: Zustand der Ladestatus-Entität, während das Auto lädt.
+  entity_charge_power:
+    name: Entität Ladeleistung
+    description: z. B. sensor.mein_tesla_ladegerat_leistung – zeigt beim Laden die Leistung in kW.
+  entity_time_to_full:
+    name: Entität Zeit bis voll
+    description: z. B. sensor.mein_tesla_zeit_zum_vollstandigen_aufladen – zeigt beim Laden, wann das Ladelimit erreicht ist. Ohne sie schätzt Ladecockpit die Zeit.
   entity_cost_total:
     name: Helfer Ladekosten gesamt
     description: input_number, in den der Blueprint bucht – für den Abgleich „HA vs. Rechnungen“.

@@ -151,10 +151,21 @@ def build_demo(settings: Settings) -> dict:
     inv_total = sum(s["total"] for s in sessions)
     inv_kwh = sum(s["kwh"] for s in sessions)
     demo_settings = dataclasses.replace(settings, ent_cost_total="demo", ent_kwh_total="demo")
+    # Right now the car charges at a Supercharger: it arrived with about 30 % less than the last
+    # reading (driven since), plugged in 12 minutes ago and gains about 2 % a minute.
+    plugged = max(12, readings["soc_last"][1] - 30)
+    rising = [(now - timedelta(minutes=12 - m), round(plugged + m * 1.9)) for m in range(0, 12, 2)]
+    soc_now = round(plugged + 12 * 1.9)
+    readings["soc"] = readings["soc"] + rising
+    readings["soc_long"] = readings["soc_long"] + rising
     live = {
         "available": True,
+        "raw": {"charging": "charging",
+                "time_to_full": (now + timedelta(minutes=max(4, settings.soc_target - plugged - 23) / 1.6)).isoformat(timespec="seconds")},
         "values": {
-            "soc": None,                                   # car offline right now
+            "soc": soc_now,
+            "range": round(soc_now * 5.7),
+            "charge_power": 104.0,
             "cost_total": round(inv_total * 1.07, 2),     # e.g. estimated prices booked by hand
             "kwh_total": round(inv_kwh * 0.93, 2),        # car-reported kWh < billed kWh
             "reference_price": 0.49,
@@ -162,7 +173,7 @@ def build_demo(settings: Settings) -> dict:
             "fuel_consumption": 7.2,                       # comparison car, L/100 km
             "fuel_price": 1.79,                            # per litre
         },
-        "units": {"odometer": "km", "range": "km"},
+        "units": {"odometer": "km", "range": "km", "charge_power": "kW"},
     }
     meta = {
         "mode": "demo",

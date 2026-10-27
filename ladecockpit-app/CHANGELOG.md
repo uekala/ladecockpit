@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.0 – 2026-10-27
+
+- **New look: Dynamic.** It replaces *Modern* (whoever used Modern gets Dynamic). A cockpit at night, always dark: the battery is a glowing ring with ticks, the floor and the charge limit, next to the picture of your car. When the page opens, the tiles rise one after the other, the ring draws itself, figures count up and bars grow. The light of the page follows the battery – green, amber when it gets low, red below the floor, cyan while charging – and the time of day. The price radar marks the time slot you are in right now; tap a slot for sessions, kWh and how far it is from your average. Tap or point at a month in the history for its figures. The session list shows the newest six and opens the rest on request. Figures in Saira, text in Geist (both SIL Open Font License, shipped with the app). *Classic* stays as it was and stays the default.
+- **Live while charging.** While the car charges, the web app shows *Charging* with the power, when the charge limit is reached and how long that takes, counting down every second. Ladecockpit asks Home Assistant every 15 seconds instead of every minute while the car charges, and the web app refreshes as often. Two new optional entities: *Charging power* (e.g. `sensor.my_tesla_charger_power`) and *Time to full* (e.g. `sensor.my_tesla_time_to_full_charge`, a timestamp or a duration). Without them the finish time is estimated from the power and the kWh one percent takes, or from how fast the battery level rises.
+- While the car charges, the next charging stop is counted from the charge limit.
+- The demo now shows a car charging at a Supercharger.
+- `status` in `/api/dashboard` has `charging`, `power`, `rate` (% per hour) and `finish`. `PUT /api/look` takes `classic` or `dynamic` (`modern` still works and means `dynamic`).
+
 ## 0.10.0 – 2026-10-27
 
 - **The fuel price you actually paid.** The combustion-car comparison can use what you really paid per litre instead of a fixed price or a station's current price. Set two new options, *Fuel cost total* and *Litres filled total* – two entities that grow with each fill-up, e.g. the helpers of a fuel log in Home Assistant. Ladecockpit keeps a daily reading of both and uses the average of the last 90 days; until it has 90 days, or after the totals were reset, it uses everything the totals hold. The paid price wins over *Fuel price from an entity* and the fixed fuel price; the month card says "… €/L paid", and a tip shows how many litres the average is based on.

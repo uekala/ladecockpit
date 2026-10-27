@@ -16,6 +16,7 @@ Ladecockpit fetches your real Supercharger invoices from the Tesla Fleet API and
    - **Range**: shown next to the battery level.
    - **Odometer**: distance, cost and kWh per 100 km/mi.
    - **Charging state**, e.g. `sensor.my_tesla_charging`: the invoice is fetched right after a session ends.
+   - **Charging power** and **Time to full**, e.g. `sensor.my_tesla_charger_power` and `sensor.my_tesla_time_to_full_charge`: while the car charges, the web app shows the power and when the charge limit is reached.
 3. Optional: the two `input_number` helpers the blueprint books into. They enable the "HA vs. invoices" check.
 4. Start the app and open **Ladecockpit** in the sidebar.
 
