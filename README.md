@@ -249,9 +249,9 @@ The Fleet API is billed per request. Ladecockpit only uses data requests for the
 
 ## Privacy and security
 
-- The web app loads nothing from other services except the picture of your car from Tesla's configurator; its typefaces ship with it. At the bottom of the page you pick its look: classic (calm, close to the car's app) or modern (prices coloured like an energy label).
+- The web app loads nothing from other services except the picture of your car from Tesla's configurator; its typefaces ship with it. At the bottom of the page you pick its look: classic (calm, close to the car's app) or modern (vivid colours, prices coloured like an energy label).
 - Everything stays on your machine: tokens, invoices and readings live in the Docker volume `ladecockpit-data` (SQLite and a PDF cache).
-- Ladecockpit talks only to Tesla and your Home Assistant. The web app also loads the picture of your car from Tesla's image server and the fonts from Google Fonts. The map links of MultiPass stations open a Google Maps search for the station's name – only when you click one.
+- Ladecockpit talks only to Tesla and your Home Assistant. The web app also loads the picture of your car from Tesla's image server. The map links of MultiPass stations open a Google Maps search for the station's name – only when you click one.
 - Run it in your LAN or behind a reverse proxy with authentication. `APP_PASSWORD` adds simple HTTP Basic protection.
 - Never commit your `.env`. It is already in `.gitignore`.
 
