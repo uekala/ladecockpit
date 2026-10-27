@@ -417,10 +417,10 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
 
 </style>
 <style id="look-modern" media="not all">
-/* Modern look: "vivid". A saturated ultramarine block carries the car and the battery, everything
-   you can press is a filled pill, and prices wear the full colours of the energy label – green for
-   cheaper than your average, red for dearer. Clean cool whites (or a deep blue-black at night), one
-   grotesque (Bricolage) with condensed bold figures, a segmented battery like a car's display. */
+/* Modern look: "price scale". Prices carry the colours of the energy label – dark green for
+   cheaper than your average, red for dearer – and that scale is the only colour on the page.
+   Everything else is ink on paper: one grotesque (Bricolage) with condensed bold figures, a
+   segmented battery like a car's display, outlined buttons, tiles with a hairline frame. */
 @font-face {
   font-family: "Bricolage Grotesque"; font-style: normal; font-weight: 200 800; font-stretch: 75% 100%; font-display: swap;
   src: url(fonts/bricolage-latin.woff2) format("woff2");
@@ -432,110 +432,85 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 :root {
-  --bg: #eef0f7;
+  --bg: #eceee9;
   --panel: #ffffff;
-  --sunk: #f1f3fb;
-  --btn: #e6e9ff;
-  --btn-hover: #d6dbff;
-  --line: #e0e3ef;
-  --ink: #0d1124;
-  --ink-2: #343a55;
-  --mute: #5c6483;
-  --accent: #2b3df0;
-  --accent-fill: #2b3df0;
-  --accent-soft: #e6e9ff;
-  --accent-ink: #1d29b5;
+  --sunk: #f1f3ef;
+  --btn: transparent;
+  --btn-hover: #141714;
+  --line: #d6dbd2;
+  --ink: #141714;
+  --ink-2: #3a3f39;
+  --mute: #60675f;
+  --accent: #141714;
+  --accent-fill: #141714;
+  --accent-soft: #e2e6df;
   --on-accent: #ffffff;
-  --good: #00874a;
-  --good-soft: #d6f6e5;
-  --battery: #00b85c;
-  --warn: #c45a00;
-  --warn-soft: #ffefd4;
-  --bad: #e0102b;
-  --bad-soft: #ffe1e5;
-  --shadow: 0 1px 2px rgba(13, 17, 36, .05), 0 10px 28px rgba(13, 17, 36, .07);
-  /* the block on top: car and battery */
-  --hero: #2b3df0;
-  --hero-glow: #5b6cff;
-  --on-hero: #ffffff;
-  --on-hero-2: #d3d8ff;
-  --hero-track: rgba(255, 255, 255, .2);
-  --hero-btn: rgba(255, 255, 255, .16);
-  --hero-fill: #4dfca0;
+  --good: #0c8a43;
+  --good-soft: #dcefe2;
+  --battery: #141714;
+  --warn: #b06600;
+  --warn-soft: #fbeccc;
+  --bad: #d1121f;
+  --bad-soft: #fadadb;
+  --shadow: 0 10px 30px rgba(20, 23, 20, .14);
   /* the price scale, cheap to dear */
-  --t-a: #00a650; --t-b: #4fbf1c; --t-c: #b3d400; --t-d: #ffd500; --t-e: #ffa600; --t-f: #ff6a00; --t-g: #f2132e;
+  --t-a: #00a04a; --t-b: #5cb946; --t-c: #b4cf2a; --t-d: #f5d800; --t-e: #f7ad00; --t-f: #ec6f00; --t-g: #e30613;
 
   --f-body: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --f-code: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --r: 16px;
+  --r: 8px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #080b16;
-    --panel: #131829;
-    --sunk: #1b2138;
-    --btn: #222a52;
-    --btn-hover: #2d3769;
-    --line: #252c48;
-    --ink: #f2f4ff;
-    --ink-2: #c4c9e4;
-    --mute: #8a92b6;
-    --accent: #8e9bff;
-    --accent-fill: #3a4dff;
-    --accent-soft: #1f2650;
-    --accent-ink: #b9c1ff;
-    --on-accent: #ffffff;
-    --good: #2ee38a;
-    --good-soft: #10301f;
-    --battery: #2ee38a;
-    --warn: #ffb02e;
-    --warn-soft: #382a0f;
-    --bad: #ff4f63;
-    --bad-soft: #3c1520;
-    --shadow: 0 12px 32px rgba(0, 0, 0, .5);
-    --hero: #3043f5;
-    --hero-glow: #6271ff;
-    --on-hero: #ffffff;
-    --on-hero-2: #d3d8ff;
-    --hero-track: rgba(255, 255, 255, .2);
-    --hero-btn: rgba(255, 255, 255, .16);
-    --hero-fill: #4dfca0;
-    --t-a: #19d86e; --t-b: #7be033; --t-c: #cdf01f; --t-d: #ffe21f; --t-e: #ffb61a; --t-f: #ff7b1f; --t-g: #ff3d52;
+    --bg: #171a18;
+    --panel: #202421;
+    --sunk: #2a2f2b;
+    --btn: transparent;
+    --btn-hover: #eef1ec;
+    --line: #363c37;
+    --ink: #eef1ec;
+    --ink-2: #c9cfc7;
+    --mute: #98a097;
+    --accent: #eef1ec;
+    --accent-fill: #eef1ec;
+    --accent-soft: #2f3530;
+    --on-accent: #171a18;
+    --good: #39c46d;
+    --good-soft: #1d3324;
+    --battery: #eef1ec;
+    --warn: #ffb84d;
+    --warn-soft: #3a2d14;
+    --bad: #ff5a52;
+    --bad-soft: #3d1a19;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .55);
+    --t-a: #22b85f; --t-b: #6cc955; --t-c: #c3db3c; --t-d: #ffe12e; --t-e: #ffbd2b; --t-f: #ff8a2b; --t-g: #ff4a45;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #080b16;
-  --panel: #131829;
-  --sunk: #1b2138;
-  --btn: #222a52;
-  --btn-hover: #2d3769;
-  --line: #252c48;
-  --ink: #f2f4ff;
-  --ink-2: #c4c9e4;
-  --mute: #8a92b6;
-  --accent: #8e9bff;
-  --accent-fill: #3a4dff;
-  --accent-soft: #1f2650;
-  --accent-ink: #b9c1ff;
-  --on-accent: #ffffff;
-  --good: #2ee38a;
-  --good-soft: #10301f;
-  --battery: #2ee38a;
-  --warn: #ffb02e;
-  --warn-soft: #382a0f;
-  --bad: #ff4f63;
-  --bad-soft: #3c1520;
-  --shadow: 0 12px 32px rgba(0, 0, 0, .5);
-  --hero: #3043f5;
-  --hero-glow: #6271ff;
-  --on-hero: #ffffff;
-  --on-hero-2: #d3d8ff;
-  --hero-track: rgba(255, 255, 255, .2);
-  --hero-btn: rgba(255, 255, 255, .16);
-  --hero-fill: #4dfca0;
-  --t-a: #19d86e; --t-b: #7be033; --t-c: #cdf01f; --t-d: #ffe21f; --t-e: #ffb61a; --t-f: #ff7b1f; --t-g: #ff3d52;
+  --bg: #171a18;
+  --panel: #202421;
+  --sunk: #2a2f2b;
+  --btn: transparent;
+  --btn-hover: #eef1ec;
+  --line: #363c37;
+  --ink: #eef1ec;
+  --ink-2: #c9cfc7;
+  --mute: #98a097;
+  --accent: #eef1ec;
+  --accent-fill: #eef1ec;
+  --accent-soft: #2f3530;
+  --on-accent: #171a18;
+  --good: #39c46d;
+  --good-soft: #1d3324;
+  --battery: #eef1ec;
+  --warn: #ffb84d;
+  --warn-soft: #3a2d14;
+  --bad: #ff5a52;
+  --bad-soft: #3d1a19;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .55);
+  --t-a: #22b85f; --t-b: #6cc955; --t-c: #c3db3c; --t-d: #ffe12e; --t-e: #ffbd2b; --t-f: #ff8a2b; --t-g: #ff4a45;
   color-scheme: dark;
 }
 
@@ -871,60 +846,39 @@ h1, h2, h3 { font-weight: 650; }
 /* Head: the name with the price scale as its mark */
 .brand h1 { font-size: 1.15rem; font-weight: 750; font-stretch: 80%; letter-spacing: 0; white-space: nowrap; }
 .brand h1::before {
-  content: ""; display: inline-block; vertical-align: -1px; margin-right: 8px; width: 26px; height: 12px; border-radius: 3px;
+  content: ""; display: inline-block; vertical-align: -1px; margin-right: 8px; width: 26px; height: 12px; border-radius: 2px;
   background: linear-gradient(90deg, var(--t-a) 0 14.3%, var(--t-b) 0 28.6%, var(--t-c) 0 42.9%, var(--t-d) 0 57.1%, var(--t-e) 0 71.4%, var(--t-f) 0 85.7%, var(--t-g) 0);
 }
 
-/* Everything you can press is a pill: tinted, filled in the accent when it matters */
-.btn { border: 0; border-radius: 999px; font-weight: 650; background: var(--btn); color: var(--accent-ink); padding-inline: 18px; }
-.btn:hover { background: var(--accent-fill); color: var(--on-accent); }
-.btn.primary { background: var(--accent-fill); color: var(--on-accent); }
-.btn.primary:hover { background: color-mix(in srgb, var(--accent-fill) 85%, var(--ink)); }
-.exports a { background: var(--btn); color: var(--accent-ink); border-radius: 999px; font-weight: 650; }
-.exports a:hover { background: var(--accent-fill); color: var(--on-accent); }
-.chip.info { background: var(--accent-soft); color: var(--accent-ink); border-radius: 999px; font-weight: 600; }
-.link-btn, .map-link { color: var(--accent); font-weight: 650; }
-a { color: var(--accent); text-underline-offset: 3px; }
+/* Buttons: outlined in ink, filled when pressed or primary */
+.btn { border: 1.5px solid var(--ink); border-radius: 6px; font-weight: 600; background: transparent; }
+.btn:hover { background: var(--ink); color: var(--panel); }
+.btn.primary { background: var(--ink); color: var(--panel); }
+.btn.primary:hover { background: var(--ink-2); }
+.exports a { background: transparent; border: 1px solid var(--line); border-radius: 6px; font-weight: 600; }
+.exports a:hover { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.chip.info { background: transparent; color: var(--ink-2); border: 1px solid var(--line); border-radius: 4px; }
+.link-btn, .map-link { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+a { color: var(--ink); text-underline-offset: 3px; }
 
-/* Tiles: white on cool grey, soft shadow, no frame */
-.panel { box-shadow: var(--shadow); }
-.panel h2 { font-size: 1.25rem; font-weight: 700; font-stretch: 88%; letter-spacing: 0; }
-.eyebrow { font-weight: 650; color: var(--accent); }
+/* Tiles: hairline frame, small radius */
+.panel { border: 1px solid var(--line); }
+.panel h2 { font-size: 1.25rem; font-weight: 650; font-stretch: 88%; letter-spacing: 0; }
+.eyebrow { font-weight: 500; }
 
 /* Figures: condensed bold */
-.big { font-weight: 750; font-stretch: 75%; letter-spacing: -.01em; line-height: .95; }
+.big { font-weight: 720; font-stretch: 75%; letter-spacing: -.01em; line-height: .95; }
 .big small { font-weight: 500; font-stretch: 100%; }
-.range { font-weight: 700; font-stretch: 78%; letter-spacing: 0; color: var(--ink); }
-.next-date { font-weight: 750; font-stretch: 75%; letter-spacing: 0; font-size: clamp(2.2rem, 7vw, 2.9rem); }
+.range { font-weight: 650; font-stretch: 78%; letter-spacing: 0; color: var(--ink); }
+.next-date { font-weight: 720; font-stretch: 75%; letter-spacing: 0; font-size: clamp(2.2rem, 7vw, 2.9rem); }
 .month-total .big { font-size: clamp(2.8rem, 10vw, 3.6rem); }
 .car-text h2 { font-weight: 750; font-stretch: 75%; letter-spacing: 0; font-size: clamp(2rem, 7vw, 2.8rem); }
-.receipt .site { font-weight: 700; font-stretch: 88%; font-size: 1.25rem; }
-.line.total { font-weight: 750; }
+.receipt .site { font-weight: 650; font-stretch: 88%; font-size: 1.25rem; }
+.line.total { font-weight: 700; }
 
-/* Small figure blocks: tinted in the accent */
-.kpi, .fact { background: var(--accent-soft); border-radius: 12px; }
-.kpi b, .fact b { font-weight: 750; font-stretch: 80%; font-size: clamp(1.1rem, 4.4vw, 1.4rem); color: var(--accent-ink); }
-.kpi span, .fact span { color: var(--ink-2); }
-
-/* The block on top: car and battery on a saturated ground */
-.hero {
-  background: radial-gradient(120% 130% at 100% 0%, var(--hero-glow) 0%, transparent 60%), var(--hero);
-  color: var(--on-hero); border-radius: 22px; padding: 22px 24px 20px; gap: 10px;
-  box-shadow: 0 16px 40px color-mix(in srgb, var(--hero) 30%, transparent);
-}
-.hero .sub, .hero .stamp, .hero .range small, .hero .big small, .hero .car-miss, .hero .car-form label { color: var(--on-hero-2); }
-.hero .range { color: var(--on-hero); }
-.hero .chip { color: var(--on-hero); }
-.hero .chip::before { background: var(--on-hero-2); }
-.hero .chip.good::before { background: var(--hero-fill); }
-.hero .chip.bad { color: var(--on-hero); }
-.hero .btn { background: var(--hero-btn); color: var(--on-hero); }
-.hero .btn:hover, .hero .btn.primary { background: var(--on-hero); color: var(--hero); }
-.hero .link-btn { color: var(--on-hero); text-decoration: underline; text-underline-offset: 3px; }
-.hero .car-form select { background: var(--hero-btn); color: var(--on-hero); border: 0; }
-.hero .car-form select option { color: var(--ink); background: var(--panel); }
-.hero :focus-visible { outline-color: var(--on-hero); }
-@media (max-width: 560px) { .hero { padding: 18px 16px 16px; border-radius: 18px; } }
+/* Small figure blocks: a rule on top instead of a filled box */
+.kpi, .fact { background: none; border-radius: 0; border-top: 2px solid var(--ink); padding: 8px 2px 0; }
+.kpi b, .fact b { font-weight: 700; font-stretch: 80%; font-size: 1.35rem; }
 
 /* Battery: 20 segments like the car's display, floor and limit marked by the figures under it */
 .gauge { padding-bottom: 24px; }
@@ -933,51 +887,45 @@ a { color: var(--accent); text-underline-offset: 3px; }
   -webkit-mask: repeating-linear-gradient(90deg, #000 0 calc(5% - 3px), transparent calc(5% - 3px) 5%);
           mask: repeating-linear-gradient(90deg, #000 0 calc(5% - 3px), transparent calc(5% - 3px) 5%);
 }
-.hero .gauge-track { background: var(--hero-track); }
+.hero .gauge-track { background: color-mix(in srgb, var(--ink) 12%, var(--bg)); }
 .gauge-fill { border-radius: 0; }
-.hero .gauge-fill { background: var(--hero-fill); }
-.hero .gauge-fill.warn { background: var(--t-e); }
-.hero .gauge-fill.bad { background: var(--t-g); }
 .gauge-floor, .gauge-limit { display: none; }
-.gauge-scale span { color: var(--ink-2); font-weight: 600; }
-.hero .gauge-scale span { color: var(--on-hero-2); }
-.gauge-scale span::before { content: ""; position: absolute; left: 50%; top: -5px; width: 1px; height: 4px; background: currentColor; }
+.gauge-scale span { color: var(--ink-2); font-weight: 500; }
+.gauge-scale span::before { content: ""; position: absolute; left: 50%; top: -5px; width: 1px; height: 4px; background: var(--mute); }
 .gauge-scale span:first-child::before, .gauge-scale span:last-child::before { display: none; }
 
-/* Tips save money: they wear the cheap end of the scale */
-.tip { background: var(--good-soft); border-radius: 12px; }
-.tip svg { color: var(--good); }
-.insights li svg { color: var(--accent); }
+/* Tips save money: the cheap end of the scale marks them */
+.tip { background: var(--sunk); border-radius: 6px; box-shadow: inset 4px 0 0 var(--t-a); padding-left: 16px; }
+.tip svg { color: var(--t-a); }
+.insights li svg { color: var(--ink-2); }
 
 /* Price radar: arrows on the scale, like an energy label */
 .radar-track { height: 28px; }
 .radar-bar, .radar-row.best .radar-bar {
   top: 2px; bottom: 2px; border-radius: 0;
-  background: var(--tone, var(--accent-fill));
+  background: var(--tone, var(--ink-2));
   clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
 }
 .radar-avg { border-left: 1.5px dashed var(--ink); }
-.radar-val { font-weight: 750; }
+.radar-val { font-weight: 700; }
 .tone-legend { display: flex; align-items: center; gap: 10px; font-size: .78rem; color: var(--mute); }
 .tone-legend .scale {
-  width: 120px; height: 8px; flex: none; border-radius: 4px;
+  width: 120px; height: 8px; flex: none;
   background: linear-gradient(90deg, var(--t-a) 0 14.3%, var(--t-b) 0 28.6%, var(--t-c) 0 42.9%, var(--t-d) 0 57.1%, var(--t-e) 0 71.4%, var(--t-f) 0 85.7%, var(--t-g) 0);
 }
 
 /* Lists: the price of a site or a session carries its colour too */
-.minibar { background: var(--sunk); }
-.minibar i { background: var(--tone, var(--accent-fill)); }
-td[data-tone]:not([data-tone=""])::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; background: var(--tone); vertical-align: 0; }
+.minibar { background: var(--sunk); border-radius: 0; }
+.minibar i { background: var(--tone, var(--ink-2)); border-radius: 0; }
+td[data-tone]:not([data-tone=""])::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; background: var(--tone); vertical-align: 1px; }
 
-/* Month history and meters in the accent */
-.col .bar { background: var(--accent-fill); border-radius: 6px 6px 0 0; }
-.col.cur .bar { background: repeating-linear-gradient(135deg, var(--accent-fill) 0 4px, var(--accent-soft) 4px 8px); box-shadow: inset 0 0 0 1.5px var(--accent-fill); }
-.col .v { font-weight: 650; color: var(--ink); }
-.meter { background: var(--sunk); }
-.meter i { background: var(--accent-fill); }
+/* Month history and meters in ink */
+.col .bar { background: var(--ink); border-radius: 2px 2px 0 0; }
+.col.cur .bar { background: repeating-linear-gradient(135deg, var(--ink) 0 4px, transparent 4px 8px); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.meter { border-radius: 0; background: var(--sunk); }
+.meter i { background: var(--ink); border-radius: 0; }
 
-.car-form select, form.code input { background: var(--sunk); border: 1px solid var(--line); border-radius: 10px; }
-footer .look-pick button[aria-pressed="true"] { background: var(--accent-fill); color: var(--on-accent); }
+.car-form select, form.code input { background: var(--sunk); border: 1px solid var(--line); border-radius: 6px; }
 </style>
 <style>
 /* --- PDF view (Home Assistant app only: it has no PDF viewer) --------------------------------- */

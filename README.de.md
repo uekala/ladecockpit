@@ -211,9 +211,9 @@ Die Fleet API wird pro Abfrage abgerechnet. Ladecockpit nutzt nur Datenabfragen 
 
 ## Datenschutz und Sicherheit
 
-- Die Web-App lädt nichts von anderen Diensten nach, außer dem Bild deines Autos aus Teslas Konfigurator; die Schriften bringt sie selbst mit. Ganz unten auf der Seite wählst du das Design: klassisch (ruhig, nah an der App des Autos) oder modern (kräftige Farben, Preise in den Farben des Energielabels).
+- Die Web-App lädt nichts von anderen Diensten nach, außer dem Bild deines Autos aus Teslas Konfigurator; die Schriften bringt sie selbst mit. Ganz unten auf der Seite wählst du das Design: klassisch (ruhig, nah an der App des Autos) oder modern (Preise in den Farben des Energielabels).
 - Alles bleibt bei dir: Tokens, Rechnungen und Messwerte liegen im Docker-Volume `ladecockpit-data` (SQLite und PDF-Cache).
-- Ladecockpit spricht nur mit Tesla und deinem Home Assistant. Die Web-App lädt außerdem das Bild deines Autos von Teslas Bildserver. Die Kartenlinks der MultiPass-Stationen öffnen eine Google-Maps-Suche nach dem Stationsnamen – nur wenn du einen anklickst.
+- Ladecockpit spricht nur mit Tesla und deinem Home Assistant. Die Web-App lädt außerdem das Bild deines Autos von Teslas Bildserver und die Schriften von Google Fonts. Die Kartenlinks der MultiPass-Stationen öffnen eine Google-Maps-Suche nach dem Stationsnamen – nur wenn du einen anklickst.
 - Im LAN oder hinter einem Reverse-Proxy mit Anmeldung betreiben. `APP_PASSWORD` gibt einen einfachen HTTP-Basic-Schutz.
 - Die eigene `.env` nie committen. Sie steht bereits in `.gitignore`.
 
