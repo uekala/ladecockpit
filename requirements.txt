@@ -1,0 +1,7 @@
+fastapi==0.161.1
+uvicorn[standard]==0.54.0
+httpx==0.28.1
+tzdata>=2024.1
+fpdf2==2.8.9
+pypdf==6.21.2
+pypdfium2==5.14.0

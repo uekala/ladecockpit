@@ -1,0 +1,2101 @@
+<title>Ladecockpit</title>
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ladecockpit">
+<style id="look-classic">
+/* Classic look (0.8): calm and dark like the car's own app – the car picture and the battery on top, flat tiles
+   below, one sans-serif with tabular figures, blue for actions, green for the battery. */
+@font-face {
+  font-family: "Geist"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url(fonts/geist-latin.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Geist"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url(fonts/geist-latin-ext.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+:root {
+  --bg: #ffffff;
+  --panel: #f4f4f4;
+  --sunk: #e9e9ea;
+  --btn: #e2e3e4;
+  --btn-hover: #d6d7d9;
+  --line: #dcdddf;
+  --ink: #171a20;
+  --ink-2: #393c41;
+  --mute: #5c5e62;
+  --accent: #3e6ae1;
+  --accent-fill: #3e6ae1;
+  --accent-soft: #e3e9fb;
+  --on-accent: #ffffff;
+  --good: #1f8f4e;
+  --good-soft: #dcf1e3;
+  --battery: #2fb35a;
+  --warn: #a35f00;
+  --warn-soft: #f8ead2;
+  --bad: #c9302c;
+  --bad-soft: #f9dedd;
+  --shadow: 0 10px 30px rgba(23, 26, 32, .12);
+
+  --f-body: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-code: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --r: 18px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000;
+    --panel: #151618;
+    --sunk: #202124;
+    --btn: #26272b;
+    --btn-hover: #313237;
+    --line: #2b2c30;
+    --ink: #f2f2f2;
+    --ink-2: #c8c9cc;
+    --mute: #8f9095;
+    --accent: #6d8ff3;
+    --accent-fill: #3e6ae1;
+    --accent-soft: #19223d;
+    --on-accent: #ffffff;
+    --good: #45cf74;
+    --good-soft: #13291b;
+    --battery: #3ccb6a;
+    --warn: #ffb547;
+    --warn-soft: #2f230e;
+    --bad: #ff6159;
+    --bad-soft: #351614;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000;
+  --panel: #151618;
+  --sunk: #202124;
+  --btn: #26272b;
+  --btn-hover: #313237;
+  --line: #2b2c30;
+  --ink: #f2f2f2;
+  --ink-2: #c8c9cc;
+  --mute: #8f9095;
+  --accent: #6d8ff3;
+  --accent-fill: #3e6ae1;
+  --accent-soft: #19223d;
+  --on-accent: #ffffff;
+  --good: #45cf74;
+  --good-soft: #13291b;
+  --battery: #3ccb6a;
+  --warn: #ffb547;
+  --warn-soft: #2f230e;
+  --bad: #ff6159;
+  --bad-soft: #351614;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .6);
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.5;
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 48px;
+  display: grid;
+  gap: 16px;
+}
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 500; }
+p { margin: 0; }
+a { color: var(--accent); }
+.num, td.n { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--f-code); font-size: .9em; }
+
+/* --- Kopf ------------------------------------------------------------------- */
+.top {
+  display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto; align-items: center; gap: 8px 20px;
+}
+.top .chips { justify-content: flex-end; }
+@media (max-width: 720px) {
+  .top { grid-template-columns: minmax(0, 1fr) auto; }
+  .top .chips { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; }
+}
+.brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.brand h1 { font-size: 1.05rem; font-weight: 600; letter-spacing: .01em; }
+.brand .sub { font-size: .82rem; }
+@media (max-width: 560px) { .brand .sub { display: none; } }
+.chips { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .8rem; font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--mute); }
+.chip.plain::before { display: none; }
+.chip.plain { color: var(--mute); }
+.chip.good::before { background: var(--good); }
+.chip.warn { color: var(--warn); }
+.chip.warn::before { background: var(--warn); }
+.chip.bad { color: var(--bad); }
+.chip.bad::before { background: var(--bad); }
+/* A tag rather than a status: MultiPass in lists. */
+.chip.info { background: var(--accent-soft); color: var(--accent); padding: 1px 8px; border-radius: 6px; font-size: .74rem; }
+.chip.info::before { display: none; }
+.chip.pulse::before { animation: pulse 1.4s ease-in-out infinite; background: var(--accent); }
+@keyframes pulse { 50% { opacity: .25; } }
+
+.btn {
+  font: inherit; font-weight: 500; font-size: .88rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 8px 16px; min-height: 40px;
+  border-radius: 8px; border: none;
+  background: var(--btn); color: var(--ink);
+  cursor: pointer; text-decoration: none;
+  transition: background .15s;
+}
+.btn:hover { background: var(--btn-hover); }
+.btn.primary { background: var(--accent-fill); color: var(--on-accent); }
+.btn.primary:hover { background: color-mix(in srgb, var(--accent-fill) 88%, #fff); }
+.btn[disabled], .btn.is-disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+.btn:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visible, button:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+.banner {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 16px; border-radius: 12px;
+  background: var(--warn-soft); color: var(--ink);
+  font-size: .92rem;
+}
+.banner strong { color: var(--warn); font-weight: 600; }
+.banner.bad { background: var(--bad-soft); }
+.banner.bad strong { color: var(--bad); }
+
+/* --- Kacheln ------------------------------------------------------------------- */
+.panel {
+  background: var(--panel);
+  border-radius: var(--r);
+  padding: 20px;
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+.eyebrow { font-size: .86rem; font-weight: 500; color: var(--mute); }
+.panel h2 { font-size: 1.15rem; font-weight: 500; letter-spacing: -.005em; }
+.sub { color: var(--mute); font-size: .88rem; }
+.grid-2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+
+/* --- Auto und Akku oben, ohne Kachel ------------------------------------------------ */
+.hero { display: grid; gap: 6px; padding: 18px 4px 6px; }
+.car-panel { display: grid; gap: 4px; }
+.car-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px 16px; }
+.car-text { display: grid; gap: 2px; min-width: 0; }
+.car-text h2 { font-size: clamp(1.7rem, 6vw, 2.3rem); font-weight: 500; letter-spacing: -.02em; line-height: 1.1; }
+.car-actions { display: flex; gap: 8px; align-items: center; flex: none; }
+.car-panel .car-form { margin-top: 8px; }
+.car-note { margin-top: 6px; }
+.car-pic { display: grid; place-items: center; min-height: 140px; margin-inline: auto; width: min(100%, 760px); }
+.car-pic img { width: 100%; max-height: 300px; aspect-ratio: 2.4 / 1; object-fit: contain; display: block; }
+.car-pic.broken img { display: none; }
+.car-pic .car-miss { display: none; color: var(--mute); font-size: .86rem; padding: 32px 8px; text-align: center; }
+.car-pic.broken .car-miss { display: block; }
+.car-pic.loading img { opacity: .45; transition: opacity .2s; }
+.car-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 10px; }
+.car-form label { display: grid; gap: 4px; font-size: .8rem; font-weight: 500; color: var(--mute); min-width: 0; }
+.car-form select {
+  font: inherit; font-size: .92rem; color: var(--ink);
+  padding: 8px 10px; min-height: 42px; border-radius: 8px; border: none;
+  background: var(--btn); min-width: 0; width: 100%;
+}
+.car-note { display: grid; gap: 4px; overflow-wrap: anywhere; }
+
+.battery { display: grid; gap: 10px; }
+.battery-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 20px; }
+.big {
+  font-weight: 300; font-size: clamp(3rem, 13vw, 4.4rem); line-height: 1; letter-spacing: -.04em;
+  font-variant-numeric: tabular-nums;
+}
+.big small { font-size: .45em; font-weight: 400; margin-left: 6px; color: var(--mute); letter-spacing: 0; }
+.range { font-weight: 300; font-size: clamp(1.5rem, 6vw, 2rem); letter-spacing: -.02em; color: var(--ink-2); }
+.range small { color: var(--mute); font-weight: 400; font-size: .8rem; display: block; text-align: right; letter-spacing: 0; }
+
+/* Battery bar: thin, green, with the floor and the charge limit marked underneath. */
+.gauge { position: relative; padding-bottom: 22px; }
+.gauge-window { display: none; }
+.gauge-body { position: relative; }
+.gauge-track { position: relative; height: 10px; border-radius: 5px; background: var(--sunk); overflow: hidden; }
+.hero .gauge-track { background: var(--btn); }
+.gauge-nub { display: none; }
+.gauge-fill {
+  position: absolute; inset: 0 auto 0 0; border-radius: 5px;
+  background: var(--battery);
+  transition: width .8s cubic-bezier(.2, .8, .2, 1);
+}
+.gauge-fill.warn { background: var(--warn); }
+.gauge-fill.bad { background: var(--bad); }
+.gauge-floor { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--bg); opacity: .9; }
+.gauge-limit { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--bg); opacity: .9; }
+.gauge-scale { position: absolute; left: 0; right: 0; bottom: 0; height: 18px; }
+.gauge-scale span {
+  position: absolute; transform: translateX(-50%);
+  font-size: .74rem; color: var(--mute); white-space: nowrap;
+}
+.gauge-scale span:first-child { transform: none; }
+.gauge-scale span:last-child { transform: translateX(-100%); }
+.stamp { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; color: var(--mute); font-size: .86rem; }
+
+/* --- Nächster Ladestopp ---------------------------------------------------------- */
+.next-date { font-weight: 400; font-size: clamp(1.9rem, 6vw, 2.4rem); line-height: 1.05; letter-spacing: -.025em; }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.fact { background: var(--sunk); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.fact b { display: block; font-weight: 500; font-size: 1.05rem; }
+.fact span { font-size: .76rem; color: var(--mute); }
+.tip {
+  display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start;
+  padding: 12px 14px; border-radius: 12px; background: var(--sunk); font-size: .9rem;
+}
+.tip svg { color: var(--accent); margin-top: 2px; }
+
+/* --- Letzte Ladung ---------------------------------------------------------------- */
+.receipt { display: grid; gap: 0; }
+.receipt .site { font-weight: 500; font-size: 1.15rem; letter-spacing: -.01em; }
+.receipt .when { color: var(--mute); margin-bottom: 6px; font-size: .86rem; }
+.line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; }
+.line + .line, .receipt .line { border-top: 1px solid var(--line); }
+.line .lbl { white-space: nowrap; color: var(--ink-2); }
+.line .dots { flex: 1; min-width: 8px; }
+.line .val { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.line.total { font-weight: 600; font-size: 1.05rem; }
+.line.total .lbl { color: var(--ink); }
+.line.zero .val { color: var(--mute); }
+.receipt-actions { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+
+/* --- Monat ------------------------------------------------------------------------------ */
+.month { gap: 18px 40px; }
+@media (min-width: 860px) { .month { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.month-main { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.month-total { display: flex; align-items: baseline; gap: 6px 14px; flex-wrap: wrap; }
+.month-total .big { font-size: clamp(2.5rem, 9vw, 3.2rem); }
+.delta { font-size: .86rem; color: var(--mute); }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kpi { background: var(--sunk); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.kpi b { display: block; font-weight: 500; font-size: 1.1rem; }
+.kpi span { font-size: .76rem; color: var(--mute); }
+.exports { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .86rem; }
+.exports .label { color: var(--mute); margin-right: 4px; }
+.exports a { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; background: var(--btn); color: var(--ink); text-decoration: none; font-weight: 500; }
+.exports a:hover { background: var(--btn-hover); }
+.steps { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; font-size: .92rem; }
+.compare { display: grid; gap: 0; font-size: .92rem; }
+.compare .line .lbl { white-space: normal; min-width: 0; }  /* long labels wrap on phones */
+.compare .cmp-group { display: grid; margin-top: 14px; }
+.compare .cmp-head { color: var(--mute); font-size: .82rem; font-weight: 500; padding-bottom: 2px; }
+
+/* --- Preis-Radar ---------------------------------------------------------------------- */
+.radar { display: grid; gap: 12px; position: relative; }
+.radar-row {
+  display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 7.2rem; gap: 12px; align-items: center;
+  border-radius: 8px; padding: 2px 0;
+}
+.radar-row .who b { display: block; font-size: .94rem; font-weight: 500; }
+.radar-row .who span { font-size: .78rem; color: var(--mute); }
+.radar-track { position: relative; height: 22px; }
+.radar-bar {
+  position: absolute; left: 0; top: 6px; bottom: 6px;
+  background: var(--accent-fill); border-radius: 5px;
+  transition: width .7s cubic-bezier(.2, .8, .2, 1);
+}
+.radar-row.best .radar-bar { background: var(--battery); }
+.radar-empty { position: absolute; left: 0; right: 0; top: 10px; height: 0; border-top: 2px dotted var(--line); }
+.radar-avg { position: absolute; top: -2px; bottom: -2px; width: 0; border-left: 1.5px dashed var(--mute); }
+.radar-val { text-align: right; font-size: .9rem; font-weight: 500; }
+.radar-val small { display: block; color: var(--mute); font-size: .74rem; font-weight: 400; }
+.radar-axis { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 7.2rem; gap: 12px; }
+.radar-axis .ticks { position: relative; height: 16px; }
+.radar-axis .ticks span { position: absolute; top: 2px; transform: translateX(-50%); font-size: .72rem; color: var(--mute); }
+.radar-axis .ticks span.avg { color: var(--ink-2); font-weight: 500; }
+@media (max-width: 560px) {
+  .radar-row, .radar-axis { grid-template-columns: 6.6rem minmax(0, 1fr) 5.8rem; gap: 8px; }
+}
+.insights { list-style: none; margin: 0; padding: 0; display: grid; }
+.insights li {
+  display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: start;
+  font-size: .9rem; padding: 12px 0; border-top: 1px solid var(--line); color: var(--ink-2);
+}
+.insights li svg { color: var(--accent); margin-top: 2px; }
+.insights li.idle svg, .insights li.speed svg { color: var(--warn); }
+.kw-slow, td .when-sub.kw-slow, .line.slow .val { color: var(--warn); }
+.line-note { color: var(--warn); font-size: .8rem; text-align: right; padding-bottom: 6px; }
+
+/* --- Tabellen -------------------------------------------------------------------------- */
+.scroll { overflow-x: auto; margin-inline: -4px; padding-inline: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th {
+  text-align: left; font-size: .78rem; font-weight: 500;
+  color: var(--mute); padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+td { padding: 11px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+th.n, td.n { text-align: right; }
+td.site { white-space: normal; min-width: 8rem; }
+td .when-sub { display: block; color: var(--mute); font-size: .78rem; }
+.minibar { display: inline-block; width: 64px; height: 6px; border-radius: 3px; background: var(--btn); vertical-align: middle; margin-right: 8px; position: relative; overflow: hidden; }
+.minibar i { position: absolute; inset: 0 auto 0 0; background: var(--accent-fill); border-radius: 3px; }
+.op-chips { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.mp-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.mp-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 16px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.mp-list li:last-child { border-bottom: none; }
+.mp-list .who b { display: block; font-size: .95rem; font-weight: 500; overflow-wrap: anywhere; }
+.mp-list .who span { font-size: .8rem; color: var(--mute); }
+.mp-val { text-align: right; font-size: .9rem; white-space: nowrap; }
+.mp-val small { display: block; color: var(--mute); font-size: .76rem; }
+.map-link { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; font-size: .86rem; font-weight: 500; color: var(--accent); text-decoration: none; }
+.map-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.map-link svg { width: 16px; height: 16px; flex: none; }
+@media (max-width: 560px) { .mp-list li { gap: 10px; } .map-link span { display: none; } }
+.link-btn { font: inherit; font-size: .86rem; font-weight: 500; color: var(--accent); background: none; border: none; padding: 0; cursor: pointer; }
+.link-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
+.muted { color: var(--mute); }
+
+/* --- Monatsverlauf ------------------------------------------------------------------------ */
+.cols { display: flex; align-items: flex-end; gap: 14px; height: 170px; padding-top: 22px; border-bottom: 1px solid var(--line); position: relative; }
+.col { flex: 1; max-width: 90px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; position: relative; }
+.col .bar { width: 100%; max-width: 40px; background: var(--accent-fill); border-radius: 6px 6px 0 0; min-height: 2px; transition: height .7s cubic-bezier(.2, .8, .2, 1); }
+.col.cur .bar { background: color-mix(in srgb, var(--accent-fill) 45%, var(--panel)); }
+.col .v { font-size: .76rem; color: var(--ink-2); margin-bottom: 4px; white-space: nowrap; }
+.col-labels { display: flex; gap: 14px; }
+.col-labels span { flex: 1; max-width: 90px; text-align: center; font-size: .78rem; color: var(--mute); }
+
+/* --- Abgleich / Betrieb ----------------------------------------------------------------------- */
+.meter { height: 6px; border-radius: 3px; background: var(--btn); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent-fill); border-radius: 3px; }
+.status-list { display: grid; font-size: .92rem; }
+.status-list div { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 9px 0; border-top: 1px solid var(--line); }
+.status-list div:first-child { border-top: none; }
+.setup-steps { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; font-size: .92rem; }
+form.code { display: flex; gap: 8px; flex-wrap: wrap; }
+form.code input {
+  flex: 1; min-width: 0; font: inherit; font-size: .88rem; padding: 9px 12px; border-radius: 8px;
+  border: none; background: var(--btn); color: var(--ink);
+}
+details summary { cursor: pointer; font-weight: 500; font-size: .9rem; color: var(--ink-2); }
+details[open] summary { margin-bottom: 10px; }
+
+/* --- Tooltip & Toast ------------------------------------------------------------------------- */
+.tt {
+  position: fixed; z-index: 30; pointer-events: none;
+  background: var(--ink); color: var(--bg);
+  font-size: .8rem; line-height: 1.4; padding: 7px 10px; border-radius: 8px;
+  max-width: 240px; box-shadow: var(--shadow);
+}
+.toast {
+  position: fixed; z-index: 40; left: 50%; transform: translateX(-50%);
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px;
+  font-size: .9rem; font-weight: 500; box-shadow: var(--shadow); max-width: calc(100% - 32px);
+}
+.skeleton { color: var(--mute); padding: 40px 0; text-align: center; }
+.tone-legend { display: none; }
+footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; }
+
+</style>
+<style id="look-modern" media="not all">
+/* Modern look: "price scale". Prices carry the colours of the energy label – dark green for
+   cheaper than your average, red for dearer – and that scale is the only colour on the page.
+   Everything else is ink on paper: one grotesque (Bricolage) with condensed bold figures, a
+   segmented battery like a car's display, outlined buttons, tiles with a hairline frame. */
+@font-face {
+  font-family: "Bricolage Grotesque"; font-style: normal; font-weight: 200 800; font-stretch: 75% 100%; font-display: swap;
+  src: url(fonts/bricolage-latin.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Bricolage Grotesque"; font-style: normal; font-weight: 200 800; font-stretch: 75% 100%; font-display: swap;
+  src: url(fonts/bricolage-latin-ext.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+:root {
+  --bg: #eceee9;
+  --panel: #ffffff;
+  --sunk: #f1f3ef;
+  --btn: transparent;
+  --btn-hover: #141714;
+  --line: #d6dbd2;
+  --ink: #141714;
+  --ink-2: #3a3f39;
+  --mute: #60675f;
+  --accent: #141714;
+  --accent-fill: #141714;
+  --accent-soft: #e2e6df;
+  --on-accent: #ffffff;
+  --good: #0c8a43;
+  --good-soft: #dcefe2;
+  --battery: #141714;
+  --warn: #b06600;
+  --warn-soft: #fbeccc;
+  --bad: #d1121f;
+  --bad-soft: #fadadb;
+  --shadow: 0 10px 30px rgba(20, 23, 20, .14);
+  /* the price scale, cheap to dear */
+  --t-a: #00a04a; --t-b: #5cb946; --t-c: #b4cf2a; --t-d: #f5d800; --t-e: #f7ad00; --t-f: #ec6f00; --t-g: #e30613;
+
+  --f-body: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-code: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --r: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171a18;
+    --panel: #202421;
+    --sunk: #2a2f2b;
+    --btn: transparent;
+    --btn-hover: #eef1ec;
+    --line: #363c37;
+    --ink: #eef1ec;
+    --ink-2: #c9cfc7;
+    --mute: #98a097;
+    --accent: #eef1ec;
+    --accent-fill: #eef1ec;
+    --accent-soft: #2f3530;
+    --on-accent: #171a18;
+    --good: #39c46d;
+    --good-soft: #1d3324;
+    --battery: #eef1ec;
+    --warn: #ffb84d;
+    --warn-soft: #3a2d14;
+    --bad: #ff5a52;
+    --bad-soft: #3d1a19;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .55);
+    --t-a: #22b85f; --t-b: #6cc955; --t-c: #c3db3c; --t-d: #ffe12e; --t-e: #ffbd2b; --t-f: #ff8a2b; --t-g: #ff4a45;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171a18;
+  --panel: #202421;
+  --sunk: #2a2f2b;
+  --btn: transparent;
+  --btn-hover: #eef1ec;
+  --line: #363c37;
+  --ink: #eef1ec;
+  --ink-2: #c9cfc7;
+  --mute: #98a097;
+  --accent: #eef1ec;
+  --accent-fill: #eef1ec;
+  --accent-soft: #2f3530;
+  --on-accent: #171a18;
+  --good: #39c46d;
+  --good-soft: #1d3324;
+  --battery: #eef1ec;
+  --warn: #ffb84d;
+  --warn-soft: #3a2d14;
+  --bad: #ff5a52;
+  --bad-soft: #3d1a19;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .55);
+  --t-a: #22b85f; --t-b: #6cc955; --t-c: #c3db3c; --t-d: #ffe12e; --t-e: #ffbd2b; --t-f: #ff8a2b; --t-g: #ff4a45;
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.5;
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 48px;
+  display: grid;
+  gap: 16px;
+}
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 500; }
+p { margin: 0; }
+a { color: var(--accent); }
+.num, td.n { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--f-code); font-size: .9em; }
+
+/* --- Kopf ------------------------------------------------------------------- */
+.top {
+  display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto; align-items: center; gap: 8px 20px;
+}
+.top .chips { justify-content: flex-end; }
+@media (max-width: 720px) {
+  .top { grid-template-columns: minmax(0, 1fr) auto; }
+  .top .chips { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; }
+}
+.brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.brand h1 { font-size: 1.05rem; font-weight: 600; letter-spacing: .01em; }
+.brand .sub { font-size: .82rem; }
+@media (max-width: 560px) { .brand .sub { display: none; } }
+.chips { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .8rem; font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--mute); }
+.chip.plain::before { display: none; }
+.chip.plain { color: var(--mute); }
+.chip.good::before { background: var(--good); }
+.chip.warn { color: var(--warn); }
+.chip.warn::before { background: var(--warn); }
+.chip.bad { color: var(--bad); }
+.chip.bad::before { background: var(--bad); }
+/* A tag rather than a status: MultiPass in lists. */
+.chip.info { background: var(--accent-soft); color: var(--accent); padding: 1px 8px; border-radius: 6px; font-size: .74rem; }
+.chip.info::before { display: none; }
+.chip.pulse::before { animation: pulse 1.4s ease-in-out infinite; background: var(--accent); }
+@keyframes pulse { 50% { opacity: .25; } }
+
+.btn {
+  font: inherit; font-weight: 500; font-size: .88rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 8px 16px; min-height: 40px;
+  border-radius: 8px; border: none;
+  background: var(--btn); color: var(--ink);
+  cursor: pointer; text-decoration: none;
+  transition: background .15s;
+}
+.btn:hover { background: var(--btn-hover); }
+.btn.primary { background: var(--accent-fill); color: var(--on-accent); }
+.btn.primary:hover { background: color-mix(in srgb, var(--accent-fill) 88%, #fff); }
+.btn[disabled], .btn.is-disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+.btn:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visible, button:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+.banner {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 16px; border-radius: 12px;
+  background: var(--warn-soft); color: var(--ink);
+  font-size: .92rem;
+}
+.banner strong { color: var(--warn); font-weight: 600; }
+.banner.bad { background: var(--bad-soft); }
+.banner.bad strong { color: var(--bad); }
+
+/* --- Kacheln ------------------------------------------------------------------- */
+.panel {
+  background: var(--panel);
+  border-radius: var(--r);
+  padding: 20px;
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+.eyebrow { font-size: .86rem; font-weight: 500; color: var(--mute); }
+.panel h2 { font-size: 1.15rem; font-weight: 500; letter-spacing: -.005em; }
+.sub { color: var(--mute); font-size: .88rem; }
+.grid-2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+
+/* --- Auto und Akku oben, ohne Kachel ------------------------------------------------ */
+.hero { display: grid; gap: 6px; padding: 18px 4px 6px; }
+.car-panel { display: grid; gap: 4px; }
+.car-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px 16px; }
+.car-text { display: grid; gap: 2px; min-width: 0; }
+.car-text h2 { font-size: clamp(1.7rem, 6vw, 2.3rem); font-weight: 500; letter-spacing: -.02em; line-height: 1.1; }
+.car-actions { display: flex; gap: 8px; align-items: center; flex: none; }
+.car-panel .car-form { margin-top: 8px; }
+.car-note { margin-top: 6px; }
+.car-pic { display: grid; place-items: center; min-height: 140px; margin-inline: auto; width: min(100%, 760px); }
+.car-pic img { width: 100%; max-height: 300px; aspect-ratio: 2.4 / 1; object-fit: contain; display: block; }
+.car-pic.broken img { display: none; }
+.car-pic .car-miss { display: none; color: var(--mute); font-size: .86rem; padding: 32px 8px; text-align: center; }
+.car-pic.broken .car-miss { display: block; }
+.car-pic.loading img { opacity: .45; transition: opacity .2s; }
+.car-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 10px; }
+.car-form label { display: grid; gap: 4px; font-size: .8rem; font-weight: 500; color: var(--mute); min-width: 0; }
+.car-form select {
+  font: inherit; font-size: .92rem; color: var(--ink);
+  padding: 8px 10px; min-height: 42px; border-radius: 8px; border: none;
+  background: var(--btn); min-width: 0; width: 100%;
+}
+.car-note { display: grid; gap: 4px; overflow-wrap: anywhere; }
+
+.battery { display: grid; gap: 10px; }
+.battery-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 20px; }
+.big {
+  font-weight: 300; font-size: clamp(3rem, 13vw, 4.4rem); line-height: 1; letter-spacing: -.04em;
+  font-variant-numeric: tabular-nums;
+}
+.big small { font-size: .45em; font-weight: 400; margin-left: 6px; color: var(--mute); letter-spacing: 0; }
+.range { font-weight: 300; font-size: clamp(1.5rem, 6vw, 2rem); letter-spacing: -.02em; color: var(--ink-2); }
+.range small { color: var(--mute); font-weight: 400; font-size: .8rem; display: block; text-align: right; letter-spacing: 0; }
+
+/* Battery bar: thin, green, with the floor and the charge limit marked underneath. */
+.gauge { position: relative; padding-bottom: 22px; }
+.gauge-window { display: none; }
+.gauge-body { position: relative; }
+.gauge-track { position: relative; height: 10px; border-radius: 5px; background: var(--sunk); overflow: hidden; }
+.hero .gauge-track { background: var(--btn); }
+.gauge-nub { display: none; }
+.gauge-fill {
+  position: absolute; inset: 0 auto 0 0; border-radius: 5px;
+  background: var(--battery);
+  transition: width .8s cubic-bezier(.2, .8, .2, 1);
+}
+.gauge-fill.warn { background: var(--warn); }
+.gauge-fill.bad { background: var(--bad); }
+.gauge-floor { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--bg); opacity: .9; }
+.gauge-limit { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--bg); opacity: .9; }
+.gauge-scale { position: absolute; left: 0; right: 0; bottom: 0; height: 18px; }
+.gauge-scale span {
+  position: absolute; transform: translateX(-50%);
+  font-size: .74rem; color: var(--mute); white-space: nowrap;
+}
+.gauge-scale span:first-child { transform: none; }
+.gauge-scale span:last-child { transform: translateX(-100%); }
+.stamp { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; color: var(--mute); font-size: .86rem; }
+
+/* --- Nächster Ladestopp ---------------------------------------------------------- */
+.next-date { font-weight: 400; font-size: clamp(1.9rem, 6vw, 2.4rem); line-height: 1.05; letter-spacing: -.025em; }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.fact { background: var(--sunk); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.fact b { display: block; font-weight: 500; font-size: 1.05rem; }
+.fact span { font-size: .76rem; color: var(--mute); }
+.tip {
+  display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start;
+  padding: 12px 14px; border-radius: 12px; background: var(--sunk); font-size: .9rem;
+}
+.tip svg { color: var(--accent); margin-top: 2px; }
+
+/* --- Letzte Ladung ---------------------------------------------------------------- */
+.receipt { display: grid; gap: 0; }
+.receipt .site { font-weight: 500; font-size: 1.15rem; letter-spacing: -.01em; }
+.receipt .when { color: var(--mute); margin-bottom: 6px; font-size: .86rem; }
+.line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; }
+.line + .line, .receipt .line { border-top: 1px solid var(--line); }
+.line .lbl { white-space: nowrap; color: var(--ink-2); }
+.line .dots { flex: 1; min-width: 8px; }
+.line .val { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.line.total { font-weight: 600; font-size: 1.05rem; }
+.line.total .lbl { color: var(--ink); }
+.line.zero .val { color: var(--mute); }
+.receipt-actions { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+
+/* --- Monat ------------------------------------------------------------------------------ */
+.month { gap: 18px 40px; }
+@media (min-width: 860px) { .month { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.month-main { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.month-total { display: flex; align-items: baseline; gap: 6px 14px; flex-wrap: wrap; }
+.month-total .big { font-size: clamp(2.5rem, 9vw, 3.2rem); }
+.delta { font-size: .86rem; color: var(--mute); }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kpi { background: var(--sunk); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.kpi b { display: block; font-weight: 500; font-size: 1.1rem; }
+.kpi span { font-size: .76rem; color: var(--mute); }
+.exports { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .86rem; }
+.exports .label { color: var(--mute); margin-right: 4px; }
+.exports a { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; background: var(--btn); color: var(--ink); text-decoration: none; font-weight: 500; }
+.exports a:hover { background: var(--btn-hover); }
+.steps { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; font-size: .92rem; }
+.compare { display: grid; gap: 0; font-size: .92rem; }
+.compare .line .lbl { white-space: normal; min-width: 0; }  /* long labels wrap on phones */
+.compare .cmp-group { display: grid; margin-top: 14px; }
+.compare .cmp-head { color: var(--mute); font-size: .82rem; font-weight: 500; padding-bottom: 2px; }
+
+/* --- Preis-Radar ---------------------------------------------------------------------- */
+.radar { display: grid; gap: 12px; position: relative; }
+.radar-row {
+  display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 7.2rem; gap: 12px; align-items: center;
+  border-radius: 8px; padding: 2px 0;
+}
+.radar-row .who b { display: block; font-size: .94rem; font-weight: 500; }
+.radar-row .who span { font-size: .78rem; color: var(--mute); }
+.radar-track { position: relative; height: 22px; }
+.radar-bar {
+  position: absolute; left: 0; top: 6px; bottom: 6px;
+  background: var(--accent-fill); border-radius: 5px;
+  transition: width .7s cubic-bezier(.2, .8, .2, 1);
+}
+.radar-row.best .radar-bar { background: var(--battery); }
+.radar-empty { position: absolute; left: 0; right: 0; top: 10px; height: 0; border-top: 2px dotted var(--line); }
+.radar-avg { position: absolute; top: -2px; bottom: -2px; width: 0; border-left: 1.5px dashed var(--mute); }
+.radar-val { text-align: right; font-size: .9rem; font-weight: 500; }
+.radar-val small { display: block; color: var(--mute); font-size: .74rem; font-weight: 400; }
+.radar-axis { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 7.2rem; gap: 12px; }
+.radar-axis .ticks { position: relative; height: 16px; }
+.radar-axis .ticks span { position: absolute; top: 2px; transform: translateX(-50%); font-size: .72rem; color: var(--mute); }
+.radar-axis .ticks span.avg { color: var(--ink-2); font-weight: 500; }
+@media (max-width: 560px) {
+  .radar-row, .radar-axis { grid-template-columns: 6.6rem minmax(0, 1fr) 5.8rem; gap: 8px; }
+}
+.insights { list-style: none; margin: 0; padding: 0; display: grid; }
+.insights li {
+  display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: start;
+  font-size: .9rem; padding: 12px 0; border-top: 1px solid var(--line); color: var(--ink-2);
+}
+.insights li svg { color: var(--accent); margin-top: 2px; }
+.insights li.idle svg, .insights li.speed svg { color: var(--warn); }
+.kw-slow, td .when-sub.kw-slow, .line.slow .val { color: var(--warn); }
+.line-note { color: var(--warn); font-size: .8rem; text-align: right; padding-bottom: 6px; }
+
+/* --- Tabellen -------------------------------------------------------------------------- */
+.scroll { overflow-x: auto; margin-inline: -4px; padding-inline: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th {
+  text-align: left; font-size: .78rem; font-weight: 500;
+  color: var(--mute); padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+td { padding: 11px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+th.n, td.n { text-align: right; }
+td.site { white-space: normal; min-width: 8rem; }
+td .when-sub { display: block; color: var(--mute); font-size: .78rem; }
+.minibar { display: inline-block; width: 64px; height: 6px; border-radius: 3px; background: var(--btn); vertical-align: middle; margin-right: 8px; position: relative; overflow: hidden; }
+.minibar i { position: absolute; inset: 0 auto 0 0; background: var(--accent-fill); border-radius: 3px; }
+.op-chips { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.mp-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.mp-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 16px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.mp-list li:last-child { border-bottom: none; }
+.mp-list .who b { display: block; font-size: .95rem; font-weight: 500; overflow-wrap: anywhere; }
+.mp-list .who span { font-size: .8rem; color: var(--mute); }
+.mp-val { text-align: right; font-size: .9rem; white-space: nowrap; }
+.mp-val small { display: block; color: var(--mute); font-size: .76rem; }
+.map-link { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; font-size: .86rem; font-weight: 500; color: var(--accent); text-decoration: none; }
+.map-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.map-link svg { width: 16px; height: 16px; flex: none; }
+@media (max-width: 560px) { .mp-list li { gap: 10px; } .map-link span { display: none; } }
+.link-btn { font: inherit; font-size: .86rem; font-weight: 500; color: var(--accent); background: none; border: none; padding: 0; cursor: pointer; }
+.link-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
+.muted { color: var(--mute); }
+
+/* --- Monatsverlauf ------------------------------------------------------------------------ */
+.cols { display: flex; align-items: flex-end; gap: 14px; height: 170px; padding-top: 22px; border-bottom: 1px solid var(--line); position: relative; }
+.col { flex: 1; max-width: 90px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; position: relative; }
+.col .bar { width: 100%; max-width: 40px; background: var(--accent-fill); border-radius: 6px 6px 0 0; min-height: 2px; transition: height .7s cubic-bezier(.2, .8, .2, 1); }
+.col.cur .bar { background: color-mix(in srgb, var(--accent-fill) 45%, var(--panel)); }
+.col .v { font-size: .76rem; color: var(--ink-2); margin-bottom: 4px; white-space: nowrap; }
+.col-labels { display: flex; gap: 14px; }
+.col-labels span { flex: 1; max-width: 90px; text-align: center; font-size: .78rem; color: var(--mute); }
+
+/* --- Abgleich / Betrieb ----------------------------------------------------------------------- */
+.meter { height: 6px; border-radius: 3px; background: var(--btn); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent-fill); border-radius: 3px; }
+.status-list { display: grid; font-size: .92rem; }
+.status-list div { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 9px 0; border-top: 1px solid var(--line); }
+.status-list div:first-child { border-top: none; }
+.setup-steps { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; font-size: .92rem; }
+form.code { display: flex; gap: 8px; flex-wrap: wrap; }
+form.code input {
+  flex: 1; min-width: 0; font: inherit; font-size: .88rem; padding: 9px 12px; border-radius: 8px;
+  border: none; background: var(--btn); color: var(--ink);
+}
+details summary { cursor: pointer; font-weight: 500; font-size: .9rem; color: var(--ink-2); }
+details[open] summary { margin-bottom: 10px; }
+
+/* --- Tooltip & Toast ------------------------------------------------------------------------- */
+.tt {
+  position: fixed; z-index: 30; pointer-events: none;
+  background: var(--ink); color: var(--bg);
+  font-size: .8rem; line-height: 1.4; padding: 7px 10px; border-radius: 8px;
+  max-width: 240px; box-shadow: var(--shadow);
+}
+.toast {
+  position: fixed; z-index: 40; left: 50%; transform: translateX(-50%);
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px;
+  font-size: .9rem; font-weight: 500; box-shadow: var(--shadow); max-width: calc(100% - 32px);
+}
+.skeleton { color: var(--mute); padding: 40px 0; text-align: center; }
+footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; }
+
+
+/* ===== Modern: what differs from the shared base above ======================================= */
+[data-tone="A"] { --tone: var(--t-a); }
+[data-tone="B"] { --tone: var(--t-b); }
+[data-tone="C"] { --tone: var(--t-c); }
+[data-tone="D"] { --tone: var(--t-d); }
+[data-tone="E"] { --tone: var(--t-e); }
+[data-tone="F"] { --tone: var(--t-f); }
+[data-tone="G"] { --tone: var(--t-g); }
+
+body { font-feature-settings: "tnum" 1, "lnum" 1; }
+h1, h2, h3 { font-weight: 650; }
+
+/* Head: the name with the price scale as its mark */
+.brand h1 { font-size: 1.15rem; font-weight: 750; font-stretch: 80%; letter-spacing: 0; white-space: nowrap; }
+.brand h1::before {
+  content: ""; display: inline-block; vertical-align: -1px; margin-right: 8px; width: 26px; height: 12px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--t-a) 0 14.3%, var(--t-b) 0 28.6%, var(--t-c) 0 42.9%, var(--t-d) 0 57.1%, var(--t-e) 0 71.4%, var(--t-f) 0 85.7%, var(--t-g) 0);
+}
+
+/* Buttons: outlined in ink, filled when pressed or primary */
+.btn { border: 1.5px solid var(--ink); border-radius: 6px; font-weight: 600; background: transparent; }
+.btn:hover { background: var(--ink); color: var(--panel); }
+.btn.primary { background: var(--ink); color: var(--panel); }
+.btn.primary:hover { background: var(--ink-2); }
+.exports a { background: transparent; border: 1px solid var(--line); border-radius: 6px; font-weight: 600; }
+.exports a:hover { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.chip.info { background: transparent; color: var(--ink-2); border: 1px solid var(--line); border-radius: 4px; }
+.link-btn, .map-link { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+a { color: var(--ink); text-underline-offset: 3px; }
+
+/* Tiles: hairline frame, small radius */
+.panel { border: 1px solid var(--line); }
+.panel h2 { font-size: 1.25rem; font-weight: 650; font-stretch: 88%; letter-spacing: 0; }
+.eyebrow { font-weight: 500; }
+
+/* Figures: condensed bold */
+.big { font-weight: 720; font-stretch: 75%; letter-spacing: -.01em; line-height: .95; }
+.big small { font-weight: 500; font-stretch: 100%; }
+.range { font-weight: 650; font-stretch: 78%; letter-spacing: 0; color: var(--ink); }
+.next-date { font-weight: 720; font-stretch: 75%; letter-spacing: 0; font-size: clamp(2.2rem, 7vw, 2.9rem); }
+.month-total .big { font-size: clamp(2.8rem, 10vw, 3.6rem); }
+.car-text h2 { font-weight: 750; font-stretch: 75%; letter-spacing: 0; font-size: clamp(2rem, 7vw, 2.8rem); }
+.receipt .site { font-weight: 650; font-stretch: 88%; font-size: 1.25rem; }
+.line.total { font-weight: 700; }
+
+/* Small figure blocks: a rule on top instead of a filled box */
+.kpi, .fact { background: none; border-radius: 0; border-top: 2px solid var(--ink); padding: 8px 2px 0; }
+.kpi b, .fact b { font-weight: 700; font-stretch: 80%; font-size: 1.35rem; }
+
+/* Battery: 20 segments like the car's display, floor and limit marked by the figures under it */
+.gauge { padding-bottom: 24px; }
+.gauge-track, .hero .gauge-track {
+  height: 20px; border-radius: 0; background: var(--sunk);
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 calc(5% - 3px), transparent calc(5% - 3px) 5%);
+          mask: repeating-linear-gradient(90deg, #000 0 calc(5% - 3px), transparent calc(5% - 3px) 5%);
+}
+.hero .gauge-track { background: color-mix(in srgb, var(--ink) 12%, var(--bg)); }
+.gauge-fill { border-radius: 0; }
+.gauge-floor, .gauge-limit { display: none; }
+.gauge-scale span { color: var(--ink-2); font-weight: 500; }
+.gauge-scale span::before { content: ""; position: absolute; left: 50%; top: -5px; width: 1px; height: 4px; background: var(--mute); }
+.gauge-scale span:first-child::before, .gauge-scale span:last-child::before { display: none; }
+
+/* Tips save money: the cheap end of the scale marks them */
+.tip { background: var(--sunk); border-radius: 6px; box-shadow: inset 4px 0 0 var(--t-a); padding-left: 16px; }
+.tip svg { color: var(--t-a); }
+.insights li svg { color: var(--ink-2); }
+
+/* Price radar: arrows on the scale, like an energy label */
+.radar-track { height: 28px; }
+.radar-bar, .radar-row.best .radar-bar {
+  top: 2px; bottom: 2px; border-radius: 0;
+  background: var(--tone, var(--ink-2));
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
+}
+.radar-avg { border-left: 1.5px dashed var(--ink); }
+.radar-val { font-weight: 700; }
+.tone-legend { display: flex; align-items: center; gap: 10px; font-size: .78rem; color: var(--mute); }
+.tone-legend .scale {
+  width: 120px; height: 8px; flex: none;
+  background: linear-gradient(90deg, var(--t-a) 0 14.3%, var(--t-b) 0 28.6%, var(--t-c) 0 42.9%, var(--t-d) 0 57.1%, var(--t-e) 0 71.4%, var(--t-f) 0 85.7%, var(--t-g) 0);
+}
+
+/* Lists: the price of a site or a session carries its colour too */
+.minibar { background: var(--sunk); border-radius: 0; }
+.minibar i { background: var(--tone, var(--ink-2)); border-radius: 0; }
+td[data-tone]:not([data-tone=""])::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; background: var(--tone); vertical-align: 1px; }
+
+/* Month history and meters in ink */
+.col .bar { background: var(--ink); border-radius: 2px 2px 0 0; }
+.col.cur .bar { background: repeating-linear-gradient(135deg, var(--ink) 0 4px, transparent 4px 8px); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.meter { border-radius: 0; background: var(--sunk); }
+.meter i { background: var(--ink); border-radius: 0; }
+
+.car-form select, form.code input { background: var(--sunk); border: 1px solid var(--line); border-radius: 6px; }
+</style>
+<style>
+/* --- PDF view (Home Assistant app only: it has no PDF viewer) --------------------------------- */
+.pdf-view {
+  position: fixed; inset: 0; z-index: 35; display: flex; flex-direction: column;
+  background: var(--bg); color: var(--ink);
+}
+.pdf-bar {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  background: var(--panel); border-bottom: 1px solid var(--line);
+}
+.pdf-bar .pdf-title { flex: 1; min-width: 0; font-weight: 700; font-size: .92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pdf-bar .btn { padding: 7px 12px; min-height: 40px; }
+.pdf-bar .pdf-x { width: 40px; padding: 0; justify-content: center; font-size: 1.3rem; line-height: 1; }
+.pdf-pages {
+  flex: 1; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding: 12px 12px calc(24px + env(safe-area-inset-bottom, 0px));
+}
+.pdf-pages .pdf-hint { color: var(--mute); font-size: .8rem; text-align: center; margin: 0 0 12px; }
+.pdf-pages figure { margin: 0 0 14px; overflow-x: auto; }
+.pdf-pages img {
+  display: block; width: 100%; height: auto; aspect-ratio: auto 210 / 297; background: #fff; border-radius: 4px;
+  box-shadow: var(--shadow); cursor: zoom-in;
+}
+.pdf-pages figure.zoomed img { width: 220%; max-width: none; cursor: zoom-out; }
+.pdf-pages figcaption { color: var(--mute); font-size: .74rem; text-align: center; margin-top: 4px; }
+.pdf-pages .pdf-msg { color: var(--mute); text-align: center; padding: 40px 0; }
+
+/* --- Look picker (footer) ----------------------------------------------------------------- */
+.look-pick { display: inline-flex; align-items: center; gap: 8px; }
+footer { align-items: center; }
+.look-pick .seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--sunk); box-shadow: inset 0 0 0 1px var(--line); }
+.look-pick button {
+  font: inherit; font-size: .8rem; font-weight: 500; border: 0; background: none; color: var(--mute);
+  padding: 4px 12px; min-height: 30px; border-radius: 7px; cursor: pointer;
+}
+.look-pick button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.look-pick button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+
+<script>
+try {
+  if (localStorage.getItem("ladecockpit-look") === "modern") {
+    document.getElementById("look-modern").media = "all";
+    document.getElementById("look-classic").media = "not all";
+    document.documentElement.dataset.look = "modern";
+  }
+} catch (e) { /* no storage – the server's choice applies once the data is in */ }
+</script>
+
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="brand">
+      <h1>Lade<span>cockpit</span></h1>
+      <span class="sub" id="tagline"></span>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="top-actions" id="top-actions"></div>
+  </header>
+  <div id="banners"></div>
+  <div id="content"><p class="skeleton">…</p></div>
+  <footer id="footer"></footer>
+</div>
+<div class="tt" id="tt" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script type="application/json" id="preview-data"></script>
+<script>
+(() => {
+  "use strict";
+
+  const $ = (sel) => document.querySelector(sel);
+  // car: the open editor of the car picture – { catalog, choice, view } while it is open
+  const state = { data: null, preview: false, busy: false, car: null };
+
+  // --- Texts -----------------------------------------------------------------------
+  const TEXT = {
+    en: {
+      tagline: "Supercharger invoices for Home Assistant",
+      preview: "Preview · demo data", demoMode: "Demo mode", live: "Live",
+      searching: "Looking for invoice …", syncBroken: "Sync failed", synced: "Synced {when}",
+      syncNow: "Sync now", syncing: "Syncing …", connectFirst: "Connect to Tesla first", syncTitle: "Fetch invoices from Tesla now",
+      previewBanner: "<strong>Preview.</strong> All figures are made-up example data. On your own server the page shows your real invoices and Home Assistant values.",
+      missingEntities: "Entity not found in Home Assistant:", missingHint: "Check the HA_ENT_… settings.",
+      authExpired: "Tesla sign-in expired.", lastSyncFailed: "Last sync failed.", haDown: "Home Assistant not reachable.", haHint: "Check HA_URL and HA_TOKEN.",
+      noService: "No connection to the Ladecockpit service.", noServiceHint: "Is the container running?",
+      setup: "Setup", teslaMissing: "Tesla access missing",
+      teslaMissingText: "Add <code>TESLA_CLIENT_ID</code> and <code>TESLA_CLIENT_SECRET</code> of your developer app to <code>.env</code> and restart the container.",
+      connectTitle: "Connect to Tesla",
+      connectText: "Sign in once so Ladecockpit may read your Supercharger invoices. It only reads and never sends commands to the car.",
+      signIn: "Sign in with Tesla", redirectHelp: "The redirect after sign-in does not land here?",
+      redirectText: "After signing in, copy the full address from the browser bar (it contains <code>code=…</code>) and paste it here. Expected redirect:",
+      connect: "Connect", addrOrCode: "Address or code",
+      battery: "Battery", noBattery: "No battery data", carOnline: "Car online", liveFromHa: "Live from Home Assistant",
+      carOffline: "Car offline", lastValue: "Last value {when}", rangeLabel: "Range reported by car",
+      window: "Charging window {a}–{b} %", gaugeAria: "Battery {soc}, charging window {a} to {b} percent",
+      nextStop: "Next charging stop", soon: "Charge soon", reachesToday: "The battery reaches {floor} % today.",
+      reachesTomorrow: "The battery reaches {floor} % tomorrow.", reachesIn: "In about {days} days the battery is at {floor} %.",
+      perDay: "used per day", distPerDay: "driven per day", basis: "history used", days: "{n} days",
+      lastCharge: "Last session · from invoice", noCharge: "No invoice fetched yet. After the first sync the latest Supercharger session with its real price shows up here.",
+      supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", ofWhichMp: "of which MultiPass ({n})", thSiteAny: "Site", energy: "Energy",
+      fuelCompare: "Combustion car ({c} L/100 km · {p}/L)", fuelComparePaid: "Combustion car ({c} L/100 km · {p}/L paid)", saved: "Saved",
+      fuelPaidTip: "Price per litre you paid: {litres} L {span}", fuelPaidDays: "in the last {n} days", fuelPaidAll: "in total",
+      fuelHead: "Compared with a combustion car · {dist} {unit}", fuelSince: " since {d}", teslaSame: "Tesla ({p} per 100 {unit})",
+      credit: "Tesla credit", listPrice: "List price", creditsUsed: "Tesla credits used", plusCredit: "− {p} Tesla credit",
+      invoicesLine: "Superchargers & MultiPass (invoices)", homeLine: "At home ({kwh} kWh · {p}/kWh)", homeLineNoPrice: "At home ({kwh} kWh, no price set)",
+      windowText: "Charge window {a}–{b} %",
+      lookLabel: "Look", lookModern: "Modern", lookClassic: "Classic", lookFailed: "Could not save the look ({e})",
+      toneCheap: "cheaper than your average", toneDear: "dearer",
+      health: "Battery health", healthTitle: "Range at 100 %", healthSub: "The car's own estimate, from {n} readings with the battery above 50 %.",
+      healthSince: "since {d}: {sign}{p} %", healthWait: "A trend shows after 30 days of data.", dcShare: "Supercharger share of charged energy (12 months)",
+      climate: "Consumption", climateTitle: "By outside temperature", thTemp: "Outside", thDays: "Days", thPct: "% / 100 {unit}", thKwh100: "kWh / 100 {unit}",
+      climateSub: "Battery used per day, grouped by the day's mean temperature. kWh include charging losses.",
+      bandBelow: "below {hi} °C", bandAbove: "above {lo} °C", bandRange: "{lo} to {hi} °C",
+      projection: "Projected for a year: ≈ {cost} for ≈ {dist} {unit}", projectionFuel: " · combustion car ≈ {fuel}, saved ≈ {saved}", projectionBasis: " (based on the last {n} days)", price: "Price", charging: "Charging", idleFee: "Idle fee", total: "Total",
+      invoicePdf: "Invoice (PDF)", notInPreview: "Not available in the preview",
+      pdfLoading: "Loading …", pdfFailed: "Could not load the PDF ({e}).", pdfPage: "Page {n} of {m}",
+      pdfDownload: "Download", pdfClose: "Close", pdfZoom: "Tap a page to zoom in", dlStarted: "Download started – the file goes to Downloads",
+      dlFailed: "Download failed ({e})",
+      pushed: "Sent to HA", backfill: "Imported", pending: "Sending to HA", stale: "Too old to send",
+      pushedShort: "sent", backfillShort: "imported", pendingShort: "pending", staleShort: "too old",
+      thisMonth: "This month", avgDelta: "avg price {sign}{d}/kWh vs. {month}",
+      kwhCharged: "kWh charged", avgPerKwh: "avg per kWh", per100: "per 100 {unit}", sessionsWord: "sessions", feeWord: "fees",
+      kwh100: "kWh per 100 {unit}", power: "Avg power", thKw: "kW", kwTip: "avg charging power {kw} kW",
+      slowSub: "usually {typical}", slowNote: "slow – usually {typical} kW here",
+      exportLabel: "Export", csvAll: "CSV – all sessions", zipMonth: "Invoices {month} (ZIP)", pdfMonth: "Report {month} (PDF, with invoices)",
+      addonStepsTitle: "Sign in with Tesla in three steps",
+      addonStep1: "Click <strong>Sign in with Tesla</strong> – Tesla opens in a new tab.",
+      addonStep2: "After signing in, Tesla redirects to <span class=\"mono\">{uri}</span>. That page does not load – that is expected.",
+      addonStep3: "Copy the full address from the browser bar of that tab and paste it here.",
+      atReference: "At reference price {p}", perInvoices: "Per invoices (without fees)",
+      radar: "Price radar", radarTitle: "What a kWh costs you by time of day", radarSub: "Average list price from your invoices", yourAvg: "dashed: your average {p}",
+      cheapest: "cheapest", noSession: "no session", oneSession: "1 session", nSessions: "{n} sessions",
+      tipSlot: "{label} ({range}): avg {p}/kWh from {n}, {kwh} kWh", tipEmpty: "{label}: no session in this time window yet",
+      sites: "Sites", sitesTitle: "Where you charge", noSessions: "No sessions yet.",
+      thSite: "Supercharger", thSessions: "Sessions", thKwh: "kWh", thAvg: "avg /kWh",
+      history: "History", historyTitle: "Charging cost per month", current: "(current)",
+      allSessions: "All sessions", sinceDate: "since {d}", thDate: "Date", thAmount: "Amount", thHa: "HA", thInvoice: "Invoice",
+      open: "open", plusIdle: "+ {p} idle fee", noneYet: "No sessions fetched yet.",
+      reconcile: "Reconciliation", reconcileTitle: "Home Assistant vs. invoices", haCost: "Charging cost in HA", perNInvoices: "Per {n} invoices",
+      haKwh: "Energy in HA", billedKwh: "Billed kWh", matches: "Matches", haAbove: "HA is {p} higher", haBelow: "HA is {p} lower",
+      reconcileText: "Differences come from estimated prices in manual bookings and from the car reporting fewer kWh than the Supercharger bills. Sessions sent from now on are booked with invoice values.",
+      ops: "Operation", opsTitle: "Connections & API cost", tesla: "Tesla", ha: "Home Assistant",
+      connected: "connected", notConnected: "not connected", unreachable: "unreachable", notSetUp: "not set up",
+      entities: "HA entities", lastSync: "Last sync", nextSync: "Next sync", requests: "Tesla requests this month",
+      apiCost: "≈ ${usd} – covered by Tesla's monthly ${credit} credit.", disconnect: "Disconnect Tesla", confirmDisconnect: "Really disconnect? Tap again",
+      footerSrc: "Invoices: Tesla Fleet API · Battery & distance: Home Assistant", stand: "As of {d}",
+      toastSynced: "Synced – {n} new", toastNothing: "Synced – nothing new", toastFailed: "Sync failed: {e}",
+      toastConnected: "Connected to Tesla – first sync running", toastDisconnected: "Tesla disconnected",
+      unknown: "unknown", justNow: "just now", minAgo: "{n} min ago", hAgo: "{n} h ago", yesterday: "yesterday {t}",
+      inMin: "in {n} min", inH: "in {n} h", onDate: "on {d}", perMonthAria: "Charging cost per month",
+      car: "Your car", carEdit: "Customise", carAuto: "Recognised from the VIN. Pick the trim, paint and wheels so the picture matches your car.",
+      carModel: "Model", carTrim: "Trim", carWheels: "Wheels", carPaint: "Paint", carView: "View",
+      save: "Save", cancel: "Cancel", carReset: "Recognise from the VIN again", carSaved: "Saved – Home Assistant gets the new picture within a minute",
+      carSource: "Pictures come straight from Tesla's configurator. Only combinations Tesla can render are offered.",
+      carHa: "In Home Assistant: <span class=\"mono\">sensor.ladecockpit_car</span> – entity picture plus <span class=\"mono\">image_front</span>, <span class=\"mono\">image_side</span>, <span class=\"mono\">image_rear</span>.",
+      carLoadFailed: "Tesla's image service did not answer.",
+      mpTitle: "Where MultiPass has worked", mpSub: "Third-party stations from your invoices, billed through Tesla",
+      mpLast: "last", mpMap: "Map", mpMapTitle: "Search {site} on Google Maps",
+      oneStation: "1 station", nStations: "{n} stations", mpOpTip: "{name}: {stations}, {sessions}, last on {d}",
+      mpNote: "Only stations where a MultiPass session is on your invoices. Whether another station takes MultiPass is shown by the Tesla app and by the car's map with third-party chargers turned on. In Home Assistant: <span class=\"mono\">sensor.ladecockpit_multipass</span>.",
+    },
+    de: {
+      tagline: "Supercharger-Rechnungen für Home Assistant",
+      preview: "Vorschau · Demo-Daten", demoMode: "Demo-Modus", live: "Live",
+      searching: "Sucht neue Rechnung …", syncBroken: "Abgleich gestört", synced: "Abgleich {when}",
+      syncNow: "Jetzt abgleichen", syncing: "Gleiche ab …", connectFirst: "Erst mit Tesla verbinden", syncTitle: "Rechnungen jetzt bei Tesla abrufen",
+      previewBanner: "<strong>Vorschau.</strong> Alle Zahlen sind erfundene Beispieldaten. Auf deinem eigenen Server zeigt die Seite deine echten Rechnungen und HA-Werte.",
+      missingEntities: "Entität in Home Assistant nicht gefunden:", missingHint: "Prüfe die HA_ENT_…-Einstellungen.",
+      authExpired: "Tesla-Anmeldung abgelaufen.", lastSyncFailed: "Letzter Abgleich fehlgeschlagen.", haDown: "Home Assistant nicht erreichbar.", haHint: "Prüfe HA_URL und HA_TOKEN.",
+      noService: "Keine Verbindung zum Ladecockpit-Dienst.", noServiceHint: "Läuft der Container?",
+      setup: "Einrichtung", teslaMissing: "Tesla-Zugang fehlt",
+      teslaMissingText: "Trage <code>TESLA_CLIENT_ID</code> und <code>TESLA_CLIENT_SECRET</code> deiner Developer-App in die <code>.env</code> ein und starte den Container neu.",
+      connectTitle: "Mit Tesla verbinden",
+      connectText: "Einmal anmelden, damit Ladecockpit deine Supercharger-Rechnungen abrufen darf. Es liest nur und schickt keine Befehle ans Auto.",
+      signIn: "Bei Tesla anmelden", redirectHelp: "Die Weiterleitung nach der Anmeldung landet nicht hier?",
+      redirectText: "Kopiere nach der Anmeldung die komplette Adresse aus der Browserzeile (sie enthält <code>code=…</code>) und füge sie hier ein. Erwartete Weiterleitung:",
+      connect: "Verbinden", addrOrCode: "Adresse oder Code",
+      battery: "Akku", noBattery: "Keine Akkudaten", carOnline: "Auto online", liveFromHa: "Live aus Home Assistant",
+      carOffline: "Auto offline", lastValue: "Letzter Stand {when}", rangeLabel: "Reichweite laut Auto",
+      window: "Ladefenster {a}–{b} %", gaugeAria: "Akku {soc}, Ladefenster {a} bis {b} Prozent",
+      nextStop: "Nächster Ladestopp", soon: "Bald laden", reachesToday: "Der Akku erreicht heute {floor} %.",
+      reachesTomorrow: "Der Akku erreicht morgen {floor} %.", reachesIn: "In etwa {days} Tagen ist der Akku bei {floor} %.",
+      perDay: "Verbrauch pro Tag", distPerDay: "gefahren pro Tag", basis: "Verlauf als Basis", days: "{n} Tage",
+      lastCharge: "Letzte Ladung · laut Rechnung", noCharge: "Noch keine Rechnung abgerufen. Nach dem ersten Abgleich steht hier die letzte Supercharger-Ladung mit echtem Preis.",
+      supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", ofWhichMp: "davon MultiPass ({n})", thSiteAny: "Standort", energy: "Energie",
+      fuelCompare: "Verbrenner ({c} L/100 km · {p}/L)", fuelComparePaid: "Verbrenner ({c} L/100 km · {p}/L bezahlt)", saved: "Gespart",
+      fuelPaidTip: "Literpreis, den du bezahlt hast: {litres} L {span}", fuelPaidDays: "in den letzten {n} Tagen", fuelPaidAll: "insgesamt",
+      fuelHead: "Vergleich mit Verbrenner · {dist} {unit}", fuelSince: " seit {d}", teslaSame: "Tesla ({p} pro 100 {unit})",
+      credit: "Tesla-Gutschrift", listPrice: "Listenpreis", creditsUsed: "Tesla-Gutschriften genutzt", plusCredit: "− {p} Tesla-Gutschrift",
+      invoicesLine: "Supercharger & MultiPass (Rechnungen)", homeLine: "Zu Hause ({kwh} kWh · {p}/kWh)", homeLineNoPrice: "Zu Hause ({kwh} kWh, kein Preis hinterlegt)",
+      windowText: "Ladefenster {a}–{b} %",
+      lookLabel: "Design", lookModern: "Modern", lookClassic: "Klassisch", lookFailed: "Design ließ sich nicht speichern ({e})",
+      toneCheap: "günstiger als dein Schnitt", toneDear: "teurer",
+      health: "Akku-Gesundheit", healthTitle: "Reichweite bei 100 %", healthSub: "Schätzung des Autos, aus {n} Messungen mit Akku über 50 %.",
+      healthSince: "seit {d}: {sign}{p} %", healthWait: "Ein Trend zeigt sich nach 30 Tagen Daten.", dcShare: "Supercharger-Anteil der geladenen Energie (12 Monate)",
+      climate: "Verbrauch", climateTitle: "Je nach Außentemperatur", thTemp: "Außen", thDays: "Tage", thPct: "% / 100 {unit}", thKwh100: "kWh / 100 {unit}",
+      climateSub: "Akkuverbrauch pro Tag, eingeteilt nach der Durchschnittstemperatur des Tages. kWh inklusive Ladeverlusten.",
+      bandBelow: "unter {hi} °C", bandAbove: "über {lo} °C", bandRange: "{lo} bis {hi} °C",
+      projection: "Aufs Jahr hochgerechnet: ≈ {cost} bei ≈ {dist} {unit}", projectionFuel: " · Verbrenner ≈ {fuel}, gespart ≈ {saved}", projectionBasis: " (Basis: letzte {n} Tage)", price: "Preis", charging: "Laden", idleFee: "Blockiergebühr", total: "Summe",
+      invoicePdf: "Rechnung (PDF)", notInPreview: "In der Vorschau nicht verfügbar",
+      pdfLoading: "Wird geladen …", pdfFailed: "Die PDF ließ sich nicht laden ({e}).", pdfPage: "Seite {n} von {m}",
+      pdfDownload: "Herunterladen", pdfClose: "Schließen", pdfZoom: "Seite antippen zum Vergrößern", dlStarted: "Download gestartet – die Datei landet unter „Downloads“",
+      dlFailed: "Download fehlgeschlagen ({e})",
+      pushed: "An HA gemeldet", backfill: "Übernommen", pending: "Wird an HA gemeldet", stale: "Zu alt zum Melden",
+      pushedShort: "gemeldet", backfillShort: "übernommen", pendingShort: "offen", staleShort: "zu alt",
+      thisMonth: "Dieser Monat", avgDelta: "Ø-Preis {sign}{d}/kWh ggü. {month}",
+      kwhCharged: "kWh geladen", avgPerKwh: "Ø pro kWh", per100: "pro 100 {unit}", sessionsWord: "Ladungen", feeWord: "Gebühr",
+      kwh100: "kWh pro 100 {unit}", power: "Ø Leistung", thKw: "kW", kwTip: "Ø Ladeleistung {kw} kW",
+      slowSub: "sonst {typical}", slowNote: "langsam – sonst {typical} kW hier",
+      exportLabel: "Export", csvAll: "CSV – alle Ladungen", zipMonth: "Rechnungen {month} (ZIP)", pdfMonth: "Monatsbericht {month} (PDF mit Rechnungen)",
+      addonStepsTitle: "Mit Tesla verbinden in drei Schritten",
+      addonStep1: "Auf <strong>Bei Tesla anmelden</strong> klicken – Tesla öffnet sich in einem neuen Tab.",
+      addonStep2: "Nach der Anmeldung leitet Tesla zu <span class=\"mono\">{uri}</span> weiter. Die Seite lädt nicht – das ist so gewollt.",
+      addonStep3: "Die komplette Adresse aus der Browserzeile dieses Tabs kopieren und hier einfügen.",
+      atReference: "Mit Referenzpreis {p}", perInvoices: "Laut Rechnungen (ohne Gebühren)",
+      radar: "Preis-Radar", radarTitle: "Was dich eine kWh je nach Uhrzeit kostet", radarSub: "Ø Listenpreis aus deinen Rechnungen", yourAvg: "gestrichelt: dein Schnitt {p}",
+      cheapest: "am günstigsten", noSession: "keine Ladung", oneSession: "1 Ladung", nSessions: "{n} Ladungen",
+      tipSlot: "{label} ({range}): Ø {p}/kWh aus {n}, {kwh} kWh", tipEmpty: "{label}: noch keine Ladung in diesem Zeitfenster",
+      sites: "Standorte", sitesTitle: "Wo du lädst", noSessions: "Noch keine Ladungen.",
+      thSite: "Supercharger", thSessions: "Ladungen", thKwh: "kWh", thAvg: "Ø /kWh",
+      history: "Verlauf", historyTitle: "Ladekosten pro Monat", current: "(lfd.)",
+      allSessions: "Alle Ladungen", sinceDate: "seit {d}", thDate: "Datum", thAmount: "Betrag", thHa: "HA", thInvoice: "Rechnung",
+      open: "offen", plusIdle: "+ {p} Blockiergebühr", noneYet: "Noch keine Ladungen abgerufen.",
+      reconcile: "Abgleich", reconcileTitle: "Home Assistant vs. Rechnungen", haCost: "Ladekosten in HA", perNInvoices: "Laut {n} Rechnungen",
+      haKwh: "Lademenge in HA", billedKwh: "Abgerechnete kWh", matches: "Passt", haAbove: "HA liegt {p} darüber", haBelow: "HA liegt {p} darunter",
+      reconcileText: "Abweichungen kommen von geschätzten Preisen bei manuellen Buchungen und davon, dass das Auto weniger kWh meldet, als der Supercharger abrechnet. Ab jetzt gemeldete Ladungen werden mit Rechnungswerten gebucht.",
+      ops: "Betrieb", opsTitle: "Verbindungen & API-Kosten", tesla: "Tesla", ha: "Home Assistant",
+      connected: "verbunden", notConnected: "nicht verbunden", unreachable: "nicht erreichbar", notSetUp: "nicht eingerichtet",
+      entities: "HA-Entitäten", lastSync: "Letzter Abgleich", nextSync: "Nächster Abgleich", requests: "Tesla-Abfragen diesen Monat",
+      apiCost: "≈ {usd} $ – das monatliche Tesla-Guthaben von {credit} $ deckt das ab.", disconnect: "Tesla-Verbindung trennen", confirmDisconnect: "Wirklich trennen? Nochmal tippen",
+      footerSrc: "Rechnungsdaten: Tesla Fleet API · Akku & Strecke: Home Assistant", stand: "Stand {d}",
+      toastSynced: "Abgeglichen – {n} neu", toastNothing: "Abgeglichen – nichts Neues", toastFailed: "Abgleich fehlgeschlagen: {e}",
+      toastConnected: "Mit Tesla verbunden – erster Abgleich läuft", toastDisconnected: "Tesla-Verbindung getrennt",
+      unknown: "unbekannt", justNow: "gerade eben", minAgo: "vor {n} Min.", hAgo: "vor {n} Std.", yesterday: "gestern {t}",
+      inMin: "in {n} Min.", inH: "in {n} Std.", onDate: "am {d}", perMonthAria: "Ladekosten pro Monat",
+      car: "Dein Auto", carEdit: "Anpassen", carAuto: "Aus der VIN erkannt. Wähle Ausstattung, Farbe und Felgen, damit das Bild zu deinem Auto passt.",
+      carModel: "Modell", carTrim: "Ausstattung", carWheels: "Felgen", carPaint: "Farbe", carView: "Ansicht",
+      save: "Speichern", cancel: "Abbrechen", carReset: "Wieder aus der VIN erkennen", carSaved: "Gespeichert – Home Assistant bekommt das neue Bild innerhalb einer Minute",
+      carSource: "Die Bilder kommen direkt aus Teslas Konfigurator. Angeboten werden nur Kombinationen, die Tesla darstellen kann.",
+      carHa: "In Home Assistant: <span class=\"mono\">sensor.ladecockpit_car</span> – als Entitätsbild und in den Attributen <span class=\"mono\">image_front</span>, <span class=\"mono\">image_side</span>, <span class=\"mono\">image_rear</span>.",
+      carLoadFailed: "Teslas Bildserver hat nicht geantwortet.",
+      mpTitle: "Wo MultiPass schon funktioniert hat", mpSub: "Drittanbieter-Stationen aus deinen Rechnungen, abgerechnet über Tesla",
+      mpLast: "zuletzt", mpMap: "Karte", mpMapTitle: "{site} in Google Maps suchen",
+      oneStation: "1 Station", nStations: "{n} Stationen", mpOpTip: "{name}: {stations}, {sessions}, zuletzt am {d}",
+      mpNote: "Nur Stationen, an denen eine MultiPass-Ladung auf deinen Rechnungen steht. Ob eine andere Station MultiPass annimmt, zeigen die Tesla-App und die Karte im Auto, wenn Drittanbieter-Ladestationen eingeblendet sind. In Home Assistant: <span class=\"mono\">sensor.ladecockpit_multipass</span>.",
+    },
+  };
+  const lang = () => (state.data?.lang === "de" ? "de" : "en");
+  const T = (key, vars = {}) => (TEXT[lang()][key] ?? TEXT.en[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
+
+  // --- Formatting ----------------------------------------------------------------------
+  const locale = () => state.data?.locale || (lang() === "de" ? "de-DE" : "en-US");
+  const nfCache = {};
+  const nf = (d) => (nfCache[locale() + d] ||= new Intl.NumberFormat(locale(), { minimumFractionDigits: d, maximumFractionDigits: d }));
+  const num = (v, d = 1) => (v == null || Number.isNaN(v) ? "–" : nf(d).format(v));
+  const cfCache = {};
+  const money = (v, d = 2) => {
+    if (v == null || Number.isNaN(v)) return "–";
+    const key = locale() + (state.data?.currency || "EUR") + d;
+    cfCache[key] ||= new Intl.NumberFormat(locale(), { style: "currency", currency: state.data?.currency || "EUR", minimumFractionDigits: d, maximumFractionDigits: d });
+    return cfCache[key].format(v);
+  };
+  const ppk = (v) => (v == null ? "–" : money(v) + "/kWh");
+  const unit = () => state.data?.distance_unit || "km";
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const sessionsText = (n) => (n === 1 ? T("oneSession") : T("nSessions", { n }));
+  const stationsText = (n) => (n === 1 ? T("oneStation") : T("nStations", { n }));
+
+  function fmtDate(iso, opts) {
+    if (!iso) return "–";
+    return new Intl.DateTimeFormat(locale(), { timeZone: state.data?.tz || undefined, ...opts }).format(new Date(iso));
+  }
+  const dShort = (iso) => fmtDate(iso, { weekday: "short", day: "2-digit", month: "2-digit" });
+  const tShort = (iso) => fmtDate(iso, { hour: "2-digit", minute: "2-digit" });
+
+  function relTime(iso) {
+    if (!iso) return T("unknown");
+    const diff = (Date.now() - new Date(iso).getTime()) / 60000;
+    if (diff < 0) {
+      const m = -diff;
+      if (m < 60) return T("inMin", { n: Math.round(m) });
+      if (m < 60 * 36) return T("inH", { n: Math.round(m / 60) });
+      return T("onDate", { d: dShort(iso) });
+    }
+    if (diff < 2) return T("justNow");
+    if (diff < 60) return T("minAgo", { n: Math.round(diff) });
+    if (diff < 60 * 24) return T("hAgo", { n: Math.round(diff / 60) });
+    if (diff < 60 * 48) return T("yesterday", { t: tShort(iso) });
+    return `${dShort(iso)} ${tShort(iso)}`;
+  }
+
+  // --- Icons ------------------------------------------------------------------------------
+  const ico = {
+    clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    pin: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+    plug: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0V8zM12 17v5"/></svg>',
+    tag: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>',
+    bolt: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>',
+  };
+  const insightIcon = { slot: ico.clock, site: ico.pin, idle: ico.plug, reference: ico.tag, network: ico.bolt, speed: ico.bolt };
+  const isMp = (x) => x && x.network === "multipass";
+  const mpChip = (x) => (isMp(x) ? ` <span class="chip info">${T("mpChip")}</span>` : "");
+  const siteHead = (d) => ((d.sites || []).some(isMp) ? T("thSiteAny") : T("thSite"));
+
+  // --- Loading -------------------------------------------------------------------------------
+  async function load() {
+    try {
+      const r = await fetch("api/dashboard", { cache: "no-store", headers: { Accept: "application/json" } });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      state.data = await r.json();
+      state.preview = false;
+      if (state.data.look && state.data.look !== look) applyLook(state.data.look);
+    } catch (err) {
+      const el = document.getElementById("preview-data");
+      const raw = el && el.textContent.trim();
+      if (raw) {
+        state.data = JSON.parse(raw);
+        state.preview = true;
+      } else if (!state.data) {
+        $("#content").innerHTML = `<div class="banner bad"><div><strong>${T("noService")}</strong> ${T("noServiceHint")} (${esc(err.message)})</div></div>`;
+        return;
+      }
+    }
+    render();
+  }
+
+  async function post(url, body) {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    let data = {};
+    try { data = await r.json(); } catch { /* empty body */ }
+    if (!r.ok) throw new Error(data.detail || "HTTP " + r.status);
+    return data;
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $("#toast");
+    t.textContent = msg;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (t.hidden = true), 3600);
+  }
+
+  // --- Render ------------------------------------------------------------------------------------
+  function render() {
+    const d = state.data;
+    document.documentElement.lang = lang();
+    $("#tagline").textContent = T("tagline");
+    renderChips(d);
+    renderBanners(d);
+    $("#content").innerHTML = `
+      <div style="display:grid;gap:16px">
+        ${setupPanel(d)}
+        <section class="hero" aria-labelledby="${d.car ? "h-car" : "h-batt"}">
+          ${d.car ? `<div class="car-panel" id="car-panel">${carPanelBody()}</div>` : ""}
+          ${batteryPanel(d)}
+        </section>
+        <div class="grid-2">${nextStopPanel(d)}${receiptPanel(d)}</div>
+        ${monthPanel(d)}
+        ${radarPanel(d)}
+        <div class="grid-2">${sitesPanel(d)}${historyPanel(d)}</div>
+        ${multipassPanel(d)}
+        ${d.battery_health || d.climate ? `<div class="grid-2">${healthPanel(d)}${climatePanel(d)}</div>` : ""}
+        ${sessionsPanel(d)}
+        <div class="grid-2">${d.reconcile ? reconcilePanel(d) : ""}${opsPanel(d)}</div>
+      </div>`;
+    $("#footer").innerHTML = `<span>${T("footerSrc")}</span>
+      <div class="look-pick" role="group" aria-label="${T("lookLabel")}"><span>${T("lookLabel")}</span><span class="seg">
+        <button type="button" data-look="classic" aria-pressed="${!modern()}">${T("lookClassic")}</button>
+        <button type="button" data-look="modern" aria-pressed="${modern()}">${T("lookModern")}</button>
+      </span></div>
+      <span>${esc(T("stand", { d: fmtDate(d.generated_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) }))}</span>`;
+    bindTooltips();
+    bindActions();
+    bindCar();
+  }
+
+  const offline = () => state.preview || state.data?.mode === "demo";
+
+  // Where a price sits against your average list price: A (much cheaper) … D (about average) … G
+  // (much dearer). The modern look colours prices with it; the classic look ignores it.
+  const avgPrice = (d) => d.totals?.list_price ?? d.totals?.avg_price;
+  function tone(price, avg) {
+    if (price == null || !avg) return "";
+    const r = price / avg;
+    const i = [0.8, 0.88, 0.96, 1.04, 1.12, 1.2].findIndex((x) => r < x);
+    return "ABCDEFG"[i < 0 ? 6 : i];
+  }
+
+  // --- Look: classic or modern ------------------------------------------------------------------
+  // Two stylesheets on the same markup; the one not in use is switched off. Chosen in the footer
+  // and saved in Ladecockpit, so every device shows the same. The browser also remembers it, only
+  // to avoid a flash of the other look while the page loads.
+  let look = document.documentElement.dataset.look === "modern" ? "modern" : "classic";
+  const modern = () => look === "modern";
+
+  function applyLook(next) {
+    look = next === "modern" ? "modern" : "classic";
+    $("#look-modern").media = modern() ? "all" : "not all";
+    $("#look-classic").media = modern() ? "not all" : "all";
+    document.documentElement.dataset.look = look;
+    try { localStorage.setItem("ladecockpit-look", look); } catch { /* private mode */ }
+  }
+
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".look-pick [data-look]");
+    if (!btn || btn.dataset.look === look) return;
+    const before = look;
+    applyLook(btn.dataset.look);
+    if (state.data) { state.data.look = look; render(); }
+    if (state.preview) return;
+    try {
+      const r = await fetch("api/look", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ look }) });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+    } catch (err) {
+      toast(T("lookFailed", { e: err.message }));
+      applyLook(before);
+      if (state.data) { state.data.look = look; render(); }
+    }
+  });
+
+  // --- PDFs in the Home Assistant app -------------------------------------------------------------
+  // The companion apps show this page in a web view that has no PDF viewer, and a link that opens
+  // a new window lands outside the Home Assistant sign-in. In the app, PDF links therefore open a
+  // view with the pages as pictures, and downloads are fetched here and handed to the app as a
+  // file. In a normal browser nothing changes.
+  const inHaApp = /\bHome Assistant\//.test(navigator.userAgent);
+  let pdfView = null;  // { el, file } while the view is open
+
+  function filenameOf(r, url) {
+    const cd = r.headers.get("Content-Disposition") || "";
+    const m = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(cd);
+    return m ? decodeURIComponent(m[1] || m[2]) : url.split("/").pop();
+  }
+
+  async function errorText(r) {
+    try { return (await r.json()).detail || "HTTP " + r.status; } catch { return "HTTP " + r.status; }
+  }
+
+  async function downloadInApp(url) {
+    try {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) throw new Error(await errorText(r));
+      const href = URL.createObjectURL(await r.blob());
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = filenameOf(r, url);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // The app reads the file from this address after the click, so keep it for a while.
+      setTimeout(() => URL.revokeObjectURL(href), 120000);
+      toast(T("dlStarted"));
+    } catch (e) {
+      toast(T("dlFailed", { e: e.message }));
+    }
+  }
+
+  async function openPdfView(base, file, title) {
+    if (pdfView) return;
+    const el = document.createElement("div");
+    el.className = "pdf-view";
+    el.setAttribute("role", "dialog");
+    el.setAttribute("aria-modal", "true");
+    el.setAttribute("aria-label", title);
+    el.innerHTML = `<div class="pdf-bar">
+        <span class="pdf-title">${esc(title)}</span>
+        <button class="btn" type="button" data-pdf="download">${T("pdfDownload")}</button>
+        <button class="btn pdf-x" type="button" data-pdf="close" aria-label="${T("pdfClose")}" title="${T("pdfClose")}">×</button>
+      </div>
+      <div class="pdf-pages"><p class="pdf-msg">${T("pdfLoading")}</p></div>`;
+    document.body.appendChild(el);
+    document.body.style.overflow = "hidden";
+    pdfView = { el, file };
+    // The back gesture of the app closes the view instead of leaving Ladecockpit.
+    history.pushState({ pdfView: true }, "");
+    el.querySelector('[data-pdf="close"]').focus();
+    const pages = el.querySelector(".pdf-pages");
+    try {
+      const r = await fetch(base + "/pages", { cache: "no-store" });
+      if (!r.ok) throw new Error(await errorText(r));
+      const n = (await r.json()).pages;
+      if (pdfView?.el !== el) return;
+      const label = (i) => esc(T("pdfPage", { n: i, m: n }));
+      pages.innerHTML = `<p class="pdf-hint">${T("pdfZoom")}</p>` + Array.from({ length: n }, (_, i) => `<figure>
+          <img src="${base}/page/${i + 1}.png" alt="${label(i + 1)}" loading="${i ? "lazy" : "eager"}" decoding="async">
+          ${n > 1 ? `<figcaption>${label(i + 1)}</figcaption>` : ""}</figure>`).join("");
+    } catch (e) {
+      if (pdfView?.el === el) pages.innerHTML = `<p class="pdf-msg">${esc(T("pdfFailed", { e: e.message }))}</p>`;
+    }
+  }
+
+  function closePdfView(fromHistory = false) {
+    if (!pdfView) return;
+    pdfView.el.remove();
+    pdfView = null;
+    document.body.style.overflow = "";
+    if (!fromHistory && history.state?.pdfView) history.back();
+  }
+
+  document.addEventListener("click", (e) => {
+    if (pdfView) {
+      const act = e.target.closest("[data-pdf]")?.dataset.pdf;
+      if (act === "close") closePdfView();
+      else if (act === "download") downloadInApp(pdfView.file);
+      else e.target.closest(".pdf-pages figure")?.classList.toggle("zoomed");
+      return;
+    }
+    if (!inHaApp) return;
+    const a = e.target.closest("a[data-view], a[data-download]");
+    if (!a) return;
+    e.preventDefault();
+    if (a.hasAttribute("data-view")) openPdfView(a.dataset.view, a.getAttribute("href"), a.dataset.title || a.textContent.trim());
+    else downloadInApp(a.getAttribute("href"));
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePdfView(); });
+  window.addEventListener("popstate", () => closePdfView(true));
+
+  function renderChips(d) {
+    const chips = [];
+    if (state.preview) chips.push(`<span class="chip warn">${T("preview")}</span>`);
+    else if (d.mode === "demo") chips.push(`<span class="chip warn">${T("demoMode")}</span>`);
+    else chips.push(`<span class="chip good">${T("live")}</span>`);
+    const s = d.sync || {};
+    if (s.burst) chips.push(`<span class="chip info pulse">${T("searching")}</span>`);
+    else if (s.error) chips.push(`<span class="chip bad">${T("syncBroken")}</span>`);
+    else if (s.last) chips.push(`<span class="chip plain">${esc(T("synced", { when: relTime(s.last) }))}</span>`);
+    const dis = offline() || !d.setup?.tesla_connected ? "disabled" : "";
+    $("#chips").innerHTML = chips.join("");
+    $("#top-actions").innerHTML = `<button class="btn" id="btn-sync" ${dis} title="${dis ? T("connectFirst") : T("syncTitle")}">${T("syncNow")}</button>`;
+  }
+
+  function renderBanners(d) {
+    const out = [];
+    if (state.preview) out.push(`<div class="banner"><div>${T("previewBanner")}</div></div>`);
+    const st = d.setup || {};
+    if (st.tesla_auth_error) out.push(`<div class="banner bad"><div><strong>${T("authExpired")}</strong> ${esc(st.tesla_auth_error)}</div></div>`);
+    if (d.sync?.error && !st.tesla_auth_error) out.push(`<div class="banner bad"><div><strong>${T("lastSyncFailed")}</strong> ${esc(d.sync.error)}</div></div>`);
+    if (st.ha_configured && (st.entities || []).length && !st.ha_ok) out.push(`<div class="banner bad"><div><strong>${T("haDown")}</strong> ${esc(st.ha_error || T("haHint"))}</div></div>`);
+    if ((st.missing_entities || []).length) out.push(`<div class="banner"><div><strong>${T("missingEntities")}</strong> <span class="mono">${esc(st.missing_entities.join(", "))}</span>. ${T("missingHint")}</div></div>`);
+    $("#banners").innerHTML = out.join("");
+    $("#banners").hidden = out.length === 0;
+  }
+
+  function setupPanel(d) {
+    const st = d.setup || {};
+    if (offline() || (st.tesla_connected && !st.tesla_auth_error)) return "";
+    if (!st.tesla_configured) {
+      return `<section class="panel"><span class="eyebrow">${T("setup")}</span><h2>${T("teslaMissing")}</h2><p class="sub">${T("teslaMissingText")}</p></section>`;
+    }
+    return `<section class="panel">
+      <span class="eyebrow">${T("setup")}</span>
+      <h2>${T("connectTitle")}</h2>
+      <p class="sub">${T("connectText")}</p>
+      ${st.addon ? `<ol class="steps">
+        <li>${T("addonStep1")}</li>
+        <li>${T("addonStep2", { uri: esc(st.redirect_uri || "") })}</li>
+        <li>${T("addonStep3")}</li>
+      </ol>` : ""}
+      <div><a class="btn primary" href="auth/login" target="${st.addon ? "_blank" : "_self"}" rel="noopener">${T("signIn")}</a></div>
+      ${st.addon ? codeForm() : `<details>
+        <summary>${T("redirectHelp")}</summary>
+        <p class="sub" style="margin-bottom:10px">${T("redirectText")} <span class="mono">${esc(st.redirect_uri || "")}</span></p>
+        ${codeForm()}
+      </details>`}
+    </section>`;
+  }
+
+  function codeForm() {
+    return `<form class="code" id="code-form">
+      <label for="code-input" hidden>${T("addrOrCode")}</label>
+      <input id="code-input" name="code" placeholder="http://localhost:8077/auth/callback?code=…" autocomplete="off" required>
+      <button class="btn" type="submit">${T("connect")}</button>
+    </form>`;
+  }
+
+  function batteryPanel(d) {
+    const s = d.status || {};
+    const soc = s.soc;
+    const floor = s.floor ?? 10, target = s.target ?? 80;
+    const fillCls = soc == null ? "" : soc <= floor ? "bad" : soc <= floor + 8 ? "warn" : "";
+    const stamp = soc == null
+      ? `<span class="chip bad">${T("noBattery")}</span>`
+      : s.soc_source === "live"
+        ? `<span class="chip good">${T("carOnline")}</span><span>${T("liveFromHa")}</span>`
+        : `<span class="chip">${T("carOffline")}</span><span>${esc(T("lastValue", { when: relTime(s.as_of) }))}</span>`;
+    const socTxt = soc == null ? T("unknown") : num(soc, 0) + " %";
+    return `<div class="battery">
+      <div class="battery-head">
+        <div class="big" id="h-batt" aria-label="${esc(T("battery") + " " + socTxt)}">${soc == null ? "–" : num(soc, 0)}<small>%</small></div>
+        <div class="range">${s.range == null ? "–" : "≈ " + num(s.range, 0) + " " + unit()}<small>${T("rangeLabel")}</small></div>
+      </div>
+      <div class="gauge" role="img" aria-label="${esc(T("gaugeAria", { soc: socTxt, a: floor, b: target }))}">
+        <div class="gauge-body">
+          <div class="gauge-track">
+            <div class="gauge-fill ${fillCls}" style="width:${Math.max(0, Math.min(100, soc ?? 0))}%"></div>
+            <div class="gauge-floor" style="left:${floor}%"></div>
+            <div class="gauge-limit" style="left:${target}%"></div>
+          </div>
+        </div>
+        <div class="gauge-scale">
+          <span style="left:0">0</span><span style="left:${floor}%">${floor}</span><span style="left:${target}%">${target}</span><span style="left:100%">100 %</span>
+        </div>
+      </div>
+      <div class="stamp">${stamp}<span>${esc(T("windowText", { a: floor, b: target }))}</span></div>
+    </div>`;
+  }
+
+  function nextStopPanel(d) {
+    const f = d.forecast || {};
+    const slotTip = (d.insights || []).find((i) => i.kind === "slot");
+    const floor = d.status?.floor ?? 10;
+    const days = f.calendar_days;
+    const subline = days == null ? (f.text || "")
+      : days <= 0 ? T("reachesToday", { floor })
+      : days === 1 ? T("reachesTomorrow", { floor })
+      : T("reachesIn", { days: num(days, 0), floor });
+    return `<section class="panel" aria-labelledby="h-next">
+      <span class="eyebrow" id="h-next">${T("nextStop")}</span>
+      <div>
+        <div class="next-date">${f.date_label ? esc(f.date_label) : "–"}</div>
+        <p class="sub" style="margin-top:6px">${esc(subline)}</p>
+      </div>
+      ${days != null && days < 2 ? `<span class="chip warn" style="justify-self:start">${T("soon")}</span>` : ""}
+      <div class="facts">
+        <div class="fact"><b>${f.rate_pct_day == null ? "–" : num(f.rate_pct_day, 1) + " %"}</b><span>${T("perDay")}</span></div>
+        <div class="fact"><b>${f.dist_day == null ? "–" : num(f.dist_day, 0) + " " + unit()}</b><span>${T("distPerDay")}</span></div>
+        <div class="fact"><b>${f.basis_days ? T("days", { n: num(f.basis_days, 0) }) : "–"}</b><span>${T("basis")}</span></div>
+      </div>
+      ${f.plan ? `<div class="tip">${ico.bolt}<span>${esc(f.plan.text)}</span></div>`
+        : slotTip ? `<div class="tip">${ico.clock}<span>${esc(slotTip.text)}</span></div>` : ""}
+    </section>`;
+  }
+
+  const pushChip = (st) => ({
+    pushed: `<span class="chip good">${T("pushed")}</span>`,
+    backfill: `<span class="chip plain">${T("backfill")}</span>`,
+    new: `<span class="chip info">${T("pending")}</span>`,
+    stale: `<span class="chip warn">${T("stale")}</span>`,
+  }[st] || "");
+  const pushChipShort = (st) => ({
+    pushed: `<span class="chip good">${T("pushedShort")}</span>`,
+    backfill: `<span class="chip plain">${T("backfillShort")}</span>`,
+    new: `<span class="chip info">${T("pendingShort")}</span>`,
+    stale: `<span class="chip warn">${T("staleShort")}</span>`,
+  }[st] || "");
+
+  function receiptPanel(d) {
+    const c = d.last_charge;
+    if (!c) return `<section class="panel"><span class="eyebrow">${T("lastCharge")}</span><p class="sub">${T("noCharge")}</p></section>`;
+    const canPdf = c.has_invoice && !offline();
+    const dur = c.duration_min != null ? ` (${c.duration_min} min)` : "";
+    const line = (lbl, val, cls = "") => `<div class="line ${cls}"><span class="lbl">${lbl}</span><span class="dots"></span><span class="val">${val}</span></div>`;
+    return `<section class="panel" aria-labelledby="h-last">
+      <span class="eyebrow" id="h-last">${T("lastCharge")}</span>
+      <div class="receipt">
+        <div class="site">${esc(T(isMp(c) ? "multipass" : "supercharger", { site: c.site }))}</div>
+        <div class="when">${esc(dShort(c.start))} · ${esc(tShort(c.start))}–${esc(tShort(c.end))}${dur}</div>
+        ${line(T("energy"), num(c.kwh, 1) + " kWh")}
+        ${line(T("price"), ppk(c.price))}
+        ${c.credit ? line(T("listPrice"), ppk(c.list_price)) : ""}
+        ${c.avg_kw ? line(T("power"), num(c.avg_kw, 0) + " kW", c.slow ? "slow" : "") : ""}
+        ${c.avg_kw && c.slow ? `<div class="line-note">${esc(T("slowNote", { typical: num(c.typical_kw, 0) }))}</div>` : ""}
+        ${line(T("charging"), money(c.charge_cost))}
+        ${c.credit ? line(T("credit"), "−" + money(c.credit)) : ""}
+        ${line(T("idleFee"), money(c.idle), c.idle ? "" : "zero")}
+        ${line(T("total"), money(c.cost), "total")}
+      </div>
+      <div class="receipt-actions">
+        ${canPdf ? `<a class="btn" href="api/invoice/${encodeURIComponent(c.id)}" data-view="api/invoice/${encodeURIComponent(c.id)}" data-title="${esc(c.site + " · " + dShort(c.start))}" target="_blank" rel="noopener">${T("invoicePdf")}</a>` : `<span class="btn is-disabled" title="${T("notInPreview")}">${T("invoicePdf")}</span>`}
+        ${pushChip(c.push_state)}
+      </div>
+    </section>`;
+  }
+
+  function monthPanel(d) {
+    const m = d.month || {};
+    const c = d.compare || {};
+    const prev = m.prev || {};
+    let delta = "";
+    const cur = m.list_price ?? m.avg_price, before = prev.list_price ?? prev.avg_price;
+    if (before && cur) {
+      const diff = cur - before;
+      delta = T("avgDelta", { sign: diff <= 0 ? "−" : "+", d: money(Math.abs(diff)), month: prev.label });
+    } else if (prev.sessions) {
+      delta = `${prev.label}: ${money(prev.cost)}`;
+    }
+    const line = (lbl, val) => `<div class="line"><span class="lbl">${lbl}</span><span class="dots"></span><span class="val">${val}</span></div>`;
+    // Groups, most useful first: what the total is made of (only when there is more than one part),
+    // the saving against a combustion car, the check against the price HA used to estimate with,
+    // and the fuel of another car. A line separates the groups.
+    const groups = [];
+    const parts = [];
+    if (m.home) {
+      parts.push(line(esc(T("invoicesLine")), money(m.cost)));
+      parts.push(line(esc(m.home.cost != null ? T("homeLine", { kwh: num(m.home.kwh, 1), p: money(m.home.avg_price) }) : T("homeLineNoPrice", { kwh: num(m.home.kwh, 1) })), money(m.home.cost)));
+    }
+    const mp = (m.by_network || {}).multipass;
+    if (mp && mp.sessions && (m.by_network || {}).supercharger) parts.push(line(esc(T("ofWhichMp", { n: mp.sessions })), `${money(mp.cost)} · ${ppk(mp.avg_price)}`));
+    if (m.credit) parts.push(line(T("creditsUsed"), money(m.credit)));
+    if (m.idle) parts.push(line(T("idleFee"), money(m.idle)));
+    groups.push(parts);
+    const fuel = c.fuel;
+    if (fuel && m.fuel_equivalent != null && m.savings != null) {
+      // The distance can start after the first of the month (odometer readings begin later).
+      const since = m.distance_since && m.key && m.distance_since.slice(0, 10) > m.key + "-01"
+        ? T("fuelSince", { d: fmtDate(m.distance_since, { day: "2-digit", month: "2-digit" }) }) : "";
+      groups.push([
+        `<div class="cmp-head">${esc(T("fuelHead", { dist: num(m.distance, 0), unit: unit() }) + since)}</div>`,
+        line(fuel.source === "paid"
+          ? `<span tabindex="0" data-tip="${esc(T("fuelPaidTip", { litres: num(fuel.paid_litres, 0), span: fuel.paid_days ? T("fuelPaidDays", { n: fuel.paid_days }) : T("fuelPaidAll") }))}">${esc(T("fuelComparePaid", { c: num(fuel.consumption, 1), p: money(fuel.price, 3) }))}</span>`
+          : esc(T("fuelCompare", { c: num(fuel.consumption, 1), p: money(fuel.price, 3) })), money(m.fuel_equivalent)),
+        // Shown as the difference, so the three lines add up exactly.
+        line(esc(T("teslaSame", { p: money(m.per_100), unit: unit() })), money(m.fuel_equivalent - m.savings)),
+        `<div class="line"><span class="lbl">${T("saved")}</span><span class="dots"></span><span class="val" style="color:var(${m.savings >= 0 ? "--good" : "--bad"})">${money(m.savings)}</span></div>`,
+      ]);
+    }
+    if (c.reference_cost != null) {
+      const ref = [line(esc(T("atReference", { p: ppk(c.reference_price) })), money(c.reference_cost))];
+      if (c.actual_cost != null) ref.push(line(T("perInvoices"), money(c.actual_cost)));
+      groups.push(ref);
+    }
+    if (c.fuel_month != null) groups.push([line(esc(c.fuel_label), money(c.fuel_month))]);
+    const cmp = groups.filter((g) => g.length).map((g, i) => (i ? `<div class="cmp-group">${g.join("")}</div>` : g.join("")));
+    return `<section class="panel month" aria-labelledby="h-month">
+      <div class="month-main">
+      <span class="eyebrow" id="h-month">${esc(m.label || T("thisMonth"))} · ${esc(sessionsText(m.sessions || 0))}</span>
+      <div class="month-total"><div class="big">${money(m.home ? m.total_cost : m.cost)}</div><span class="delta">${esc(delta)}</span></div>
+      <div class="kpis">
+        <div class="kpi"><b>${num(m.kwh, 1)}</b><span>${T("kwhCharged")}</span></div>
+        <div class="kpi"><b>${m.avg_price == null ? "–" : money(m.avg_price)}</b><span>${T("avgPerKwh")}</span></div>
+        <div class="kpi"><b>${m.per_100 == null ? "–" : money(m.per_100)}</b><span>${T("per100", { unit: unit() })}</span></div>
+        <div class="kpi"><b>${m.kwh_per_100 == null ? "–" : num(m.kwh_per_100, 1)}</b><span>${T("kwh100", { unit: unit() })}</span></div>
+      </div>
+      </div>
+      ${cmp.length ? `<div class="compare">${cmp.join("")}</div>` : ""}
+    </section>`;
+  }
+
+  function radarPanel(d) {
+    const slots = d.slots || [];
+    const avg = d.totals?.list_price ?? d.totals?.avg_price;
+    const priced = slots.filter((s) => s.avg_price != null);
+    const maxP = Math.max(0.6, ...priced.map((s) => s.avg_price));
+    const step = maxP > 1.2 ? 0.5 : 0.2;
+    const top = Math.ceil(maxP / step) * step;
+    const pct = (v) => (v / top) * 100;
+    const best = priced.length >= 2 ? priced.reduce((a, b) => (b.avg_price < a.avg_price ? b : a)) : null;
+    const ticks = [];
+    for (let t = 0; t <= top + 1e-9; t += step) ticks.push(t);
+    const rows = slots.map((s) => {
+      const has = s.avg_price != null;
+      const isBest = best && s.id === best.id;
+      const tip = has
+        ? T("tipSlot", { label: s.label, range: s.range, p: money(s.avg_price), n: sessionsText(s.sessions), kwh: num(s.kwh, 1) })
+        : T("tipEmpty", { label: s.label });
+      return `<div class="radar-row ${isBest ? "best" : ""}" data-tone="${has ? tone(s.avg_price, avg) : ""}" data-tip="${esc(tip)}" tabindex="0">
+        <div class="who"><b>${esc(s.label)}</b><span>${esc(s.range)}</span></div>
+        <div class="radar-track">
+          ${has ? `<div class="radar-bar" style="width:${pct(s.avg_price)}%"></div>` : '<div class="radar-empty"></div>'}
+          ${avg ? `<div class="radar-avg" style="left:${pct(avg)}%"></div>` : ""}
+        </div>
+        <div class="radar-val">${has ? money(s.avg_price) : '<span class="muted">–</span>'}<small>${has ? (isBest ? T("cheapest") : sessionsText(s.sessions)) : T("noSession")}</small></div>
+      </div>`;
+    }).join("");
+    const insights = (d.insights || []).filter((i) => !["slot", "fuel", "climate"].includes(i.kind));
+    return `<section class="panel" aria-labelledby="h-radar">
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline">
+        <div><span class="eyebrow">${T("radar")}</span><h2 id="h-radar">${T("radarTitle")}</h2></div>
+        <span class="sub">${T("radarSub")}${avg ? " · " + esc(T("yourAvg", { p: money(avg) })) : ""}</span>
+      </div>
+      <div class="radar">
+        ${rows}
+        <div class="radar-axis" aria-hidden="true"><span></span><div class="ticks">${ticks.map((t) => `<span style="left:${pct(t)}%">${num(t, 1)}</span>`).join("")}</div><span class="sub" style="font-size:.72rem;text-align:right">/kWh</span></div>
+      </div>
+      ${avg ? `<div class="tone-legend"><span>${T("toneCheap")}</span><span class="scale" aria-hidden="true"></span><span>${T("toneDear")}</span></div>` : ""}
+      ${insights.length ? `<ul class="insights">${insights.map((i) => `<li class="${esc(i.kind)}">${insightIcon[i.kind] || ico.bolt}<span>${esc(i.text)}</span></li>`).join("")}</ul>` : ""}
+    </section>`;
+  }
+
+  function bandLabel(b) {
+    if (b.from == null) return T("bandBelow", { hi: num(b.to, 0) });
+    if (b.to == null) return T("bandAbove", { lo: num(b.from, 0) });
+    return T("bandRange", { lo: num(b.from, 0), hi: num(b.to, 0) });
+  }
+
+  function sparkline(values) {
+    if (values.length < 2) return "";
+    const w = 260, h = 46, lo = Math.min(...values), hi = Math.max(...values), span = hi - lo || 1;
+    const pts = values.map((v, i) => `${(i / (values.length - 1)) * w},${h - 4 - ((v - lo) / span) * (h - 8)}`).join(" ");
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" aria-hidden="true" style="margin-top:10px"><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+  }
+
+  function healthPanel(d) {
+    const h = d.battery_health;
+    if (!h) return "";
+    let delta = T("healthWait");
+    if (h.change_pct != null) {
+      delta = T("healthSince", { d: fmtDate(h.since + "T12:00:00Z", { day: "2-digit", month: "2-digit", year: "numeric" }), sign: h.change_pct > 0 ? "+" : h.change_pct < 0 ? "−" : "±", p: num(Math.abs(h.change_pct), 1) });
+    }
+    const line = (lbl, val) => `<div class="line"><span class="lbl">${lbl}</span><span class="dots"></span><span class="val">${val}</span></div>`;
+    return `<section class="panel" aria-labelledby="h-health">
+      <div><span class="eyebrow">${T("health")}</span><h2 id="h-health">${T("healthTitle")}</h2></div>
+      <div class="month-total"><div class="big">${num(h.range_at_100, 0)} ${unit()}</div><span class="delta">${esc(delta)}</span></div>
+      ${sparkline((h.weeks || []).map((w) => w.value))}
+      <p class="sub">${esc(T("healthSub", { n: h.samples }))}</p>
+      ${h.dc_share != null ? `<div class="compare">${line(esc(T("dcShare")), num(h.dc_share, 0) + " %")}</div>` : ""}
+    </section>`;
+  }
+
+  function climatePanel(d) {
+    const c = d.climate;
+    if (!c) return "";
+    const tip = (d.insights || []).find((i) => i.kind === "climate");
+    return `<section class="panel" aria-labelledby="h-climate">
+      <div><span class="eyebrow">${T("climate")}</span><h2 id="h-climate">${T("climateTitle")}</h2></div>
+      <div class="scroll"><table>
+        <thead><tr><th>${T("thTemp")}</th><th class="n">${T("thDays")}</th><th class="n">${unit()}</th><th class="n">${T("thPct", { unit: unit() })}</th><th class="n">${T("thKwh100", { unit: unit() })}</th></tr></thead>
+        <tbody>${c.bands.map((b) => `<tr><td>${esc(bandLabel(b))}</td><td class="n">${b.days}</td><td class="n">${num(b.distance, 0)}</td><td class="n">${num(b.pct_per_100, 1)}</td><td class="n">${b.kwh_per_100 == null ? "–" : num(b.kwh_per_100, 1)}</td></tr>`).join("")}</tbody>
+      </table></div>
+      ${tip ? `<div class="tip">${ico.bolt}<span>${esc(tip.text)}</span></div>` : ""}
+      <p class="sub">${T("climateSub")}</p>
+    </section>`;
+  }
+
+  function sitesPanel(d) {
+    const sites = d.sites || [];
+    if (!sites.length) return `<section class="panel"><span class="eyebrow">${T("sites")}</span><p class="sub">${T("noSessions")}</p></section>`;
+    const maxP = Math.max(...sites.map((s) => s.avg_price || 0)) || 1;
+    return `<section class="panel" aria-labelledby="h-sites">
+      <div><span class="eyebrow">${T("sites")}</span><h2 id="h-sites">${T("sitesTitle")}</h2></div>
+      <div class="scroll"><table>
+        <thead><tr><th>${siteHead(d)}</th><th class="n">${T("thSessions")}</th><th class="n">${T("thKwh")}</th><th class="n">${T("thAvg")}</th><th class="n">Ø ${T("thKw")}</th></tr></thead>
+        <tbody>${sites.map((s) => `<tr>
+          <td class="site">${esc(s.site)}${mpChip(s)}</td>
+          <td class="n">${s.sessions}</td>
+          <td class="n">${num(s.kwh, 1)}</td>
+          <td class="n"><span class="minibar" aria-hidden="true"><i data-tone="${tone(s.avg_price, avgPrice(d))}" style="width:${((s.avg_price || 0) / maxP) * 100}%"></i></span>${s.avg_price == null ? "–" : money(s.avg_price)}</td>
+          <td class="n">${s.avg_kw == null ? "–" : num(s.avg_kw, 0)}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>
+    </section>`;
+  }
+
+  function multipassPanel(d) {
+    const mp = d.multipass;
+    const list = mp?.stations || [];
+    if (!list.length) return "";
+    const day = (iso) => fmtDate(iso, { day: "2-digit", month: "2-digit", year: "numeric" });
+    const ops = (mp.operators || []).map((o) => `<span class="chip info" tabindex="0" data-tip="${esc(T("mpOpTip", { name: o.name, stations: stationsText(o.stations), sessions: sessionsText(o.sessions), d: day(o.last) }))}">${esc(o.name)} · ${esc(stationsText(o.stations))}</span>`);
+    return `<section class="panel" aria-labelledby="h-mp">
+      <div><span class="eyebrow">${T("mpChip")}</span><h2 id="h-mp">${T("mpTitle")}</h2>
+        <p class="sub">${esc(T("mpSub"))} · ${esc(sessionsText(mp.sessions))}${mp.avg_price ? " · Ø " + ppk(mp.avg_price) : ""}</p></div>
+      ${ops.length ? `<div class="op-chips">${ops.join("")}</div>` : ""}
+      <ul class="mp-list">${list.map((s) => `<li>
+        <div class="who"><b>${esc(s.site)}</b><span>${esc([s.operator, sessionsText(s.sessions)].filter(Boolean).join(" · "))}</span></div>
+        <div class="mp-val">${s.avg_price == null ? "–" : ppk(s.avg_price)}<small>${esc(T("mpLast"))} ${day(s.last)}</small></div>
+        <a class="map-link" href="${esc(s.map_url)}" target="_blank" rel="noopener noreferrer" title="${esc(T("mpMapTitle", { site: s.site }))}" aria-label="${esc(T("mpMapTitle", { site: s.site }))}">${ico.pin}<span>${T("mpMap")}</span></a>
+      </li>`).join("")}</ul>
+      <p class="sub">${T("mpNote")}</p>
+    </section>`;
+  }
+
+  function projectionLine(d) {
+    const p = d.projection;
+    if (!p) return "";
+    let s = T("projection", { cost: money(p.cost, 0), dist: num(p.distance, 0), unit: unit() });
+    if (p.savings != null) s += T("projectionFuel", { fuel: money(p.fuel_cost, 0), saved: money(p.savings, 0) });
+    s += T("projectionBasis", { n: p.basis_days });
+    return `<p class="sub" style="margin-top:6px">${esc(s)}</p>`;
+  }
+
+  function historyPanel(d) {
+    const months = d.monthly || [];
+    const mc = (m) => (m.cost || 0) + (m.home_cost || 0);
+    const max = Math.max(1, ...months.map(mc));
+    const curKey = d.month?.key;
+    return `<section class="panel" aria-labelledby="h-hist">
+      <div><span class="eyebrow">${T("history")}</span><h2 id="h-hist">${T("historyTitle")}</h2>${projectionLine(d)}</div>
+      <div class="cols" role="img" aria-label="${T("perMonthAria")}">
+        ${months.map((m) => `<div class="col ${m.key === curKey ? "cur" : ""}" tabindex="0" data-tip="${esc(`${m.label}: ${money(m.cost)} · ${num(m.kwh, 1)} kWh · ${sessionsText(m.sessions)}${m.avg_price ? " · " + ppk(m.avg_price) : ""}${m.kwh_per_100 ? " · " + num(m.kwh_per_100, 1) + " kWh/100 " + unit() : ""}`)}">
+          <span class="v">${mc(m) ? money(mc(m), 0) : ""}</span>
+          <div class="bar" style="height:${(mc(m) / max) * 100 * 0.82}%"></div>
+        </div>`).join("")}
+      </div>
+      <div class="col-labels">${months.map((m) => `<span>${esc(m.label)}${m.key === curKey ? " " + T("current") : ""}</span>`).join("")}</div>
+    </section>`;
+  }
+
+  function sessionsPanel(d) {
+    const list = d.sessions || [];
+    const t = d.totals || {};
+    return `<section class="panel" aria-labelledby="h-list">
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline">
+        <div><span class="eyebrow">${T("allSessions")}</span><h2 id="h-list">${esc(sessionsText(t.sessions || 0))} · ${money(t.cost || 0)}</h2></div>
+        <span class="sub">${t.since ? esc(T("sinceDate", { d: fmtDate(t.since, { day: "2-digit", month: "2-digit", year: "numeric" }) })) : ""}${t.avg_price ? " · " + ppk(t.avg_price) : ""}</span>
+      </div>
+      ${list.length && !offline() ? exportsRow(d) : ""}
+      ${list.length ? `<div class="scroll"><table>
+        <thead><tr><th>${T("thDate")}</th><th>${siteHead(d)}</th><th class="n">kWh</th><th class="n">/kWh</th><th class="n">${T("thKw")}</th><th class="n">${T("thAmount")}</th><th>${T("thHa")}</th><th>${T("thInvoice")}</th></tr></thead>
+        <tbody>${list.map((s) => `<tr>
+          <td>${esc(dShort(s.start))}<span class="when-sub">${esc(tShort(s.start))}${s.duration_min != null ? " · " + s.duration_min + " min" : ""}</span></td>
+          <td class="site">${esc(s.site)}${mpChip(s)}${s.idle ? `<span class="when-sub" style="color:var(--warn)">${esc(T("plusIdle", { p: money(s.idle) }))}</span>` : ""}${s.credit ? `<span class="when-sub" style="color:var(--good)">${esc(T("plusCredit", { p: money(s.credit) }))}</span>` : ""}</td>
+          <td class="n">${s.kwh == null ? `<span class="muted">${T("open")}</span>` : num(s.kwh, 1)}</td>
+          <td class="n" data-tone="${tone(s.price, avgPrice(d))}">${s.price == null ? "–" : money(s.price)}</td>
+          <td class="n">${s.avg_kw == null ? "–" : s.slow ? `<span class="kw-slow">${num(s.avg_kw, 0)}</span><span class="when-sub kw-slow">${esc(T("slowSub", { typical: num(s.typical_kw, 0) }))}</span>` : num(s.avg_kw, 0)}</td>
+          <td class="n">${money(s.cost)}</td>
+          <td>${pushChipShort(s.push_state)}</td>
+          <td>${s.has_invoice ? (!offline() ? `<a href="api/invoice/${encodeURIComponent(s.id)}" data-view="api/invoice/${encodeURIComponent(s.id)}" data-title="${esc(s.site + " · " + dShort(s.start))}" target="_blank" rel="noopener">PDF</a>` : `<span class="muted" title="${T("notInPreview")}">PDF</span>`) : '<span class="muted">–</span>'}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>` : `<p class="sub">${T("noneYet")}</p>`}
+    </section>`;
+  }
+
+  function exportsRow(d) {
+    const months = (d.monthly || []).filter((m) => m.sessions).reverse();
+    const monthName = (key) => fmtDate(key + "-15T12:00:00Z", { month: "short", year: "numeric" });
+    return `<div class="exports">
+      <span class="label">${T("exportLabel")}</span>
+      <a href="api/export.csv" data-download target="_blank" rel="noopener">${T("csvAll")}</a>
+      ${months.map((m) => `<a href="api/report/${m.key}.pdf" data-view="api/report/${m.key}" target="_blank" rel="noopener">${esc(T("pdfMonth", { month: monthName(m.key) }))}</a>`).join("")}
+      ${months.map((m) => `<a href="api/invoices/${m.key}.zip" data-download target="_blank" rel="noopener">${esc(T("zipMonth", { month: monthName(m.key) }))}</a>`).join("")}
+    </div>`;
+  }
+
+  function reconcilePanel(d) {
+    const r = d.reconcile || {};
+    const line = (lbl, val) => `<div class="line"><span class="lbl">${lbl}</span><span class="dots"></span><span class="val">${val}</span></div>`;
+    let verdict = "";
+    if (r.diff != null) {
+      const abs = Math.abs(r.diff);
+      verdict = abs < 0.5 ? `<span class="chip good">${T("matches")}</span>`
+        : `<span class="chip warn">${esc(T(r.diff > 0 ? "haAbove" : "haBelow", { p: money(abs) }))}</span>`;
+    }
+    return `<section class="panel" aria-labelledby="h-rec">
+      <div><span class="eyebrow">${T("reconcile")}</span><h2 id="h-rec">${T("reconcileTitle")}</h2></div>
+      <div class="compare">
+        ${line(T("haCost"), money(r.ha_cost))}
+        ${line(esc(T("perNInvoices", { n: r.inv_sessions || 0 })), money(r.inv_cost))}
+        ${line(T("haKwh"), r.ha_kwh == null ? "–" : num(r.ha_kwh, 1) + " kWh")}
+        ${line(T("billedKwh"), r.inv_kwh == null ? "–" : num(r.inv_kwh, 1) + " kWh")}
+      </div>
+      <div>${verdict}</div>
+      <p class="sub">${T("reconcileText")}</p>
+    </section>`;
+  }
+
+  function opsPanel(d) {
+    const a = d.api || {};
+    const st = d.setup || {};
+    const s = d.sync || {};
+    const usedPct = a.budget ? Math.min(100, (a.calls / a.budget) * 100) : 0;
+    const connected = st.tesla_connected && !st.tesla_auth_error;
+    const ents = (st.entities || []).join(", ");
+    const haChip = st.ha_ok ? `<span class="chip good">${T("connected")}</span>`
+      : st.ha_configured ? `<span class="chip bad">${T("unreachable")}</span>` : `<span class="chip warn">${T("notSetUp")}</span>`;
+    return `<section class="panel" aria-labelledby="h-ops">
+      <div><span class="eyebrow">${T("ops")}</span><h2 id="h-ops">${T("opsTitle")}</h2></div>
+      <div class="status-list">
+        <div><span>${T("tesla")}</span>${connected ? `<span class="chip good">${T("connected")}</span>` : `<span class="chip bad">${T("notConnected")}</span>`}</div>
+        <div><span>${T("ha")}</span>${haChip}</div>
+        ${ents ? `<div><span>${T("entities")}</span><span class="mono">${esc(ents)}</span></div>` : ""}
+        <div><span>${T("lastSync")}</span><span>${esc(relTime(s.last))}</span></div>
+        <div><span>${T("nextSync")}</span><span>${s.next ? esc(relTime(s.next)) : "–"}</span></div>
+      </div>
+      <div style="display:grid;gap:6px">
+        <div style="display:flex;justify-content:space-between;gap:8px;font-size:.88rem"><span>${T("requests")}</span><span>${a.calls ?? 0} / ${a.budget ?? "–"}</span></div>
+        <div class="meter" role="img" aria-label="${a.calls ?? 0} / ${a.budget}"><i style="width:${usedPct}%"></i></div>
+        <span class="sub">${esc(T("apiCost", { usd: num(a.cost_usd, 2), credit: num(a.credit_usd, 0) }))}</span>
+      </div>
+      ${connected && !offline() ? `<div><button class="link-btn" id="btn-logout" type="button">${T("disconnect")}</button></div>` : ""}
+    </section>`;
+  }
+
+  // --- Picture of the car -------------------------------------------------------------------------
+  const carPic = (car, extraCls = "") => `<div class="car-pic ${extraCls}">
+      <img src="${esc(car.url)}" alt="${esc(car.name)}" decoding="async" referrerpolicy="no-referrer">
+      <span class="car-miss">${T("carLoadFailed")}</span>
+    </div>`;
+
+
+  function carPanelBody() {
+    const ed = state.car;
+    if (ed) return carEditorBody(ed);
+    const car = state.data.car;
+    const l = car.labels || {};
+    return `<div class="car-head">
+        <div class="car-text">
+          <h2 id="h-car">${esc(car.name)}</h2>
+          <p class="sub">${esc([l.generation, l.paint, l.wheel].filter(Boolean).join(" · "))}</p>
+        </div>
+        ${state.preview ? "" : `<div class="car-actions"><button class="btn" id="btn-car-edit" type="button">${T("carEdit")}</button></div>`}
+      </div>
+      ${carPic(car)}`;
+  }
+
+  function carEditorBody(ed) {
+    const gen = ed.catalog.find((g) => g.key === ed.choice.generation) || ed.catalog[0];
+    const trim = gen.trims.find((t) => t.key === ed.choice.trim) || gen.trims[0];
+    const wheel = trim.wheels.find((w) => w.code === ed.choice.wheel) || trim.wheels[0];
+    const opt = (value, label, current) => `<option value="${esc(value)}"${value === current ? " selected" : ""}>${esc(label)}</option>`;
+    const select = (name, label, items, current) => `<label>${label}
+        <select name="${name}"${items.length < 2 ? " disabled" : ""}>${items.map(([v, l]) => opt(v, l, current)).join("")}</select>
+      </label>`;
+    return `<div class="car-head">
+        <div class="car-text">
+          <h2 id="h-car">${esc(ed.view.name)}</h2>
+          <p class="sub">${esc([ed.view.labels.paint, ed.view.labels.wheel].join(" · "))}</p>
+          ${ed.auto ? "" : `<div><button class="link-btn" id="btn-car-reset" type="button">${T("carReset")}</button></div>`}
+        </div>
+        <div class="car-actions">
+          <button class="btn primary" id="btn-car-save" type="button">${T("save")}</button>
+          <button class="btn" id="btn-car-cancel" type="button">${T("cancel")}</button>
+        </div>
+      </div>
+      ${carPic(ed.view, "")}
+      <form class="car-form" id="car-form">
+        ${select("generation", T("carModel"), ed.catalog.map((g) => [g.key, g.label]), gen.key)}
+        ${select("trim", T("carTrim"), gen.trims.map((t) => [t.key, t.label]), trim.key)}
+        ${select("wheel", T("carWheels"), trim.wheels.map((w) => [w.code, w.label]), wheel.code)}
+        ${select("paint", T("carPaint"), wheel.paints.map((p) => [p.code, p.label]), ed.choice.paint)}
+        ${select("view", T("carView"), gen.views.map((v) => [v.key, v.label]), ed.choice.view)}
+      </form>
+      <div class="car-note">${ed.auto ? `<p class="sub">${T("carAuto")}</p>` : ""}<p class="sub">${T("carSource")}</p><p class="sub">${T("carHa")}</p></div>`;
+  }
+
+  function renderCar() {
+    const panel = $("#car-panel");
+    if (!panel) return;
+    panel.innerHTML = carPanelBody();
+    bindCar();
+  }
+
+  function bindCar() {
+    document.querySelectorAll(".car-pic img").forEach((img) => {
+      const pic = img.closest(".car-pic");
+      img.onerror = () => { pic.classList.remove("loading"); pic.classList.add("broken"); };
+      img.onload = () => pic.classList.remove("loading", "broken");
+    });
+    const edit = $("#btn-car-edit");
+    if (edit) edit.onclick = async () => {
+      try {
+        const r = await fetch("api/car", { cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const car = await r.json();
+        state.car = { catalog: car.catalog, choice: car.choice, view: car, auto: car.auto };
+        renderCar();
+        $("#car-form select")?.focus();
+      } catch (e) { toast(e.message); }
+    };
+    const form = $("#car-form");
+    if (form) form.onchange = async (e) => {
+      const ed = state.car;
+      const choice = Object.fromEntries(new FormData(form).entries());
+      // A new model or trim: let the server pick fitting wheels and paint again.
+      if (e.target.name === "generation") { delete choice.trim; delete choice.wheel; delete choice.view; }
+      if (e.target.name === "trim") delete choice.wheel;
+      $("#car-panel .car-pic")?.classList.add("loading");
+      try {
+        const res = await post("api/car/preview", choice);
+        if (state.car !== ed) return;  // closed meanwhile
+        ed.choice = res.choice;
+        ed.view = res;
+        renderCar();
+      } catch (err) { toast(err.message); }
+    };
+    const save = $("#btn-car-save");
+    if (save) save.onclick = async () => {
+      try {
+        const res = await fetch("api/car", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(state.car.choice) });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        state.car = null;
+        toast(T("carSaved"));
+        await load();
+      } catch (e) { toast(e.message); }
+    };
+    const cancel = $("#btn-car-cancel");
+    if (cancel) cancel.onclick = () => { state.car = null; renderCar(); };
+    const reset = $("#btn-car-reset");
+    if (reset) reset.onclick = async () => {
+      try {
+        const res = await fetch("api/car", { method: "DELETE" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        state.car = null;
+        await load();
+      } catch (e) { toast(e.message); }
+    };
+  }
+
+  // --- Interaction ---------------------------------------------------------------------------------
+  function bindTooltips() {
+    const tt = $("#tt");
+    const show = (el, x, y) => {
+      tt.textContent = el.dataset.tip;
+      tt.hidden = false;
+      const w = tt.offsetWidth, h = tt.offsetHeight;
+      tt.style.left = Math.min(window.innerWidth - w - 8, Math.max(8, x + 12)) + "px";
+      tt.style.top = (y - h - 12 < 8 ? y + 16 : y - h - 12) + "px";
+    };
+    document.querySelectorAll("[data-tip]").forEach((el) => {
+      el.addEventListener("pointermove", (e) => show(el, e.clientX, e.clientY));
+      el.addEventListener("pointerleave", () => (tt.hidden = true));
+      el.addEventListener("focus", () => {
+        const r = el.getBoundingClientRect();
+        show(el, r.left + r.width / 2, r.top);
+      });
+      el.addEventListener("blur", () => (tt.hidden = true));
+    });
+  }
+
+  function bindActions() {
+    const syncBtn = $("#btn-sync");
+    if (syncBtn) syncBtn.onclick = async () => {
+      if (state.busy) return;
+      state.busy = true;
+      syncBtn.disabled = true;
+      syncBtn.textContent = T("syncing");
+      try {
+        const res = await post("api/sync/now");
+        toast(res.new ? T("toastSynced", { n: res.new }) : T("toastNothing"));
+        await load();
+      } catch (e) {
+        toast(T("toastFailed", { e: e.message }));
+        syncBtn.disabled = false;
+        syncBtn.textContent = T("syncNow");
+      } finally {
+        state.busy = false;
+      }
+    };
+    const form = $("#code-form");
+    if (form) form.onsubmit = async (e) => {
+      e.preventDefault();
+      const value = $("#code-input").value.trim();
+      if (!value) return;
+      try {
+        await post("auth/code", { value });
+        toast(T("toastConnected"));
+        setTimeout(load, 4000);
+      } catch (err) {
+        toast(err.message);
+      }
+    };
+    const logout = $("#btn-logout");
+    if (logout) logout.onclick = async () => {
+      if (logout.dataset.armed !== "1") {
+        logout.dataset.armed = "1";
+        logout.textContent = T("confirmDisconnect");
+        setTimeout(() => { logout.dataset.armed = ""; logout.textContent = T("disconnect"); }, 4000);
+        return;
+      }
+      try { await post("auth/logout"); toast(T("toastDisconnected")); load(); } catch (e) { toast(e.message); }
+    };
+  }
+
+  load().then(() => {
+    if (new URLSearchParams(location.search).get("connected")) {
+      toast(T("toastConnected"));
+      history.replaceState(null, "", location.pathname);
+    }
+  });
+  setInterval(() => { if (!state.preview && !document.hidden && !state.car && !pdfView) load(); }, 60000);
+})();
+</script>

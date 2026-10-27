@@ -1,0 +1,22 @@
+# Optional Home Assistant package for Ladecockpit.
+# Copy to /config/packages/ladecockpit.yaml (packages must be enabled in configuration.yaml:
+#   homeassistant:
+#     packages: !include_dir_named packages
+# ), replace LADECOCKPIT_HOST, check the configuration and restart or reload.
+#
+# You do NOT need this for the basics: Ladecockpit reads your car's entities, detects the
+# end of a charging session and creates its own sensor.ladecockpit_* entities. Use it only
+# if you want to trigger the invoice lookup yourself.
+#
+# Ladecockpit < 0.3 had REST sensors here. Remove them if you copied them: they would clash
+# with the entities Ladecockpit now creates itself.
+
+rest_command:
+  # Optional: look for the invoice right away (e.g. from your own automation).
+  ladecockpit_sync:
+    url: "http://LADECOCKPIT_HOST:8077/api/sync"
+    method: post
+    timeout: 10
+    # Only if APP_PASSWORD is set:
+    # username: ladecockpit
+    # password: !secret ladecockpit_password
