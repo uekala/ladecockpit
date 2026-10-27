@@ -1,0 +1,104 @@
+configuration:
+  language:
+    name: Language
+    description: Language of the web app and of the texts sent to Home Assistant.
+  locale:
+    name: Number and date format
+    description: Optional, e.g. en-GB, en-US or de-DE.
+  tesla_client_id:
+    name: Tesla client ID
+    description: From your app on developer.tesla.com.
+  tesla_client_secret:
+    name: Tesla client secret
+    description: From your app on developer.tesla.com.
+  tesla_region:
+    name: Tesla region
+    description: eu for Europe, Middle East and Africa – na for North America and Asia-Pacific.
+  tesla_redirect_uri:
+    name: Redirect URI
+    description: Must be listed exactly like this under "Allowed Redirect URIs" in your Tesla app.
+  tesla_vin:
+    name: VIN
+    description: Optional, only needed with several cars on the account.
+  entity_battery:
+    name: Battery level entity
+    description: e.g. sensor.my_tesla_battery_level – battery card and charging forecast.
+  entity_range:
+    name: Range entity
+    description: e.g. sensor.my_tesla_battery_range
+  entity_odometer:
+    name: Odometer entity
+    description: e.g. sensor.my_tesla_odometer – distance and cost per 100 km/mi.
+  entity_charging:
+    name: Charging state entity
+    description: e.g. sensor.my_tesla_charging – the invoice is fetched right after a session ends.
+  charging_state:
+    name: State while charging
+    description: State of the charging entity while the car is charging.
+  entity_cost_total:
+    name: Cost total helper
+    description: input_number the blueprint books into – for the "HA vs. invoices" check.
+  entity_kwh_total:
+    name: Energy total helper
+    description: input_number the blueprint books into – for the "HA vs. invoices" check.
+  entity_reference_price:
+    name: Reference price entity
+    description: Compare the invoices with a price you used to estimate costs.
+  reference_price:
+    name: Reference price per kWh
+    description: Fixed number instead of an entity.
+  entity_fuel_month:
+    name: Fuel cost this month
+    description: Fuel cost of another car, shown next to the charging cost.
+  fuel_label:
+    name: Label for fuel cost
+  fuel_consumption:
+    name: Consumption of a comparison car (L/100 km)
+    description: For the comparison "what the distance would have cost with a combustion car". Fixed value, e.g. 7.5.
+  entity_fuel_consumption:
+    name: Consumption of the comparison car from an entity
+    description: Instead of the fixed value, e.g. the average consumption of your combustion car in L/100 km.
+  fuel_price:
+    name: Fuel price (per litre)
+    description: Fixed fuel price for the comparison, e.g. 1.79.
+  entity_fuel_price:
+    name: Fuel price from an entity
+    description: Instead of the fixed price, e.g. a fuel price sensor.
+  entity_fuel_cost_total:
+    name: Fuel cost total
+    description: Entity with everything you spent on fuel so far, growing with each fill-up. Together with "Litres filled total", Ladecockpit uses the price per litre you actually paid (average of the last 90 days) instead of the fuel price above.
+  entity_fuel_litres_total:
+    name: Litres filled total
+    description: Entity with all litres filled so far, growing with each fill-up.
+  entity_home_energy:
+    name: Wallbox energy meter (kWh)
+    description: Energy meter of your wallbox in kWh that only increases (e.g. from the Tesla Wall Connector or a sub-meter). Ladecockpit then includes charging at home.
+  home_price:
+    name: Electricity price at home (per kWh)
+    description: Fixed electricity price for charging at home, e.g. 0.32.
+  entity_home_price:
+    name: Electricity price from an entity
+    description: Instead of the fixed price, e.g. a dynamic tariff (Tibber, aWATTar). Ladecockpit uses the price at the time of charging.
+  entity_outside_temp:
+    name: Outside temperature
+    description: Sensor or weather entity. Ladecockpit then shows the consumption by temperature.
+  soc_floor:
+    name: Lowest battery level (%)
+    description: The forecast says when this level is reached.
+  soc_target:
+    name: Charge limit (%)
+  notify_problems:
+    name: Notify about problems
+    description: Notification in Home Assistant when the Tesla sign-in expired or syncing fails.
+  publish_entities:
+    name: Create sensors in Home Assistant
+    description: Creates sensor.ladecockpit_* and binary_sensor.ladecockpit_problem (next charge, battery, monthly cost, last charge, price tip) for dashboards and automations.
+  month_report:
+    name: Monthly report
+    description: On the first of the month a notification in Home Assistant with cost, distance and savings of the previous month. The event ladecockpit_month_report is always fired.
+  sync_interval_hours:
+    name: Regular sync (hours)
+  api_budget_requests:
+    name: Monthly limit of Tesla requests
+network:
+  8077/tcp: Web app outside Home Assistant (optional)

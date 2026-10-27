@@ -1,0 +1,23 @@
+# Secrets and local data – never commit these
+.env
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# Generated previews
+preview.html
+vorschau.html
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
