@@ -348,7 +348,10 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         soc_hist = readings.get("soc_ha") or soc_hist
     odo_all = readings.get("odometer") or []
     odo_14d = [p for p in odo_all if p[0] >= now_utc - timedelta(days=14)]
-    forecast = _forecast(lang, soc_hist, soc, settings.soc_floor, now_utc, tz, odo_14d)
+    # While the car charges, the next stop is counted from the charge limit it is heading for.
+    charging_now = ((live.get("raw") or {}).get("charging") or "").strip().lower() == settings.charging_value.strip().lower()
+    soc_from = max(soc, settings.soc_target) if charging_now and soc is not None else soc
+    forecast = _forecast(lang, soc_hist, soc_from, settings.soc_floor, now_utc, tz, odo_14d)
 
     # --- comparison with a combustion car ------------------------------------------------------
     consumption = values.get("fuel_consumption") or settings.fuel_consumption
@@ -518,6 +521,11 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
 
     health = vehicle.battery_health(readings.get("soc_long") or [], readings.get("range_long") or [], tz)
     kwh_pct = vehicle.kwh_per_percent(priced, readings.get("soc_long") or [])
+    # Right now: charging or not, and while charging the power and when the limit is reached.
+    status.update(vehicle.live_charge(
+        raw=live.get("raw") or {}, values=values, units=units, charging_value=settings.charging_value,
+        soc=soc if status["soc_source"] == "live" else None, target=settings.soc_target,
+        soc_readings=readings.get("soc") or [], kwh_pct=kwh_pct, now=now_utc))
     climate = vehicle.consumption_by_temperature(readings.get("soc_long") or [], odo_all,
                                                  readings.get("temp") or [], tz, kwh_pct)
     if climate and len(climate["bands"]) >= 2:

@@ -75,8 +75,9 @@ def test_blueprint_is_consistent():
 def test_look_is_saved():
     with TestClient(app) as client:
         assert client.get("/api/dashboard").json()["look"] == "classic"
-        assert client.put("/api/look", json={"look": "modern"}).json() == {"look": "modern"}
-        assert client.get("/api/dashboard").json()["look"] == "modern"
+        assert client.put("/api/look", json={"look": "dynamic"}).json() == {"look": "dynamic"}
+        assert client.get("/api/dashboard").json()["look"] == "dynamic"
+        assert client.put("/api/look", json={"look": "modern"}).json() == {"look": "dynamic"}  # old name
         assert client.put("/api/look", json={"look": "neon"}).status_code == 400
         assert client.put("/api/look", json={"look": "classic"}).status_code == 200
         assert client.get("/api/dashboard").json()["look"] == "classic"
