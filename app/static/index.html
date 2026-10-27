@@ -416,103 +416,79 @@ details[open] summary { margin-bottom: 10px; }
 footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; }
 
 </style>
-<style id="look-modern" media="not all">
-/* Modern look: "price scale". Prices carry the colours of the energy label – dark green for
-   cheaper than your average, red for dearer – and that scale is the only colour on the page.
-   Everything else is ink on paper: one grotesque (Bricolage) with condensed bold figures, a
-   segmented battery like a car's display, outlined buttons, tiles with a hairline frame. */
+<style id="look-dynamic" media="not all">
+/* Dynamic look: "cockpit at night". Always dark, like an instrument cluster after sunset: the
+   battery is a glowing ring, figures are Saira (wide, light, tabular), text is Geist. The page
+   moves and reacts – figures count up and bars grow when it opens, the ring draws itself, energy
+   flows through it while the car charges, and the light of the page follows the battery
+   (green, amber when low, red below the floor, cyan while charging) and the time of day.
+   The script sets data-batt and data-daypart on <html>; everything else is plain CSS. */
 @font-face {
-  font-family: "Bricolage Grotesque"; font-style: normal; font-weight: 200 800; font-stretch: 75% 100%; font-display: swap;
-  src: url(fonts/bricolage-latin.woff2) format("woff2");
+  font-family: "Geist"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url(fonts/geist-latin.woff2) format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: "Bricolage Grotesque"; font-style: normal; font-weight: 200 800; font-stretch: 75% 100%; font-display: swap;
-  src: url(fonts/bricolage-latin-ext.woff2) format("woff2");
+  font-family: "Geist"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url(fonts/geist-latin-ext.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Saira"; font-style: normal; font-weight: 100 900; font-stretch: 50% 125%; font-display: swap;
+  src: url(fonts/saira-latin.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Saira"; font-style: normal; font-weight: 100 900; font-stretch: 50% 125%; font-display: swap;
+  src: url(fonts/saira-latin-ext.woff2) format("woff2");
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 :root {
-  --bg: #eceee9;
-  --panel: #ffffff;
-  --sunk: #f1f3ef;
-  --btn: transparent;
-  --btn-hover: #141714;
-  --line: #d6dbd2;
-  --ink: #141714;
-  --ink-2: #3a3f39;
-  --mute: #60675f;
-  --accent: #141714;
-  --accent-fill: #141714;
-  --accent-soft: #e2e6df;
-  --on-accent: #ffffff;
-  --good: #0c8a43;
-  --good-soft: #dcefe2;
-  --battery: #141714;
-  --warn: #b06600;
-  --warn-soft: #fbeccc;
-  --bad: #d1121f;
-  --bad-soft: #fadadb;
-  --shadow: 0 10px 30px rgba(20, 23, 20, .14);
-  /* the price scale, cheap to dear */
-  --t-a: #00a04a; --t-b: #5cb946; --t-c: #b4cf2a; --t-d: #f5d800; --t-e: #f7ad00; --t-f: #ec6f00; --t-g: #e30613;
+  --bg: #04060b;
+  --panel: rgba(14, 20, 34, .72);
+  --panel-solid: #0c1220;
+  --sunk: rgba(255, 255, 255, .045);
+  --btn: rgba(255, 255, 255, .07);
+  --btn-hover: rgba(255, 255, 255, .13);
+  --line: rgba(150, 180, 255, .11);
+  --ink: #eaf1ff;
+  --ink-2: #b6c2dd;
+  --mute: #7f8cab;
+  --accent: #5ad8ff;
+  --accent-fill: #2fc6ff;
+  --accent-soft: rgba(90, 216, 255, .12);
+  --on-accent: #021018;
+  --good: #3df5a0;
+  --good-soft: rgba(61, 245, 160, .11);
+  --battery: #3df5a0;
+  --warn: #ffb547;
+  --warn-soft: rgba(255, 181, 71, .12);
+  --bad: #ff5470;
+  --bad-soft: rgba(255, 84, 112, .13);
+  --shadow: 0 24px 60px rgba(0, 0, 0, .55);
+  /* the light of the page: the battery's state and the sky of the time of day */
+  --state: #3df5a0;
+  --state-2: #19d3ff;
+  --sky: #2337ff;
+  /* prices against your average, cheap to dear, as instrument lights */
+  --t-a: #2dfca0; --t-b: #8cf55a; --t-c: #d6f53c; --t-d: #ffe14d; --t-e: #ffb23d; --t-f: #ff7a3d; --t-g: #ff4769;
 
-  --f-body: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-body: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-num: "Saira", "Geist", system-ui, sans-serif;
   --f-code: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --r: 8px;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #171a18;
-    --panel: #202421;
-    --sunk: #2a2f2b;
-    --btn: transparent;
-    --btn-hover: #eef1ec;
-    --line: #363c37;
-    --ink: #eef1ec;
-    --ink-2: #c9cfc7;
-    --mute: #98a097;
-    --accent: #eef1ec;
-    --accent-fill: #eef1ec;
-    --accent-soft: #2f3530;
-    --on-accent: #171a18;
-    --good: #39c46d;
-    --good-soft: #1d3324;
-    --battery: #eef1ec;
-    --warn: #ffb84d;
-    --warn-soft: #3a2d14;
-    --bad: #ff5a52;
-    --bad-soft: #3d1a19;
-    --shadow: 0 10px 30px rgba(0, 0, 0, .55);
-    --t-a: #22b85f; --t-b: #6cc955; --t-c: #c3db3c; --t-d: #ffe12e; --t-e: #ffbd2b; --t-f: #ff8a2b; --t-g: #ff4a45;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #171a18;
-  --panel: #202421;
-  --sunk: #2a2f2b;
-  --btn: transparent;
-  --btn-hover: #eef1ec;
-  --line: #363c37;
-  --ink: #eef1ec;
-  --ink-2: #c9cfc7;
-  --mute: #98a097;
-  --accent: #eef1ec;
-  --accent-fill: #eef1ec;
-  --accent-soft: #2f3530;
-  --on-accent: #171a18;
-  --good: #39c46d;
-  --good-soft: #1d3324;
-  --battery: #eef1ec;
-  --warn: #ffb84d;
-  --warn-soft: #3a2d14;
-  --bad: #ff5a52;
-  --bad-soft: #3d1a19;
-  --shadow: 0 10px 30px rgba(0, 0, 0, .55);
-  --t-a: #22b85f; --t-b: #6cc955; --t-c: #c3db3c; --t-d: #ffe12e; --t-e: #ffbd2b; --t-f: #ff8a2b; --t-g: #ff4a45;
+  --r: 18px;
   color-scheme: dark;
 }
+:root[data-batt="ok"] { --state: #3df5a0; --state-2: #19d3ff; }
+:root[data-batt="full"] { --state: #6dffbd; --state-2: #3df5a0; }
+:root[data-batt="low"] { --state: #ffb547; --state-2: #ff7a3d; }
+:root[data-batt="critical"] { --state: #ff5470; --state-2: #ff2d55; }
+:root[data-batt="charging"] { --state: #3ee8ff; --state-2: #3df5a0; }
+:root[data-daypart="dawn"] { --sky: #ff6a4d; }
+:root[data-daypart="day"] { --sky: #2a7dff; }
+:root[data-daypart="dusk"] { --sky: #9a45ff; }
+:root[data-daypart="night"] { --sky: #2337ff; }
 
 [hidden] { display: none !important; }
 * { box-sizing: border-box; }
@@ -831,7 +807,8 @@ details[open] summary { margin-bottom: 10px; }
 footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; }
 
 
-/* ===== Modern: what differs from the shared base above ======================================= */
+
+/* ===== Dynamic: what differs from the shared base above ======================================= */
 [data-tone="A"] { --tone: var(--t-a); }
 [data-tone="B"] { --tone: var(--t-b); }
 [data-tone="C"] { --tone: var(--t-c); }
@@ -840,92 +817,266 @@ footer { color: var(--mute); font-size: .8rem; display: flex; flex-wrap: wrap; g
 [data-tone="F"] { --tone: var(--t-f); }
 [data-tone="G"] { --tone: var(--t-g); }
 
-body { font-feature-settings: "tnum" 1, "lnum" 1; }
-h1, h2, h3 { font-weight: 650; }
+/* The sky behind the instruments: two slow lights, one for the battery, one for the time of day,
+   over a faint grid. Fixed, so scrolling glides over it. */
+body { background: var(--bg); }
+body::before, body::after { content: ""; position: fixed; pointer-events: none; z-index: -1; }
+body::before {
+  inset: -25vmax;
+  background:
+    radial-gradient(42vmax 32vmax at 18% 12%, color-mix(in srgb, var(--state) 20%, transparent), transparent 70%),
+    radial-gradient(55vmax 40vmax at 88% 0%, color-mix(in srgb, var(--sky) 34%, transparent), transparent 70%),
+    radial-gradient(45vmax 40vmax at 55% 105%, color-mix(in srgb, var(--sky) 16%, transparent), transparent 70%);
+  animation: dyn-sky 32s ease-in-out infinite alternate;
+  transition: background 1.2s;
+}
+body::after {
+  inset: 0;
+  background: radial-gradient(rgba(170, 200, 255, .07) 1px, transparent 1.2px) 0 0 / 24px 24px;
+  -webkit-mask: linear-gradient(180deg, #000, transparent 75%);
+          mask: linear-gradient(180deg, #000, transparent 75%);
+}
+@keyframes dyn-sky { to { transform: translate3d(5vmax, 4vmax, 0) rotate(7deg) scale(1.08); } }
 
-/* Head: the name with the price scale as its mark */
-.brand h1 { font-size: 1.15rem; font-weight: 750; font-stretch: 80%; letter-spacing: 0; white-space: nowrap; }
+h1, h2, h3 { font-weight: 600; }
+
+/* Head: the name with a small glowing ring */
+.brand h1 { font-size: 1.05rem; font-weight: 650; letter-spacing: .02em; white-space: nowrap; }
 .brand h1::before {
-  content: ""; display: inline-block; vertical-align: -1px; margin-right: 8px; width: 26px; height: 12px; border-radius: 2px;
-  background: linear-gradient(90deg, var(--t-a) 0 14.3%, var(--t-b) 0 28.6%, var(--t-c) 0 42.9%, var(--t-d) 0 57.1%, var(--t-e) 0 71.4%, var(--t-f) 0 85.7%, var(--t-g) 0);
+  content: ""; display: inline-block; width: 11px; height: 11px; margin-right: 9px; vertical-align: 0;
+  border-radius: 50%; border: 2.5px solid var(--state); box-shadow: 0 0 10px var(--state), inset 0 0 6px var(--state);
+}
+:root[data-batt="charging"] .brand h1::before { animation: dyn-pulse 1.6s ease-in-out infinite; }
+.chip::before { box-shadow: 0 0 8px currentColor; }
+.chip.good::before { box-shadow: 0 0 8px var(--good); }
+.chip.info { background: var(--accent-soft); color: var(--accent); border-radius: 999px; }
+
+/* Buttons: glass pills that light up */
+.btn { border-radius: 999px; border: 1px solid var(--line); background: var(--btn); font-weight: 550; transition: background .2s, border-color .2s, box-shadow .2s; }
+.btn:hover { background: var(--btn-hover); border-color: color-mix(in srgb, var(--accent) 50%, transparent); box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 25%, transparent); }
+.btn.primary { background: var(--accent-fill); color: var(--on-accent); border-color: transparent; box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 45%, transparent); }
+.btn.primary:hover { background: var(--accent); }
+.exports a { border: 1px solid var(--line); border-radius: 999px; }
+.link-btn, .map-link, a { color: var(--accent); }
+
+/* Tiles: dark glass with a lit edge; under the mouse a soft light follows the pointer */
+.panel {
+  position: relative; isolation: isolate; overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, 0) 120px), var(--panel);
+  border: 1px solid var(--line); border-radius: var(--r);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), var(--shadow);
+}
+.panel::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity .35s;
+  background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 0%), color-mix(in srgb, var(--state) 11%, transparent), transparent 65%);
+}
+.panel:hover::before { opacity: 1; }
+.eyebrow {
+  font-size: .7rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--mute);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.eyebrow::before { content: ""; width: 14px; height: 2px; border-radius: 1px; background: var(--state); box-shadow: 0 0 8px var(--state); flex: none; }
+.panel h2 { font-size: 1.12rem; font-weight: 600; letter-spacing: 0; }
+.sub { color: var(--mute); }
+
+/* Figures: Saira, wide and light, lit from inside */
+.big, .range, .next-date, .kpi b, .fact b, .radar-val, .col .v, .readout b, .ring-range, td.n, .mp-val, .line .val {
+  font-family: var(--f-num); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1;
+}
+.big { font-weight: 300; font-stretch: 112%; letter-spacing: -.01em; color: #fff; text-shadow: 0 0 26px color-mix(in srgb, var(--state) 40%, transparent); }
+.big small { font-family: var(--f-body); font-weight: 400; color: var(--mute); text-shadow: none; }
+.next-date { font-weight: 400; font-stretch: 112%; letter-spacing: 0; font-size: clamp(2rem, 6.5vw, 2.6rem); color: #fff; }
+.month-total .big { font-size: clamp(2.8rem, 10vw, 3.7rem); }
+.line .val { font-stretch: 105%; }
+.line.total .val { font-weight: 600; color: #fff; text-shadow: 0 0 16px color-mix(in srgb, var(--accent) 45%, transparent); }
+td.n { font-stretch: 105%; }
+
+/* Small figure blocks: lit edge on top */
+.kpi, .fact {
+  position: relative; background: var(--sunk); border-radius: 12px; overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.kpi::before, .fact::before {
+  content: ""; position: absolute; left: 12px; right: 12px; top: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--state), transparent); opacity: .8;
+}
+.kpi b, .fact b { font-weight: 500; font-stretch: 108%; font-size: clamp(1.05rem, 4.2vw, 1.35rem); color: #fff; }
+.kpi span, .fact span { text-transform: uppercase; letter-spacing: .08em; font-size: .64rem; }
+
+.tip { background: var(--good-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--good) 25%, transparent); border-radius: 12px; }
+.tip svg { color: var(--good); filter: drop-shadow(0 0 6px var(--good)); }
+.insights li svg { color: var(--accent); }
+.banner { border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent); }
+.banner.bad { border-color: color-mix(in srgb, var(--bad) 35%, transparent); }
+
+/* --- The block on top: the car and the battery ring side by side --------------------------- */
+.hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 330px); align-items: center; gap: 12px 28px;
+  padding: 22px 26px; border-radius: 26px; border: 1px solid var(--line);
+  background:
+    radial-gradient(70% 110% at 82% 50%, color-mix(in srgb, var(--state) 15%, transparent), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, .045), transparent 50%), rgba(8, 12, 22, .66);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), var(--shadow);
+  transition: background .8s;
+}
+.hero:not(:has(.car-panel)) { grid-template-columns: minmax(0, 1fr); }
+.car-text h2 { font-family: var(--f-num); font-weight: 500; font-stretch: 115%; letter-spacing: .01em; font-size: clamp(1.9rem, 6vw, 2.6rem); }
+.car-pic { position: relative; min-height: 120px; }
+.car-pic img { position: relative; z-index: 1; filter: drop-shadow(0 22px 26px rgba(0, 0, 0, .65)); }
+.car-pic::after {
+  content: ""; position: absolute; left: 12%; right: 12%; bottom: 8%; height: 22%; z-index: 0;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--state) 45%, transparent), transparent);
+  filter: blur(8px); transition: background .8s;
 }
 
-/* Buttons: outlined in ink, filled when pressed or primary */
-.btn { border: 1.5px solid var(--ink); border-radius: 6px; font-weight: 600; background: transparent; }
-.btn:hover { background: var(--ink); color: var(--panel); }
-.btn.primary { background: var(--ink); color: var(--panel); }
-.btn.primary:hover { background: var(--ink-2); }
-.exports a { background: transparent; border: 1px solid var(--line); border-radius: 6px; font-weight: 600; }
-.exports a:hover { background: var(--ink); color: var(--panel); border-color: var(--ink); }
-.chip.info { background: transparent; color: var(--ink-2); border: 1px solid var(--line); border-radius: 4px; }
-.link-btn, .map-link { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-a { color: var(--ink); text-underline-offset: 3px; }
-
-/* Tiles: hairline frame, small radius */
-.panel { border: 1px solid var(--line); }
-.panel h2 { font-size: 1.25rem; font-weight: 650; font-stretch: 88%; letter-spacing: 0; }
-.eyebrow { font-weight: 500; }
-
-/* Figures: condensed bold */
-.big { font-weight: 720; font-stretch: 75%; letter-spacing: -.01em; line-height: .95; }
-.big small { font-weight: 500; font-stretch: 100%; }
-.range { font-weight: 650; font-stretch: 78%; letter-spacing: 0; color: var(--ink); }
-.next-date { font-weight: 720; font-stretch: 75%; letter-spacing: 0; font-size: clamp(2.2rem, 7vw, 2.9rem); }
-.month-total .big { font-size: clamp(2.8rem, 10vw, 3.6rem); }
-.car-text h2 { font-weight: 750; font-stretch: 75%; letter-spacing: 0; font-size: clamp(2rem, 7vw, 2.8rem); }
-.receipt .site { font-weight: 650; font-stretch: 88%; font-size: 1.25rem; }
-.line.total { font-weight: 700; }
-
-/* Small figure blocks: a rule on top instead of a filled box */
-.kpi, .fact { background: none; border-radius: 0; border-top: 2px solid var(--ink); padding: 8px 2px 0; }
-.kpi b, .fact b { font-weight: 700; font-stretch: 80%; font-size: 1.35rem; }
-
-/* Battery: 20 segments like the car's display, floor and limit marked by the figures under it */
-.gauge { padding-bottom: 24px; }
-.gauge-track, .hero .gauge-track {
-  height: 20px; border-radius: 0; background: var(--sunk);
-  -webkit-mask: repeating-linear-gradient(90deg, #000 0 calc(5% - 3px), transparent calc(5% - 3px) 5%);
-          mask: repeating-linear-gradient(90deg, #000 0 calc(5% - 3px), transparent calc(5% - 3px) 5%);
+/* The ring on the right; the car's name and picture, the charging readouts and the stamp on the left */
+.hero { grid-template-rows: minmax(0, 1fr) auto auto; }
+.hero > .car-panel { grid-column: 1; grid-row: 1; align-self: start; }
+.dyn-battery { display: contents; }
+.dyn-battery .ring { grid-column: 2; grid-row: 1 / span 3; align-self: center; justify-self: center; }
+.dyn-battery .charge-facts { grid-column: 1; grid-row: 2; }
+.dyn-battery .stamp { grid-column: 1; grid-row: 3; }
+.hero:not(:has(.car-panel)) .dyn-battery .ring { grid-column: 1 / -1; }
+@media (max-width: 760px) {
+  .hero { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; padding: 18px 16px; border-radius: 22px; }
+  .hero > .car-panel, .dyn-battery .ring, .dyn-battery .charge-facts, .dyn-battery .stamp { grid-column: 1 / -1; grid-row: auto; }
+  .dyn-battery .charge-facts, .dyn-battery .stamp { justify-content: center; text-align: center; }
 }
-.hero .gauge-track { background: color-mix(in srgb, var(--ink) 12%, var(--bg)); }
-.gauge-fill { border-radius: 0; }
-.gauge-floor, .gauge-limit { display: none; }
-.gauge-scale span { color: var(--ink-2); font-weight: 500; }
-.gauge-scale span::before { content: ""; position: absolute; left: 50%; top: -5px; width: 1px; height: 4px; background: var(--mute); }
-.gauge-scale span:first-child::before, .gauge-scale span:last-child::before { display: none; }
+.ring { position: relative; width: min(100%, 320px); max-width: 100%; aspect-ratio: 1; }
+.ring > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ring-track { fill: none; stroke: rgba(255, 255, 255, .07); stroke-width: 13; stroke-linecap: round; }
+.ring-fill {
+  fill: none; stroke: url(#ring-grad); stroke-width: 13; stroke-linecap: round; stroke-dasharray: 1 1;
+  filter: drop-shadow(0 0 9px var(--state));
+}
+.ring-flow {
+  fill: none; stroke: #fff; stroke-width: 3.5; stroke-linecap: round; opacity: .75;
+  stroke-dasharray: .012 .045; animation: dyn-flow 1.1s linear infinite;
+}
+.ring-stop { stop-color: var(--state); transition: stop-color .8s; }
+.ring-stop.from { stop-color: var(--state-2); }
+.tick { stroke: rgba(255, 255, 255, .16); stroke-width: 1.6; stroke-linecap: round; }
+.tick.major { stroke-width: 2.4; }
+.tick.lit { stroke: var(--state); filter: drop-shadow(0 0 3px var(--state)); }
+.mark { stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; }
+.mark-label { fill: var(--ink-2); font: 600 9.5px var(--f-num); text-anchor: middle; dominant-baseline: middle; }
+.ring-center { position: absolute; inset: 14% 14% 16%; display: grid; place-content: center; justify-items: center; text-align: center; gap: 2px; }
+.ring .big { font-size: clamp(3.3rem, 14vw, 4.4rem); line-height: 1; }
+.ring .big small { margin-left: 2px; }
+.ring-range { color: var(--ink-2); font-stretch: 108%; font-size: 1.05rem; }
+.ring-state {
+  margin-top: 6px; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  font-size: .74rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--state); background: color-mix(in srgb, var(--state) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--state) 30%, transparent);
+}
+.ring-state svg { width: 13px; height: 13px; }
+:root[data-batt="charging"] .ring-state svg { animation: dyn-pulse 1.2s ease-in-out infinite; }
+:root[data-batt="charging"] .ring-fill { animation: dyn-breathe 2.4s ease-in-out infinite; }
+.charge-facts { display: flex; flex-wrap: wrap; gap: 8px; }
+.charge-facts span {
+  display: grid; gap: 2px; min-width: 96px;
+  font-family: var(--f-num); font-stretch: 110%; font-size: 1.45rem; font-weight: 400; line-height: 1.1; color: #fff;
+  padding: 9px 14px 10px; border-radius: 14px; background: var(--sunk); box-shadow: inset 0 0 0 1px var(--line);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--state) 40%, transparent);
+}
+.charge-facts b { font-weight: inherit; }
+.charge-facts small { font-family: var(--f-body); color: var(--mute); font-size: .64rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; text-shadow: none; }
 
-/* Tips save money: the cheap end of the scale marks them */
-.tip { background: var(--sunk); border-radius: 6px; box-shadow: inset 4px 0 0 var(--t-a); padding-left: 16px; }
-.tip svg { color: var(--t-a); }
-.insights li svg { color: var(--ink-2); }
-
-/* Price radar: arrows on the scale, like an energy label */
-.radar-track { height: 28px; }
+/* --- Price radar: lit bars, the slot of right now marked ----------------------------------- */
+.radar-track { height: 24px; }
+.radar-track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--line); }
 .radar-bar, .radar-row.best .radar-bar {
-  top: 2px; bottom: 2px; border-radius: 0;
-  background: var(--tone, var(--ink-2));
-  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
+  top: 6px; bottom: 6px; border-radius: 6px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--tone, var(--accent)) 25%, transparent), var(--tone, var(--accent)));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--tone, var(--accent)) 55%, transparent);
+  transform-origin: left center;
 }
-.radar-avg { border-left: 1.5px dashed var(--ink); }
-.radar-val { font-weight: 700; }
-.tone-legend { display: flex; align-items: center; gap: 10px; font-size: .78rem; color: var(--mute); }
+.radar-avg { border-left: 1.5px dashed rgba(255, 255, 255, .45); }
+.radar-val { font-weight: 500; font-stretch: 108%; color: #fff; }
+.radar-row { cursor: pointer; padding: 6px 8px; margin-inline: -8px; border-radius: 12px; transition: background .2s; }
+.radar-row:hover, .radar-row.open { background: var(--sunk); }
+.radar-row.now { background: color-mix(in srgb, var(--accent) 8%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent); }
+.now-pill {
+  display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; vertical-align: 1px;
+  font-size: .62rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--on-accent); background: var(--accent); box-shadow: 0 0 12px var(--accent);
+  animation: dyn-glow 2s ease-in-out infinite;
+}
+.radar-more { grid-column: 1 / -1; display: none; color: var(--ink-2); font-size: .84rem; padding: 2px 0 4px; }
+.radar-row.open .radar-more { display: block; }
+.tone-legend { display: flex; align-items: center; gap: 10px; font-size: .74rem; color: var(--mute); }
 .tone-legend .scale {
-  width: 120px; height: 8px; flex: none;
-  background: linear-gradient(90deg, var(--t-a) 0 14.3%, var(--t-b) 0 28.6%, var(--t-c) 0 42.9%, var(--t-d) 0 57.1%, var(--t-e) 0 71.4%, var(--t-f) 0 85.7%, var(--t-g) 0);
+  width: 120px; height: 6px; flex: none; border-radius: 3px;
+  background: linear-gradient(90deg, var(--t-a), var(--t-b), var(--t-c), var(--t-d), var(--t-e), var(--t-f), var(--t-g));
+  box-shadow: 0 0 10px rgba(255, 255, 255, .15);
 }
 
-/* Lists: the price of a site or a session carries its colour too */
-.minibar { background: var(--sunk); border-radius: 0; }
-.minibar i { background: var(--tone, var(--ink-2)); border-radius: 0; }
-td[data-tone]:not([data-tone=""])::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; background: var(--tone); vertical-align: 1px; }
+/* Lists: a lit dot in the price colour */
+.minibar { background: var(--sunk); }
+.minibar i { background: var(--tone, var(--accent)); box-shadow: 0 0 8px var(--tone, var(--accent)); transform-origin: left center; }
+td[data-tone]:not([data-tone=""])::before {
+  content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; vertical-align: 1px;
+  background: var(--tone); box-shadow: 0 0 8px var(--tone);
+}
+tbody tr { transition: background .2s; }
+tbody tr:hover { background: var(--sunk); }
+tr.more { display: none; }
+.show-all tr.more { display: table-row; }
+.more-btn { justify-self: center; }
 
-/* Month history and meters in ink */
-.col .bar { background: var(--ink); border-radius: 2px 2px 0 0; }
-.col.cur .bar { background: repeating-linear-gradient(135deg, var(--ink) 0 4px, transparent 4px 8px); box-shadow: inset 0 0 0 1.5px var(--ink); }
-.meter { border-radius: 0; background: var(--sunk); }
-.meter i { background: var(--ink); border-radius: 0; }
+/* Month history: lit columns, the running month shimmering; a readout for the chosen month */
+.readout { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; min-height: 2.6em; font-size: .86rem; color: var(--ink-2); }
+.readout b { font-weight: 500; font-stretch: 110%; font-size: 1.35rem; color: #fff; }
+.col { cursor: pointer; }
+.col .bar {
+  max-width: 34px; border-radius: 8px 8px 2px 2px; transform-origin: bottom center;
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 20%, transparent));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: box-shadow .2s, filter .2s;
+}
+.col.cur .bar {
+  background: repeating-linear-gradient(135deg, var(--accent) 0 5px, color-mix(in srgb, var(--accent) 35%, transparent) 5px 10px);
+  background-size: 200% 200%; animation: dyn-stripes 3s linear infinite;
+}
+.col.sel .bar, .col:hover .bar { filter: brightness(1.25); box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 60%, transparent); }
+.col .v { font-weight: 500; color: var(--ink-2); }
+.col.sel .v { color: #fff; }
+.cols { border-bottom-color: var(--line); }
+.spark-line { stroke: var(--accent); filter: drop-shadow(0 0 6px var(--accent)); }
+.spark-area { fill: url(#spark-grad); stroke: none; }
 
-.car-form select, form.code input { background: var(--sunk); border: 1px solid var(--line); border-radius: 6px; }
+.meter { background: var(--sunk); }
+.meter i { background: linear-gradient(90deg, var(--accent-fill), var(--accent)); box-shadow: 0 0 10px var(--accent); transform-origin: left center; }
+
+.car-form select, form.code input { background: var(--sunk); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); }
+.car-form select option { background: var(--panel-solid); color: var(--ink); }
+.tt, .toast { background: rgba(12, 18, 32, .94); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 12px 30px rgba(0, 0, 0, .6); }
+footer .look-pick button[aria-pressed="true"] { background: var(--accent-fill); color: var(--on-accent); box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 45%, transparent); }
+
+/* --- Motion -------------------------------------------------------------------------------- */
+@keyframes dyn-pulse { 50% { opacity: .45; } }
+@keyframes dyn-glow { 50% { box-shadow: 0 0 2px var(--accent); } }
+@keyframes dyn-breathe { 50% { filter: drop-shadow(0 0 18px var(--state)); } }
+@keyframes dyn-flow { to { stroke-dashoffset: -.057; } }
+@keyframes dyn-stripes { to { background-position: 28px 0; } }
+@keyframes dyn-rise { from { opacity: 0; transform: translateY(14px); } }
+@keyframes dyn-grow-x { from { transform: scaleX(0); } }
+@keyframes dyn-grow-y { from { transform: scaleY(0); } }
+@keyframes dyn-draw { from { stroke-dashoffset: 1; } }
+@keyframes dyn-fade { from { opacity: 0; } }
+/* When the page opens (or the look is switched on): tiles rise one after the other, bars grow,
+   the ring draws itself. Not on the refresh every minute. */
+.dyn-intro .hero, .dyn-intro .panel { animation: dyn-rise .7s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 70ms); }
+.dyn-intro .radar-bar, .dyn-intro .minibar i, .dyn-intro .meter i { animation: dyn-grow-x 1.1s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 70ms + 250ms); }
+.dyn-intro .col .bar { animation: dyn-grow-y 1.1s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 70ms + 250ms); }
+.dyn-intro .ring-fill { animation: dyn-draw 1.6s cubic-bezier(.2, .8, .2, 1) both .15s; }
+.dyn-intro .tick.lit { animation: dyn-fade .5s both; animation-delay: calc(var(--t, 0) * 40ms + 150ms); }
+@media (prefers-reduced-motion: reduce) {
+  body::before, .ring-flow, .now-pill, .col.cur .bar, :root[data-batt="charging"] .ring-fill,
+  :root[data-batt="charging"] .ring-state svg, :root[data-batt="charging"] .brand h1::before { animation: none; }
+}
 </style>
 <style>
 /* --- PDF view (Home Assistant app only: it has no PDF viewer) --------------------------------- */
@@ -973,10 +1124,11 @@ footer { align-items: center; }
 
 <script>
 try {
-  if (localStorage.getItem("ladecockpit-look") === "modern") {
-    document.getElementById("look-modern").media = "all";
+  // "modern" is the name 0.9–0.10 used for the second look
+  if (["dynamic", "modern"].includes(localStorage.getItem("ladecockpit-look"))) {
+    document.getElementById("look-dynamic").media = "all";
     document.getElementById("look-classic").media = "not all";
-    document.documentElement.dataset.look = "modern";
+    document.documentElement.dataset.look = "dynamic";
   }
 } catch (e) { /* no storage – the server's choice applies once the data is in */ }
 </script>
@@ -1038,7 +1190,9 @@ try {
       credit: "Tesla credit", listPrice: "List price", creditsUsed: "Tesla credits used", plusCredit: "− {p} Tesla credit",
       invoicesLine: "Superchargers & MultiPass (invoices)", homeLine: "At home ({kwh} kWh · {p}/kWh)", homeLineNoPrice: "At home ({kwh} kWh, no price set)",
       windowText: "Charge window {a}–{b} %",
-      lookLabel: "Look", lookModern: "Modern", lookClassic: "Classic", lookFailed: "Could not save the look ({e})",
+      lookLabel: "Look", lookDynamic: "Dynamic", lookClassic: "Classic", lookFailed: "Could not save the look ({e})",
+      chargingNow: "Charging", chargeAt: "{t} % at {time}", chargeLeft: "Time left", chargePower: "Power", chargeLimit: "Limit {t} %", chargeRate: "+{r} %/h",
+      nowSlot: "now", showAll: "Show all {n}", showFewer: "Show fewer", aboveAvg: "{d} above your average", belowAvg: "{d} below your average", atAvg: "about your average",
       toneCheap: "cheaper than your average", toneDear: "dearer",
       health: "Battery health", healthTitle: "Range at 100 %", healthSub: "The car's own estimate, from {n} readings with the battery above 50 %.",
       healthSince: "since {d}: {sign}{p} %", healthWait: "A trend shows after 30 days of data.", dcShare: "Supercharger share of charged energy (12 months)",
@@ -1123,7 +1277,9 @@ try {
       credit: "Tesla-Gutschrift", listPrice: "Listenpreis", creditsUsed: "Tesla-Gutschriften genutzt", plusCredit: "− {p} Tesla-Gutschrift",
       invoicesLine: "Supercharger & MultiPass (Rechnungen)", homeLine: "Zu Hause ({kwh} kWh · {p}/kWh)", homeLineNoPrice: "Zu Hause ({kwh} kWh, kein Preis hinterlegt)",
       windowText: "Ladefenster {a}–{b} %",
-      lookLabel: "Design", lookModern: "Modern", lookClassic: "Klassisch", lookFailed: "Design ließ sich nicht speichern ({e})",
+      lookLabel: "Design", lookDynamic: "Dynamisch", lookClassic: "Klassisch", lookFailed: "Design ließ sich nicht speichern ({e})",
+      chargingNow: "Lädt", chargeAt: "{t} % um {time}", chargeLeft: "Restzeit", chargePower: "Leistung", chargeLimit: "Limit {t} %", chargeRate: "+{r} %/h",
+      nowSlot: "jetzt", showAll: "Alle {n} zeigen", showFewer: "Weniger zeigen", aboveAvg: "{d} über deinem Schnitt", belowAvg: "{d} unter deinem Schnitt", atAvg: "etwa dein Schnitt",
       toneCheap: "günstiger als dein Schnitt", toneDear: "teurer",
       health: "Akku-Gesundheit", healthTitle: "Reichweite bei 100 %", healthSub: "Schätzung des Autos, aus {n} Messungen mit Akku über 50 %.",
       healthSince: "seit {d}: {sign}{p} %", healthWait: "Ein Trend zeigt sich nach 30 Tagen Daten.", dcShare: "Supercharger-Anteil der geladenen Energie (12 Monate)",
@@ -1304,19 +1460,20 @@ try {
       </div>`;
     $("#footer").innerHTML = `<span>${T("footerSrc")}</span>
       <div class="look-pick" role="group" aria-label="${T("lookLabel")}"><span>${T("lookLabel")}</span><span class="seg">
-        <button type="button" data-look="classic" aria-pressed="${!modern()}">${T("lookClassic")}</button>
-        <button type="button" data-look="modern" aria-pressed="${modern()}">${T("lookModern")}</button>
+        <button type="button" data-look="classic" aria-pressed="${!dynamic()}">${T("lookClassic")}</button>
+        <button type="button" data-look="dynamic" aria-pressed="${dynamic()}">${T("lookDynamic")}</button>
       </span></div>
       <span>${esc(T("stand", { d: fmtDate(d.generated_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) }))}</span>`;
     bindTooltips();
     bindActions();
     bindCar();
+    dynAfterRender();
   }
 
   const offline = () => state.preview || state.data?.mode === "demo";
 
   // Where a price sits against your average list price: A (much cheaper) … D (about average) … G
-  // (much dearer). The modern look colours prices with it; the classic look ignores it.
+  // (much dearer). The dynamic look colours prices with it; the classic look ignores it.
   const avgPrice = (d) => d.totals?.list_price ?? d.totals?.avg_price;
   function tone(price, avg) {
     if (price == null || !avg) return "";
@@ -1325,18 +1482,23 @@ try {
     return "ABCDEFG"[i < 0 ? 6 : i];
   }
 
-  // --- Look: classic or modern ------------------------------------------------------------------
-  // Two stylesheets on the same markup; the one not in use is switched off. Chosen in the footer
-  // and saved in Ladecockpit, so every device shows the same. The browser also remembers it, only
-  // to avoid a flash of the other look while the page loads.
-  let look = document.documentElement.dataset.look === "modern" ? "modern" : "classic";
-  const modern = () => look === "modern";
+  // --- Look: classic or dynamic -----------------------------------------------------------------
+  // Two stylesheets on the same markup; the one not in use is switched off. The dynamic look adds
+  // a few pieces of its own (the battery ring, readouts, motion – see "Dynamic look" below).
+  // Chosen in the footer and saved in Ladecockpit, so every device shows the same. The browser
+  // also remembers it, only to avoid a flash of the other look while the page loads.
+  let look = document.documentElement.dataset.look === "dynamic" ? "dynamic" : "classic";
+  const dynamic = () => look === "dynamic";
+  const themeMetas = [...document.querySelectorAll('meta[name="theme-color"]')].map((m) => [m, m.content]);
 
   function applyLook(next) {
-    look = next === "modern" ? "modern" : "classic";
-    $("#look-modern").media = modern() ? "all" : "not all";
-    $("#look-classic").media = modern() ? "not all" : "all";
+    const was = look;
+    look = next === "dynamic" || next === "modern" ? "dynamic" : "classic";
+    $("#look-dynamic").media = dynamic() ? "all" : "not all";
+    $("#look-classic").media = dynamic() ? "not all" : "all";
     document.documentElement.dataset.look = look;
+    themeMetas.forEach(([m, c]) => (m.content = dynamic() ? "#04060b" : c));  // always dark
+    if (look !== was) dyn.intro = true;
     try { localStorage.setItem("ladecockpit-look", look); } catch { /* private mode */ }
   }
 
@@ -1513,12 +1675,15 @@ try {
   }
 
   function batteryPanel(d) {
+    if (dynamic()) return ringPanel(d);
     const s = d.status || {};
     const soc = s.soc;
     const floor = s.floor ?? 10, target = s.target ?? 80;
     const fillCls = soc == null ? "" : soc <= floor ? "bad" : soc <= floor + 8 ? "warn" : "";
     const stamp = soc == null
       ? `<span class="chip bad">${T("noBattery")}</span>`
+      : s.charging
+        ? `<span class="chip good pulse">${T("chargingNow")}${s.power ? " · " + num(s.power, 0) + " kW" : ""}</span>${s.finish ? `<span>${esc(T("chargeAt", { t: target, time: tShort(s.finish) }))}</span>` : ""}`
       : s.soc_source === "live"
         ? `<span class="chip good">${T("carOnline")}</span><span>${T("liveFromHa")}</span>`
         : `<span class="chip">${T("carOffline")}</span><span>${esc(T("lastValue", { when: relTime(s.as_of) }))}</span>`;
@@ -1543,6 +1708,80 @@ try {
       <div class="stamp">${stamp}<span>${esc(T("windowText", { a: floor, b: target }))}</span></div>
     </div>`;
   }
+
+  // --- Battery ring (dynamic look) ------------------------------------------------------------------
+  // 270° from bottom left to bottom right, like a gauge in the car: ticks every 5 %, the floor and
+  // the charge limit marked outside, the level as a lit arc. While charging, energy runs along it.
+  const RING = { cx: 120, cy: 120, r: 92, from: 135, sweep: 270 };
+  const ringPt = (p, r = RING.r) => {
+    const a = ((RING.from + (RING.sweep * Math.max(0, Math.min(100, p))) / 100) * Math.PI) / 180;
+    return [+(RING.cx + r * Math.cos(a)).toFixed(2), +(RING.cy + r * Math.sin(a)).toFixed(2)];
+  };
+  const ringArc = (p0, p1, r = RING.r) => {
+    const [x0, y0] = ringPt(p0, r), [x1, y1] = ringPt(p1, r);
+    return `M${x0} ${y0}A${r} ${r} 0 ${(RING.sweep * (p1 - p0)) / 100 > 180 ? 1 : 0} 1 ${x1} ${y1}`;
+  };
+
+  function ringPanel(d) {
+    const s = d.status || {};
+    const soc = s.soc;
+    const floor = s.floor ?? 10, target = s.target ?? 80;
+    const socTxt = soc == null ? T("unknown") : num(soc, 0) + " %";
+    const p = Math.max(0, Math.min(100, soc ?? 0));
+    const ticks = [];
+    for (let t = 0; t <= 100; t += 5) {
+      const major = t % 25 === 0;
+      const [x0, y0] = ringPt(t, 104), [x1, y1] = ringPt(t, major ? 113 : 109);
+      ticks.push(`<line class="tick${major ? " major" : ""}${soc != null && t <= soc ? " lit" : ""}" style="--t:${t / 5}" x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}"/>`);
+    }
+    const mark = (v) => {
+      const [x0, y0] = ringPt(v, 83), [x1, y1] = ringPt(v, 101), [lx, ly] = ringPt(v, 124);
+      return `<line class="mark" x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}"/><text class="mark-label" x="${lx}" y="${ly}">${v}</text>`;
+    };
+    const state = soc == null ? `<span class="ring-state">${T("noBattery")}</span>`
+      : s.charging ? `<span class="ring-state">${ico.bolt}${T("chargingNow")}</span>`
+      : `<span class="ring-state">${T(s.soc_source === "live" ? "carOnline" : "carOffline")}</span>`;
+    const facts = [];
+    if (s.charging) {
+      if (s.power) facts.push(`<span><small>${T("chargePower")}</small>${num(s.power, 0)} kW</span>`);
+      if (s.finish) {
+        facts.push(`<span><small>${esc(T("chargeLimit", { t: target }))}</small>${esc(tShort(s.finish))}</span>`);
+        facts.push(`<span><small>${T("chargeLeft")}</small><b data-until="${esc(s.finish)}">${untilText(s.finish)}</b></span>`);
+      }
+      if (s.rate && facts.length < 3) facts.push(`<span>${esc(T("chargeRate", { r: num(s.rate, 0) }))}</span>`);
+    }
+    const stamp = s.charging ? "" : soc == null ? ""
+      : s.soc_source === "live" ? `<span>${T("liveFromHa")}</span>` : `<span>${esc(T("lastValue", { when: relTime(s.as_of) }))}</span>`;
+    return `<div class="battery dyn-battery">
+      <div class="ring" role="img" aria-label="${esc(T("gaugeAria", { soc: socTxt, a: floor, b: target }))}">
+        <svg viewBox="-16 -16 272 272" aria-hidden="true">
+          <defs><linearGradient id="ring-grad" gradientUnits="userSpaceOnUse" x1="40" y1="220" x2="220" y2="40">
+            <stop offset="0" class="ring-stop from"/><stop offset="1" class="ring-stop"/>
+          </linearGradient></defs>
+          ${ticks.join("")}
+          <path class="ring-track" d="${ringArc(0, 100)}"/>
+          ${soc != null && p > 0 ? `<path class="ring-fill" d="${ringArc(0, Math.max(p, 0.5))}" pathLength="1"/>` : ""}
+          ${s.charging && p > 2 ? `<path class="ring-flow" d="${ringArc(0, p)}" pathLength="1"/>` : ""}
+          ${mark(floor)}${mark(target)}
+        </svg>
+        <div class="ring-center">
+          <div class="big" id="h-batt">${soc == null ? "–" : num(soc, 0)}<small>%</small></div>
+          ${s.range == null ? "" : `<div class="ring-range">≈ ${num(s.range, 0)} ${unit()}</div>`}
+          ${state}
+        </div>
+      </div>
+      ${facts.length ? `<div class="charge-facts">${facts.join("")}</div>` : ""}
+      <div class="stamp">${stamp}<span>${esc(T("windowText", { a: floor, b: target }))}</span></div>
+    </div>`;
+  }
+
+  // Time left until a moment, as 18:42 or 1:05:30, ticking every second while it is on the page
+  function untilText(iso) {
+    const sec = Math.round(Math.max(0, new Date(iso).getTime() - Date.now()) / 1000);
+    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), x = String(sec % 60).padStart(2, "0");
+    return h ? `${h}:${String(m).padStart(2, "0")}:${x}` : `${m}:${x}`;
+  }
+  setInterval(() => document.querySelectorAll("[data-until]").forEach((el) => (el.textContent = untilText(el.dataset.until))), 1000);
 
   function nextStopPanel(d) {
     const f = d.forecast || {};
@@ -1692,6 +1931,22 @@ try {
       const tip = has
         ? T("tipSlot", { label: s.label, range: s.range, p: money(s.avg_price), n: sessionsText(s.sessions), kwh: num(s.kwh, 1) })
         : T("tipEmpty", { label: s.label });
+      if (dynamic()) {
+        // Tap for the details instead of a tooltip; the slot of right now is marked.
+        const now = isNowSlot(s.id, d.tz);
+        const diff = has && avg ? s.avg_price - avg : null;
+        const vs = diff == null ? "" : Math.abs(diff) < 0.005 ? T("atAvg") : T(diff > 0 ? "aboveAvg" : "belowAvg", { d: money(Math.abs(diff)) });
+        const more = has ? [sessionsText(s.sessions), num(s.kwh, 1) + " kWh", vs].filter(Boolean).join(" · ") : T("tipEmpty", { label: s.label });
+        return `<div class="radar-row ${isBest ? "best" : ""} ${now ? "now" : ""} ${dyn.openSlots.has(s.id) ? "open" : ""}" data-slot="${esc(s.id)}" data-tone="${has ? tone(s.avg_price, avg) : ""}" tabindex="0" role="button" aria-expanded="${dyn.openSlots.has(s.id)}">
+        <div class="who"><b>${esc(s.label)}${now ? `<span class="now-pill">${T("nowSlot")}</span>` : ""}</b><span>${esc(s.range)}</span></div>
+        <div class="radar-track">
+          ${has ? `<div class="radar-bar" style="width:${pct(s.avg_price)}%"></div>` : '<div class="radar-empty"></div>'}
+          ${avg ? `<div class="radar-avg" style="left:${pct(avg)}%"></div>` : ""}
+        </div>
+        <div class="radar-val">${has ? money(s.avg_price) : '<span class="muted">–</span>'}<small>${has ? (isBest ? T("cheapest") : sessionsText(s.sessions)) : T("noSession")}</small></div>
+        <div class="radar-more">${esc(more)}</div>
+      </div>`;
+      }
       return `<div class="radar-row ${isBest ? "best" : ""}" data-tone="${has ? tone(s.avg_price, avg) : ""}" data-tip="${esc(tip)}" tabindex="0">
         <div class="who"><b>${esc(s.label)}</b><span>${esc(s.range)}</span></div>
         <div class="radar-track">
@@ -1726,7 +1981,8 @@ try {
     if (values.length < 2) return "";
     const w = 260, h = 46, lo = Math.min(...values), hi = Math.max(...values), span = hi - lo || 1;
     const pts = values.map((v, i) => `${(i / (values.length - 1)) * w},${h - 4 - ((v - lo) / span) * (h - 8)}`).join(" ");
-    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" aria-hidden="true" style="margin-top:10px"><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+    const area = dynamic() ? `<defs><linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".35"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs><polygon class="spark-area" points="0,${h} ${pts} ${w},${h}"/>` : "";
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" aria-hidden="true" style="margin-top:10px">${area}<polyline class="spark-line" points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
   }
 
   function healthPanel(d) {
@@ -1813,10 +2069,13 @@ try {
     const mc = (m) => (m.cost || 0) + (m.home_cost || 0);
     const max = Math.max(1, ...months.map(mc));
     const curKey = d.month?.key;
+    const info = (m) => `${m.label}: ${money(m.cost)} · ${num(m.kwh, 1)} kWh · ${sessionsText(m.sessions)}${m.avg_price ? " · " + ppk(m.avg_price) : ""}${m.kwh_per_100 ? " · " + num(m.kwh_per_100, 1) + " kWh/100 " + unit() : ""}`;
+    const sel = dynamic() ? months.find((m) => m.key === dyn.month) || months.find((m) => m.key === curKey) || months[months.length - 1] : null;
     return `<section class="panel" aria-labelledby="h-hist">
       <div><span class="eyebrow">${T("history")}</span><h2 id="h-hist">${T("historyTitle")}</h2>${projectionLine(d)}</div>
+      ${sel ? `<div class="readout" id="readout" aria-live="polite">${readoutHtml(sel)}</div>` : ""}
       <div class="cols" role="img" aria-label="${T("perMonthAria")}">
-        ${months.map((m) => `<div class="col ${m.key === curKey ? "cur" : ""}" tabindex="0" data-tip="${esc(`${m.label}: ${money(m.cost)} · ${num(m.kwh, 1)} kWh · ${sessionsText(m.sessions)}${m.avg_price ? " · " + ppk(m.avg_price) : ""}${m.kwh_per_100 ? " · " + num(m.kwh_per_100, 1) + " kWh/100 " + unit() : ""}`)}">
+        ${months.map((m) => `<div class="col ${m.key === curKey ? "cur" : ""} ${sel && sel.key === m.key ? "sel" : ""}" tabindex="0" data-month="${esc(m.key)}" ${sel ? "" : `data-tip="${esc(info(m))}"`}>
           <span class="v">${mc(m) ? money(mc(m), 0) : ""}</span>
           <div class="bar" style="height:${(mc(m) / max) * 100 * 0.82}%"></div>
         </div>`).join("")}
@@ -1828,7 +2087,8 @@ try {
   function sessionsPanel(d) {
     const list = d.sessions || [];
     const t = d.totals || {};
-    return `<section class="panel" aria-labelledby="h-list">
+    const fold = dynamic() && list.length > SESSIONS_FOLDED + 1;
+    return `<section class="panel ${fold && dyn.allSessions ? "show-all" : ""}" aria-labelledby="h-list" id="sessions-panel">
       <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline">
         <div><span class="eyebrow">${T("allSessions")}</span><h2 id="h-list">${esc(sessionsText(t.sessions || 0))} · ${money(t.cost || 0)}</h2></div>
         <span class="sub">${t.since ? esc(T("sinceDate", { d: fmtDate(t.since, { day: "2-digit", month: "2-digit", year: "numeric" }) })) : ""}${t.avg_price ? " · " + ppk(t.avg_price) : ""}</span>
@@ -1836,7 +2096,7 @@ try {
       ${list.length && !offline() ? exportsRow(d) : ""}
       ${list.length ? `<div class="scroll"><table>
         <thead><tr><th>${T("thDate")}</th><th>${siteHead(d)}</th><th class="n">kWh</th><th class="n">/kWh</th><th class="n">${T("thKw")}</th><th class="n">${T("thAmount")}</th><th>${T("thHa")}</th><th>${T("thInvoice")}</th></tr></thead>
-        <tbody>${list.map((s) => `<tr>
+        <tbody>${list.map((s, i) => `<tr${fold && i >= SESSIONS_FOLDED ? ' class="more"' : ""}>
           <td>${esc(dShort(s.start))}<span class="when-sub">${esc(tShort(s.start))}${s.duration_min != null ? " · " + s.duration_min + " min" : ""}</span></td>
           <td class="site">${esc(s.site)}${mpChip(s)}${s.idle ? `<span class="when-sub" style="color:var(--warn)">${esc(T("plusIdle", { p: money(s.idle) }))}</span>` : ""}${s.credit ? `<span class="when-sub" style="color:var(--good)">${esc(T("plusCredit", { p: money(s.credit) }))}</span>` : ""}</td>
           <td class="n">${s.kwh == null ? `<span class="muted">${T("open")}</span>` : num(s.kwh, 1)}</td>
@@ -1847,6 +2107,7 @@ try {
           <td>${s.has_invoice ? (!offline() ? `<a href="api/invoice/${encodeURIComponent(s.id)}" data-view="api/invoice/${encodeURIComponent(s.id)}" data-title="${esc(s.site + " · " + dShort(s.start))}" target="_blank" rel="noopener">PDF</a>` : `<span class="muted" title="${T("notInPreview")}">PDF</span>`) : '<span class="muted">–</span>'}</td>
         </tr>`).join("")}</tbody>
       </table></div>` : `<p class="sub">${T("noneYet")}</p>`}
+      ${fold ? `<button class="btn more-btn" id="more-sessions" type="button" aria-expanded="${dyn.allSessions}">${dyn.allSessions ? T("showFewer") : esc(T("showAll", { n: list.length }))}</button>` : ""}
     </section>`;
   }
 
@@ -2025,6 +2286,137 @@ try {
     };
   }
 
+  // --- Dynamic look ---------------------------------------------------------------------------------
+  // Runs after each render, only in the dynamic look: the battery's state and the time of day go to
+  // <html> for the light of the page; when the page opens, figures count up, tiles rise and bars
+  // grow (not on the refresh every minute); a changed battery level counts to its new value; the
+  // pointer lights the tile under it; radar rows, month columns and the session list react to taps.
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  const dyn = { intro: true, soc: null, allSessions: false, month: null, openSlots: new Set(), introTimer: 0 };
+  const SESSIONS_FOLDED = 6;
+  const SLOT_HOURS = { night: [0, 6], morning: [6, 11], midday: [11, 16], afternoon: [16, 20], evening: [20, 24] };
+  const COUNT_SEL = ".ring .big, .ring-range, .month-total .big, .kpi b, .fact b, .radar-val, .col .v, .readout b";
+
+  function hourIn(tz) {
+    try { return Number(new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", hourCycle: "h23" }).format(new Date())); }
+    catch { return new Date().getHours(); }
+  }
+  const isNowSlot = (id, tz) => { const h = hourIn(tz), r = SLOT_HOURS[id]; return !!r && h >= r[0] && h < r[1]; };
+  const daypart = (h) => (h >= 5 && h < 9 ? "dawn" : h >= 9 && h < 17 ? "day" : h >= 17 && h < 21 ? "dusk" : "night");
+  function battState(s) {
+    if (s.charging) return "charging";
+    if (s.soc == null) return "ok";
+    const floor = s.floor ?? 10;
+    return s.soc <= floor ? "critical" : s.soc <= floor + 8 ? "low" : s.soc >= (s.target ?? 80) ? "full" : "ok";
+  }
+  function readoutHtml(m) {
+    const total = (m.cost || 0) + (m.home_cost || 0);
+    const bits = [m.label, num((m.kwh || 0) + (m.home_kwh || 0), 1) + " kWh"];
+    if (m.sessions) bits.push(sessionsText(m.sessions));
+    if (m.distance) bits.push(num(m.distance, 0) + " " + unit());
+    if (m.avg_price) bits.push(ppk(m.avg_price));
+    return `<b>${money(total)}</b><span>${esc(bits.join(" · "))}</span>`;
+  }
+
+  // Counts the first number in an element up from `from`, in the page's number format.
+  function countUp(el, from) {
+    const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walk.nextNode()) && !/\d/.test(node.nodeValue));
+    if (!node) return;
+    const parts = new Intl.NumberFormat(locale()).formatToParts(12345.6);
+    const group = parts.find((x) => x.type === "group")?.value || ",";
+    const dec = parts.find((x) => x.type === "decimal")?.value || ".";
+    const rx = new RegExp("\\d[\\d" + group.replace(/[\\\]^-]/g, "\\$&") + dec.replace(/[\\\]^-]/g, "\\$&") + "]*\\d|\\d");
+    const text = node.nodeValue, m = rx.exec(text);
+    if (!m) return;
+    const raw = m[0];
+    const decimals = raw.includes(dec) ? raw.length - raw.lastIndexOf(dec) - 1 : 0;
+    const value = Number(raw.split(group).join("").replace(dec, "."));
+    if (!Number.isFinite(value) || value === from) return;
+    const fmt = new Intl.NumberFormat(locale(), { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: raw.includes(group) });
+    const start = performance.now(), dur = 1100;
+    const step = (t) => {
+      if (!node.isConnected) return;
+      const k = Math.min(1, Math.max(0, (t - start) / dur)), e = 1 - Math.pow(1 - k, 3);
+      node.nodeValue = k < 1 ? text.slice(0, m.index) + fmt.format(from + (value - from) * e) + text.slice(m.index + raw.length) : text;
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  function dynAfterRender() {
+    const root = document.documentElement;
+    if (!dynamic()) { delete root.dataset.batt; delete root.dataset.daypart; return; }
+    const d = state.data, s = d.status || {};
+    root.dataset.batt = battState(s);
+    root.dataset.daypart = daypart(hourIn(d.tz));
+    document.querySelectorAll("#content .hero, #content .panel").forEach((el, i) => el.style.setProperty("--i", i));
+    const motion = !reduceMotion.matches;
+    if (dyn.intro && motion) {
+      const c = $("#content");
+      c.classList.add("dyn-intro");
+      clearTimeout(dyn.introTimer);
+      dyn.introTimer = setTimeout(() => c.classList.remove("dyn-intro"), 2600);
+      document.querySelectorAll(COUNT_SEL).forEach((el) => countUp(el, 0));
+    } else if (motion && dyn.soc != null && s.soc != null && s.soc !== dyn.soc) {
+      const el = $(".ring .big");
+      if (el) countUp(el, dyn.soc);
+    }
+    dyn.intro = false;
+    dyn.soc = s.soc ?? null;
+  }
+
+  function selectMonth(key) {
+    const m = (state.data.monthly || []).find((x) => x.key === key);
+    const out = $("#readout");
+    if (!m || !out) return;
+    dyn.month = key;
+    out.innerHTML = readoutHtml(m);
+    document.querySelectorAll(".col[data-month]").forEach((c) => c.classList.toggle("sel", c.dataset.month === key));
+    if (!reduceMotion.matches) countUp(out.querySelector("b"), 0);
+  }
+
+  document.addEventListener("pointermove", (e) => {
+    if (!dynamic() || e.pointerType !== "mouse") return;
+    const p = e.target.closest?.(".panel");
+    if (!p) return;
+    const r = p.getBoundingClientRect();
+    p.style.setProperty("--mx", e.clientX - r.left + "px");
+    p.style.setProperty("--my", e.clientY - r.top + "px");
+  }, { passive: true });
+  document.addEventListener("pointerover", (e) => {
+    if (!dynamic() || e.pointerType !== "mouse") return;
+    const col = e.target.closest?.(".col[data-month]");
+    if (col && col.dataset.month !== dyn.month) selectMonth(col.dataset.month);
+  });
+  function dynActivate(e) {
+    if (!dynamic()) return;
+    const row = e.target.closest(".radar-row[data-slot]");
+    if (row) {
+      const open = row.classList.toggle("open");
+      row.setAttribute("aria-expanded", open);
+      dyn.openSlots[open ? "add" : "delete"](row.dataset.slot);
+      return;
+    }
+    const col = e.target.closest(".col[data-month]");
+    if (col) { selectMonth(col.dataset.month); return; }
+    const more = e.target.closest("#more-sessions");
+    if (more) {
+      dyn.allSessions = !dyn.allSessions;
+      $("#sessions-panel").classList.toggle("show-all", dyn.allSessions);
+      more.setAttribute("aria-expanded", dyn.allSessions);
+      more.textContent = dyn.allSessions ? T("showFewer") : T("showAll", { n: (state.data.sessions || []).length });
+    }
+  }
+  document.addEventListener("click", dynActivate);
+  document.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target.closest?.(".radar-row[data-slot], .col[data-month]")) {
+      e.preventDefault();
+      dynActivate(e);
+    }
+  });
+
   // --- Interaction ---------------------------------------------------------------------------------
   function bindTooltips() {
     const tt = $("#tt");
@@ -2096,6 +2488,12 @@ try {
       history.replaceState(null, "", location.pathname);
     }
   });
-  setInterval(() => { if (!state.preview && !document.hidden && !state.car && !pdfView) load(); }, 60000);
+  // Every minute; every 15 seconds while the car charges, so the battery follows closely.
+  (function refresh() {
+    setTimeout(async () => {
+      try { if (!state.preview && !document.hidden && !state.car && !pdfView) await load(); } catch { /* shown on the next try */ }
+      refresh();
+    }, state.data?.status?.charging ? 15000 : 60000);
+  })();
 })();
 </script>

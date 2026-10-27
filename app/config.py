@@ -38,6 +38,8 @@ ADDON_OPTION_MAP = {
     "entity_odometer": "HA_ENT_ODOMETER",
     "entity_charging": "HA_ENT_CHARGING",
     "charging_state": "HA_CHARGING_STATE",
+    "entity_charge_power": "HA_ENT_CHARGE_POWER",
+    "entity_time_to_full": "HA_ENT_TIME_TO_FULL",
     "entity_cost_total": "HA_ENT_COST_TOTAL",
     "entity_kwh_total": "HA_ENT_KWH_TOTAL",
     "entity_reference_price": "HA_ENT_REFERENCE_PRICE",
@@ -143,6 +145,9 @@ class Settings:
     ent_odometer: str
     ent_charging: str
     charging_value: str
+    # While charging (optional): charger power and time until the charge limit is reached
+    ent_charge_power: str
+    ent_time_to_full: str
     ent_cost_total: str
     ent_kwh_total: str
     ent_reference_price: str
@@ -227,6 +232,8 @@ def load() -> Settings:
         ent_odometer=_env("HA_ENT_ODOMETER"),
         ent_charging=_env("HA_ENT_CHARGING"),
         charging_value=_env("HA_CHARGING_STATE", "charging"),
+        ent_charge_power=_env("HA_ENT_CHARGE_POWER"),
+        ent_time_to_full=_env("HA_ENT_TIME_TO_FULL"),
         ent_cost_total=_env("HA_ENT_COST_TOTAL"),
         ent_kwh_total=_env("HA_ENT_KWH_TOTAL"),
         ent_reference_price=_env("HA_ENT_REFERENCE_PRICE"),

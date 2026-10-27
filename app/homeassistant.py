@@ -59,7 +59,8 @@ class HAClient:
         s = self.s
         roles = {
             "soc": s.ent_soc, "range": s.ent_range, "odometer": s.ent_odometer,
-            "charging": s.ent_charging, "cost_total": s.ent_cost_total, "kwh_total": s.ent_kwh_total,
+            "charging": s.ent_charging, "charge_power": s.ent_charge_power, "time_to_full": s.ent_time_to_full,
+            "cost_total": s.ent_cost_total, "kwh_total": s.ent_kwh_total,
             "reference_price": s.ent_reference_price, "fuel_month": s.ent_fuel_month,
             "fuel_consumption": s.ent_fuel_consumption, "fuel_price": s.ent_fuel_price,
             "fuel_cost_total": s.ent_fuel_cost_total, "fuel_litres_total": s.ent_fuel_litres_total,

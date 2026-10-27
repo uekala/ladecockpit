@@ -26,6 +26,8 @@ ROLE = {"soc": "soc", "range": "range", "odometer": "odometer", "temp": "outside
 MAX_AGE = timedelta(hours=1)
 # The fuel totals only move when you fill up: one reading a day is plenty.
 MAX_AGE_FOR = {"fuel_cost": timedelta(days=1), "fuel_litres": timedelta(days=1)}
+# While the car charges, poll more often so the web app follows the battery closely.
+FAST_POLL_SECONDS = 15
 HOME_MIN_STEP_KWH = 0.05
 HOME_MAX_STEP_KWH = 100.0
 KEEP_DAYS = 400
@@ -50,7 +52,13 @@ class Watcher:
                 await self.poll_once()
             except Exception:  # noqa: BLE001 – keep polling
                 log.exception("Polling Home Assistant failed")
-            await asyncio.sleep(self.s.ha_poll_seconds)
+            await asyncio.sleep(self.interval())
+
+    def interval(self) -> int:
+        state = ((self.latest or {}).get("raw") or {}).get("charging") or ""
+        if state.strip().lower() == self.s.charging_value.strip().lower():
+            return min(self.s.ha_poll_seconds, FAST_POLL_SECONDS)
+        return self.s.ha_poll_seconds
 
     async def poll_once(self, now: datetime | None = None) -> dict:
         now = now or datetime.now(timezone.utc)
