@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.0 – 2026-10-27
+
+- **Modern look in vivid colours.** The car and the battery sit on a saturated ultramarine block, the battery segments light up in bright green (orange and red when it runs low). Buttons are filled pills, the small figure tiles and the month history are tinted blue, tips that save money are green. The energy-label colours of the prices are fuller, the light background is a clean cool white instead of the greyish green, and dark mode is a deep blue-black. *Classic* stays as it was.
+
 ## 0.10.0 – 2026-10-27
 
 - **The fuel price you actually paid.** The combustion-car comparison can use what you really paid per litre instead of a fixed price or a station's current price. Set two new options, *Fuel cost total* and *Litres filled total* – two entities that grow with each fill-up, e.g. the helpers of a fuel log in Home Assistant. Ladecockpit keeps a daily reading of both and uses the average of the last 90 days; until it has 90 days, or after the totals were reset, it uses everything the totals hold. The paid price wins over *Fuel price from an entity* and the fixed fuel price; the month card says "… €/L paid", and a tip shows how many litres the average is based on.
