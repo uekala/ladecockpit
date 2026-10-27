@@ -1,0 +1,72 @@
+name: Ladecockpit
+version: "0.10.0"
+slug: ladecockpit
+description: Real Tesla Supercharger invoices in Home Assistant – price radar, next charging stop and a small web app.
+url: https://github.com/uekala/ladecockpit
+image: ghcr.io/uekala/ladecockpit
+arch:
+  - aarch64
+  - amd64
+startup: application
+boot: auto
+ingress: true
+ingress_port: 8077
+panel_icon: mdi:ev-station
+panel_title: Ladecockpit
+homeassistant_api: true
+ports:
+  8077/tcp: null
+ports_description:
+  8077/tcp: Web app outside Home Assistant (optional)
+options:
+  language: en
+  tesla_client_id: ""
+  tesla_client_secret: ""
+  tesla_region: eu
+  tesla_redirect_uri: "http://localhost:8077/auth/callback"
+  entity_battery: ""
+  entity_range: ""
+  entity_odometer: ""
+  entity_charging: ""
+  charging_state: charging
+  soc_floor: 10
+  soc_target: 80
+  notify_problems: true
+  publish_entities: true
+  month_report: true
+schema:
+  language: list(en|de)
+  locale: str?
+  tesla_client_id: str?
+  tesla_client_secret: password?
+  tesla_region: list(eu|na)
+  tesla_redirect_uri: str
+  tesla_vin: str?
+  entity_battery: str?
+  entity_range: str?
+  entity_odometer: str?
+  entity_charging: str?
+  charging_state: str
+  entity_cost_total: str?
+  entity_kwh_total: str?
+  entity_reference_price: str?
+  reference_price: float?
+  entity_fuel_month: str?
+  fuel_label: str?
+  fuel_consumption: float(0,50)?
+  entity_fuel_consumption: str?
+  fuel_price: float(0,10)?
+  entity_fuel_price: str?
+  entity_fuel_cost_total: str?
+  entity_fuel_litres_total: str?
+  entity_home_energy: str?
+  home_price: float(0,5)?
+  entity_home_price: str?
+  entity_outside_temp: str?
+  soc_floor: int(0,50)
+  soc_target: int(50,100)
+  notify_problems: bool
+  publish_entities: bool
+  month_report: bool
+  sync_interval_hours: float(1,24)?
+  api_budget_requests: int(100,10000)?

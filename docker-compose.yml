@@ -1,0 +1,16 @@
+services:
+  ladecockpit:
+    # Build locally from this repository …
+    build: .
+    # … or use the published image instead (remove "build" above):
+    # image: ghcr.io/uekala/ladecockpit:latest
+    container_name: ladecockpit
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8077:8077"
+    volumes:
+      - ladecockpit-data:/data
+
+volumes:
+  ladecockpit-data:

@@ -1,0 +1,14 @@
+.git
+.github
+.env
+data
+docs
+tests
+blueprints
+homeassistant
+**/__pycache__
+*.md
+preview.html
+vorschau.html
+ladecockpit-app
+repository.yaml
