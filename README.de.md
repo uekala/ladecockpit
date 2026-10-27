@@ -4,7 +4,7 @@
 
 [English](README.md)
 
-![Ladecockpit auf Desktop und Handy mit Demo-Daten: Bild des Autos, Akku, nächster Ladestopp, letzte Rechnung, Monat, Preis-Radar und Fahrzeugauswahl](docs/screenshot-de.png)
+![Ladecockpit mit Demo-Daten: am Desktop im klassischen Design mit Akku, nächstem Ladestopp, letzter Rechnung und Monat; auf zwei Handys im modernen Design, eins mit dem Preis-Radar in den Farben des Energielabels](docs/screenshot-de.png)
 
 Viele Home-Assistant-Setups schätzen die Supercharger-Kosten aus den kWh des Autos und einem festen Preis oder fragen nach jeder Ladung den Preis ab. Ladecockpit holt stattdessen die echte Rechnung über die Tesla Fleet API: abgerechnete kWh, Preis pro kWh, Blockiergebühr, Standort und PDF. Diese Daten gibt es an Home Assistant weiter.
 
