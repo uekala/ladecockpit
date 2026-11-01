@@ -14,7 +14,7 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 
-from . import i18n, networks, vehicle
+from . import i18n, invoices, networks, vehicle
 from .config import Settings
 from .db import DB, utcnow_iso
 from .homeassistant import HAClient
@@ -25,6 +25,9 @@ log = logging.getLogger("ladecockpit.sync")
 BURST_START_DELAY_S = 5
 PROBLEM_ID = "ladecockpit_problem"
 FAILURES_BEFORE_ALERT = 3
+# Invoices read for the network per sync, and how far back (each is one Tesla request, once).
+CHECK_PER_SYNC = 25
+CHECK_DAYS = 120
 
 
 class SyncService:
@@ -141,11 +144,30 @@ class SyncService:
                     new_count += 1
                     self._log_format(raw, session["session_id"])
 
+            await self.check_invoices()
             await self.push_pending()
             self.last_sync = utcnow_iso()
             self.db.kv_set("last_sync", self.last_sync)
             self.last_error = None
             return new_count
+
+    async def check_invoices(self, now: datetime | None = None) -> int:
+        """Read the network from the invoice of sessions not checked yet, before they go to Home
+        Assistant. The PDF is kept, so viewing it or the month report needs no extra request."""
+        since = ((now or datetime.now(timezone.utc)) - timedelta(days=CHECK_DAYS)).isoformat(timespec="seconds")
+        checked = 0
+        for s in self.db.sessions_to_check(since, CHECK_PER_SYNC):
+            try:
+                path = await invoices.pdf_path(self.tesla, self.s.data_dir, s)
+            except Exception as e:  # noqa: BLE001 – try again with the next sync
+                log.warning("Could not fetch the invoice of session %s: %s", s["session_id"], e)
+                break
+            network = invoices.network_from_pdf(path.read_bytes())
+            self.db.set_invoice_network(s["session_id"], network)
+            if network == networks.MULTIPASS and s.get("network") != networks.MULTIPASS:
+                log.info("Session %s is a MultiPass session (invoice number)", s["session_id"])
+            checked += 1
+        return checked
 
     @staticmethod
     def _log_format(raw: dict, session_id: str) -> None:

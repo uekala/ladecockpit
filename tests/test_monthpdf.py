@@ -43,7 +43,7 @@ def test_cover_and_merge():
 def test_report_endpoint_in_demo():
     with TestClient(app) as client:
         d = client.get("/api/dashboard").json()
-        month = d["month"]["key"]
+        month = next(m["key"] for m in reversed(d["monthly"]) if m["sessions"])  # the 1st of a month has none yet
         r = client.get(f"/api/report/{month}.pdf")
         assert r.status_code == 200 and r.headers["content-type"] == "application/pdf"
         assert PdfReader(io.BytesIO(r.content)).pages[0].extract_text().startswith("Charging costs")
