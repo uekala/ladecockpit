@@ -104,3 +104,56 @@ def test_credit_from_real_shape(settings, tmp_path):
     assert d["totals"]["credit"] == 13.5 and d["totals"]["avg_price"] == 0.2177
     assert d["sessions"][0]["credit"] == 13.5 and d["sessions"][0]["net"] == 10.63
     assert any(i["kind"] == "credit" for i in d["insights"])
+
+
+def _priced(site, rate, currency="EUR"):
+    fee = {**SUPERCHARGER_RAW["fees"][0], "rateBase": rate, "currencyCode": currency,
+           "totalBase": round(rate * 6.05, 2), "totalDue": round(rate * 6.05, 2)}
+    return {**SUPERCHARGER_RAW, "siteLocationName": site, "fees": [fee, SUPERCHARGER_RAW["fees"][1]]}
+
+
+def test_price_rule_for_sites_that_do_not_look_like_superchargers():
+    # Superchargers keep their class even when they are dear at peak hours
+    assert classify(_priced("Bergstadt, Germany", 0.58)) == (SUPERCHARGER, None)
+    assert classify(_priced("Seestadt - Center, Germany", 0.66)) == (SUPERCHARGER, None)
+    assert classify(_priced("Tesla Supercharger Südstadt", 0.61)) == (SUPERCHARGER, None)
+    # Unknown operator, no Supercharger form, dear → MultiPass
+    network, reason = classify(_priced("Hyper Charge - Musterstadt", 0.69))
+    assert network == MULTIPASS and "0.69" in reason
+    assert classify(_priced("", 0.79))[0] == MULTIPASS
+    # Looks like "Place, Country" at first sight, but the end is a town, not a country
+    assert classify(_priced("Brunnenhausstr. 46, Neustadt", 0.59))[0] == MULTIPASS
+    assert classify(_priced("Oslo, Norway", 0.62)) == (SUPERCHARGER, None)
+    assert classify(_priced("Utrecht, The Netherlands", 0.61)) == (SUPERCHARGER, None)
+    # Cheap or not in euros → no conclusion from the price
+    assert classify(_priced("Hyper Charge - Musterstadt", 0.45)) == (SUPERCHARGER, None)
+    assert classify(_priced("Hyper Charge - Musterstadt", 0.50)) == (SUPERCHARGER, None)
+    assert classify(_priced("Hyper Lading - Oslo", 6.5, "NOK")) == (SUPERCHARGER, None)
+
+
+def test_price_rule_can_be_turned_off_and_uses_the_list_rate():
+    from app import networks
+    try:
+        networks.configure(0)
+        assert classify(_priced("Hyper Charge - Musterstadt", 0.69)) == (SUPERCHARGER, None)
+        networks.configure(0.70)
+        assert classify(_priced("Hyper Charge - Musterstadt", 0.69)) == (SUPERCHARGER, None)
+    finally:
+        networks.configure(networks.DEFAULT_MIN_PRICE)
+    # Partly paid with credits: the listed rate counts, not what was left to pay
+    credit = {**_priced("Hyper Charge - Musterstadt", 0.69)}
+    credit["fees"] = [{**credit["fees"][0], "pricingType": "CREDIT_PARTIAL_PAYMENT", "totalBase": 1.0}]
+    assert networks.kwh_rate(credit) == (0.69, "EUR")
+    no_rate = {**credit, "fees": [{"feeType": "CHARGING", "uom": "kwh", "usageBase": 10, "totalBase": 7.5,
+                                   "currencyCode": "EUR"}]}
+    assert networks.kwh_rate(no_rate) == (0.75, "EUR")
+    assert networks.kwh_rate({"fees": []}) is None
+
+
+def test_operator_from_site():
+    from app.networks import operator_from_site
+    assert operator_from_site("Allego - ATU Neustadt") == "Allego"
+    assert operator_from_site("Hyper Charge - Musterstadt") == "Hyper Charge"
+    assert operator_from_site("Hyper Charge Musterstadt") is None
+    assert operator_from_site("Seestadt - Center, Germany") is None
+    assert operator_from_site(None) is None

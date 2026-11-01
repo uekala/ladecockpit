@@ -3,7 +3,8 @@
 Tesla bills two kinds of sessions through the same history: its own Superchargers, and
 since 2025 third-party chargers paid with Tesla MultiPass. The Fleet API has no field
 that names the network, and Tesla has not documented how MultiPass sessions look.
-So this goes by hints, from strong to weak. It runs whenever sessions are read from
+So this goes by hints, from strong to weak; the weakest is the price: a site that does not
+look like a Supercharger and cost more than MULTIPASS_MIN_PRICE per kWh. It runs whenever sessions are read from
 the database (the raw Tesla record is kept), so a better rule in a later version also
 re-classifies older sessions.
 """
@@ -40,6 +41,80 @@ _BRANDS = re.compile(
 )
 
 
+# Tesla names its Superchargers "Place, Country" ("Bergstadt, Germany", "Seestadt - Center, Germany").
+# Third-party sites can look alike ("Brunnenhausstr. 46, Neustadt"), so the part after the last comma
+# must be a country.
+_COUNTRIES = frozenset("""
+germany deutschland netherlands the-netherlands nederland belgium belgique belgië belgie france austria
+österreich osterreich switzerland schweiz suisse svizzera italy italia spain españa espana portugal denmark
+danmark sweden sverige norway norge finland suomi poland polska czech-republic czechia česko cesko slovakia
+slovensko hungary magyarország magyarorszag slovenia slovenija croatia hrvatska luxembourg luxemburg ireland
+united-kingdom uk great-britain england scotland wales northern-ireland iceland ísland estonia eesti latvia
+latvija lithuania lietuva romania românia bulgaria greece turkey türkiye turkiye serbia liechtenstein monaco
+andorra malta cyprus bosnia-and-herzegovina montenegro north-macedonia albania kosovo ukraine moldova
+georgia israel jordan morocco united-arab-emirates uae saudi-arabia qatar united-states usa canada mexico
+chile australia new-zealand japan china south-korea korea taiwan hong-kong singapore thailand malaysia
+philippines india
+""".split())
+_TESLA_WORDS = re.compile(r"\b(tesla|supercharger)\b", re.I)
+
+# Price rule: a session whose site does not look like a Supercharger and whose energy cost more
+# than this per kWh (EUR) is counted as MultiPass. Superchargers rarely cost more; when they do
+# (peak hours), their site name still has the Supercharger form, so they are not affected.
+# 0 turns the rule off. Set from MULTIPASS_MIN_PRICE at start (see configure).
+DEFAULT_MIN_PRICE = 0.50
+_min_price = DEFAULT_MIN_PRICE
+
+
+def configure(min_price: float | None) -> None:
+    """Set the price rule (EUR per kWh, 0 or None = off)."""
+    global _min_price
+    _min_price = float(min_price) if min_price and min_price > 0 else 0.0
+
+
+def looks_like_supercharger(site: str | None) -> bool:
+    """True when the site name has the form Tesla gives its Superchargers, or says Tesla."""
+    site = (site or "").strip()
+    if not site:
+        return False
+    if _TESLA_WORDS.search(site):
+        return True
+    place, comma, country = site.rpartition(",")
+    country = "-".join(country.casefold().split())
+    return bool(comma and place.strip() and country in _COUNTRIES)
+
+
+def kwh_rate(raw: dict) -> tuple[float, str] | None:
+    """(list price per kWh, currency) from the CHARGING fees, or None.
+
+    Uses the listed rate (rateBase), so a session partly paid with Tesla credits keeps its
+    real price; without a rate, the total divided by the kWh.
+    """
+    usage = cost = 0.0
+    currency = ""
+    for fee in raw.get("fees") or []:
+        if not isinstance(fee, dict) or str(fee.get("feeType", "")).upper() != "CHARGING":
+            continue
+        if str(fee.get("uom", "")).lower() != "kwh":
+            continue
+        try:
+            kwh = float(fee.get("usageBase") or 0)
+            if fee.get("rateBase") is not None:
+                amount = kwh * float(fee["rateBase"])
+            else:
+                amount = float(fee.get("totalBase") or fee.get("totalDue") or 0)
+        except (TypeError, ValueError):
+            continue
+        if kwh <= 0:
+            continue
+        usage += kwh
+        cost += amount
+        currency = currency or str(fee.get("currencyCode") or "").upper()
+    if usage <= 0:
+        return None
+    return round(cost / usage, 4), currency
+
+
 # How the operators matched by _BRANDS are written (lower-case match → display name).
 _OPERATOR_NAMES = {
     "enbw": "EnBW", "ionity": "IONITY", "fastned": "Fastned", "allego": "Allego", "aral pulse": "Aral pulse",
@@ -61,6 +136,25 @@ def operator(site: str | None) -> str | None:
         key = re.sub(r"\s+", " ", match.group(0).lower())
         if key in _OPERATOR_NAMES:
             return _OPERATOR_NAMES[key]
+    return None
+
+
+_SITE_SPLIT = re.compile(r"\s+[-–|]\s+")
+
+
+def operator_from_site(site: str | None) -> str | None:
+    """The network behind a third-party site: a known brand, otherwise the part before the dash
+    as Tesla writes MultiPass sites ("Hyper Charge - Musterstadt" → "Hyper Charge")."""
+    known = operator(site)
+    if known:
+        return known
+    if looks_like_supercharger(site):
+        return None
+    parts = _SITE_SPLIT.split((site or "").strip(), maxsplit=1)
+    if len(parts) == 2:
+        head = parts[0].strip()
+        if 2 <= len(head) <= 40 and any(ch.isalpha() for ch in head):
+            return head
     return None
 
 
@@ -94,6 +188,10 @@ def classify(raw: dict | None) -> tuple[str, str | None]:
     brand = _BRANDS.search(site)
     if brand:
         return MULTIPASS, f"site {brand.group(0)}"
+    if _min_price > 0 and not looks_like_supercharger(site):
+        rate = kwh_rate(raw)
+        if rate and rate[1] == "EUR" and rate[0] > _min_price:
+            return MULTIPASS, f"price {rate[0]:.2f} EUR/kWh, site not like a Supercharger"
     return SUPERCHARGER, None
 
 

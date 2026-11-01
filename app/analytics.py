@@ -280,7 +280,7 @@ def _multipass(sessions: list[dict], tz, lang: str) -> dict | None:
         priced = [x for x in items if x.get("kwh") and x.get("total") is not None]
         st = _stats(priced)
         stations.append({
-            "site": site, "operator": networks.operator(site), "sessions": len(items),
+            "site": site, "operator": networks.operator_from_site(site), "sessions": len(items),
             "kwh": st["kwh"], "cost": st["cost"], "avg_price": st["list_price"], "avg_kw": _avg_kw(priced),
             "first": when[0].date().isoformat(), "last": _iso(when[-1]),
             "last_label": i18n.day_label(lang, when[-1]), "map_url": map_url(site),
