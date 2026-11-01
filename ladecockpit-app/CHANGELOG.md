@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.1 – 2026-11-01
+
+- **MultiPass recognised by the invoice.** MultiPass sessions at stations whose name gives nothing away (e.g. "Brunnenhausstr. 46, Neustadt" or "Green Energy Nord - AC E5") were counted as Supercharger sessions. Ladecockpit now reads the network from the invoice: MultiPass invoices have a number with "MSP" (Tesla as mobility service provider), Supercharger invoices do not. The invoice of each new session is fetched once, before the session goes to Home Assistant, and kept – viewing it or the month report then needs no further request. After the update, the sessions of the last 120 days are checked, at most 25 per sync. The invoice has the last word, also over the operator name: a Supercharger on a supermarket car park stays a Supercharger.
+- Downloaded MultiPass invoices are called `multipass-….pdf`.
+- Tests no longer fail on the first day of a month.
+
 ## 0.11.0 – 2026-10-27
 
 - **New look: Dynamic.** It replaces *Modern* (whoever used Modern gets Dynamic). A cockpit at night, always dark: the battery is a glowing ring with ticks, the floor and the charge limit, next to the picture of your car. When the page opens, the tiles rise one after the other, the ring draws itself, figures count up and bars grow. The light of the page follows the battery – green, amber when it gets low, red below the floor, cyan while charging – and the time of day. The price radar marks the time slot you are in right now; tap a slot for sessions, kWh and how far it is from your average. Tap or point at a month in the history for its figures. The session list shows the newest six and opens the rest on request. Figures in Saira, text in Geist (both SIL Open Font License, shipped with the app). *Classic* stays as it was and stays the default.

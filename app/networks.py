@@ -24,6 +24,8 @@ KNOWN_KEYS = {
 
 _HINT = re.compile(r"multi\s*pass|roaming|third[\s_-]*party|partner|e-?msp|ocpi|hubject|electroverse", re.I)
 _HINT_KEY = re.compile(r"operator|network|provider|cpo|evse|partner|roaming|third_?party|emsp", re.I)
+# MultiPass invoice numbers carry "MSP" (Tesla as mobility service provider): 4020MSP0000019797
+_MSP_NUMBER = re.compile(r"\d{3,5}MSP\d{6,}", re.I)
 # Free text and IDs: never searched for hints (a site called "Partnerweg" is still a Supercharger).
 _SKIP = {"siteLocationName", "vin", "contentId", "fileName", "sessionId", "sessionFeeId",
          "chargeStartDateTime", "chargeStopDateTime", "unlatchDateTime"}
@@ -80,6 +82,10 @@ def classify(raw: dict | None) -> tuple[str, str | None]:
                 return MULTIPASS, f"field {key}"
             if key not in _SKIP and isinstance(value, str) and _HINT.search(value):
                 return MULTIPASS, f"{key}={value}"
+    for inv in raw.get("invoices") or []:
+        name = inv.get("fileName") if isinstance(inv, dict) else None
+        if isinstance(name, str) and _MSP_NUMBER.search(name):
+            return MULTIPASS, f"invoice {name}"
     for key, record in (("billingType", raw), *(("invoiceType", inv) for inv in raw.get("invoices") or [])):
         value = record.get(key) if isinstance(record, dict) else None
         if value and str(value).upper() not in SUPERCHARGER_BILLING:
