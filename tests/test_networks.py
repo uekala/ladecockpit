@@ -157,3 +157,18 @@ def test_operator_from_site():
     assert operator_from_site("Hyper Charge Musterstadt") is None
     assert operator_from_site("Oberhausen - Centro, Germany") is None
     assert operator_from_site(None) is None
+
+
+def test_towns_are_not_networks():
+    from app.networks import operator_from_site, place_names
+    places = place_names(["Kleinewefersstr. 46, Krefeld", "Oberhausen - Centro, Germany", "Willich, Germany",
+                          "Musterweg 3, 12345  Musterstadt", "Allego - ATU Krefeld", None, ""])
+    assert places == {"krefeld", "oberhausen", "willich", "musterstadt"}
+    # Town first: no network
+    assert operator_from_site("Krefeld - KiK", places) is None
+    assert operator_from_site("Oberhausen – Bero", places) is None
+    # Network first, or a known brand: unchanged
+    assert operator_from_site("Green Energy Hüls - AC E5", places) == "Green Energy Hüls"
+    assert operator_from_site("Allego - ATU Krefeld", places) == "Allego"
+    # Without towns from your own sites, the part before the dash is all there is
+    assert operator_from_site("Krefeld - KiK") == "Krefeld"

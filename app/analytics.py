@@ -274,13 +274,14 @@ def _multipass(sessions: list[dict], tz, lang: str) -> dict | None:
     groups: dict[str, list[dict]] = {}
     for x in used:
         groups.setdefault(x.get("site") or i18n.t(lang, "unknown_station"), []).append(x)
+    places = networks.place_names(x.get("site") for x in sessions)
     stations = []
     for site, items in groups.items():
         when = sorted(datetime.fromisoformat(x["start_ts"]).astimezone(tz) for x in items)
         priced = [x for x in items if x.get("kwh") and x.get("total") is not None]
         st = _stats(priced)
         stations.append({
-            "site": site, "operator": networks.operator_from_site(site), "sessions": len(items),
+            "site": site, "operator": networks.operator_from_site(site, places), "sessions": len(items),
             "kwh": st["kwh"], "cost": st["cost"], "avg_price": st["list_price"], "avg_kw": _avg_kw(priced),
             "first": when[0].date().isoformat(), "last": _iso(when[-1]),
             "last_label": i18n.day_label(lang, when[-1]), "map_url": map_url(site),

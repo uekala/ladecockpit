@@ -62,6 +62,23 @@ def test_stations_operators_and_entity(settings):
     assert attrs["operators"][0]["name"] == "EnBW" and attrs["sessions"] == 5 and attrs["text"] == mp["text"]
 
 
+def test_operators_from_site_names_without_towns(settings):
+    sessions = [
+        _s("a", "Allego - ATU Krefeld", 3, 4.9, 3.57),
+        _s("b", "Charging Station ALDI SÜD", 4, 1.5, 1.04),
+        _s("c", "Kleinewefersstr. 46, Krefeld", 5, 1.2, 0.84),
+        _s("d", "Green Energy Hüls - AC E5", 6, 1.1, 0.77),
+        _s("e", "Krefeld - KiK", 7, 1.2, 0.82),
+        _s("f", "Willich, Germany", 8, 30, 12.0, network="supercharger"),
+    ]
+    mp = _dash(settings, sessions)["multipass"]
+    by_site = {s["site"]: s["operator"] for s in mp["stations"]}
+    assert by_site == {"Allego - ATU Krefeld": "Allego", "Charging Station ALDI SÜD": "Aldi",
+                       "Kleinewefersstr. 46, Krefeld": None, "Green Energy Hüls - AC E5": "Green Energy Hüls",
+                       "Krefeld - KiK": None}
+    assert [o["name"] for o in mp["operators"]] == ["Aldi", "Allego", "Green Energy Hüls"]
+
+
 def test_no_multipass_yet(settings):
     d = _dash(settings, [_s("f", "Mainz, Germany", 22, 35, 13.3, network="supercharger")])
     assert d["multipass"] is None
