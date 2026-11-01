@@ -68,7 +68,8 @@ def test_invoice_pages_in_demo():
 
 def test_report_pages_in_demo():
     with TestClient(app) as client:
-        month = client.get("/api/dashboard").json()["month"]["key"]
+        monthly = client.get("/api/dashboard").json()["monthly"]
+        month = next(m["key"] for m in reversed(monthly) if m["sessions"])  # the 1st of a month has none yet
         info = client.get(f"/api/report/{month}/pages").json()
         assert info["pages"] >= 1 and info["name"].endswith(f"{month}.pdf")
         r = client.get(f"/api/report/{month}/page/1.png")

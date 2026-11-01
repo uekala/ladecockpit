@@ -73,6 +73,9 @@ class DB:
         with self._lock:
             self._conn.execute("PRAGMA journal_mode=WAL")
             self._conn.executescript(SCHEMA)
+            cols = {r["name"] for r in self._conn.execute("PRAGMA table_info(sessions)")}
+            if "invoice_network" not in cols:  # 0.12: the network as the invoice tells it
+                self._conn.execute("ALTER TABLE sessions ADD COLUMN invoice_network TEXT")
             self._conn.commit()
 
     # --- key/value -----------------------------------------------------------
@@ -143,6 +146,20 @@ class DB:
             ).fetchall()
         return [self._row(r) for r in rows]
 
+    def sessions_to_check(self, since: str, limit: int) -> list[dict]:
+        """Sessions with an invoice whose network has not been read from the invoice yet."""
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT * FROM sessions WHERE invoice_network IS NULL AND invoices NOT IN ('', '[]') "
+                "AND start_ts >= ? ORDER BY start_ts DESC LIMIT ?", (since, limit)
+            ).fetchall()
+        return [self._row(r) for r in rows]
+
+    def set_invoice_network(self, session_id: str, network: str) -> None:
+        with self._lock:
+            self._conn.execute("UPDATE sessions SET invoice_network=? WHERE session_id=?", (network, session_id))
+            self._conn.commit()
+
     def set_push_state(self, session_id: str, state: str) -> None:
         with self._lock:
             self._conn.execute(
@@ -165,6 +182,9 @@ class DB:
             except json.JSONDecodeError:
                 record = None
             d["network"], d["network_reason"] = networks.classify(record)
+            # The invoice has the last word: its number says MultiPass or Supercharger.
+            if d.get("invoice_network") in (networks.MULTIPASS, networks.SUPERCHARGER) and d["invoice_network"] != d["network"]:
+                d["network"], d["network_reason"] = d["invoice_network"], "invoice number"
             d.update(price_details(record))
             if d["list_cost"] is None and d.get("charge_cost") is not None:
                 d["list_cost"] = d["charge_cost"]

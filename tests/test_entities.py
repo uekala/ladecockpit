@@ -107,7 +107,10 @@ def test_health_and_consumption_entities(settings):
     r100, attrs = states["sensor.ladecockpit_range_at_100"]
     assert r100 == str(d["battery_health"]["range_at_100"]) and attrs["state_class"] == "measurement"
     cons, attrs = states["sensor.ladecockpit_consumption"]
-    assert float(cons) == d["month"]["kwh_per_100"] and attrs["unit_of_measurement"] == "kWh/100 km"
+    # On the first days of a month the demo month may have no distance yet
+    expected = d["month"]["kwh_per_100"]
+    assert (cons == "unknown" if expected is None else float(cons) == expected)
+    assert attrs["unit_of_measurement"] == "kWh/100 km"
     assert attrs["by_temperature"][0]["label"] == "0 bis 10 °C" and attrs["temperature_tip"]
     empty = build_states({}, "de")
     assert empty["sensor.ladecockpit_range_at_100"][0] == "unknown"

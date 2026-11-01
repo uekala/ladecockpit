@@ -18,7 +18,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel
 
-from . import __version__, carimage, demo, monthpdf, pdfview
+from . import __version__, carimage, demo, invoices, monthpdf, networks, pdfview
 from .analytics import build_dashboard
 from .export import sessions_csv
 from .config import settings
@@ -318,19 +318,18 @@ async def sync_now():
 
 # --- invoices ------------------------------------------------------------------------------
 async def _invoice_pdf(s: dict) -> Path:
-    """Path of the cached invoice PDF of a session (fetched from Tesla on first use)."""
-    cache_dir = settings.data_dir / "invoices"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    safe_id = "".join(c for c in s["session_id"] if c.isalnum() or c in "-_")
-    path = cache_dir / f"{safe_id}.pdf"
-    if not path.exists():
-        path.write_bytes(await tesla.invoice_pdf(s["invoices"][0]["id"]))
+    """Path of the cached invoice PDF of a session (fetched from Tesla on first use). A session
+    not checked yet gets its network from the invoice right away."""
+    path = await invoices.pdf_path(tesla, settings.data_dir, s)
+    if s.get("invoice_network") is None:
+        db.set_invoice_network(s["session_id"], invoices.network_from_pdf(path.read_bytes()))
     return path
 
 
 def _pdf_name(s: dict) -> str:
-    site = re.sub(r"[^A-Za-z0-9]+", "-", (s.get("site") or "supercharger")).strip("-")[:40]
-    return f"supercharger-{(s.get('start_ts') or '')[:10]}-{site}-{s['session_id']}.pdf"
+    kind = "multipass" if s.get("network") == networks.MULTIPASS else "supercharger"
+    site = re.sub(r"[^A-Za-z0-9]+", "-", (s.get("site") or kind)).strip("-")[:40]
+    return f"{kind}-{(s.get('start_ts') or '')[:10]}-{site}-{s['session_id']}.pdf"
 
 
 async def _invoice_source(session_id: str) -> tuple[Path, str]:
@@ -454,16 +453,16 @@ async def _month_report(month: str) -> tuple[bytes, str]:
     home = {"kwh": entry.get("home_kwh"), "cost": entry.get("home_cost")} if entry.get("home_kwh") else None
     cover = monthpdf.cover(month, chosen, lang=settings.lang, tz=settings.tz, currency=d.get("currency") or "EUR",
                            home=home, distance=entry.get("distance"), unit=d.get("distance_unit") or "km", now=now)
-    invoices = []
+    pdfs = []
     if not settings.demo:
         for s in chosen:
             if s.get("invoices"):
                 try:
-                    invoices.append((await _invoice_pdf(s)).read_bytes())
+                    pdfs.append((await _invoice_pdf(s)).read_bytes())
                 except TeslaError as e:
                     raise HTTPException(502, str(e)) from e
     name = f"ladekosten-{month}.pdf" if settings.lang == "de" else f"charging-{month}.pdf"
-    return monthpdf.merge(cover, invoices), name
+    return monthpdf.merge(cover, pdfs), name
 
 
 @app.get("/api/export.csv")
