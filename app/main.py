@@ -30,6 +30,8 @@ from .sync import SyncService
 from .tesla import TeslaClient, TeslaError
 from .watcher import Watcher
 
+networks.configure(settings.multipass_min_price)
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 # httpx logs every request at INFO – with the Home Assistant watcher that is about a dozen
 # lines a minute, which buries real problems. Errors are still logged by Ladecockpit itself.

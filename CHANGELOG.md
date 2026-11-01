@@ -3,6 +3,8 @@
 ## 0.11.1 – 2026-11-01
 
 - **MultiPass recognised by the invoice.** MultiPass sessions at stations whose name gives nothing away (e.g. "Kleinewefersstr. 46, Krefeld" or "Green Energy Hüls - AC E5") were counted as Supercharger sessions. Ladecockpit now reads the network from the invoice: MultiPass invoices have a number with "MSP" (Tesla as mobility service provider), Supercharger invoices do not. The invoice of each new session is fetched once, before the session goes to Home Assistant, and kept – viewing it or the month report then needs no further request. After the update, the sessions of the last 120 days are checked, at most 25 per sync. The invoice has the last word, also over the operator name: a Supercharger on a supermarket car park stays a Supercharger.
+- **MultiPass by price.** Until the invoice has been checked, a session whose site name does not have the form Tesla gives its Superchargers ("Place, Country", e.g. "Willich, Germany") and that cost more than 0.50 €/kWh counts as MultiPass, even when the operator is not a known brand. Superchargers that are dear at peak hours stay Superchargers. New setting `MULTIPASS_MIN_PRICE` (option *MultiPass above price* in the Home Assistant app), 0 turns the rule off.
+- The operator of a MultiPass station is now also taken from the part of the site name before the dash ("Green Energy Hüls - AC E5" → "Green Energy Hüls"), so `operators` in `sensor.ladecockpit_multipass` also lists networks that are not on the brand list.
 - Downloaded MultiPass invoices are called `multipass-….pdf`.
 - Tests no longer fail on the first day of a month.
 

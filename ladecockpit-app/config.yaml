@@ -70,5 +70,6 @@ schema:
   notify_problems: bool
   publish_entities: bool
   month_report: bool
+  multipass_min_price: float(0,5)?
   sync_interval_hours: float(1,24)?
   api_budget_requests: int(100,10000)?
