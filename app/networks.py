@@ -140,11 +140,37 @@ def operator(site: str | None) -> str | None:
 
 
 _SITE_SPLIT = re.compile(r"\s+[-–|]\s+")
+_POSTCODE = re.compile(r"^[\d\s-]+")
 
 
-def operator_from_site(site: str | None) -> str | None:
+def _plain(text: str) -> str:
+    return " ".join(text.split()).casefold()
+
+
+def place_names(sites) -> frozenset[str]:
+    """Towns named in your own site names: the town of a Supercharger ("Bergstadt, Germany",
+    "Seestadt - Center, Germany") and the town after the comma of an address
+    ("Brunnenhausstr. 46, Neustadt"). They tell "Neustadt - KiK" (town first) from
+    "Hyper Charge - Musterstadt" (network first)."""
+    places: set[str] = set()
+    for site in sites:
+        place, comma, tail = (site or "").strip().rpartition(",")
+        if not comma or not place.strip():
+            continue
+        if "-".join(tail.casefold().split()) in _COUNTRIES:
+            town = _SITE_SPLIT.split(place.strip(), maxsplit=1)[0]
+        else:
+            town = _POSTCODE.sub("", tail.strip())
+        town = _plain(town)
+        if town and any(ch.isalpha() for ch in town):
+            places.add(town)
+    return frozenset(places)
+
+
+def operator_from_site(site: str | None, places: frozenset[str] = frozenset()) -> str | None:
     """The network behind a third-party site: a known brand, otherwise the part before the dash
-    as Tesla writes MultiPass sites ("Hyper Charge - Musterstadt" → "Hyper Charge")."""
+    as Tesla writes MultiPass sites ("Hyper Charge - Musterstadt" → "Hyper Charge").
+    A part before the dash that is one of `places` is a town, not a network ("Neustadt - KiK")."""
     known = operator(site)
     if known:
         return known
@@ -153,7 +179,7 @@ def operator_from_site(site: str | None) -> str | None:
     parts = _SITE_SPLIT.split((site or "").strip(), maxsplit=1)
     if len(parts) == 2:
         head = parts[0].strip()
-        if 2 <= len(head) <= 40 and any(ch.isalpha() for ch in head):
+        if 2 <= len(head) <= 40 and any(ch.isalpha() for ch in head) and _plain(head) not in places:
             return head
     return None
 
