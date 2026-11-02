@@ -75,6 +75,8 @@ async def lifespan(_app: FastAPI):
     yield
     for task in tasks:
         task.cancel()
+    # Let them finish their cleanup before the process ends.
+    await asyncio.gather(*tasks, return_exceptions=True)
 
 
 app = FastAPI(title="Ladecockpit", version=__version__, lifespan=lifespan,

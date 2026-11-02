@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.3 – 2026-11-02
+
+- **Clean stop.** When Home Assistant stops or updates the app, Ladecockpit now ends with exit code 0 after shutting down, instead of 143. Home Assistant no longer warns that the app "did not handle SIGTERM". Background tasks finish their cleanup before the process ends.
+
 ## 0.11.2 – 2026-11-01
 
 - **MultiPass by price.** Until the invoice has been checked, a session whose site name does not have the form Tesla gives its Superchargers ("Place, Country", e.g. "Bergstadt, Germany") and that cost more than 0.50 €/kWh counts as MultiPass, even when the operator is not a known brand. Superchargers that are dear at peak hours stay Superchargers. New setting `MULTIPASS_MIN_PRICE` (option *MultiPass above price* in the Home Assistant app), 0 turns the rule off.
