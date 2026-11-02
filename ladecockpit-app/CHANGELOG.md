@@ -3,6 +3,7 @@
 ## 0.11.3 – 2026-11-02
 
 - **Clean stop.** When Home Assistant stops or updates the app, Ladecockpit now ends with exit code 0 after shutting down, instead of 143. Home Assistant no longer warns that the app "did not handle SIGTERM". Background tasks finish their cleanup before the process ends.
+- **Shell stations recognised.** "OBN 0317 - Shell Diessemer Bruch" now shows the operator *Shell Recharge* instead of the station number "OBN 0317": Shell counts as a known network, and a station number before the dash is never taken for the operator.
 
 ## 0.11.2 – 2026-11-01
 
