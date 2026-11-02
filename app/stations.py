@@ -24,6 +24,7 @@ import csv
 import logging
 import re
 import tempfile
+from difflib import SequenceMatcher
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -43,6 +44,8 @@ REGISTER_HEADER = "Ladeeinrichtungs-ID"
 REGISTER_MIN_GAP = timedelta(hours=12)   # never download the register more often
 RETRY_UNMATCHED = timedelta(days=30)     # a station the register did not have: look again after this
 NEAR_NUMBER = 20                          # house numbers this close count as the same site
+STREET_LIKENESS = 0.9                     # street names this alike are the same street
+MATCH_VERSION = 2                         # stations matched by an older rule are looked up again
 
 # Labels of the station block in the invoice, by language.
 _STATION_LABELS = ("ladestation", "charging station", "station de recharge", "laadstation", "laadpaal",
@@ -116,6 +119,8 @@ _LEGAL = re.compile(
 # Public bodies carry their legal form in words: "Sparkasse X Anstalt des öffentlichen Rechts …"
 _PUBLIC_BODY = re.compile(r"\s+(?:anstalt|körperschaft|zweckverband)\b", re.I)
 MAX_NAME = 40
+# Brands in a site name that host charging rather than run it: the register knows better who runs it
+HOST_BRANDS = {"Aldi", "Lidl", "Kaufland", "Stadtwerke", "Mobility+"}
 # Brands named in a site name that are too general to stand for the operator
 _GENERIC_BRANDS = {"Stadtwerke", "Mobility+"}
 
@@ -159,6 +164,9 @@ def operator_label(station: dict | None, site: str | None, places: frozenset[str
     is more specific ("Aral pulse" rather than "Aral") and wins."""
     from_site = networks.operator_from_site(site, places)
     registered = registered_name((station or {}).get("operator"), (station or {}).get("operator_shown"))
+    brand = networks.operator(site)
+    if registered and brand and brand not in HOST_BRANDS:
+        return brand
     if registered:
         label = clean_operator(registered)
         if from_site and label and from_site.split()[0].casefold() in label.casefold().split():
@@ -199,20 +207,30 @@ def _number_distance(a: str | None, b: str | None) -> int | None:
     return abs(na - nb)
 
 
+def _street_likeness(a: str, b: str) -> float:
+    return 1.0 if a == b else SequenceMatcher(None, a, b).ratio()
+
+
 def match_operator(station: dict, rows: list[dict]) -> dict | None:
-    """The register row for a station: same postcode and street, then the same or the nearest
-    house number (within NEAR_NUMBER). None when the street is not in the register."""
+    """The register row for a station: same postcode and street (spelt alike: the register and the
+    invoice do not always agree on "Kleinewefersstr." and "Kleineweferstraße"), then the same or the
+    nearest house number (within NEAR_NUMBER), then the closer spelling. None when the street is not
+    in the register."""
     street = norm_street(station.get("street"))
     if not street:
         return None
-    same_street = [r for r in rows if r["postcode"] == station.get("postcode") and norm_street(r["street"]) == street]
     best = None
-    for r in same_street:
+    for r in rows:
+        if r["postcode"] != station.get("postcode"):
+            continue
+        like = _street_likeness(street, norm_street(r["street"]))
+        if like < STREET_LIKENESS:
+            continue
         d = _number_distance(station.get("number"), r["number"])
         if d is None:
             d = NEAR_NUMBER  # no number on one side: only if nothing better is there
-        if d <= NEAR_NUMBER and (best is None or d < best[0]):
-            best = (d, r)
+        if d <= NEAR_NUMBER and (best is None or (d, -like) < best[0]):
+            best = ((d, -like), r)
     return best[1] if best else None
 
 
@@ -324,7 +342,7 @@ def due_for_lookup(station: dict | None, now: datetime) -> bool:
     if (station.get("country") or "DE") != "DE":
         return False
     checked = station.get("checked")
-    if not checked:
+    if not checked or station.get("match_v", 1) < MATCH_VERSION:
         return True
     if station.get("operator"):
         return False

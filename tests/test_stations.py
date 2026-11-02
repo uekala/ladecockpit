@@ -47,7 +47,10 @@ def test_operator_names():
     # the register wins over the site name, but a more specific brand of the same company stays
     assert stations.operator_label({"operator": "SWK ENERGIE GmbH"}, "Kleinewefersstr. 46, Krefeld") == "SWK ENERGIE"
     assert stations.operator_label({"operator": "Aral Aktiengesellschaft"}, "Aral pulse Brassertstraße 124") == "Aral pulse"
-    assert stations.operator_label({"operator": "SWK ENERGIE GmbH"}, "Allego - Krefeld") == "SWK ENERGIE"
+    # a charging network in the site name is what people know; a supermarket only hosts the station
+    assert stations.operator_label({"operator": "BP Europa SE"}, "Aral pulse Musterstraße 124, 12345 Musterstadt") == "Aral pulse"
+    assert stations.operator_label({"operator": "SWK ENERGIE GmbH"}, "Allego - Krefeld") == "Allego"
+    assert stations.operator_label({"operator": "HomE of Mobility GmbH"}, "Charging Station ALDI SÜD") == "HomE of Mobility"
     assert stations.operator_label(None, "Green Energy Hüls - AC E5") == "Green Energy Hüls"
     assert stations.operator_label({}, "Krefeld - KiK", frozenset({"krefeld"})) is None
 
@@ -78,6 +81,12 @@ def test_matching_the_register():
     assert stations.match_operator(st, rows)["operator"] == "SWK ENERGIE GmbH"
     assert stations.match_operator({**st, "street": "Hafelsstraße"}, rows) is None
     assert stations.match_operator({**st, "number": "300"}, rows) is None          # too far along the street
+    # The register and the invoice spell the street a little differently; the house number decides
+    rows = [{"operator": "HomE of Mobility GmbH", "street": "Kleineweferstraße", "number": "70", "postcode": "47803"},
+            {"operator": "ALDI SÜD Immobilienverwaltungs-GmbH & Co. oHG", "street": "Kleinewefersstr.", "number": "50", "postcode": "47803"},
+            {"operator": "Ganz Andere GmbH", "street": "Kleiststraße", "number": "50", "postcode": "47803"}]
+    hit = stations.match_operator({"street": "Kleineweferstraße", "number": "50", "postcode": "47803"}, rows)
+    assert hit["operator"].startswith("ALDI SÜD")
 
 
 REGISTER_CSV = (
@@ -134,7 +143,9 @@ def test_due_for_lookup():
     base = {"street": "Hauptstraße", "postcode": "47809", "country": "DE"}
     assert stations.due_for_lookup(base, now)
     assert not stations.due_for_lookup({**base, "country": "NL"}, now)
-    assert not stations.due_for_lookup({**base, "checked": now.isoformat(), "operator": "X"}, now)
-    assert not stations.due_for_lookup({**base, "checked": (now - timedelta(days=3)).isoformat()}, now)
-    assert stations.due_for_lookup({**base, "checked": (now - timedelta(days=40)).isoformat()}, now)
+    v = stations.MATCH_VERSION
+    assert not stations.due_for_lookup({**base, "checked": now.isoformat(), "operator": "X", "match_v": v}, now)
+    assert not stations.due_for_lookup({**base, "checked": (now - timedelta(days=3)).isoformat(), "match_v": v}, now)
+    assert stations.due_for_lookup({**base, "checked": (now - timedelta(days=40)).isoformat(), "match_v": v}, now)
+    assert stations.due_for_lookup({**base, "checked": now.isoformat(), "operator": "X"}, now)   # matched by an older rule
     assert not stations.due_for_lookup({}, now) and not stations.due_for_lookup(None, now)
