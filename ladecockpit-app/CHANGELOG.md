@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.0 – 2026-11-02
+
+- **Operators instead of addresses.** MultiPass stations are now shown by the company that runs them, with the address underneath – "SEW · Brunnenhausstraße 46, Neustadt" instead of "Brunnenhausstr. 46, Neustadt", "Electra" instead of "Neustadt - KiK". Ladecockpit fetches the invoice of each MultiPass session once, reads the station's address, and for stations in Germany looks it up in the public charging station register of the Bundesnetzagentur (same postcode and street, the same or nearest house number). The register is downloaded only when a new station comes up, at most every 12 hours, read line by line and not kept. Outside Germany, or when the register has no match, the operator still comes from the site name. New option *Look up operators in the charging station register* (`OPERATOR_LOOKUP`, on by default).
+- The operator and the address show in the session list, the sites table, the MultiPass card (its map link now searches the address), the last-session card, `sensor.ladecockpit_multipass` and `sensor.ladecockpit_last_charge` (`operator`, `address`), the event to Home Assistant (`operator`, `address`, and the operator in `text`), the CSV export (two new columns at the end) and the month PDF. The price tip names them too ("SEW (Brunnenhausstraße 46, Neustadt)").
+- The register's short name is used when it names the operator ("SEW" rather than "SEW Seestadt Energie und Wasser"); long legal names are cut to what people call them.
+- **The invoice number decides the network.** Tesla writes the invoice number into the file name of the invoice: series "P" for Supercharger, "MSP" for MultiPass. That now settles the network before every other hint – without downloading the PDF – so a Supercharger on a supermarket car park stays a Supercharger. Supercharger invoices are no longer downloaded just to check the network.
+- **Sign-in to Tesla kept after a hiccup.** A single rejected token refresh no longer marks the Tesla sign-in as expired (and no longer sends the problem notification); only a second one in a row does.
+- The charging station register is read in the background, so the web app stays responsive meanwhile.
+
 ## 0.11.3 – 2026-11-02
 
 - **Clean stop.** When Home Assistant stops or updates the app, Ladecockpit now ends with exit code 0 after shutting down, instead of 143. Home Assistant no longer warns that the app "did not handle SIGTERM". Background tasks finish their cleanup before the process ends.

@@ -118,7 +118,7 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         multipass = last.get("network") == "multipass"
         text = " · ".join(p for p in (
             "MultiPass" if multipass else None,
-            last.get("site"),
+            (last.get("operator") or last.get("site")) if multipass else last.get("site"),
             f"{i18n.num(lang, last['kwh'], 1)} kWh" if last.get("kwh") is not None else None,
             money(last["cost"]) if last.get("cost") is not None else None,
             f"{money(last['price'])}/kWh" if last.get("price") is not None else None,
@@ -127,7 +127,8 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         out["sensor.ladecockpit_last_charge"] = (_state(last.get("cost")), {
             "friendly_name": name("last_charge"), "unit_of_measurement": cur, "device_class": "monetary",
             "icon": "mdi:ev-plug-ccs2" if multipass else "mdi:ev-plug-tesla", "network": last.get("network"),
-            "site": last.get("site"), "start": last.get("start"),
+            "site": last.get("site"), "operator": last.get("operator"), "address": last.get("address"),
+            "start": last.get("start"),
             "end": last.get("end"), "energy_kwh": _round(last.get("kwh"), 2),
             "price_per_kwh": _round(last.get("price"), 4), "list_price_per_kwh": _round(last.get("list_price"), 4),
             "credit": last.get("credit"), "idle_fee": last.get("idle"),
@@ -194,7 +195,7 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
     out["sensor.ladecockpit_multipass"] = (str(len(stations)), {
         "friendly_name": name("multipass"), "icon": "mdi:ev-plug-ccs2",
         "text": mp.get("text") or i18n.t(lang, "mp_none"),
-        "stations": [{k: s.get(k) for k in ("site", "operator", "sessions", "kwh", "avg_price", "last", "last_label", "map_url")}
+        "stations": [{k: s.get(k) for k in ("site", "operator", "address", "sessions", "kwh", "avg_price", "last", "last_label", "map_url")}
                      for s in stations[:MAX_STATIONS]],
         "operators": mp.get("operators") or [],
         "sessions": mp.get("sessions") or 0, "energy_kwh": mp.get("kwh"), "cost": mp.get("cost"),

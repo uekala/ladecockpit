@@ -1390,6 +1390,15 @@ try {
   const insightIcon = { slot: ico.clock, site: ico.pin, idle: ico.plug, reference: ico.tag, network: ico.bolt, speed: ico.bolt };
   const isMp = (x) => x && x.network === "multipass";
   const mpChip = (x) => (isMp(x) ? ` <span class="chip info">${T("mpChip")}</span>` : "");
+  // A MultiPass station by its operator (from the register or the site name), with the address
+  // underneath; Superchargers keep their site name.
+  const siteName = (x) => (isMp(x) && x.operator ? x.operator : x.site);
+  function siteWhere(x) {
+    if (!isMp(x)) return "";
+    const where = x.address || (x.operator ? x.site : "");
+    return where && where !== siteName(x) ? where : "";
+  }
+  const whereSub = (x) => (siteWhere(x) ? `<span class="when-sub">${esc(siteWhere(x))}</span>` : "");
   const siteHead = (d) => ((d.sites || []).some(isMp) ? T("thSiteAny") : T("thSite"));
 
   // --- Loading -------------------------------------------------------------------------------
@@ -1831,7 +1840,8 @@ try {
     return `<section class="panel" aria-labelledby="h-last">
       <span class="eyebrow" id="h-last">${T("lastCharge")}</span>
       <div class="receipt">
-        <div class="site">${esc(T(isMp(c) ? "multipass" : "supercharger", { site: c.site }))}</div>
+        <div class="site">${esc(T(isMp(c) ? "multipass" : "supercharger", { site: siteName(c) }))}</div>
+        ${siteWhere(c) ? `<div class="when">${esc(siteWhere(c))}</div>` : ""}
         <div class="when">${esc(dShort(c.start))} · ${esc(tShort(c.start))}–${esc(tShort(c.end))}${dur}</div>
         ${line(T("energy"), num(c.kwh, 1) + " kWh")}
         ${line(T("price"), ppk(c.price))}
@@ -2026,7 +2036,7 @@ try {
       <div class="scroll"><table>
         <thead><tr><th>${siteHead(d)}</th><th class="n">${T("thSessions")}</th><th class="n">${T("thKwh")}</th><th class="n">${T("thAvg")}</th><th class="n">Ø ${T("thKw")}</th></tr></thead>
         <tbody>${sites.map((s) => `<tr>
-          <td class="site">${esc(s.site)}${mpChip(s)}</td>
+          <td class="site">${esc(siteName(s))}${mpChip(s)}${whereSub(s)}</td>
           <td class="n">${s.sessions}</td>
           <td class="n">${num(s.kwh, 1)}</td>
           <td class="n"><span class="minibar" aria-hidden="true"><i data-tone="${tone(s.avg_price, avgPrice(d))}" style="width:${((s.avg_price || 0) / maxP) * 100}%"></i></span>${s.avg_price == null ? "–" : money(s.avg_price)}</td>
@@ -2047,9 +2057,9 @@ try {
         <p class="sub">${esc(T("mpSub"))} · ${esc(sessionsText(mp.sessions))}${mp.avg_price ? " · Ø " + ppk(mp.avg_price) : ""}</p></div>
       ${ops.length ? `<div class="op-chips">${ops.join("")}</div>` : ""}
       <ul class="mp-list">${list.map((s) => `<li>
-        <div class="who"><b>${esc(s.site)}</b><span>${esc([s.operator, sessionsText(s.sessions)].filter(Boolean).join(" · "))}</span></div>
+        <div class="who"><b>${esc(s.operator || s.site)}</b><span>${esc([s.address || (s.operator ? s.site : ""), sessionsText(s.sessions)].filter(Boolean).join(" · "))}</span></div>
         <div class="mp-val">${s.avg_price == null ? "–" : ppk(s.avg_price)}<small>${esc(T("mpLast"))} ${day(s.last)}</small></div>
-        <a class="map-link" href="${esc(s.map_url)}" target="_blank" rel="noopener noreferrer" title="${esc(T("mpMapTitle", { site: s.site }))}" aria-label="${esc(T("mpMapTitle", { site: s.site }))}">${ico.pin}<span>${T("mpMap")}</span></a>
+        <a class="map-link" href="${esc(s.map_url)}" target="_blank" rel="noopener noreferrer" title="${esc(T("mpMapTitle", { site: s.address || s.site }))}" aria-label="${esc(T("mpMapTitle", { site: s.address || s.site }))}">${ico.pin}<span>${T("mpMap")}</span></a>
       </li>`).join("")}</ul>
       <p class="sub">${T("mpNote")}</p>
     </section>`;
@@ -2098,7 +2108,7 @@ try {
         <thead><tr><th>${T("thDate")}</th><th>${siteHead(d)}</th><th class="n">kWh</th><th class="n">/kWh</th><th class="n">${T("thKw")}</th><th class="n">${T("thAmount")}</th><th>${T("thHa")}</th><th>${T("thInvoice")}</th></tr></thead>
         <tbody>${list.map((s, i) => `<tr${fold && i >= SESSIONS_FOLDED ? ' class="more"' : ""}>
           <td>${esc(dShort(s.start))}<span class="when-sub">${esc(tShort(s.start))}${s.duration_min != null ? " · " + s.duration_min + " min" : ""}</span></td>
-          <td class="site">${esc(s.site)}${mpChip(s)}${s.idle ? `<span class="when-sub" style="color:var(--warn)">${esc(T("plusIdle", { p: money(s.idle) }))}</span>` : ""}${s.credit ? `<span class="when-sub" style="color:var(--good)">${esc(T("plusCredit", { p: money(s.credit) }))}</span>` : ""}</td>
+          <td class="site">${esc(siteName(s))}${mpChip(s)}${whereSub(s)}${s.idle ? `<span class="when-sub" style="color:var(--warn)">${esc(T("plusIdle", { p: money(s.idle) }))}</span>` : ""}${s.credit ? `<span class="when-sub" style="color:var(--good)">${esc(T("plusCredit", { p: money(s.credit) }))}</span>` : ""}</td>
           <td class="n">${s.kwh == null ? `<span class="muted">${T("open")}</span>` : num(s.kwh, 1)}</td>
           <td class="n" data-tone="${tone(s.price, avgPrice(d))}">${s.price == null ? "–" : money(s.price)}</td>
           <td class="n">${s.avg_kw == null ? "–" : s.slow ? `<span class="kw-slow">${num(s.avg_kw, 0)}</span><span class="when-sub kw-slow">${esc(T("slowSub", { typical: num(s.typical_kw, 0) }))}</span>` : num(s.avg_kw, 0)}</td>

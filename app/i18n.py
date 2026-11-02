@@ -84,7 +84,7 @@ TEXTS = {
         "mp_none": "Noch keine MultiPass-Ladung in deinen Rechnungen.",
         "unknown_station": "Unbekannte Station",
         "ent_consumption_note": "Abgerechnete kWh pro 100 km diesen Monat, inklusive Ladeverlusten.",
-        "csv_header": "Datum;Start;Ende;Standort;kWh;Preis pro kWh;Ladekosten;Blockiergebühr;Summe;Währung;Ø kW;Ladung-ID;Netz;Listenpreis pro kWh;Gutschrift;Netto",
+        "csv_header": "Datum;Start;Ende;Standort;kWh;Preis pro kWh;Ladekosten;Blockiergebühr;Summe;Währung;Ø kW;Ladung-ID;Netz;Listenpreis pro kWh;Gutschrift;Netto;Betreiber;Adresse",
     },
     "en": {
         "fc_no_soc": "No battery level from Home Assistant – no forecast possible.",
@@ -148,7 +148,7 @@ TEXTS = {
         "mp_none": "No MultiPass session in your invoices yet.",
         "unknown_station": "Unknown station",
         "ent_consumption_note": "Billed kWh per 100 km/mi this month, including charging losses.",
-        "csv_header": "Date,Start,End,Site,kWh,Price per kWh,Charging cost,Idle fee,Total,Currency,Avg kW,Session ID,Network,List price per kWh,Credit,Net",
+        "csv_header": "Date,Start,End,Site,kWh,Price per kWh,Charging cost,Idle fee,Total,Currency,Avg kW,Session ID,Network,List price per kWh,Credit,Net,Operator,Address",
     },
 }
 

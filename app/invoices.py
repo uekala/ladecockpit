@@ -15,13 +15,11 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
-from .networks import MULTIPASS, SUPERCHARGER
+from .networks import MULTIPASS, SUPERCHARGER, invoice_series
 
 log = logging.getLogger("ladecockpit.invoices")
 
 UNKNOWN = "unknown"  # checked, but the invoice did not tell
-# Invoice numbers: digits, a short series code, digits – 4020MSP0000019797
-_NUMBER = re.compile(r"\b\d{3,5}([A-Z]{2,5})\d{6,}\b")
 
 
 def cache_path(data_dir: Path, session_id: str) -> Path:
@@ -39,15 +37,25 @@ async def pdf_path(tesla, data_dir: Path, session: dict) -> Path:
     return path
 
 
-def network_from_pdf(data: bytes) -> str:
-    """MULTIPASS or SUPERCHARGER from an invoice PDF, or UNKNOWN when it does not tell."""
+def pdf_text(data: bytes) -> str:
+    """Text of the first pages of a PDF ("" when it cannot be read)."""
     try:
-        text = " ".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(data)).pages[:2])
+        return "\n".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(data)).pages[:2])
     except Exception:  # noqa: BLE001 – a broken or unusual PDF just tells nothing
-        return UNKNOWN
-    numbers = [m.group(1) for m in _NUMBER.finditer(text)]
-    if any("MSP" in series for series in numbers):
+        return ""
+
+
+def network_from_text(text: str) -> str:
+    """MULTIPASS or SUPERCHARGER from the text of an invoice, or UNKNOWN when it does not tell."""
+    numbers = re.findall(r"(?:Rechnungsnummer|Invoice\s*(?:Number|No\.?))\s*:?\s*(\S+)", text, re.I)
+    series = invoice_series(numbers[0] if numbers else text)
+    if series == "MSP":
         return MULTIPASS
-    if numbers or re.search(r"\bsupercharg", text, re.I):
+    if series == "P" or re.search(r"\bsupercharg", text, re.I):
         return SUPERCHARGER
     return UNKNOWN
+
+
+def network_from_pdf(data: bytes) -> str:
+    """MULTIPASS or SUPERCHARGER from an invoice PDF, or UNKNOWN when it does not tell."""
+    return network_from_text(pdf_text(data))
