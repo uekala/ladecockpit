@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.12.1 – 2026-11-02
+
+- **Closer match in the charging station register.** The invoice and the register do not always spell a street the same way ("Kleineweferstraße" and "Kleinewefersstr."). Streets spelt almost alike now count as the same street, and the same house number wins over a near one – before, a station could get the operator of a neighbouring site further along the street. Stations matched by the old rule are looked up again once.
+- **The charging network named in the site name wins.** "Aral pulse Brassertstraße 124" shows *Aral pulse*, not the company behind it in the register (BP Europa). Where the site name only names a host – a supermarket like Aldi, Lidl or Kaufland, or "Stadtwerke" – the register still says who runs the station.
+
 ## 0.12.0 – 2026-11-02
 
 - **Operators instead of addresses.** MultiPass stations are now shown by the company that runs them, with the address underneath – "NEW · Kleinewefersstraße 46, Krefeld" instead of "Kleinewefersstr. 46, Krefeld", "Electra" instead of "Krefeld - KiK". Ladecockpit fetches the invoice of each MultiPass session once, reads the station's address, and for stations in Germany looks it up in the public charging station register of the Bundesnetzagentur (same postcode and street, the same or nearest house number). The register is downloaded only when a new station comes up, at most every 12 hours, read line by line and not kept. Outside Germany, or when the register has no match, the operator still comes from the site name. New option *Look up operators in the charging station register* (`OPERATOR_LOOKUP`, on by default).
