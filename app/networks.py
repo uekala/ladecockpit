@@ -33,7 +33,7 @@ _SKIP = {"siteLocationName", "vin", "contentId", "fileName", "sessionId", "sessi
 
 # Operators that do not run Superchargers. Matched as whole words in the site name.
 _BRANDS = re.compile(
-    r"\b(enbw|ionity|fastned|allego|aral\s*pulse|bp\s*pulse|shell\s*recharge|ewe\s*go|e\.on|eon drive|"
+    r"\b(enbw|ionity|fastned|allego|aral\s*pulse|bp\s*pulse|shell(?:\s*recharge)?|ewe\s*go|e\.on|eon drive|"
     r"vattenfall|maingau|pfalzwerke|electra|atlante|zunder|plugsurfing|wirelane|elli|qwello|chargepoint|"
     r"monta|virta|greenway|iberdrola|endesa|instavolt|osprey|gridserve|pod\s*point|totalenergies|"
     r"lidl|kaufland|aldi|stadtwerke|mobility\+|tesla\s*multipass|be\s*charge|ladenetz|innogy|easycharger)\b",
@@ -118,7 +118,7 @@ def kwh_rate(raw: dict) -> tuple[float, str] | None:
 # How the operators matched by _BRANDS are written (lower-case match → display name).
 _OPERATOR_NAMES = {
     "enbw": "EnBW", "ionity": "IONITY", "fastned": "Fastned", "allego": "Allego", "aral pulse": "Aral pulse",
-    "bp pulse": "bp pulse", "shell recharge": "Shell Recharge", "ewe go": "EWE Go", "e.on": "E.ON",
+    "bp pulse": "bp pulse", "shell recharge": "Shell Recharge", "shell": "Shell Recharge", "ewe go": "EWE Go", "e.on": "E.ON",
     "eon drive": "E.ON Drive", "vattenfall": "Vattenfall", "maingau": "Maingau", "pfalzwerke": "Pfalzwerke",
     "electra": "Electra", "atlante": "Atlante", "zunder": "Zunder", "plugsurfing": "Plugsurfing",
     "wirelane": "Wirelane", "elli": "Elli", "qwello": "Qwello", "chargepoint": "ChargePoint", "monta": "Monta",
@@ -140,6 +140,7 @@ def operator(site: str | None) -> str | None:
 
 
 _SITE_SPLIT = re.compile(r"\s+[-–|]\s+")
+_CODE = re.compile(r"^[A-Za-z]{0,5}[\s-]?\d{2,}[A-Za-z]?$")  # a station number like "OBN 0317", not a network
 _POSTCODE = re.compile(r"^[\d\s-]+")
 
 
@@ -179,7 +180,7 @@ def operator_from_site(site: str | None, places: frozenset[str] = frozenset()) -
     parts = _SITE_SPLIT.split((site or "").strip(), maxsplit=1)
     if len(parts) == 2:
         head = parts[0].strip()
-        if 2 <= len(head) <= 40 and any(ch.isalpha() for ch in head) and _plain(head) not in places:
+        if 2 <= len(head) <= 40 and any(ch.isalpha() for ch in head) and not _CODE.match(head) and _plain(head) not in places:
             return head
     return None
 
