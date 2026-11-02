@@ -87,7 +87,7 @@ def cover(month_key: str, sessions: list[dict], *, lang: str, tz, currency: str,
         missing_net = missing_net or net is None
         site = s.get("site") or ""
         if s.get("network") == "multipass":
-            site = f"{_t(lang, 'multipass')} · {site}"
+            site = f"{_t(lang, 'multipass')} · {s.get('_operator') or site}"
         row = [start.strftime("%d.%m.%Y" if lang == "de" else "%Y-%m-%d") if start else "", site[:34],
                num(s.get("kwh")), money(s.get("price")), money(net), money(vat), money(gross),
                money(s.get("credit")) if s.get("credit") else ""]

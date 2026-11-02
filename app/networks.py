@@ -25,15 +25,24 @@ KNOWN_KEYS = {
 
 _HINT = re.compile(r"multi\s*pass|roaming|third[\s_-]*party|partner|e-?msp|ocpi|hubject|electroverse", re.I)
 _HINT_KEY = re.compile(r"operator|network|provider|cpo|evse|partner|roaming|third_?party|emsp", re.I)
-# MultiPass invoice numbers carry "MSP" (Tesla as mobility service provider): 4020MSP0000019797
-_MSP_NUMBER = re.compile(r"\d{3,5}MSP\d{6,}", re.I)
+# The invoice number names the kind of invoice, and so the network: Supercharger invoices are
+# series "P" (4020P0019025690_DE-DE.pdf), MultiPass invoices series "MSP" – Tesla as mobility service
+# provider (4020MSP0000019849_DE-DE.pdf). Tesla puts the number into the file name of the invoice.
+_INVOICE_NUMBER = re.compile(r"(?<![A-Za-z0-9])\d{3,5}([A-Za-z]{1,5})\d{6,}")
+_SERIES = {"MSP": MULTIPASS, "P": SUPERCHARGER}
+
+
+def invoice_series(text: str | None) -> str | None:
+    """The series of the first invoice number in a text or file name ("4020MSP0000019849" → "MSP")."""
+    m = _INVOICE_NUMBER.search(text or "")
+    return m.group(1).upper() if m else None
 # Free text and IDs: never searched for hints (a site called "Partnerweg" is still a Supercharger).
 _SKIP = {"siteLocationName", "vin", "contentId", "fileName", "sessionId", "sessionFeeId",
          "chargeStartDateTime", "chargeStopDateTime", "unlatchDateTime"}
 
 # Operators that do not run Superchargers. Matched as whole words in the site name.
 _BRANDS = re.compile(
-    r"\b(enbw|ionity|fastned|allego|aral\s*pulse|bp\s*pulse|shell(?:\s*recharge)?|ewe\s*go|e\.on|eon drive|"
+    r"\b(enbw|ionity|fastned|allego|aral\s*pulse|bp\s*pulse|shell(?:\s*recharge)?|ewe\s*go|e\.on(?:\s*drive)?|eon drive|"
     r"vattenfall|maingau|pfalzwerke|electra|atlante|zunder|plugsurfing|wirelane|elli|qwello|chargepoint|"
     r"monta|virta|greenway|iberdrola|endesa|instavolt|osprey|gridserve|pod\s*point|totalenergies|"
     r"lidl|kaufland|aldi|stadtwerke|mobility\+|tesla\s*multipass|be\s*charge|ladenetz|innogy|easycharger)\b",
@@ -118,7 +127,7 @@ def kwh_rate(raw: dict) -> tuple[float, str] | None:
 # How the operators matched by _BRANDS are written (lower-case match → display name).
 _OPERATOR_NAMES = {
     "enbw": "EnBW", "ionity": "IONITY", "fastned": "Fastned", "allego": "Allego", "aral pulse": "Aral pulse",
-    "bp pulse": "bp pulse", "shell recharge": "Shell Recharge", "shell": "Shell Recharge", "ewe go": "EWE Go", "e.on": "E.ON",
+    "bp pulse": "bp pulse", "shell recharge": "Shell Recharge", "shell": "Shell Recharge", "ewe go": "EWE Go", "e.on": "E.ON", "e.on drive": "E.ON Drive",
     "eon drive": "E.ON Drive", "vattenfall": "Vattenfall", "maingau": "Maingau", "pfalzwerke": "Pfalzwerke",
     "electra": "Electra", "atlante": "Atlante", "zunder": "Zunder", "plugsurfing": "Plugsurfing",
     "wirelane": "Wirelane", "elli": "Elli", "qwello": "Qwello", "chargepoint": "ChargePoint", "monta": "Monta",
@@ -197,16 +206,19 @@ def classify(raw: dict | None) -> tuple[str, str | None]:
     """(network, reason) for one raw record of the Tesla charging history."""
     if not raw:
         return SUPERCHARGER, None
+    # The invoice number settles it, before any hint: a Supercharger on a supermarket car park
+    # stays a Supercharger, a MultiPass station with a plain address is still MultiPass.
+    for inv in raw.get("invoices") or []:
+        name = inv.get("fileName") if isinstance(inv, dict) else None
+        network = _SERIES.get(invoice_series(name) or "")
+        if network:
+            return network, f"invoice {name}"
     for record in _records(raw):
         for key, value in record.items():
             if _HINT_KEY.search(key):
                 return MULTIPASS, f"field {key}"
             if key not in _SKIP and isinstance(value, str) and _HINT.search(value):
                 return MULTIPASS, f"{key}={value}"
-    for inv in raw.get("invoices") or []:
-        name = inv.get("fileName") if isinstance(inv, dict) else None
-        if isinstance(name, str) and _MSP_NUMBER.search(name):
-            return MULTIPASS, f"invoice {name}"
     for key, record in (("billingType", raw), *(("invoiceType", inv) for inv in raw.get("invoices") or [])):
         value = record.get(key) if isinstance(record, dict) else None
         if value and str(value).upper() not in SUPERCHARGER_BILLING:

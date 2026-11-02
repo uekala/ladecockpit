@@ -74,8 +74,10 @@ class DB:
             self._conn.execute("PRAGMA journal_mode=WAL")
             self._conn.executescript(SCHEMA)
             cols = {r["name"] for r in self._conn.execute("PRAGMA table_info(sessions)")}
-            if "invoice_network" not in cols:  # 0.12: the network as the invoice tells it
+            if "invoice_network" not in cols:  # 0.11.1: the network as the invoice tells it
                 self._conn.execute("ALTER TABLE sessions ADD COLUMN invoice_network TEXT")
+            if "station" not in cols:  # 0.12: name, address and operator of a MultiPass station (JSON)
+                self._conn.execute("ALTER TABLE sessions ADD COLUMN station TEXT")
             self._conn.commit()
 
     # --- key/value -----------------------------------------------------------
@@ -155,6 +157,28 @@ class DB:
             ).fetchall()
         return [self._row(r) for r in rows]
 
+    def sessions_without_station(self, since: str, limit: int) -> list[dict]:
+        """Sessions with an invoice whose station has not been read from it yet."""
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT * FROM sessions WHERE station IS NULL AND invoices NOT IN ('', '[]') "
+                "AND start_ts >= ? ORDER BY start_ts DESC LIMIT ?", (since, limit)
+            ).fetchall()
+        return [self._row(r) for r in rows]
+
+    def sessions_with_station(self) -> list[dict]:
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT * FROM sessions WHERE station IS NOT NULL AND station NOT IN ('', '{}')"
+            ).fetchall()
+        return [self._row(r) for r in rows]
+
+    def set_station(self, session_id: str, station: dict) -> None:
+        with self._lock:
+            self._conn.execute("UPDATE sessions SET station=? WHERE session_id=?",
+                               (json.dumps(station, ensure_ascii=False), session_id))
+            self._conn.commit()
+
     def set_invoice_network(self, session_id: str, network: str) -> None:
         with self._lock:
             self._conn.execute("UPDATE sessions SET invoice_network=? WHERE session_id=?", (network, session_id))
@@ -175,6 +199,10 @@ class DB:
             d["invoices"] = json.loads(d.get("invoices") or "[]")
         except json.JSONDecodeError:
             d["invoices"] = []
+        try:
+            d["station"] = json.loads(d["station"]) if d.get("station") else None
+        except (json.JSONDecodeError, TypeError):
+            d["station"] = None
         raw = d.pop("raw", None)
         if "raw" in row.keys():
             try:

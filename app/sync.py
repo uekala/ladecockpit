@@ -14,7 +14,7 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 
-from . import i18n, invoices, networks, vehicle
+from . import i18n, invoices, networks, stations, vehicle
 from .config import Settings
 from .db import DB, utcnow_iso
 from .homeassistant import HAClient
@@ -43,6 +43,7 @@ class SyncService:
         self.last_error: str | None = None
         self.next_sync: str | None = None
         self.failures = 0
+        self.register = stations.Register(settings.data_dir)
 
     # --- control -------------------------------------------------------------
     def trigger_burst(self) -> None:
@@ -152,22 +153,81 @@ class SyncService:
             return new_count
 
     async def check_invoices(self, now: datetime | None = None) -> int:
-        """Read the network from the invoice of sessions not checked yet, before they go to Home
-        Assistant. The PDF is kept, so viewing it or the month report needs no extra request."""
-        since = ((now or datetime.now(timezone.utc)) - timedelta(days=CHECK_DAYS)).isoformat(timespec="seconds")
-        checked = 0
-        for s in self.db.sessions_to_check(since, CHECK_PER_SYNC):
-            try:
-                path = await invoices.pdf_path(self.tesla, self.s.data_dir, s)
-            except Exception as e:  # noqa: BLE001 – try again with the next sync
-                log.warning("Could not fetch the invoice of session %s: %s", s["session_id"], e)
+        """Before sessions go to Home Assistant: their network from the invoice, and for MultiPass
+        sessions the station's address from the invoice and its operator from the register.
+
+        The invoice number in the file name usually tells the network already ("P" Supercharger,
+        "MSP" MultiPass); only when it does not, the PDF is fetched. MultiPass invoices are fetched
+        for the station's address. PDFs are kept, so viewing them or the month report needs no
+        further request. Returns the number of invoices read."""
+        now = now or datetime.now(timezone.utc)
+        since = (now - timedelta(days=CHECK_DAYS)).isoformat(timespec="seconds")
+        read = 0
+        for s in self.db.sessions_to_check(since, CHECK_PER_SYNC * 4):
+            if (s.get("network_reason") or "").startswith("invoice "):
+                self.db.set_invoice_network(s["session_id"], s["network"])  # told by the file name
+                continue
+            if read >= CHECK_PER_SYNC:
                 break
-            network = invoices.network_from_pdf(path.read_bytes())
+            text = await self._invoice_text(s)
+            if text is None:
+                break
+            read += 1
+            network = invoices.network_from_text(text)
             self.db.set_invoice_network(s["session_id"], network)
             if network == networks.MULTIPASS and s.get("network") != networks.MULTIPASS:
                 log.info("Session %s is a MultiPass session (invoice number)", s["session_id"])
-            checked += 1
-        return checked
+        for s in self.db.sessions_without_station(since, CHECK_PER_SYNC * 4):
+            if s.get("network") != networks.MULTIPASS:
+                self.db.set_station(s["session_id"], {})  # Superchargers: the site name says it all
+                continue
+            if read >= CHECK_PER_SYNC:
+                break
+            text = await self._invoice_text(s)
+            if text is None:
+                break
+            read += 1
+            self.db.set_station(s["session_id"], stations.station_from_text(text) or {})
+        await self.lookup_operators(now)
+        return read
+
+    async def _invoice_text(self, s: dict) -> str | None:
+        try:
+            path = await invoices.pdf_path(self.tesla, self.s.data_dir, s)
+        except Exception as e:  # noqa: BLE001 – try again with the next sync
+            log.warning("Could not fetch the invoice of session %s: %s", s["session_id"], e)
+            return None
+        return invoices.pdf_text(path.read_bytes())
+
+    async def lookup_operators(self, now: datetime | None = None) -> int:
+        """Operators of German MultiPass stations from the register of the Bundesnetzagentur.
+        Returns the number of stations found."""
+        if not self.s.operator_lookup:
+            return 0
+        now = now or datetime.now(timezone.utc)
+        due = [s for s in self.db.sessions_with_station() if stations.due_for_lookup(s["station"], now)]
+        if not due:
+            return 0
+        try:
+            rows = await self.register.rows_for({s["station"]["postcode"] for s in due})
+        except Exception:  # noqa: BLE001 – the operator is a nice-to-have, never stop a sync for it
+            log.exception("Charging station register lookup failed")
+            return 0
+        if rows is None:
+            return 0
+        found = 0
+        for s in due:
+            station = dict(s["station"])
+            hit = stations.match_operator(station, rows)
+            station["checked"] = now.isoformat(timespec="seconds")
+            if hit:
+                station["operator"] = hit["operator"]
+                if hit.get("shown"):
+                    station["operator_shown"] = hit["shown"]
+                found += 1
+            self.db.set_station(s["session_id"], station)
+        log.info("Operators found in the register for %d of %d MultiPass sessions", found, len(due))
+        return found
 
     @staticmethod
     def _log_format(raw: dict, session_id: str) -> None:
@@ -209,8 +269,13 @@ class SyncService:
         network = s.get("network") or networks.SUPERCHARGER
         text = (f"{i18n.num(lang, s['kwh'], 1)} kWh · {i18n.money(lang, s['total'], cur)} · "
                 f"{i18n.money(lang, price, cur)}/kWh · {when}")
+        operator = addr = None
         if network == networks.MULTIPASS:
-            text = "MultiPass · " + text
+            others = self.db.sessions()
+            mine = next((x for x in others if x["session_id"] == s["session_id"]), dict(s))
+            stations.describe([mine, *[x for x in others if x["session_id"] != s["session_id"]]])
+            operator, addr = mine.get("_operator"), mine.get("_address")
+            text = f"MultiPass · {operator} · {text}" if operator else "MultiPass · " + text
         speed = self._speed(s)
         return {
             "session_id": s["session_id"],
@@ -226,6 +291,8 @@ class SyncService:
             "credit": round(s.get("credit") or 0.0, 2),
             "currency": cur,
             "network": network,
+            "operator": operator,
+            "address": addr,
             "avg_power_kw": speed.get("kw"),
             "typical_power_kw": speed.get("typical_kw"),
             "slow": bool(speed.get("slow")),

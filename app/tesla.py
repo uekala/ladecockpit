@@ -24,6 +24,8 @@ HISTORY_PATH = "/api/1/dx/charging/history"
 INVOICE_PATH = "/api/1/dx/charging/invoice/{id}"
 PAGE_SIZE = 50
 MAX_PAGES = 20
+# Rejected token refreshes in a row before Ladecockpit asks you to sign in to Tesla again
+REFRESH_FAILURES_FOR_SIGN_IN = 2
 
 
 class TeslaError(Exception):
@@ -95,7 +97,7 @@ class TeslaClient:
             self.db.kv_set("tesla_refresh_token", tok["refresh_token"])
         expires = time.time() + int(tok.get("expires_in", 28800)) - 120
         self.db.kv_set("tesla_access_expires", str(expires))
-        self.db.kv_del("tesla_auth_error")
+        self.db.kv_del("tesla_auth_error", "tesla_refresh_failures")
 
     def disconnect(self) -> None:
         self.db.kv_del("tesla_access_token", "tesla_refresh_token",
@@ -117,7 +119,11 @@ class TeslaClient:
             })
             if r.status_code != 200:
                 msg = f"Token refresh failed (HTTP {r.status_code}). Please connect to Tesla again."
-                if 400 <= r.status_code < 500:
+                # One rejected refresh can be a hiccup at Tesla (seen at night, followed by normal
+                # syncs); only a second one in a row means the sign-in is gone and needs the user.
+                failures = int(self.db.kv_get("tesla_refresh_failures", "0") or 0) + 1
+                self.db.kv_set("tesla_refresh_failures", str(failures))
+                if 400 <= r.status_code < 500 and failures >= REFRESH_FAILURES_FOR_SIGN_IN:
                     self.db.kv_set("tesla_auth_error", msg)
                 raise TeslaError(msg)
             self._store_tokens(r.json())

@@ -5,7 +5,7 @@ import csv
 import io
 from datetime import datetime
 
-from . import i18n
+from . import i18n, stations
 from .config import Settings
 
 
@@ -29,6 +29,7 @@ def sessions_csv(sessions: list[dict], settings: Settings) -> str:
     out = io.StringIO()
     writer = csv.writer(out, delimiter=sep, lineterminator="\r\n")
     writer.writerow(i18n.t(lang, "csv_header").split(sep))
+    stations.describe(sessions)
     for s in sorted(sessions, key=lambda x: x.get("start_ts") or ""):
         start = datetime.fromisoformat(s["start_ts"]).astimezone(tz) if s.get("start_ts") else None
         stop = datetime.fromisoformat(s["stop_ts"]).astimezone(tz) if s.get("stop_ts") else None
@@ -50,5 +51,7 @@ def sessions_csv(sessions: list[dict], settings: Settings) -> str:
             dec(s.get("list_price"), 4),
             dec(s.get("credit") or 0.0, 2),
             dec(s.get("net_total"), 2),
+            s.get("_operator") or "",
+            s.get("_address") or "",
         ])
     return "﻿" + out.getvalue()  # BOM so Excel detects UTF-8

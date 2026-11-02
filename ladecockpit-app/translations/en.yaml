@@ -105,6 +105,9 @@ configuration:
   multipass_min_price:
     name: MultiPass above price (€/kWh)
     description: A session whose site name does not look like a Supercharger ("Place, Country") and that cost more than this per kWh counts as MultiPass. Default 0.50. 0 turns the rule off.
+  operator_lookup:
+    name: Look up operators in the charging station register
+    description: For MultiPass stations in Germany, Ladecockpit looks the address from the invoice up in the public charging station register of the Bundesnetzagentur and shows the operator instead of an address. It downloads the register (about 50 MB) when a new station comes up. Nothing about you is sent.
   sync_interval_hours:
     name: Regular sync (hours)
   api_budget_requests:
