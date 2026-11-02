@@ -155,6 +155,9 @@ def test_operator_from_site():
     assert operator_from_site("Allego - ATU Krefeld") == "Allego"
     assert operator_from_site("Hyper Charge - Musterstadt") == "Hyper Charge"
     assert operator_from_site("Hyper Charge Musterstadt") is None
+    assert operator_from_site("OBN 0317 - Shell Diessemer Bruch") == "Shell Recharge"   # code first, brand after
+    assert operator_from_site("OBN 0317 - Diessemer Bruch") is None                      # a station number is no network
+    assert operator_from_site("A1 Charge - Musterstadt") == "A1 Charge"
     assert operator_from_site("Oberhausen - Centro, Germany") is None
     assert operator_from_site(None) is None
 
