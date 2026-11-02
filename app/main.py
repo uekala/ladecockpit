@@ -18,7 +18,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel
 
-from . import __version__, carimage, demo, invoices, monthpdf, networks, pdfview
+from . import __version__, carimage, demo, invoices, monthpdf, networks, pdfview, stations
 from .analytics import build_dashboard
 from .export import sessions_csv
 from .config import settings
@@ -450,6 +450,7 @@ async def _month_report(month: str) -> tuple[bytes, str]:
     chosen = sorted((s for s in sessions if s.get("start_ts") and s.get("total") is not None
                      and datetime.fromisoformat(s["start_ts"]).astimezone(settings.tz).strftime("%Y-%m") == month),
                     key=lambda s: s["start_ts"])
+    stations.describe(sessions)  # names the operators of MultiPass stations in `chosen` too
     d = await dashboard()
     entry = next((m for m in d.get("monthly") or [] if m["key"] == month), {})
     if not chosen and not entry.get("home_kwh"):

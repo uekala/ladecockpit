@@ -56,7 +56,7 @@ def test_stations_operators_and_entity(settings):
     d = _dash(settings, sessions)
     state, attrs = build_states(d, "en")["sensor.ladecockpit_multipass"]
     assert state == "4" and attrs["friendly_name"] == "Ladecockpit MultiPass stations"
-    assert attrs["stations"][0] == {"site": "Fastned Venlo", "operator": "Fastned", "sessions": 1, "kwh": 40.0,
+    assert attrs["stations"][0] == {"site": "Fastned Venlo", "operator": "Fastned", "address": None, "sessions": 1, "kwh": 40.0,
                                     "avg_price": 0.65, "last": "2026-10-20T17:00:00+02:00", "last_label": "Oct 20, 2026",
                                     "map_url": map_url("Fastned Venlo")}
     assert attrs["operators"][0]["name"] == "EnBW" and attrs["sessions"] == 5 and attrs["text"] == mp["text"]
@@ -94,3 +94,30 @@ def test_demo_has_two_stations_in_german(settings):
     assert {o["name"] for o in mp["operators"]} == {"IONITY", "EnBW"}
     assert mp["text"].startswith("MultiPass hat bisher an 2 Stationen funktioniert – Anbieter: ")
     assert all(s["last_label"].count(".") == 2 for s in mp["stations"])   # 20.10.2026
+
+
+def test_operator_and_address_from_invoice_and_register(settings):
+    kw = {"street": "Kleinewefersstraße", "number": "46", "postcode": "47803", "city": "Krefeld", "country": "DE"}
+    sessions = [
+        {**_s("a", "Kleinewefersstr. 46, Krefeld", 20, 10, 7.0),
+         "station": {"name": "Kleinewefersstr. 46, Krefeld", **kw, "operator": "SWK ENERGIE GmbH", "checked": "2026-10-21"}},
+        {**_s("b", "Krefeld - KiK", 21, 10, 6.9),
+         "station": {"name": "Krefeld - KiK", "street": "Hafelsstraße", "number": "237", "postcode": "47809",
+                     "city": "Krefeld", "country": "DE", "checked": "2026-10-22"}},       # not in the register
+        _s("c", "Krefeld, Germany", 22, 30, 9.3, network="supercharger"),
+        _s("d", "Willich, Germany", 23, 30, 11.1, network="supercharger"),
+        _s("e", "Willich, Germany", 18, 30, 11.1, network="supercharger"),
+    ]
+    d = _dash(settings, sessions)
+    by_site = {s["site"]: s for s in d["multipass"]["stations"]}
+    swk = by_site["Kleinewefersstr. 46, Krefeld"]
+    assert swk["operator"] == "SWK ENERGIE" and swk["address"] == "Kleinewefersstraße 46, Krefeld"
+    assert swk["operator_source"] == "register" and "Kleinewefersstra%C3%9Fe%2046%2C%2047803%20Krefeld" in swk["map_url"]
+    kik = by_site["Krefeld - KiK"]
+    assert kik["operator"] is None and kik["address"] == "Hafelsstraße 237, Krefeld"   # "Krefeld" is a town, not a network
+    assert [o["name"] for o in d["multipass"]["operators"]] == ["SWK ENERGIE"]
+    row = next(s for s in d["sessions"] if s["id"] == "a")
+    assert row["operator"] == "SWK ENERGIE" and row["address"] == "Kleinewefersstraße 46, Krefeld"
+    site = next(s for s in d["sites"] if s["site"] == "Kleinewefersstr. 46, Krefeld")
+    assert site["label"] == "SWK ENERGIE (Kleinewefersstraße 46, Krefeld)"
+    assert next(s for s in d["sites"] if s["site"] == "Willich, Germany")["label"] == "Willich"

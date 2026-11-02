@@ -5,7 +5,7 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 
-from . import i18n, networks, vehicle
+from . import i18n, stations, vehicle
 from .config import Settings
 from .networks import MULTIPASS, SUPERCHARGER
 
@@ -253,7 +253,18 @@ def _session_view(x: dict, tz, lang: str) -> dict:
         "push_state": x.get("push_state"),
         "currency": x.get("currency") or "EUR",
         "network": x.get("network") or SUPERCHARGER,
+        "operator": x.get("_operator"),
+        "address": x.get("_address"),
     }
+
+
+def _label(site: str, operator: str | None, address: str | None) -> str:
+    """How a site is named in running text: "NEW (Kleinewefersstraße 46, Krefeld)"
+    for a MultiPass station with a known operator, else the place of the site name."""
+    if operator:
+        where = address or (None if operator.casefold() in (site or "").casefold() else site)
+        return f"{operator} ({where})" if where else operator
+    return _place(site)
 
 
 MAP_SEARCH = "https://www.google.com/maps/search/?api=1&query="
@@ -274,21 +285,25 @@ def _multipass(sessions: list[dict], tz, lang: str) -> dict | None:
     groups: dict[str, list[dict]] = {}
     for x in used:
         groups.setdefault(x.get("site") or i18n.t(lang, "unknown_station"), []).append(x)
-    places = networks.place_names(x.get("site") for x in sessions)
-    stations = []
+    found = []
     for site, items in groups.items():
+        items = sorted(items, key=lambda x: x["start_ts"], reverse=True)
         when = sorted(datetime.fromisoformat(x["start_ts"]).astimezone(tz) for x in items)
         priced = [x for x in items if x.get("kwh") and x.get("total") is not None]
         st = _stats(priced)
-        stations.append({
-            "site": site, "operator": networks.operator_from_site(site, places), "sessions": len(items),
+        station = next((x["station"] for x in items if x.get("station")), None)
+        operator = next((x["_operator"] for x in items if x.get("_operator")), None)
+        found.append({
+            "site": site, "operator": operator, "address": stations.address(station), "sessions": len(items),
             "kwh": st["kwh"], "cost": st["cost"], "avg_price": st["list_price"], "avg_kw": _avg_kw(priced),
             "first": when[0].date().isoformat(), "last": _iso(when[-1]),
-            "last_label": i18n.day_label(lang, when[-1]), "map_url": map_url(site),
+            "last_label": i18n.day_label(lang, when[-1]), "map_url": map_url(stations.full_address(station) or site),
+            "operator_source": "register" if (station or {}).get("operator") else ("site" if operator else None),
         })
-    stations.sort(key=lambda s: s["last"], reverse=True)
+    found.sort(key=lambda s: s["last"], reverse=True)
+    stations_ = found
     ops: dict[str, dict] = {}
-    for s in stations:
+    for s in stations_:
         if not s["operator"]:
             continue
         o = ops.setdefault(s["operator"], {"name": s["operator"], "stations": 0, "sessions": 0, "last": s["last"]})
@@ -298,9 +313,9 @@ def _multipass(sessions: list[dict], tz, lang: str) -> dict | None:
     operators = sorted(ops.values(), key=lambda o: (-o["sessions"], o["name"].lower()))
     total = _stats([x for x in used if x.get("kwh") and x.get("total") is not None])
     names = ", ".join(o["name"] for o in operators)
-    key = "mp_summary_one" if len(stations) == 1 else "mp_summary_many"
-    text = i18n.t(lang, key, n=len(stations), ops=i18n.t(lang, "mp_operators", names=names) if names else "")
-    return {"stations": stations, "operators": operators, "sessions": len(used), "kwh": total["kwh"],
+    key = "mp_summary_one" if len(stations_) == 1 else "mp_summary_many"
+    text = i18n.t(lang, key, n=len(stations_), ops=i18n.t(lang, "mp_operators", names=names) if names else "")
+    return {"stations": stations_, "operators": operators, "sessions": len(used), "kwh": total["kwh"],
             "cost": total["cost"], "avg_price": total["list_price"], "text": text}
 
 
@@ -326,6 +341,9 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     speed = vehicle.charging_speed(priced, readings.get("soc_long") or [])
     for x in priced:
         x["_speed"] = speed.get(x["session_id"])
+    # Who runs a MultiPass station and where it is: from the register and the invoice when known,
+    # otherwise from the site name.
+    stations.describe(sessions)
     currency = Counter(x.get("currency") or "EUR" for x in priced).most_common(1)[0][0] if priced else "EUR"
     money = lambda v: i18n.money(lang, v, currency)  # noqa: E731
     unit = units.get("odometer") or units.get("range") or "km"
@@ -442,13 +460,15 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     groups: dict[str, list[dict]] = {}
     for x in priced:
         groups.setdefault(x.get("site") or i18n.t(lang, "unknown_site"), []).append(x)
-    sites = sorted(
-        ({"site": k, **{f: _stats(v)[f] for f in ("sessions", "kwh", "cost", "credit")},
-          "avg_price": _stats(v)["list_price"], "avg_kw": _avg_kw(v),
-          "network": Counter(x.get("network") or SUPERCHARGER for x in v).most_common(1)[0][0]}
-         for k, v in groups.items()),
-        key=lambda r: (-r["sessions"], r["avg_price"] or 9),
-    )
+    def _site_row(k: str, v: list[dict]) -> dict:
+        operator = next((x["_operator"] for x in v if x.get("_operator")), None)
+        addr = next((x["_address"] for x in v if x.get("_address")), None)
+        return {"site": k, **{f: _stats(v)[f] for f in ("sessions", "kwh", "cost", "credit")},
+                "avg_price": _stats(v)["list_price"], "avg_kw": _avg_kw(v),
+                "network": Counter(x.get("network") or SUPERCHARGER for x in v).most_common(1)[0][0],
+                "operator": operator, "address": addr, "label": _label(k, operator, addr)}
+
+    sites = sorted((_site_row(k, v) for k, v in groups.items()), key=lambda r: (-r["sessions"], r["avg_price"] or 9))
 
     insights: list[dict] = []
     used = [s for s in slots if s["sessions"]]
@@ -470,8 +490,8 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         hi = max(priced_sites, key=lambda r: r["avg_price"])
         if hi["avg_price"] - lo["avg_price"] >= 0.01:
             insights.append({"kind": "site", "text": i18n.t(
-                lang, "in_site", lo=_place(lo["site"]), lo_price=money(lo["avg_price"]),
-                hi=_place(hi["site"]), hi_price=money(hi["avg_price"]))})
+                lang, "in_site", lo=lo["label"], lo_price=money(lo["avg_price"]),
+                hi=hi["label"], hi_price=money(hi["avg_price"]))})
 
     nets = _by_network(priced)
     mp, sc = nets.get(MULTIPASS), nets.get(SUPERCHARGER)

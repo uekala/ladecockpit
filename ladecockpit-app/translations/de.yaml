@@ -105,6 +105,9 @@ configuration:
   multipass_min_price:
     name: MultiPass ab Preis (€/kWh)
     description: Eine Ladung, deren Standortname nicht wie ein Supercharger aussieht („Ort, Land“) und die mehr als diesen Preis pro kWh gekostet hat, zählt als MultiPass. Standard 0,50. 0 schaltet die Regel ab.
+  operator_lookup:
+    name: Betreiber im Ladesäulenregister nachschlagen
+    description: Für MultiPass-Ladesäulen in Deutschland sucht Ladecockpit die Adresse aus der Rechnung im öffentlichen Ladesäulenregister der Bundesnetzagentur und zeigt den Betreiber statt einer Adresse. Dafür lädt es das Register (etwa 50 MB) herunter, wenn eine neue Station dazukommt. Über dich wird nichts gesendet.
   sync_interval_hours:
     name: Regelmäßiger Abgleich (Stunden)
   api_budget_requests:
