@@ -220,6 +220,9 @@ class SyncService:
             station = dict(s["station"])
             hit = stations.match_operator(station, rows)
             station["checked"] = now.isoformat(timespec="seconds")
+            station["match_v"] = stations.MATCH_VERSION
+            station.pop("operator", None)
+            station.pop("operator_shown", None)
             if hit:
                 station["operator"] = hit["operator"]
                 if hit.get("shown"):
