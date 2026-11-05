@@ -48,6 +48,7 @@ jobs:
         with:
           channel: stable
           cache: true
+      - run: flutter create --platforms=android,ios --project-name ladecockpit .
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter build ios --release --no-codesign
