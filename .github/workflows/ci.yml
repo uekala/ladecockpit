@@ -18,6 +18,8 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Check application and changelog versions
+        run: python tools/check_versions.py
       - run: pytest -q
 
   docker:
