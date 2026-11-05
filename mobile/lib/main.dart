@@ -196,7 +196,6 @@ class _DashboardPageState extends State<DashboardPage> {
     final last = _map(_data?['last_charge']);
     final totals = _map(_data?['totals']);
     final forecast = _map(_data?['forecast']);
-    final soc = _data?['soc'] ?? _data?['battery_level'] ?? _map(_data?['live'])?['soc'];
 
     return Scaffold(
       appBar: AppBar(
