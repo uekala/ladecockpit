@@ -32,6 +32,7 @@ def test_live_dashboard_starts_and_serves_without_home_assistant(monkeypatch, tm
         data_dir=tmp_path,
         tesla_client_id="test-client",
         tesla_client_secret="test-secret",
+        app_password="test-password",
         ha_url="",
         ha_token="",
         force_demo=False,
