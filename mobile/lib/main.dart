@@ -661,7 +661,9 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _priceRadar(dynamic rawSlots, dynamic rawSites) {
     final slots = rawSlots is List
-        ? rawSlots.whereType<Map<String, dynamic>>().toList()
+        ? rawSlots.whereType<Map<String, dynamic>>()
+            .where((slot) => slot['sessions'] is num && (slot['sessions'] as num) > 0)
+            .toList()
         : <Map<String, dynamic>>[];
     final sites = rawSites is List
         ? rawSites.whereType<Map<String, dynamic>>().take(8).toList()
