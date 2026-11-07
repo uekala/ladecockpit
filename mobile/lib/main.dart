@@ -752,6 +752,99 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Widget _costDevelopment(dynamic rawMonths) {
+    final months = rawMonths is List
+        ? rawMonths.whereType<Map<String, dynamic>>()
+            .where((month) => month['key'] is String).toList()
+        : <Map<String, dynamic>>[];
+    if (months.isEmpty) return const SizedBox.shrink();
+
+    num amount(dynamic value) =>
+        value is num ? value : num.tryParse(value?.toString() ?? '') ?? 0;
+    final values = months.map((month) =>
+        amount(month['cost']) + amount(month['home_cost'])).toList();
+    final maximum = values.fold<num>(0, (current, value) =>
+        value > current ? value : current);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
+          child: Text('Kostenentwicklung',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        ),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                ...List.generate(months.length, (index) {
+                  final month = months[index];
+                  final total = values[index];
+                  final homeCost = amount(month['home_cost']);
+                  final energy = amount(month['kwh']) + amount(month['home_kwh']);
+                  final ratio = maximum > 0 ? (total / maximum).clamp(0.0, 1.0).toDouble() : 0.0;
+                  final key = month['key'].toString();
+                  final parts = key.split('-');
+                  final label = parts.length == 2 ? '${parts[1]}.${parts[0]}' : key;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 7),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            SizedBox(width: 54, child: Text(label,
+                              style: const TextStyle(color: Colors.white70))),
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: LinearProgressIndicator(
+                                  value: ratio,
+                                  minHeight: 10,
+                                  backgroundColor: Colors.white12,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            SizedBox(
+                              width: 76,
+                              child: Text('${total.toStringAsFixed(2)} €',
+                                textAlign: TextAlign.end,
+                                style: const TextStyle(fontWeight: FontWeight.w600)),
+                            ),
+                          ],
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 54, top: 3),
+                          child: Text(
+                            '${energy.toStringAsFixed(1)} kWh · ${amount(month['sessions']).round()} öffentliche Ladevorgänge'
+                            '${homeCost > 0 ? ' · Zuhause ${homeCost.toStringAsFixed(2)} €' : ''}',
+                            style: const TextStyle(color: Colors.white54, fontSize: 11),
+                          ),
+                        ),
+                        if (index != months.length - 1)
+                          const SizedBox(height: 3),
+                      ],
+                    ),
+                  );
+                }),
+                const Divider(height: 20),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Öffentliches Laden plus erfasste Heimladekosten. '
+                    'Die Balken vergleichen die verfügbaren Monate.',
+                    style: TextStyle(color: Colors.white54, fontSize: 11)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _exports(dynamic rawMonths) {
     final months = rawMonths is List
         ? rawMonths.whereType<Map<String, dynamic>>()
@@ -1034,6 +1127,7 @@ class _DashboardPageState extends State<DashboardPage> {
               _section('Fahrzeug', _map(_data?['car'])),
               _priceRadar(_data?['slots'], _data?['sites']),
               _sessions(_data?['sessions']),
+              _costDevelopment(_data?['monthly']),
               _exports(_data?['monthly']),
               const SizedBox(height: 16),
               Text('Daten werden direkt von deinem Ladecockpit über Tailscale abgerufen.',
