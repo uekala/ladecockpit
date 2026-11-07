@@ -10,7 +10,7 @@ class FakeCockpitClient extends CockpitClient {
 
   @override
   Future<String> csvExport() async =>
-      'Datum;Standort;Energie;Kosten\n2026-01-10;Station A;24.5;8.20\n';
+      'Datum;Standort;Energie;Kosten\\n2026-01-10;Station A;24.5;8.20\\n';
 
   @override
   Future<Map<String, dynamic>> dashboard() async => {
@@ -36,7 +36,7 @@ class FakeCockpitClient extends CockpitClient {
             'has_invoice': false,
           },
         ],
-        'monthly': [],
+        'monthly': [\n          {'key': '2026-01', 'sessions': 1, 'kwh': 24.5},\n        ],
       };
 }
 
