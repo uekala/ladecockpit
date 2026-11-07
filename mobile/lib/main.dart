@@ -380,6 +380,80 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _priceRadar(dynamic rawSlots, dynamic rawSites) {
+    final slots = rawSlots is List
+        ? rawSlots.whereType<Map<String, dynamic>>().toList()
+        : <Map<String, dynamic>>[];
+    final sites = rawSites is List
+        ? rawSites.whereType<Map<String, dynamic>>().take(8).toList()
+        : <Map<String, dynamic>>[];
+    if (slots.isEmpty && sites.isEmpty) return const SizedBox.shrink();
+
+    Widget priceValue(dynamic value) =>
+        Text(value is num ? '${value.toStringAsFixed(3)} €/kWh' : 'Noch keine Daten',
+          style: const TextStyle(fontWeight: FontWeight.w600));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
+          child: Text('Preisradar',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        ),
+        if (slots.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.fromLTRB(4, 4, 4, 6),
+            child: Text('Tarif nach Ladezeit', style: TextStyle(color: Colors.white70)),
+          ),
+          ...slots.map((slot) {
+            final label = slot['label']?.toString() ?? 'Zeitfenster';
+            final range = slot['range']?.toString() ?? '';
+            final count = slot['sessions'] is num ? (slot['sessions'] as num).round() : 0;
+            return Card(
+              child: ListTile(
+                dense: true,
+                title: Text(label),
+                subtitle: Text('${range.isEmpty ? 'Zeitfenster' : range} · $count Ladevorgänge'),
+                trailing: priceValue(slot['avg_price']),
+              ),
+            );
+          }),
+        ],
+        if (sites.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.fromLTRB(4, 14, 4, 6),
+            child: Text('Deine häufigsten Ladestandorte',
+              style: TextStyle(color: Colors.white70)),
+          ),
+          ...sites.map((site) {
+            final label = site['label']?.toString() ??
+                site['site']?.toString() ?? 'Unbekannter Standort';
+            final network = site['network'] == 'multipass' ? 'MultiPass' : 'Supercharger';
+            final count = site['sessions'] is num ? (site['sessions'] as num).round() : 0;
+            final kwh = _numberLabel(site['kwh'], digits: 1, suffix: ' kWh');
+            final address = site['address']?.toString();
+            return Card(
+              child: ListTile(
+                leading: const Icon(Icons.ev_station, color: Colors.white60),
+                title: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis),
+                subtitle: Text('$network · $count Ladevorgänge · $kwh'
+                  '${address != null && address.isNotEmpty ? '\\n$address' : ''}'),
+                isThreeLine: address != null && address.isNotEmpty,
+                trailing: priceValue(site['avg_price']),
+              ),
+            );
+          }),
+        ],
+        const Padding(
+          padding: EdgeInsets.fromLTRB(4, 4, 4, 0),
+          child: Text('Preiswerte basieren auf den erfassten Rechnungsdaten und sind keine Live-Tarife.',
+            style: TextStyle(color: Colors.white54, fontSize: 12)),
+        ),
+      ],
+    );
+  }
+
   Future<void> _showInvoice(String sessionId, String site) async {
     try {
       final metadata = await _client.invoicePages(sessionId);
@@ -498,6 +572,7 @@ class _DashboardPageState extends State<DashboardPage> {
               _section('Gesamt', totals),
               _section('Ladeprognose', forecast),
               _section('Fahrzeug', _map(_data?['car'])),
+              _priceRadar(_data?['slots'], _data?['sites']),
               _sessions(_data?['sessions']),
               const SizedBox(height: 16),
               Text('Daten werden direkt von deinem Ladecockpit über Tailscale abgerufen.',
