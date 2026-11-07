@@ -1161,7 +1161,7 @@ try {
   // --- Texts -----------------------------------------------------------------------
   const TEXT = {
     en: {
-      tagline: "Supercharger invoices for Home Assistant",
+      tagline: "Tesla charging costs & invoices",
       preview: "Preview · demo data", demoMode: "Demo mode", live: "Live",
       searching: "Looking for invoice …", syncBroken: "Sync failed", synced: "Synced {when}",
       syncNow: "Sync now", syncing: "Syncing …", connectFirst: "Connect to Tesla first", syncTitle: "Fetch invoices from Tesla now",
@@ -1227,18 +1227,18 @@ try {
       reconcile: "Reconciliation", reconcileTitle: "Home Assistant vs. invoices", haCost: "Charging cost in HA", perNInvoices: "Per {n} invoices",
       haKwh: "Energy in HA", billedKwh: "Billed kWh", matches: "Matches", haAbove: "HA is {p} higher", haBelow: "HA is {p} lower",
       reconcileText: "Differences come from estimated prices in manual bookings and from the car reporting fewer kWh than the Supercharger bills. Sessions sent from now on are booked with invoice values.",
-      ops: "Operation", opsTitle: "Connections & API cost", tesla: "Tesla", ha: "Home Assistant",
+      ops: "Operation", opsTitle: "Connections & API cost", tesla: "Tesla", ha: "Home Assistant", haOptional: "Home Assistant (optional)", optional: "optional",
       connected: "connected", notConnected: "not connected", unreachable: "unreachable", notSetUp: "not set up",
       entities: "HA entities", lastSync: "Last sync", nextSync: "Next sync", requests: "Tesla requests this month",
       apiCost: "≈ ${usd} – covered by Tesla's monthly ${credit} credit.", disconnect: "Disconnect Tesla", confirmDisconnect: "Really disconnect? Tap again",
-      footerSrc: "Invoices: Tesla Fleet API · Battery & distance: Home Assistant", stand: "As of {d}",
+      footerSrc: "Charging invoices: Tesla Fleet API", stand: "As of {d}",
       toastSynced: "Synced – {n} new", toastNothing: "Synced – nothing new", toastFailed: "Sync failed: {e}",
       toastConnected: "Connected to Tesla – first sync running", toastDisconnected: "Tesla disconnected",
       unknown: "unknown", justNow: "just now", minAgo: "{n} min ago", hAgo: "{n} h ago", yesterday: "yesterday {t}",
       inMin: "in {n} min", inH: "in {n} h", onDate: "on {d}", perMonthAria: "Charging cost per month",
       car: "Your car", carEdit: "Customise", carAuto: "Recognised from the VIN. Pick the trim, paint and wheels so the picture matches your car.",
       carModel: "Model", carTrim: "Trim", carWheels: "Wheels", carPaint: "Paint", carView: "View",
-      save: "Save", cancel: "Cancel", carReset: "Recognise from the VIN again", carSaved: "Saved – Home Assistant gets the new picture within a minute",
+      save: "Save", cancel: "Cancel", carReset: "Recognise from the VIN again", carSaved: "Saved – your vehicle picture has been updated",
       carSource: "Pictures come straight from Tesla's configurator. Only combinations Tesla can render are offered.",
       carHa: "In Home Assistant: <span class=\"mono\">sensor.ladecockpit_car</span> – entity picture plus <span class=\"mono\">image_front</span>, <span class=\"mono\">image_side</span>, <span class=\"mono\">image_rear</span>.",
       carLoadFailed: "Tesla's image service did not answer.",
@@ -1248,7 +1248,7 @@ try {
       mpNote: "Only stations where a MultiPass session is on your invoices. Whether another station takes MultiPass is shown by the Tesla app and by the car's map with third-party chargers turned on. In Home Assistant: <span class=\"mono\">sensor.ladecockpit_multipass</span>.",
     },
     de: {
-      tagline: "Supercharger-Rechnungen für Home Assistant",
+      tagline: "Tesla-Ladekosten & Rechnungen",
       preview: "Vorschau · Demo-Daten", demoMode: "Demo-Modus", live: "Live",
       searching: "Sucht neue Rechnung …", syncBroken: "Abgleich gestört", synced: "Abgleich {when}",
       syncNow: "Jetzt abgleichen", syncing: "Gleiche ab …", connectFirst: "Erst mit Tesla verbinden", syncTitle: "Rechnungen jetzt bei Tesla abrufen",
@@ -1314,18 +1314,18 @@ try {
       reconcile: "Abgleich", reconcileTitle: "Home Assistant vs. Rechnungen", haCost: "Ladekosten in HA", perNInvoices: "Laut {n} Rechnungen",
       haKwh: "Lademenge in HA", billedKwh: "Abgerechnete kWh", matches: "Passt", haAbove: "HA liegt {p} darüber", haBelow: "HA liegt {p} darunter",
       reconcileText: "Abweichungen kommen von geschätzten Preisen bei manuellen Buchungen und davon, dass das Auto weniger kWh meldet, als der Supercharger abrechnet. Ab jetzt gemeldete Ladungen werden mit Rechnungswerten gebucht.",
-      ops: "Betrieb", opsTitle: "Verbindungen & API-Kosten", tesla: "Tesla", ha: "Home Assistant",
+      ops: "Betrieb", opsTitle: "Verbindungen & API-Kosten", tesla: "Tesla", ha: "Home Assistant", haOptional: "Home Assistant (optional)", optional: "optional",
       connected: "verbunden", notConnected: "nicht verbunden", unreachable: "nicht erreichbar", notSetUp: "nicht eingerichtet",
       entities: "HA-Entitäten", lastSync: "Letzter Abgleich", nextSync: "Nächster Abgleich", requests: "Tesla-Abfragen diesen Monat",
       apiCost: "≈ {usd} $ – das monatliche Tesla-Guthaben von {credit} $ deckt das ab.", disconnect: "Tesla-Verbindung trennen", confirmDisconnect: "Wirklich trennen? Nochmal tippen",
-      footerSrc: "Rechnungsdaten: Tesla Fleet API · Akku & Strecke: Home Assistant", stand: "Stand {d}",
+      footerSrc: "Laderechnungen: Tesla Fleet API", stand: "Stand {d}",
       toastSynced: "Abgeglichen – {n} neu", toastNothing: "Abgeglichen – nichts Neues", toastFailed: "Abgleich fehlgeschlagen: {e}",
       toastConnected: "Mit Tesla verbunden – erster Abgleich läuft", toastDisconnected: "Tesla-Verbindung getrennt",
       unknown: "unbekannt", justNow: "gerade eben", minAgo: "vor {n} Min.", hAgo: "vor {n} Std.", yesterday: "gestern {t}",
       inMin: "in {n} Min.", inH: "in {n} Std.", onDate: "am {d}", perMonthAria: "Ladekosten pro Monat",
       car: "Dein Auto", carEdit: "Anpassen", carAuto: "Aus der VIN erkannt. Wähle Ausstattung, Farbe und Felgen, damit das Bild zu deinem Auto passt.",
       carModel: "Modell", carTrim: "Ausstattung", carWheels: "Felgen", carPaint: "Farbe", carView: "Ansicht",
-      save: "Speichern", cancel: "Abbrechen", carReset: "Wieder aus der VIN erkennen", carSaved: "Gespeichert – Home Assistant bekommt das neue Bild innerhalb einer Minute",
+      save: "Speichern", cancel: "Abbrechen", carReset: "Wieder aus der VIN erkennen", carSaved: "Gespeichert – dein Fahrzeugbild wurde aktualisiert",
       carSource: "Die Bilder kommen direkt aus Teslas Konfigurator. Angeboten werden nur Kombinationen, die Tesla darstellen kann.",
       carHa: "In Home Assistant: <span class=\"mono\">sensor.ladecockpit_car</span> – als Entitätsbild und in den Attributen <span class=\"mono\">image_front</span>, <span class=\"mono\">image_side</span>, <span class=\"mono\">image_rear</span>.",
       carLoadFailed: "Teslas Bildserver hat nicht geantwortet.",
@@ -1454,18 +1454,18 @@ try {
     $("#content").innerHTML = `
       <div style="display:grid;gap:16px">
         ${setupPanel(d)}
-        <section class="hero" aria-labelledby="${d.car ? "h-car" : "h-batt"}">
+        ${d.car || d.setup?.ha_configured ? `<section class="hero" aria-labelledby="${d.car ? "h-car" : "h-batt"}">
           ${d.car ? `<div class="car-panel" id="car-panel">${carPanelBody()}</div>` : ""}
-          ${batteryPanel(d)}
-        </section>
-        <div class="grid-2">${nextStopPanel(d)}${receiptPanel(d)}</div>
+          ${d.setup?.ha_configured ? batteryPanel(d) : ""}
+        </section>` : ""}
+        ${d.setup?.ha_configured ? `<div class="grid-2">${nextStopPanel(d)}${receiptPanel(d)}</div>` : receiptPanel(d)}
         ${monthPanel(d)}
         ${radarPanel(d)}
         <div class="grid-2">${sitesPanel(d)}${historyPanel(d)}</div>
         ${multipassPanel(d)}
-        ${d.battery_health || d.climate ? `<div class="grid-2">${healthPanel(d)}${climatePanel(d)}</div>` : ""}
+        ${d.setup?.ha_configured && (d.battery_health || d.climate) ? `<div class="grid-2">${healthPanel(d)}${climatePanel(d)}</div>` : ""}
         ${sessionsPanel(d)}
-        <div class="grid-2">${d.reconcile ? reconcilePanel(d) : ""}${opsPanel(d)}</div>
+        <div class="grid-2">${d.setup?.ha_configured && d.reconcile ? reconcilePanel(d) : ""}${opsPanel(d)}</div>
       </div>`;
     $("#footer").innerHTML = `<span>${T("footerSrc")}</span>
       <div class="look-pick" role="group" aria-label="${T("lookLabel")}"><span>${T("lookLabel")}</span><span class="seg">
@@ -1855,7 +1855,7 @@ try {
       </div>
       <div class="receipt-actions">
         ${canPdf ? `<a class="btn" href="api/invoice/${encodeURIComponent(c.id)}" data-view="api/invoice/${encodeURIComponent(c.id)}" data-title="${esc(c.site + " · " + dShort(c.start))}" target="_blank" rel="noopener">${T("invoicePdf")}</a>` : `<span class="btn is-disabled" title="${T("notInPreview")}">${T("invoicePdf")}</span>`}
-        ${pushChip(c.push_state)}
+        ${d.setup?.ha_configured ? pushChip(c.push_state) : ""}
       </div>
     </section>`;
   }
@@ -2105,7 +2105,7 @@ try {
       </div>
       ${list.length && !offline() ? exportsRow(d) : ""}
       ${list.length ? `<div class="scroll"><table>
-        <thead><tr><th>${T("thDate")}</th><th>${siteHead(d)}</th><th class="n">kWh</th><th class="n">/kWh</th><th class="n">${T("thKw")}</th><th class="n">${T("thAmount")}</th><th>${T("thHa")}</th><th>${T("thInvoice")}</th></tr></thead>
+        <thead><tr><th>${T("thDate")}</th><th>${siteHead(d)}</th><th class="n">kWh</th><th class="n">/kWh</th><th class="n">${T("thKw")}</th><th class="n">${T("thAmount")}</th>${d.setup?.ha_configured ? `<th>${T("thHa")}</th>` : ""}<th>${T("thInvoice")}</th></tr></thead>
         <tbody>${list.map((s, i) => `<tr${fold && i >= SESSIONS_FOLDED ? ' class="more"' : ""}>
           <td>${esc(dShort(s.start))}<span class="when-sub">${esc(tShort(s.start))}${s.duration_min != null ? " · " + s.duration_min + " min" : ""}</span></td>
           <td class="site">${esc(siteName(s))}${mpChip(s)}${whereSub(s)}${s.idle ? `<span class="when-sub" style="color:var(--warn)">${esc(T("plusIdle", { p: money(s.idle) }))}</span>` : ""}${s.credit ? `<span class="when-sub" style="color:var(--good)">${esc(T("plusCredit", { p: money(s.credit) }))}</span>` : ""}</td>
@@ -2113,7 +2113,7 @@ try {
           <td class="n" data-tone="${tone(s.price, avgPrice(d))}">${s.price == null ? "–" : money(s.price)}</td>
           <td class="n">${s.avg_kw == null ? "–" : s.slow ? `<span class="kw-slow">${num(s.avg_kw, 0)}</span><span class="when-sub kw-slow">${esc(T("slowSub", { typical: num(s.typical_kw, 0) }))}</span>` : num(s.avg_kw, 0)}</td>
           <td class="n">${money(s.cost)}</td>
-          <td>${pushChipShort(s.push_state)}</td>
+          ${d.setup?.ha_configured ? `<td>${pushChipShort(s.push_state)}</td>` : ""}
           <td>${s.has_invoice ? (!offline() ? `<a href="api/invoice/${encodeURIComponent(s.id)}" data-view="api/invoice/${encodeURIComponent(s.id)}" data-title="${esc(s.site + " · " + dShort(s.start))}" target="_blank" rel="noopener">PDF</a>` : `<span class="muted" title="${T("notInPreview")}">PDF</span>`) : '<span class="muted">–</span>'}</td>
         </tr>`).join("")}</tbody>
       </table></div>` : `<p class="sub">${T("noneYet")}</p>`}
@@ -2167,7 +2167,7 @@ try {
       <div><span class="eyebrow">${T("ops")}</span><h2 id="h-ops">${T("opsTitle")}</h2></div>
       <div class="status-list">
         <div><span>${T("tesla")}</span>${connected ? `<span class="chip good">${T("connected")}</span>` : `<span class="chip bad">${T("notConnected")}</span>`}</div>
-        <div><span>${T("ha")}</span>${haChip}</div>
+        <div><span>${st.ha_configured ? T("ha") : T("haOptional")}</span>${st.ha_configured ? haChip : `<span class="chip plain">${T("optional")}</span>`}</div>
         ${ents ? `<div><span>${T("entities")}</span><span class="mono">${esc(ents)}</span></div>` : ""}
         <div><span>${T("lastSync")}</span><span>${esc(relTime(s.last))}</span></div>
         <div><span>${T("nextSync")}</span><span>${s.next ? esc(relTime(s.next)) : "–"}</span></div>
@@ -2230,7 +2230,7 @@ try {
         ${select("paint", T("carPaint"), wheel.paints.map((p) => [p.code, p.label]), ed.choice.paint)}
         ${select("view", T("carView"), gen.views.map((v) => [v.key, v.label]), ed.choice.view)}
       </form>
-      <div class="car-note">${ed.auto ? `<p class="sub">${T("carAuto")}</p>` : ""}<p class="sub">${T("carSource")}</p><p class="sub">${T("carHa")}</p></div>`;
+      <div class="car-note">${ed.auto ? `<p class="sub">${T("carAuto")}</p>` : ""}<p class="sub">${T("carSource")}</p>${state.data.setup?.ha_configured ? `<p class="sub">${T("carHa")}</p>` : ""}</div>`;
   }
 
   function renderCar() {
