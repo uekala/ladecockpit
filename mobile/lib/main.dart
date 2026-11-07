@@ -307,7 +307,7 @@ class _DashboardPageState extends State<DashboardPage> {
     if (minutes == null) return '–';
     final hours = minutes ~/ 60;
     final rest = minutes % 60;
-    return hours > 0 ? '${hours} Std. ${rest} Min.' : '${rest} Min.';
+    return hours > 0 ? '$hours Std. $rest Min.' : '$rest Min.';
   }
 
   Widget _detailRow(String label, String value) => Padding(
