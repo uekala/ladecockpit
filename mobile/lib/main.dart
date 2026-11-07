@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -144,8 +145,8 @@ class CockpitClient {
     final headers = await _headers(json: true);
     final response = await http.get(uri, headers: headers)
         .timeout(const Duration(seconds: 20));
-    if (response.statusCode == 401) {
-      throw const CockpitException('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.');
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      throw const CockpitException('Anmeldung fehlgeschlagen (HTTP 401/403). Bitte App-Passwort und Zugriffsrechte prüfen.');
     }
     if (response.statusCode != 200) {
       throw CockpitException('Server antwortet mit HTTP ${response.statusCode}.');
@@ -176,6 +177,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _data;
   String? _error;
   bool _loading = false;
+  DateTime? _lastSuccessfulFetch;
   String _sessionMonthFilter = 'all';
   String _sessionNetworkFilter = 'all';
   String _sessionSiteFilter = 'all';
@@ -186,13 +188,49 @@ class _DashboardPageState extends State<DashboardPage> {
     _load();
   }
 
+  String _connectionError(Object error) {
+    if (error is CockpitException) return error.message;
+    if (error is TimeoutException) {
+      return 'Zeitüberschreitung: Der Server hat nicht rechtzeitig geantwortet. Bitte Verbindung prüfen und erneut versuchen.';
+    }
+    if (error is SocketException) {
+      return 'Server nicht erreichbar: Netzwerk, Serveradresse oder VPN/Tailscale-Verbindung prüfen.';
+    }
+    if (error is HandshakeException) {
+      return 'Sichere Verbindung fehlgeschlagen: Bitte HTTPS-Zertifikat und Serveradresse prüfen.';
+    }
+    if (error is HttpException) {
+      return 'Netzwerkfehler bei der HTTP-Verbindung: Bitte Verbindung prüfen und erneut versuchen.';
+    }
+    if (error is FormatException) {
+      return 'Der Server hat eine ungültige Antwort gesendet. Bitte später erneut versuchen.';
+    }
+    return 'Verbindung fehlgeschlagen: $error';
+  }
+
+  String _dateTimeLabel(DateTime? value) {
+    if (value == null) return 'Noch kein erfolgreicher Abruf';
+    final date = value.toLocal();
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$day.$month.${date.year}, $hour:$minute Uhr';
+  }
+
   Future<void> _load() async {
+    if (_loading) return;
     setState(() { _loading = true; _error = null; });
     try {
       final data = await _client.dashboard();
-      if (mounted) setState(() => _data = data);
+      if (mounted) {
+        setState(() {
+          _data = data;
+          _lastSuccessfulFetch = DateTime.now();
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = _connectionError(e is Exception ? e : Exception(e.toString())));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -1075,6 +1113,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             const Divider(height: 18),
             _statusLine(Icons.history, 'Letzte Synchronisation', _dateTimeLabel(sync['last'])),
+            _statusLine(Icons.download_done, 'Letzter erfolgreicher App-Abruf', _dateTimeLabel(_lastSuccessfulFetch)),
             if (sync['next'] != null)
               _statusLine(Icons.schedule, 'Nächste Synchronisation', _dateTimeLabel(sync['next'])),
             if (hasSyncError)
@@ -1131,7 +1170,14 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 8),
                   Text(_error!),
                   const SizedBox(height: 8),
-                  OutlinedButton(onPressed: _settings, child: const Text('Verbindung einrichten')),
+                  Wrap(spacing: 8, runSpacing: 8, children: [
+                    FilledButton.icon(
+                      onPressed: _loading ? null : _load,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Erneut versuchen'),
+                    ),
+                    OutlinedButton(onPressed: _settings, child: const Text('Verbindung einrichten')),
+                  ]),
                 ]),
               ),
             ),
