@@ -311,7 +311,7 @@ class _DashboardPageState extends State<DashboardPage> {
               itemBuilder: (context, index) => Padding(
                 padding: const EdgeInsets.all(8),
                 child: FutureBuilder<Uri>(
-                  future: _client.invoicePageUri(sessionId, index),
+                  future: _client.invoicePageUri(sessionId, index + 1),
                   builder: (context, uriSnapshot) {
                     if (uriSnapshot.hasError) {
                       return const Padding(
