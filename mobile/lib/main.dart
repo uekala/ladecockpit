@@ -47,12 +47,7 @@ class CockpitClient {
   }
 
   Future<Map<String, String>> _headers({bool json = false}) async {
-    final secret = await password ?? '';
-    final headers = <String, String>{'Accept': json ? 'application/json' : '*/*'};
-    if (secret.isNotEmpty) {
-      headers['Authorization'] = 'Basic ${base64Encode(utf8.encode('ladecockpit:$secret'))}';
-    }
-    return headers;
+    return cockpitRequestHeaders(await password, json: json);
   }
 
   Future<Uri> _endpoint(String path) async {
@@ -145,18 +140,36 @@ class CockpitClient {
     final headers = await _headers(json: true);
     final response = await http.get(uri, headers: headers)
         .timeout(const Duration(seconds: 20));
-    if (response.statusCode == 401 || response.statusCode == 403) {
-      throw const CockpitException('Anmeldung fehlgeschlagen (HTTP 401/403). Bitte App-Passwort und Zugriffsrechte prüfen.');
-    }
-    if (response.statusCode != 200) {
-      throw CockpitException('Server antwortet mit HTTP ${response.statusCode}.');
-    }
-    final decoded = jsonDecode(response.body);
-    if (decoded is! Map<String, dynamic>) {
-      throw const CockpitException('Ungültige Antwort vom Ladecockpit.');
-    }
-    return decoded;
+    return parseDashboardResponse(response.statusCode, response.body);
   }
+}
+
+Map<String, String> cockpitRequestHeaders(String? password, {bool json = false}) {
+  final headers = <String, String>{
+    'Accept': json ? 'application/json' : '*/*',
+  };
+  final secret = password ?? '';
+  if (secret.isNotEmpty) {
+    headers['Authorization'] =
+        'Basic ${base64Encode(utf8.encode('ladecockpit:$secret'))}';
+  }
+  return headers;
+}
+
+Map<String, dynamic> parseDashboardResponse(int statusCode, String body) {
+  if (statusCode == 401 || statusCode == 403) {
+    throw const CockpitException(
+      'Anmeldung fehlgeschlagen (HTTP 401/403). Bitte App-Passwort und Zugriffsrechte prüfen.',
+    );
+  }
+  if (statusCode != 200) {
+    throw CockpitException('Server antwortet mit HTTP $statusCode.');
+  }
+  final decoded = jsonDecode(body);
+  if (decoded is! Map<String, dynamic>) {
+    throw const CockpitException('Ungültige Antwort vom Ladecockpit.');
+  }
+  return decoded;
 }
 
 class CockpitException implements Exception {
