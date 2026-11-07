@@ -755,6 +755,108 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Widget _statusLine(IconData icon, String label, String value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color ?? Colors.white70),
+          const SizedBox(width: 10),
+          Expanded(child: Text(label, style: const TextStyle(color: Colors.white70))),
+          Flexible(child: Text(value, textAlign: TextAlign.end,
+            style: TextStyle(fontWeight: FontWeight.w600, color: color))),
+        ],
+      ),
+    );
+  }
+
+  Widget _connectionStatus() {
+    final setup = _map(_data?['setup']) ?? {};
+    final sync = _map(_data?['sync']) ?? {};
+    final teslaConfigured = setup['tesla_configured'] == true;
+    final teslaConnected = setup['tesla_connected'] == true;
+    final teslaError = setup['tesla_auth_error']?.toString();
+    final haConfigured = setup['ha_configured'] == true;
+    final haOk = setup['ha_ok'] == true;
+    final haError = setup['ha_error']?.toString();
+    final syncError = sync['error']?.toString();
+    final problem = sync['problem']?.toString();
+    final hasTeslaError = teslaError != null && teslaError.isNotEmpty;
+    final hasSyncError = syncError != null && syncError.isNotEmpty;
+
+    final teslaLabel = !teslaConfigured
+        ? 'Nicht eingerichtet'
+        : teslaConnected ? 'Verbunden' : 'Nicht verbunden';
+    final teslaColor = teslaConnected ? Colors.greenAccent : Colors.orangeAccent;
+    final haLabel = !haConfigured
+        ? 'Nicht eingerichtet (optional)'
+        : haOk ? 'Verbunden' : 'Nicht erreichbar';
+    final haColor = !haConfigured || haOk ? Colors.greenAccent : Colors.orangeAccent;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.sync, size: 19),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Verbindung & Synchronisation',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
+                IconButton(
+                  tooltip: 'Status aktualisieren',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: _loading ? null : _load,
+                  icon: const Icon(Icons.refresh, size: 20),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            _statusLine(teslaConnected ? Icons.check_circle : Icons.cloud_off,
+              'Tesla', teslaLabel, color: teslaColor),
+            if (hasTeslaError)
+              Padding(
+                padding: const EdgeInsets.only(left: 28, bottom: 5),
+                child: Text(teslaError, style: const TextStyle(color: Colors.orangeAccent, fontSize: 12)),
+              ),
+            _statusLine(!haConfigured || haOk ? Icons.home_outlined : Icons.warning_amber_rounded,
+              'Home Assistant', haLabel, color: haColor),
+            if (haConfigured && !haOk && haError != null && haError.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(left: 28, bottom: 5),
+                child: Text(haError, style: const TextStyle(color: Colors.orangeAccent, fontSize: 12)),
+              ),
+            const Divider(height: 18),
+            _statusLine(Icons.history, 'Letzte Synchronisation', _dateTimeLabel(sync['last'])),
+            if (sync['next'] != null)
+              _statusLine(Icons.schedule, 'Nächste Synchronisation', _dateTimeLabel(sync['next'])),
+            if (hasSyncError)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.orangeAccent, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(syncError,
+                      style: const TextStyle(color: Colors.orangeAccent, fontSize: 12))),
+                  ],
+                ),
+              ),
+            if (!hasSyncError && problem != null && problem.isNotEmpty && problem != 'None')
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text('Hinweis: $problem',
+                  style: const TextStyle(color: Colors.white60, fontSize: 12)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final month = _map(_data?['month']);
@@ -789,6 +891,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
             if (_data != null) ...[
+              _connectionStatus(),
               Text('ÜBERSICHT', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white60, letterSpacing: 1.4)),
               const SizedBox(height: 8),
               GridView.count(
