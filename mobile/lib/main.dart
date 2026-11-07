@@ -326,12 +326,12 @@ class _DashboardPageState extends State<DashboardPage> {
       .where((v) => v.isNotEmpty).toSet().toList()..sort();
 
     final filtered = items.where((session) {
-      final monthMatches = _sessionMonthFilter == 'all' ||
-        monthKey(session) == _sessionMonthFilter;
-      final networkMatches = _sessionNetworkFilter == 'all' ||
-        (session['network']?.toString() ?? 'supercharger') == _sessionNetworkFilter;
-      final siteMatches = _sessionSiteFilter == 'all' ||
-        (session['site']?.toString() ?? '') == _sessionSiteFilter;
+      final monthMatches = selectedMonth == 'all' ||
+        monthKey(session) == selectedMonth;
+      final networkMatches = selectedNetwork == 'all' ||
+        (session['network']?.toString() ?? 'supercharger') == selectedNetwork;
+      final siteMatches = selectedSite == 'all' ||
+        (session['site']?.toString() ?? '') == selectedSite;
       return monthMatches && networkMatches && siteMatches;
     }).toList();
 
@@ -372,16 +372,10 @@ class _DashboardPageState extends State<DashboardPage> {
         overflow: TextOverflow.ellipsis))),
     ];
 
-    // If the data set changes, do not leave a selected filter pointing at a missing option.
-    if (_sessionMonthFilter != 'all' && !months.contains(_sessionMonthFilter)) {
-      _sessionMonthFilter = 'all';
-    }
-    if (_sessionNetworkFilter != 'all' && !networks.contains(_sessionNetworkFilter)) {
-      _sessionNetworkFilter = 'all';
-    }
-    if (_sessionSiteFilter != 'all' && !sites.contains(_sessionSiteFilter)) {
-      _sessionSiteFilter = 'all';
-    }
+    // Keep dropdown values valid when refreshed data no longer contains a previous selection.
+    final selectedMonth = months.contains(_sessionMonthFilter) ? _sessionMonthFilter : 'all';
+    final selectedNetwork = networks.contains(_sessionNetworkFilter) ? _sessionNetworkFilter : 'all';
+    final selectedSite = sites.contains(_sessionSiteFilter) ? _sessionSiteFilter : 'all';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,11 +395,11 @@ class _DashboardPageState extends State<DashboardPage> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            filterField('Zeitraum', _sessionMonthFilter, monthOptions,
+            filterField('Zeitraum', selectedMonth, monthOptions,
               (value) => setState(() => _sessionMonthFilter = value ?? 'all'), width: 165),
-            filterField('Netzwerk', _sessionNetworkFilter, networkOptions,
+            filterField('Netzwerk', selectedNetwork, networkOptions,
               (value) => setState(() => _sessionNetworkFilter = value ?? 'all'), width: 165),
-            filterField('Standort', _sessionSiteFilter, siteOptions,
+            filterField('Standort', selectedSite, siteOptions,
               (value) => setState(() => _sessionSiteFilter = value ?? 'all'), width: 210),
           ],
         ),
