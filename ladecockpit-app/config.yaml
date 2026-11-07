@@ -17,7 +17,7 @@ homeassistant_api: true
 ports:
   8077/tcp: null
 ports_description:
-  8077/tcp: Web app outside Home Assistant (optional)
+  8077/tcp: Direct access (optional; bypasses Ingress authentication — use only on a trusted private network or behind an authenticated reverse proxy)
 options:
   language: en
   tesla_client_id: ""
