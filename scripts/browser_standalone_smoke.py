@@ -72,7 +72,7 @@ def main() -> None:
 
                         headers = page.locator("#sessions-panel thead th").all_text_contents()
                         assert not any("HA" in header for header in headers), f"HA table column remains: {headers}"
-                        assert "optional" in page.locator("#h-ops").locator("xpath=..").inner_text().lower()
+                        assert "optional" in page.locator("#h-ops").locator("xpath=../..").inner_text().lower()
                         assert not errors, f"Browser JavaScript errors at {width}px: {errors}"
                         page.close()
                     browser.close()
