@@ -267,6 +267,19 @@ def _label(site: str, operator: str | None, address: str | None) -> str:
     return _place(site)
 
 
+def _site_group_key(session: dict) -> tuple[str, str]:
+    """Keep equal Tesla site labels separate when their invoice addresses differ.
+
+    Tesla can use the same generic label for multiple physical charging sites. The
+    invoice-derived station address is therefore part of the grouping key whenever
+    it is available; sessions without an address retain the previous site-name grouping.
+    """
+    site = session.get("site") or ""
+    address = stations.full_address(session.get("station")) or ""
+    normalized_address = " ".join(address.casefold().split())
+    return site, normalized_address
+
+
 MAP_SEARCH = "https://www.google.com/maps/search/?api=1&query="
 
 
@@ -282,11 +295,12 @@ def _multipass(sessions: list[dict], tz, lang: str) -> dict | None:
     used = [x for x in sessions if (x.get("network") or SUPERCHARGER) == MULTIPASS and x.get("start_ts")]
     if not used:
         return None
-    groups: dict[str, list[dict]] = {}
+    groups: dict[tuple[str, str], list[dict]] = {}
     for x in used:
-        groups.setdefault(x.get("site") or i18n.t(lang, "unknown_station"), []).append(x)
+        groups.setdefault(_site_group_key(x), []).append(x)
     found = []
-    for site, items in groups.items():
+    for (site_name, _address_key), items in groups.items():
+        site = site_name or i18n.t(lang, "unknown_station")
         items = sorted(items, key=lambda x: x["start_ts"], reverse=True)
         when = sorted(datetime.fromisoformat(x["start_ts"]).astimezone(tz) for x in items)
         priced = [x for x in items if x.get("kwh") and x.get("total") is not None]
@@ -457,16 +471,17 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         slots.append({"id": sid, "label": label, "range": rng,
                       "avg_price": st["list_price"], "sessions": st["sessions"], "kwh": st["kwh"]})
 
-    groups: dict[str, list[dict]] = {}
+    groups: dict[tuple[str, str], list[dict]] = {}
     for x in priced:
-        groups.setdefault(x.get("site") or i18n.t(lang, "unknown_site"), []).append(x)
-    def _site_row(k: str, v: list[dict]) -> dict:
+        groups.setdefault(_site_group_key(x), []).append(x)
+    def _site_row(k: tuple[str, str], v: list[dict]) -> dict:
+        site = k[0] or i18n.t(lang, "unknown_site")
         operator = next((x["_operator"] for x in v if x.get("_operator")), None)
         addr = next((x["_address"] for x in v if x.get("_address")), None)
-        return {"site": k, **{f: _stats(v)[f] for f in ("sessions", "kwh", "cost", "credit")},
+        return {"site": site, **{f: _stats(v)[f] for f in ("sessions", "kwh", "cost", "credit")},
                 "avg_price": _stats(v)["list_price"], "avg_kw": _avg_kw(v),
                 "network": Counter(x.get("network") or SUPERCHARGER for x in v).most_common(1)[0][0],
-                "operator": operator, "address": addr, "label": _label(k, operator, addr)}
+                "operator": operator, "address": addr, "label": _label(site, operator, addr)}
 
     sites = sorted((_site_row(k, v) for k, v in groups.items()), key=lambda r: (-r["sessions"], r["avg_price"] or 9))
 

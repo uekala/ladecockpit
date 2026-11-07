@@ -52,6 +52,38 @@ def test_cost_per_100_only_counts_sessions_after_first_odometer_reading(settings
     assert d["reconcile"] is None                  # no HA totals configured
 
 
+def test_same_tesla_site_label_keeps_different_invoice_addresses_separate(settings):
+    now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
+    sessions = [
+        {
+            **_session("aldi-kleinewefers", now - timedelta(days=2), 20, 8.0),
+            "site": "ALDI SÜD Krefeld",
+            "network": "multipass",
+            "station": {"street": "Kleinewefersstraße", "number": "1", "postcode": "47803",
+                        "city": "Krefeld", "country": "DE"},
+        },
+        {
+            **_session("aldi-hafen", now - timedelta(days=1), 30, 12.0),
+            "site": "ALDI SÜD Krefeld",
+            "network": "multipass",
+            "station": {"street": "Hafenstraße", "number": "1", "postcode": "47809",
+                        "city": "Krefeld", "country": "DE"},
+        },
+    ]
+    d = build_dashboard(sessions=sessions, live={"values": {}, "units": {}},
+                        readings={}, settings=settings, meta={}, now=now)
+
+    assert len(d["sites"]) == 2
+    assert {row["address"] for row in d["sites"]} == {
+        "Kleinewefersstraße 1, Krefeld", "Hafenstraße 1, Krefeld"
+    }
+    assert all(row["sessions"] == 1 for row in d["sites"])
+    assert len(d["multipass"]["stations"]) == 2
+    assert {row["address"] for row in d["multipass"]["stations"]} == {
+        "Kleinewefersstraße 1, Krefeld", "Hafenstraße 1, Krefeld"
+    }
+
+
 def test_forecast_from_readings(settings):
     now = datetime(2026, 10, 20, 12, tzinfo=timezone.utc)
     soc = [(now - timedelta(days=4 - i), 70 - 8 * i) for i in range(5)]   # 8 %/day over 4 days
