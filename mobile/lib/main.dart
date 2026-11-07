@@ -345,7 +345,8 @@ class _DashboardPageState extends State<DashboardPage> {
       return SizedBox(
         width: width,
         child: DropdownButtonFormField<String>(
-          value: value,
+          key: ValueKey('$label-$value'),
+          initialValue: value,
           isExpanded: true,
           decoration: InputDecoration(
             labelText: label,
