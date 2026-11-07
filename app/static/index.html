@@ -1161,7 +1161,7 @@ try {
   // --- Texts -----------------------------------------------------------------------
   const TEXT = {
     en: {
-      tagline: "Supercharger invoices for Home Assistant",
+      tagline: "Tesla charging costs & invoices",
       preview: "Preview · demo data", demoMode: "Demo mode", live: "Live",
       searching: "Looking for invoice …", syncBroken: "Sync failed", synced: "Synced {when}",
       syncNow: "Sync now", syncing: "Syncing …", connectFirst: "Connect to Tesla first", syncTitle: "Fetch invoices from Tesla now",
@@ -1248,7 +1248,7 @@ try {
       mpNote: "Only stations where a MultiPass session is on your invoices. Whether another station takes MultiPass is shown by the Tesla app and by the car's map with third-party chargers turned on. In Home Assistant: <span class=\"mono\">sensor.ladecockpit_multipass</span>.",
     },
     de: {
-      tagline: "Supercharger-Rechnungen für Home Assistant",
+      tagline: "Tesla-Ladekosten & Rechnungen",
       preview: "Vorschau · Demo-Daten", demoMode: "Demo-Modus", live: "Live",
       searching: "Sucht neue Rechnung …", syncBroken: "Abgleich gestört", synced: "Abgleich {when}",
       syncNow: "Jetzt abgleichen", syncing: "Gleiche ab …", connectFirst: "Erst mit Tesla verbinden", syncTitle: "Rechnungen jetzt bei Tesla abrufen",
@@ -1454,10 +1454,10 @@ try {
     $("#content").innerHTML = `
       <div style="display:grid;gap:16px">
         ${setupPanel(d)}
-        <section class="hero" aria-labelledby="${d.car ? "h-car" : "h-batt"}">
+        ${d.car || d.setup?.ha_configured ? `<section class="hero" aria-labelledby="${d.car ? "h-car" : "h-batt"}">
           ${d.car ? `<div class="car-panel" id="car-panel">${carPanelBody()}</div>` : ""}
           ${d.setup?.ha_configured ? batteryPanel(d) : ""}
-        </section>
+        </section>` : ""}
         ${d.setup?.ha_configured ? `<div class="grid-2">${nextStopPanel(d)}${receiptPanel(d)}</div>` : receiptPanel(d)}
         ${monthPanel(d)}
         ${radarPanel(d)}
