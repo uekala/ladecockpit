@@ -10,7 +10,7 @@ class FakeCockpitClient extends CockpitClient {
 
   @override
   Future<String> csvExport() async =>
-      'Datum;Standort;Energie;Kosten\\n2026-01-10;Station A;24.5;8.20\\n';
+      'Datum;Standort;Energie;Kosten\n2026-01-10;Station A;24.5;8.20\n';
 
   @override
   Future<Map<String, dynamic>> dashboard() async => {
@@ -38,6 +38,58 @@ class FakeCockpitClient extends CockpitClient {
         ],
         'monthly': [],
       };
+}
+
+void main() {
+  testWidgets('shows the Ladecockpit app bar', (tester) async {
+    await tester.pumpWidget(const LadecockpitApp());
+
+    expect(find.text('Ladecockpit'), findsOneWidget);
+  });
+
+  testWidgets('exposes connection settings and refresh actions', (tester) async {
+    await tester.pumpWidget(const LadecockpitApp());
+
+    expect(find.byTooltip('Verbindung'), findsOneWidget);
+    expect(find.byTooltip('Aktualisieren'), findsOneWidget);
+  });
+
+  testWidgets('filters charging sessions by network and resets filters',
+      (tester) async {
+    tester.view.physicalSize = const Size(900, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(home: DashboardPage(client: FakeCockpitClient())),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Alle Netzwerke'),
+      350,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('2 / 2'), findsOneWidget);
+
+    await tester.tap(find.text('Alle Netzwerke'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('MultiPass').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 / 2'), findsOneWidget);
+    expect(find.text('Station A'), findsOneWidget);
+    expect(find.text('Station B'), findsNothing);
+
+    await tester.tap(find.text('Filter zurücksetzen'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('2 / 2'), findsOneWidget);
+    expect(find.text('Station A'), findsOneWidget);
+    expect(find.text('Station B'), findsOneWidget);
+  });
+
   testWidgets('opens invoice action and shows a clear error when unavailable',
       (tester) async {
     tester.view.physicalSize = const Size(900, 1800);
@@ -90,57 +142,5 @@ class FakeCockpitClient extends CockpitClient {
     await tester.tap(find.text('Schließen'));
     await tester.pumpAndSettle();
     expect(find.text('CSV-Export'), findsNothing);
-  });
-
-}
-
-void main() {
-  testWidgets('shows the Ladecockpit app bar', (tester) async {
-    await tester.pumpWidget(const LadecockpitApp());
-
-    expect(find.text('Ladecockpit'), findsOneWidget);
-  });
-
-  testWidgets('exposes connection settings and refresh actions', (tester) async {
-    await tester.pumpWidget(const LadecockpitApp());
-
-    expect(find.byTooltip('Verbindung'), findsOneWidget);
-    expect(find.byTooltip('Aktualisieren'), findsOneWidget);
-  });
-
-  testWidgets('filters charging sessions by network and resets filters',
-      (tester) async {
-    tester.view.physicalSize = const Size(900, 1800);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(
-      MaterialApp(home: DashboardPage(client: FakeCockpitClient())),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.scrollUntilVisible(
-      find.text('Alle Netzwerke'),
-      350,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('2 / 2'), findsOneWidget);
-
-    await tester.tap(find.text('Alle Netzwerke'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('MultiPass').last);
-    await tester.pumpAndSettle();
-
-    expect(find.text('1 / 2'), findsOneWidget);
-    expect(find.text('Station A'), findsOneWidget);
-    expect(find.text('Station B'), findsNothing);
-
-    await tester.tap(find.text('Filter zurücksetzen'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('2 / 2'), findsOneWidget);
-    expect(find.text('Station A'), findsOneWidget);
-    expect(find.text('Station B'), findsOneWidget);
   });
 }
