@@ -1,12 +1,12 @@
 # Ladecockpit
 
-**Deine echten Supercharger-Rechnungen in Home Assistant – plus eine kleine Web-App, die zeigt, was Laden wirklich kostet.**
+**Deine echten Tesla-Laderechnungen in einer selbst gehosteten Web-App – Home Assistant ist optional.**
 
 [English](README.md)
 
 ![Ladecockpit mit Demo-Daten, während das Auto lädt: am Desktop im dynamischen Design mit leuchtendem Akku-Ring, Leistung, Uhrzeit und Countdown bis zum Ladelimit, nächstem Ladestopp und letzter Rechnung; auf einem Handy das Preis-Radar des dynamischen Designs mit dem aktuellen Zeitfenster; auf einem zweiten Handy das klassische Design hell](docs/screenshot-de.png)
 
-Viele Home-Assistant-Setups schätzen die Supercharger-Kosten aus den kWh des Autos und einem festen Preis oder fragen nach jeder Ladung den Preis ab. Ladecockpit holt stattdessen die echte Rechnung über die Tesla Fleet API: abgerechnete kWh, Preis pro kWh, Blockiergebühr, Standort und PDF. Diese Daten gibt es an Home Assistant weiter.
+Ladecockpit holt deine echten Laderechnungen direkt über die Tesla Fleet API (abgerechnete kWh, Preis pro kWh, Blockiergebühr, Standort und PDF) und speichert sie lokal. Du kannst die Web-App allein nutzen oder optional Home Assistant für Live-Fahrzeugdaten, Sensoren und Automationen anbinden.
 
 ## Funktionen
 
@@ -34,30 +34,30 @@ Viele Home-Assistant-Setups schätzen die Supercharger-Kosten aus den kWh des Au
 - **Funktioniert auch offline.** Speichert einen eigenen Verlauf von Akkustand und Kilometerstand, z. B. für ein Auto in der Tiefgarage ohne Empfang.
 - **Sparsam bei der Tesla-API.** Live-Daten kommen aus Home Assistant. Tesla wird nur nach der Ladehistorie gefragt, etwa 150–200 Abfragen im Monat (≈ 0,40 $).
 - **Nur lesend.** Es gibt keinen Code, der Befehle ans Auto schickt oder es weckt.
-- **Läuft als Home-Assistant-App** (Seitenleiste, kein extra Server) oder als Docker-Container überall.
+- **Läuft eigenständig mit Docker** auf NAS, Mini-PC oder Homeserver. Home Assistant ist optional und ergänzt Live-Fahrzeugdaten, Sensoren und Automationen.
+- **Private Version dauerhaft kostenlos.** Self-hosted, ohne Pflichtkonto, Abo oder Ladecockpit-Cloud.
 - Deutsch und Englisch, Demo-Modus ohne Zugangsdaten, als App auf den Handy-Startbildschirm legbar.
 
 ## So funktioniert es
 
-```
-Home Assistant ──(Akku, Kilometerstand, Ladestatus)──► Ladecockpit ──(Ladehistorie)──► Tesla Fleet API
-      ▲                                                     │
-      └──────── Event "ladecockpit_invoice" ◄───────────────┘
-                (Blueprint bucht kWh und Kosten in deine Helfer)
-```
+**Eigenständig:** Ladecockpit verbindet sich direkt mit der Tesla Fleet API, importiert Ladehistorie und Rechnungen und speichert Ladungen, PDFs und Tokens im lokalen Datenverzeichnis. Web-App, Monats-PDF und CSV-Export funktionieren ohne Home Assistant.
 
-1. Ladecockpit fragt jede Minute ein paar Entitäten deines Autos in Home Assistant ab (lokal, kostenlos).
-2. Wenn der Ladestatus `charging` verlässt, fragt es alle 10 Minuten die Ladehistorie bei Tesla ab, bis die neue Rechnung da ist (höchstens 3 Stunden). Sonst gleicht es alle 6 Stunden ab.
-3. Jede neue Rechnung wird genau einmal als Event `ladecockpit_invoice` gemeldet.
-4. Beim allerersten Abgleich werden alle bisherigen Rechnungen nur übernommen (in der App angezeigt) und **nicht** gemeldet. So werden Summen, die du schon in Home Assistant führst, nicht doppelt gezählt.
+**Optionale Home-Assistant-Anbindung:** Wenn eingerichtet, kann Ladecockpit zusätzlich Fahrzeug-Entitäten lesen, Sensoren veröffentlichen und Rechnungs-Events für Automationen senden. Live-Akku-/Ladedaten und HA-basierte Vergleiche benötigen passende Entitäten.
+
+1. Die Tesla-Ladehistorie wird nach Zeitplan abgeglichen (Standard: alle 6 Stunden).
+2. Nach einer Ladung kann die optionale Erkennung des Ladestatus in Home Assistant häufigere Rechnungsprüfungen auslösen.
+3. Neue Rechnungen können bei eingerichteter HA-Verbindung einmalig als Event `ladecockpit_invoice` gesendet werden.
+4. Beim ersten Abgleich werden vorhandene Ladungen importiert, aber nicht an Home Assistant gesendet, damit bestehende Summen nicht doppelt gezählt werden.
 
 ## Voraussetzungen
 
 - Home Assistant OS oder Supervised (für die App), **oder** Docker auf einem Gerät, das rund um die Uhr läuft
 - Ein Tesla-Konto und eine **Tesla Developer App** mit Fleet-API-Zugang
-- Optional, aber empfohlen: Home Assistant mit einer Integration, die die Entitäten deines Autos bereitstellt (Tesla Fleet, Teslemetry, Tessie, …)
+- Optional: Home Assistant mit einer Integration, die die Entitäten deines Autos bereitstellt (Tesla Fleet, Teslemetry, Tessie, …). Für Ladehistorie, Rechnungen, Web-App und Exporte ist Home Assistant nicht erforderlich.
 
-## Als Home-Assistant-App installieren (empfohlen)
+## Als Home-Assistant-App installieren
+
+Diese Variante ist sinnvoll, wenn du Ladecockpit in der Home-Assistant-Seitenleiste und Rechnungs-Events/Sensoren nutzen möchtest. Für eine eigenständige private Installation nutze Docker weiter unten.
 
 [![Ladecockpit-Repository zu Home Assistant hinzufügen](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fuekala%2Fladecockpit)
 
@@ -98,7 +98,9 @@ Fängst du ganz neu an? Die Fleet API antwortet nur Apps, deren Domain mit einem
 cp .env.example .env
 ```
 
-Mindestens nötig: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN` (Home Assistant → Profil → Sicherheit → Langlebige Zugriffstoken) und die Entitäten deines Autos:
+**Für den eigenständigen Betrieb erforderlich:** `TESLA_CLIENT_ID` und `TESLA_CLIENT_SECRET`. Für die deutsche Oberfläche `APP_LANG=de` setzen. `APP_PASSWORD` wird dringend empfohlen, wenn die Web-App über einen vertrauenswürdigen lokalen Rechner hinaus erreichbar ist; eigenständige Live-Installationen sollten ein starkes Passwort verwenden.
+
+**Optionale Home-Assistant-Anbindung:** `HA_URL` und `HA_TOKEN` (Home Assistant → Profil → Sicherheit → Langlebige Zugriffstoken) nur setzen, wenn du HA-Funktionen nutzen möchtest. Ergänze nur die Entitäten, die du tatsächlich hast:
 
 | Einstellung | Beispiel | Schaltet frei |
 |---|---|---|
@@ -112,7 +114,7 @@ Mindestens nötig: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN
 | `HA_ENT_HOME_ENERGY`, `HA_ENT_HOME_PRICE` / `HOME_PRICE` | `sensor.wall_connector_energy`, `0.32` | Laden zu Hause |
 | `HA_ENT_OUTSIDE_TEMP` | `weather.home` | Verbrauch nach Temperatur |
 
-Für die deutsche Oberfläche `APP_LANG=de` setzen. Bei `HA_URL` die IP von Home Assistant eintragen, denn `.local`-Namen werden im Container oft nicht aufgelöst. Alle Einstellungen stehen in [.env.example](.env.example).
+Bei `HA_URL` die IP von Home Assistant eintragen, denn `.local`-Namen werden im Container oft nicht aufgelöst. Ohne `HA_URL` und `HA_TOKEN` bleiben die eigenständigen Tesla-Funktionen verfügbar; HA-spezifische Anzeigen und Live-Messwerte stehen dann nicht zur Verfügung. Alle Einstellungen stehen in [.env.example](.env.example).
 
 ### 3. Starten
 
@@ -131,7 +133,9 @@ Die Redirect-URI zeigt auf `localhost`. Läuft der Container woanders, gibt es z
 - Einen SSH-Tunnel öffnen: `ssh -L 8077:localhost:8077 dein-server`.
 - Nach der Anmeldung die komplette Adresse aus der Browserzeile kopieren und unter „Die Weiterleitung nach der Anmeldung landet nicht hier?“ einfügen. Die Seite selbst lädt dann nicht, das ist in Ordnung.
 
-### 5. Rechnungen in Home Assistant buchen
+### 5. Optional: Rechnungen in Home Assistant buchen
+
+Dieser Abschnitt ist nur nötig, wenn du Home Assistant verwendest. Eine eigenständige Installation benötigt weder Helfer noch Blueprint.
 
 1. Zwei **Zahlen**-Helfer anlegen (Einstellungen → Geräte & Dienste → Helfer), z. B. „Lademenge gesamt“ (kWh) und „Ladekosten gesamt“. Das **Maximum hoch** setzen (z. B. 1000000), denn der Standardwert 100 ist schnell erreicht. Optional einen **Text**-Helfer für die letzte Ladung anlegen.
 2. Blueprint importieren:
@@ -214,13 +218,13 @@ Wird eine MultiPass-Ladung als Supercharger angezeigt (oder umgekehrt), bitte ei
 
 ## Kosten
 
-Die Fleet API wird pro Abfrage abgerechnet. Ladecockpit nutzt nur Datenabfragen für Ladehistorie und Rechnungen. Mit den Standardeinstellungen sind das etwa 150–200 Abfragen im Monat: ein Abgleich alle 6 Stunden plus ein paar Abfragen nach jeder Ladung (≈ 0,40 $ bei 0,002 $ pro Abfrage), weit innerhalb des monatlichen Guthabens von 10 $, das Tesla jedem Entwicklerkonto gibt. `API_BUDGET_REQUESTS` (Standard 1500) ist eine harte Obergrenze. Die App zeigt den Zählerstand des laufenden Monats.
+Die Tesla Fleet API kann je nach aktueller Tesla-Preisliste, Kontoguthaben und Nutzung pro Abfrage Kosten verursachen. Ladecockpit begrenzt die Abfragen auf Ladehistorie und Rechnungsabruf; die tatsächlichen Kosten hängen unter anderem von Ladungen, Synchronisationsintervall und Verfügbarkeit der Rechnungen ab. Frühere Kostenschätzungen sind keine Preisgarantie. `API_BUDGET_REQUESTS` (Standard 1500) ist eine harte Obergrenze. Die App zeigt den Zählerstand des laufenden Monats. Die Software selbst ist kostenlos; mögliche Tesla-API-Kosten sind davon getrennt.
 
 ## Datenschutz und Sicherheit
 
 - Die Web-App lädt nichts von anderen Diensten nach, außer dem Bild deines Autos aus Teslas Konfigurator; die Schriften bringt sie selbst mit. Ganz unten auf der Seite wählst du das Design: klassisch (ruhig, nah an der App des Autos) oder dynamisch (ein Cockpit bei Nacht, das sich bewegt und dem Akku folgt).
 - Alles bleibt bei dir: Tokens, Rechnungen und Messwerte liegen im Docker-Volume `ladecockpit-data` (SQLite und PDF-Cache).
-- Ladecockpit spricht nur mit Tesla und deinem Home Assistant und lädt – für MultiPass-Stationen in Deutschland, sofern nicht abgeschaltet – das öffentliche Ladesäulenregister der Bundesnetzagentur herunter; über dich wird dabei nichts gesendet. Die Web-App lädt außerdem das Bild deines Autos von Teslas Bildserver. Die Kartenlinks der MultiPass-Stationen öffnen eine Google-Maps-Suche nach dem Stationsnamen – nur wenn du einen anklickst.
+- Ladecockpit spricht mit Tesla und – nur wenn eingerichtet – deinem Home Assistant. Für MultiPass-Stationen in Deutschland lädt es – für MultiPass-Stationen in Deutschland, sofern nicht abgeschaltet – das öffentliche Ladesäulenregister der Bundesnetzagentur herunter; über dich wird dabei nichts gesendet. Die Web-App lädt außerdem das Bild deines Autos von Teslas Bildserver. Die Kartenlinks der MultiPass-Stationen öffnen eine Google-Maps-Suche nach dem Stationsnamen – nur wenn du einen anklickst.
 - Im LAN oder hinter einem Reverse-Proxy mit Anmeldung betreiben. `APP_PASSWORD` gibt einen einfachen HTTP-Basic-Schutz.
 - Die eigene `.env` nie committen. Sie steht bereits in `.gitignore`.
 
