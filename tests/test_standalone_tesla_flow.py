@@ -127,7 +127,7 @@ def test_tesla_history_invoice_and_export_work_without_home_assistant(settings, 
             page = await client.get("/api/invoice/standalone-session-42/page/1.png")
             assert page.status_code == 200
             assert page.headers["content-type"] == "image/png"
-            assert page.content.startswith(b"\\x89PNG\\r\\n\\x1a\\n")
+            assert page.content.startswith(bytes.fromhex("89504e470d0a1a0a"))
 
             missing_page = await client.get("/api/invoice/standalone-session-42/page/2.png")
             assert missing_page.status_code == 404
