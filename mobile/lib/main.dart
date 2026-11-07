@@ -293,6 +293,7 @@ class _DashboardPageState extends State<DashboardPage> {
     try {
       final metadata = await _client.invoicePages(sessionId);
       final pages = metadata['pages'] as int;
+      final headers = await _client._headers();
       if (!mounted) return;
       await showDialog<void>(
         context: context,
@@ -326,7 +327,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     }
                     return Image.network(
                       uriSnapshot.data.toString(),
-                      headers: _invoiceHeaders,
+                      headers: headers,
                       fit: BoxFit.contain,
                       loadingBuilder: (context, child, progress) => progress == null
                           ? child
@@ -353,9 +354,6 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     }
   }
-
-  Future<Map<String, String>> get _invoiceHeaders async =>
-      _client._headers();
 
   @override
   Widget build(BuildContext context) {
