@@ -1,4 +1,4 @@
-""""End-to-end Tesla sync checks for standalone mode without Home Assistant."""
+"""End-to-end Tesla sync checks for standalone mode without Home Assistant."""
 import asyncio
 import dataclasses
 import time
