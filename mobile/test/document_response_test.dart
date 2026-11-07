@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ladecockpit_mobile/document_response.dart';
-import 'package:ladecockpit_mobile/main.dart';
 
 void main() {
   group('parseDocumentPagesResponse', () {
