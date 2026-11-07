@@ -815,7 +815,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         final difference = total - previousTotal;
                         final percentage = difference / previousTotal * 100;
                         final sign = difference > 0 ? '+' : '';
-                        comparison = '${sign}${difference.toStringAsFixed(2)} € (${sign}${percentage.toStringAsFixed(1)} %) gegenüber Vormonat';
+                        comparison = '$sign${difference.toStringAsFixed(2)} € ($sign${percentage.toStringAsFixed(1)} %) gegenüber Vormonat';
                         comparisonColor = difference > 0 ? Colors.orangeAccent :
                             difference < 0 ? Colors.greenAccent : Colors.white54;
                       } else {
