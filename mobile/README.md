@@ -25,12 +25,12 @@ flutter run
 In the app, enter the Ladecockpit URL reachable from the phone over Tailscale, for example:
 
 ```
-http://100.x.y.z:8000
+http://100.x.y.z:8077
 ```
 
-Use the actual Tailscale IP or MagicDNS hostname and the port configured for the Ladecockpit service. If HTTP is used, traffic remains inside the encrypted Tailscale tunnel. Do not expose this endpoint publicly.
+Use the actual Tailscale IP or MagicDNS hostname and the port configured for the Ladecockpit service (Docker default: 8077; Home Assistant: the port you explicitly expose). Prefer HTTPS through Tailscale Serve or a reverse proxy. If you use plain HTTP, keep the endpoint reachable only inside your trusted Tailscale network; never expose it publicly.
 
-If Ladecockpit's optional `APP_PASSWORD` is enabled, enter that password in the app. It is stored in the device secure storage, not in source code.
+For a live standalone/Docker installation, `APP_PASSWORD` is required by default. Enter the same password in the app; it is stored in platform secure storage, not in source code. Home Assistant Ingress uses Home Assistant authentication.
 
 ## Build
 
