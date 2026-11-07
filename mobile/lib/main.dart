@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
+import 'document_response.dart';
 
 void main() => runApp(const LadecockpitApp());
 
@@ -67,20 +68,12 @@ class CockpitClient {
     final uri = await _endpoint('/api/invoice/${Uri.encodeComponent(sessionId)}/pages');
     final response = await http.get(uri, headers: await _headers(json: true))
         .timeout(const Duration(seconds: 30));
-    if (response.statusCode == 401) {
-      throw const CockpitException('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.');
-    }
-    if (response.statusCode == 404) {
-      throw const CockpitException('Die Rechnung ist auf dem Server noch nicht verfügbar.');
-    }
-    if (response.statusCode != 200) {
-      throw CockpitException('Rechnung konnte nicht geladen werden (HTTP ${response.statusCode}).');
-    }
-    final decoded = jsonDecode(response.body);
-    if (decoded is! Map<String, dynamic> || decoded['pages'] is! int) {
-      throw const CockpitException('Ungültige Antwort für die Rechnung.');
-    }
-    return decoded;
+    return parseDocumentPagesResponse(
+      response.statusCode,
+      response.body,
+      documentLabel: 'die Rechnung',
+      notFoundMessage: 'Die Rechnung ist auf dem Server noch nicht verfügbar.',
+    );
   }
 
   Future<Uri> invoicePageUri(String sessionId, int page) =>
@@ -119,17 +112,11 @@ class CockpitClient {
     final uri = await _endpoint('/api/report/$month/pages');
     final response = await http.get(uri, headers: await _headers(json: true))
         .timeout(const Duration(seconds: 60));
-    if (response.statusCode == 401) {
-      throw const CockpitException('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.');
-    }
-    if (response.statusCode != 200) {
-      throw CockpitException('Monatsbericht nicht verfügbar (HTTP ${response.statusCode}).');
-    }
-    final decoded = jsonDecode(response.body);
-    if (decoded is! Map<String, dynamic> || decoded['pages'] is! int) {
-      throw const CockpitException('Ungültige Antwort für den Monatsbericht.');
-    }
-    return decoded;
+    return parseDocumentPagesResponse(
+      response.statusCode,
+      response.body,
+      documentLabel: 'den Monatsbericht',
+    );
   }
 
   Future<Uri> monthReportPageUri(String month, int page) =>
