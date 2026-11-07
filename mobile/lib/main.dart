@@ -1162,7 +1162,10 @@ class _DashboardPageState extends State<DashboardPage> {
     final level = soc == null ? 0.0 : (soc / 100).clamp(0.0, 1.0).toDouble();
     final readingLabel = socSource == 'last'
         ? 'Letzter bekannter Akkustand'
-        : socSource == 'live' ? 'Live-Akkustand' : 'Akkustand nicht verfügbar';
+        : socSource == 'live' ? 'Live-Akkustand' : 'Akkustand';
+    final readingColor = socSource == 'last'
+        ? Colors.orangeAccent
+        : socSource == 'live' ? Colors.greenAccent : Colors.white70;
     final chargingText = charging == true ? 'Wird geladen'
         : charging == false ? 'Lädt derzeit nicht' : 'Ladestatus nicht verfügbar';
     final chargingColor = charging == true ? Colors.greenAccent
@@ -1192,11 +1195,11 @@ class _DashboardPageState extends State<DashboardPage> {
             Row(children: [
               Icon(socSource == 'last' ? Icons.history : Icons.sensors,
                 size: 14,
-                color: socSource == 'last' ? Colors.orangeAccent : Colors.greenAccent),
+                color: readingColor),
               const SizedBox(width: 6),
               Expanded(child: Text(readingLabel,
                 style: TextStyle(fontSize: 12,
-                  color: socSource == 'last' ? Colors.orangeAccent : Colors.greenAccent))),
+                  color: readingColor))),
             ]),
             if (asOf != null)
               Padding(
@@ -1211,11 +1214,11 @@ class _DashboardPageState extends State<DashboardPage> {
               width: 112, height: 112,
               child: Stack(alignment: Alignment.center, children: [
                 SizedBox.expand(child: CircularProgressIndicator(
-                  value: soc == null ? null : level,
+                  value: level,
                   strokeWidth: 9,
                   backgroundColor: Colors.white12,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    soc == null ? Colors.white38 : Colors.greenAccent),
+                    soc == null ? Colors.white24 : Colors.greenAccent),
                 )),
                 Column(mainAxisSize: MainAxisSize.min, children: [
                   Text(soc == null ? '–' : '${soc.round()}%',
