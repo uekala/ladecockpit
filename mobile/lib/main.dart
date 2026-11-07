@@ -190,6 +190,64 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _map(dynamic value) =>
       value is Map<String, dynamic> ? value : null;
 
+  Widget _sessions(dynamic raw) {
+    if (raw is! List || raw.isEmpty) return const SizedBox.shrink();
+    final items = raw.whereType<Map<String, dynamic>>().take(10).toList();
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    String dateLabel(dynamic value) {
+      final date = DateTime.tryParse(value?.toString() ?? '')?.toLocal();
+      if (date == null) return 'Datum unbekannt';
+      final day = date.day.toString().padLeft(2, '0');
+      final month = date.month.toString().padLeft(2, '0');
+      return '$day.$month.${date.year}';
+    }
+
+    String number(dynamic value, {int digits = 1}) {
+      final parsed = value is num ? value : num.tryParse(value?.toString() ?? '');
+      return parsed == null ? '–' : parsed.toStringAsFixed(digits);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
+          child: Text(
+            'Letzte Ladevorgänge',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ),
+        ...items.map((session) {
+          final site = session['site']?.toString() ?? 'Unbekannter Standort';
+          final network = session['network'] == 'multipass' ? 'MultiPass' : 'Supercharger';
+          final kwh = number(session['kwh']);
+          final cost = number(session['cost'], digits: 2);
+          final currency = session['currency']?.toString() ?? 'EUR';
+          final invoice = session['has_invoice'] == true;
+          return Card(
+            child: ListTile(
+              leading: Icon(
+                invoice ? Icons.receipt_long_outlined : Icons.ev_station,
+                color: invoice ? Theme.of(context).colorScheme.primary : Colors.white60,
+              ),
+              title: Text(site, maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text('${dateLabel(session['start'])} · $network${invoice ? ' · Rechnung vorhanden' : ''}'),
+              trailing: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('$kwh kWh', style: const TextStyle(fontWeight: FontWeight.w600)),
+                  Text('$cost $currency', style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final month = _map(_data?['month']);
@@ -242,6 +300,7 @@ class _DashboardPageState extends State<DashboardPage> {
               _section('Gesamt', totals),
               _section('Ladeprognose', forecast),
               _section('Fahrzeug', _map(_data?['car'])),
+              _sessions(_data?['sessions']),
               const SizedBox(height: 16),
               Text('Daten werden direkt von deinem Ladecockpit über Tailscale abgerufen.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white54)),
