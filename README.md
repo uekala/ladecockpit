@@ -98,7 +98,7 @@ Starting from scratch? The Fleet API only answers apps whose domain is registere
 cp .env.example .env
 ```
 
-Minimum: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN` (Home Assistant → Profile → Security → Long-lived access tokens) and your car's entities:
+Minimum: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN` (Home Assistant → Profile → Security → Long-lived access tokens), a strong `APP_PASSWORD` for live standalone/Docker use, and your car's entities:
 
 | Setting | Example | Unlocks |
 |---|---|---|
@@ -259,7 +259,8 @@ The Fleet API is billed per request. Ladecockpit only uses data requests for the
 - The web app loads nothing from other services except the picture of your car from Tesla's configurator; its typefaces ship with it. At the bottom of the page you pick its look: classic (calm, close to the car's app) or dynamic (a cockpit at night that moves and follows the battery).
 - Everything stays on your machine: tokens, invoices and readings live in the Docker volume `ladecockpit-data` (SQLite and a PDF cache).
 - Ladecockpit talks only to Tesla and your Home Assistant, and – for MultiPass stations in Germany, unless turned off – downloads the public charging station register from the Bundesnetzagentur; nothing about you is sent there. The web app also loads the picture of your car from Tesla's image server. The map links of MultiPass stations open a Google Maps search for the station's name – only when you click one.
-- Run it in your LAN or behind a reverse proxy with authentication. `APP_PASSWORD` adds simple HTTP Basic protection.
+- **Live Docker/standalone installs require `APP_PASSWORD` by default.** Set a long, unique password in `.env` before starting. Demo mode still works without a password. Home Assistant installations use Home Assistant Ingress authentication; do not expose the optional direct port publicly unless it is protected by a trusted reverse proxy or private VPN.
+- `APP_PASSWORD` adds HTTP Basic authentication. Basic Auth does not encrypt traffic: use HTTPS or a trusted encrypted VPN such as Tailscale. `APP_REQUIRE_PASSWORD=false` is an explicit opt-out and should only be used behind a trusted authenticating reverse proxy.
 - Never commit your `.env`. It is already in `.gitignore`.
 
 ## Troubleshooting
