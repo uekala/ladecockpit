@@ -208,7 +208,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return 'Verbindung fehlgeschlagen: $error';
   }
 
-  String _dateTimeLabel(DateTime? value) {
+  String _fetchTimeLabel(DateTime? value) {
     if (value == null) return 'Noch kein erfolgreicher Abruf';
     final date = value.toLocal();
     final day = date.day.toString().padLeft(2, '0');
@@ -1113,7 +1113,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             const Divider(height: 18),
             _statusLine(Icons.history, 'Letzte Synchronisation', _dateTimeLabel(sync['last'])),
-            _statusLine(Icons.download_done, 'Letzter erfolgreicher App-Abruf', _dateTimeLabel(_lastSuccessfulFetch)),
+            _statusLine(Icons.download_done, 'Letzter erfolgreicher App-Abruf', _fetchTimeLabel(_lastSuccessfulFetch)),
             if (sync['next'] != null)
               _statusLine(Icons.schedule, 'Nächste Synchronisation', _dateTimeLabel(sync['next'])),
             if (hasSyncError)
