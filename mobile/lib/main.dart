@@ -759,20 +759,19 @@ class _DashboardPageState extends State<DashboardPage> {
         : <Map<String, dynamic>>[];
     if (months.isEmpty) return const SizedBox.shrink();
 
-    // API-Daten können neueste Monate zuerst liefern. Für den Verlauf
-    // sortieren wir explizit chronologisch, statt uns auf die API-Reihenfolge
-    // zu verlassen.
+    // Die API liefert Monate teilweise neueste zuerst; die Anzeige soll
+    // unabhängig davon chronologisch von alt nach neu laufen.
     months.sort((a, b) => a['key'].toString().compareTo(b['key'].toString()));
 
     num amount(dynamic value) =>
         value is num ? value : num.tryParse(value?.toString() ?? '') ?? 0;
     num totalCost(Map<String, dynamic> month) =>
         amount(month['cost']) + amount(month['home_cost']);
-    int? monthOrdinal(String key) {
-      final match = RegExp(r'^([0-9]{4})-([0-9]{2})
-      if (match == null) return null;
-      final year = int.tryParse(match.group(1)!);
-      final month = int.tryParse(match.group(2)!);
+    int? ordinal(String key) {
+      final parts = key.split('-');
+      if (parts.length != 2 || parts[0].length != 4 || parts[1].length != 2) return null;
+      final year = int.tryParse(parts[0]);
+      final month = int.tryParse(parts[1]);
       if (year == null || month == null || month < 1 || month > 12) return null;
       return year * 12 + month;
     }
@@ -803,14 +802,12 @@ class _DashboardPageState extends State<DashboardPage> {
                   final key = month['key'].toString();
                   final parts = key.split('-');
                   final label = parts.length == 2 ? '${parts[1]}.${parts[0]}' : key;
-
                   String? comparison;
                   Color? comparisonColor;
                   if (index > 0) {
                     final previous = months[index - 1];
-                    final previousKey = previous['key'].toString();
-                    final currentOrdinal = monthOrdinal(key);
-                    final previousOrdinal = monthOrdinal(previousKey);
+                    final currentOrdinal = ordinal(key);
+                    final previousOrdinal = ordinal(previous['key'].toString());
                     if (currentOrdinal != null && previousOrdinal != null &&
                         currentOrdinal - previousOrdinal == 1) {
                       final previousTotal = totalCost(previous);
@@ -818,17 +815,15 @@ class _DashboardPageState extends State<DashboardPage> {
                         final difference = total - previousTotal;
                         final percentage = difference / previousTotal * 100;
                         final sign = difference > 0 ? '+' : '';
-                        comparison = '$sign${difference.toStringAsFixed(2)} € ($sign${percentage.toStringAsFixed(1)} %) gegenüber Vormonat';
-                        comparisonColor = difference > 0
-                            ? Colors.orangeAccent
-                            : difference < 0 ? Colors.greenAccent : Colors.white54;
+                        comparison = '${sign}${difference.toStringAsFixed(2)} € (${sign}${percentage.toStringAsFixed(1)} %) gegenüber Vormonat';
+                        comparisonColor = difference > 0 ? Colors.orangeAccent :
+                            difference < 0 ? Colors.greenAccent : Colors.white54;
                       } else {
                         comparison = 'Vormonat ohne erfasste Kosten – kein Prozentvergleich';
                         comparisonColor = Colors.white54;
                       }
                     }
                   }
-
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 7),
                     child: Column(
@@ -841,20 +836,14 @@ class _DashboardPageState extends State<DashboardPage> {
                             Expanded(
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(6),
-                                child: LinearProgressIndicator(
-                                  value: ratio,
-                                  minHeight: 10,
-                                  backgroundColor: Colors.white12,
-                                ),
+                                child: LinearProgressIndicator(value: ratio, minHeight: 10,
+                                  backgroundColor: Colors.white12),
                               ),
                             ),
                             const SizedBox(width: 12),
-                            SizedBox(
-                              width: 76,
-                              child: Text('${total.toStringAsFixed(2)} €',
-                                textAlign: TextAlign.end,
-                                style: const TextStyle(fontWeight: FontWeight.w600)),
-                            ),
+                            SizedBox(width: 76, child: Text('${total.toStringAsFixed(2)} €',
+                              textAlign: TextAlign.end,
+                              style: const TextStyle(fontWeight: FontWeight.w600))),
                           ],
                         ),
                         Padding(
@@ -862,447 +851,22 @@ class _DashboardPageState extends State<DashboardPage> {
                           child: Text(
                             '${energy.toStringAsFixed(1)} kWh · ${amount(month['sessions']).round()} öffentliche Ladevorgänge'
                             '${homeCost > 0 ? ' · Zuhause ${homeCost.toStringAsFixed(2)} €' : ''}',
-                            style: const TextStyle(color: Colors.white54, fontSize: 11),
-                          ),
+                            style: const TextStyle(color: Colors.white54, fontSize: 11)),
                         ),
                         if (comparison != null)
                           Padding(
                             padding: const EdgeInsets.only(left: 54, top: 3),
-                            child: Text(comparison,
-                              style: TextStyle(color: comparisonColor, fontSize: 11)),
+                            child: Text(comparison, style: TextStyle(color: comparisonColor, fontSize: 11)),
                           ),
-                        if (index != months.length - 1)
-                          const SizedBox(height: 3),
+                        if (index != months.length - 1) const SizedBox(height: 3),
                       ],
                     ),
                   );
                 }),
                 const Divider(height: 20),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Chronologischer Verlauf: öffentliches Laden plus erfasste Heimladekosten. '
-                    'Vergleiche werden nur bei direkt aufeinanderfolgenden Monaten angezeigt.',
-                    style: TextStyle(color: Colors.white54, fontSize: 11)),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _exports(dynamic rawMonths) {
-    final months = rawMonths is List
-        ? rawMonths.whereType<Map<String, dynamic>>()
-            .where((month) => month['key'] is String).toList().reversed.toList()
-        : <Map<String, dynamic>>[];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
-          child: Text('Berichte & Export',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        ),
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.table_chart_outlined),
-            title: const Text('Alle Ladevorgänge als CSV'),
-            subtitle: const Text('Excel-kompatibler Export der gesamten Ladehistorie'),
-            trailing: const Icon(Icons.copy),
-            onTap: _showCsvExport,
-          ),
-        ),
-        ...months.map((month) {
-          final key = month['key'].toString();
-          final count = month['sessions'] is num ? (month['sessions'] as num).round() : 0;
-          final energy = _numberLabel(month['kwh'], digits: 1, suffix: ' kWh');
-          return Card(
-            child: ListTile(
-              leading: const Icon(Icons.picture_as_pdf_outlined),
-              title: Text(key),
-              subtitle: Text('$count Ladevorgänge · $energy'),
-              trailing: Wrap(
-                spacing: 0,
-                children: [
-                  IconButton(
-                    tooltip: 'Rechnungen als ZIP teilen',
-                    onPressed: () => _shareInvoiceZip(key),
-                    icon: const Icon(Icons.folder_zip_outlined),
-                  ),
-                  IconButton(
-                    tooltip: 'Monatsbericht ansehen',
-                    onPressed: () => _showMonthlyReport(key),
-                    icon: const Icon(Icons.picture_as_pdf_outlined),
-                  ),
-                ],
-              ),
-              onTap: () => _showMonthlyReport(key),
-            ),
-          );
-        }),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(4, 4, 4, 0),
-          child: Text('Monatsberichte enthalten die Kostenübersicht und vorhandene Rechnungen.',
-            style: TextStyle(color: Colors.white54, fontSize: 12)),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _showInvoice(String sessionId, String site) async {
-    try {
-      final metadata = await _client.invoicePages(sessionId);
-      final pages = metadata['pages'] as int;
-      final headers = await _client._headers();
-      if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        builder: (dialogContext) => Dialog.fullscreen(
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text('Rechnung · $site', maxLines: 1, overflow: TextOverflow.ellipsis),
-              leading: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(dialogContext),
-              ),
-            ),
-            body: ListView.builder(
-              itemCount: pages,
-              itemBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.all(8),
-                child: FutureBuilder<Uri>(
-                  future: _client.invoicePageUri(sessionId, index + 1),
-                  builder: (context, uriSnapshot) {
-                    if (uriSnapshot.hasError) {
-                      return const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('Seite konnte nicht geladen werden.'),
-                      );
-                    }
-                    if (!uriSnapshot.hasData) {
-                      return const SizedBox(
-                        height: 240,
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    return Image.network(
-                      uriSnapshot.data.toString(),
-                      headers: headers,
-                      fit: BoxFit.contain,
-                      loadingBuilder: (context, child, progress) => progress == null
-                          ? child
-                          : const SizedBox(
-                              height: 240,
-                              child: Center(child: CircularProgressIndicator()),
-                            ),
-                      errorBuilder: (context, error, stack) => const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('PDF-Seite konnte nicht geladen werden.'),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
-      );
-    }
-  }
-
-  Widget _statusLine(IconData icon, String label, String value, {Color? color}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: color ?? Colors.white70),
-          const SizedBox(width: 10),
-          Expanded(child: Text(label, style: const TextStyle(color: Colors.white70))),
-          Flexible(child: Text(value, textAlign: TextAlign.end,
-            style: TextStyle(fontWeight: FontWeight.w600, color: color))),
-        ],
-      ),
-    );
-  }
-
-  Widget _connectionStatus() {
-    final setup = _map(_data?['setup']) ?? {};
-    final sync = _map(_data?['sync']) ?? {};
-    final teslaConfigured = setup['tesla_configured'] == true;
-    final teslaConnected = setup['tesla_connected'] == true;
-    final teslaError = setup['tesla_auth_error']?.toString();
-    final haConfigured = setup['ha_configured'] == true;
-    final haOk = setup['ha_ok'] == true;
-    final haError = setup['ha_error']?.toString();
-    final syncError = sync['error']?.toString();
-    final problem = sync['problem']?.toString();
-    final hasTeslaError = teslaError != null && teslaError.isNotEmpty;
-    final hasSyncError = syncError != null && syncError.isNotEmpty;
-
-    final teslaLabel = !teslaConfigured
-        ? 'Nicht eingerichtet'
-        : teslaConnected ? 'Verbunden' : 'Nicht verbunden';
-    final teslaColor = teslaConnected ? Colors.greenAccent : Colors.orangeAccent;
-    final haLabel = !haConfigured
-        ? 'Nicht eingerichtet (optional)'
-        : haOk ? 'Verbunden' : 'Nicht erreichbar';
-    final haColor = !haConfigured || haOk ? Colors.greenAccent : Colors.orangeAccent;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.sync, size: 19),
-                const SizedBox(width: 8),
-                Expanded(child: Text('Verbindung & Synchronisation',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
-                IconButton(
-                  tooltip: 'Status aktualisieren',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: _loading ? null : _load,
-                  icon: const Icon(Icons.refresh, size: 20),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            _statusLine(teslaConnected ? Icons.check_circle : Icons.cloud_off,
-              'Tesla', teslaLabel, color: teslaColor),
-            if (hasTeslaError)
-              Padding(
-                padding: const EdgeInsets.only(left: 28, bottom: 5),
-                child: Text(teslaError, style: const TextStyle(color: Colors.orangeAccent, fontSize: 12)),
-              ),
-            _statusLine(!haConfigured || haOk ? Icons.home_outlined : Icons.warning_amber_rounded,
-              'Home Assistant', haLabel, color: haColor),
-            if (haConfigured && !haOk && haError != null && haError.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(left: 28, bottom: 5),
-                child: Text(haError, style: const TextStyle(color: Colors.orangeAccent, fontSize: 12)),
-              ),
-            const Divider(height: 18),
-            _statusLine(Icons.history, 'Letzte Synchronisation', _dateTimeLabel(sync['last'])),
-            if (sync['next'] != null)
-              _statusLine(Icons.schedule, 'Nächste Synchronisation', _dateTimeLabel(sync['next'])),
-            if (hasSyncError)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.error_outline, color: Colors.orangeAccent, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(syncError,
-                      style: const TextStyle(color: Colors.orangeAccent, fontSize: 12))),
-                  ],
-                ),
-              ),
-            if (!hasSyncError && problem != null && problem.isNotEmpty && problem != 'None')
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text('Hinweis: $problem',
-                  style: const TextStyle(color: Colors.white60, fontSize: 12)),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final month = _map(_data?['month']);
-    final last = _map(_data?['last_charge']);
-    final totals = _map(_data?['totals']);
-    final forecast = _map(_data?['forecast']);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ladecockpit', style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(onPressed: _load, tooltip: 'Aktualisieren', icon: const Icon(Icons.refresh)),
-          IconButton(onPressed: _settings, tooltip: 'Verbindung', icon: const Icon(Icons.settings_outlined)),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-          children: [
-            if (_loading) const LinearProgressIndicator(),
-            if (_error != null) Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Icon(Icons.cloud_off, color: Colors.orange),
-                  const SizedBox(height: 8),
-                  Text(_error!),
-                  const SizedBox(height: 8),
-                  OutlinedButton(onPressed: _settings, child: const Text('Verbindung einrichten')),
-                ]),
-              ),
-            ),
-            if (_data != null) ...[
-              _connectionStatus(),
-              Text('ÜBERSICHT', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white60, letterSpacing: 1.4)),
-              const SizedBox(height: 8),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 1.65,
-                children: [
-                  _metric('Ladevorgänge diesen Monat', month?['sessions'] ?? month?['count']),
-                  _metric('Kosten diesen Monat', month?['cost'], suffix: ' €'),
-                  _metric('Geladen diesen Monat', month?['kwh'], suffix: ' kWh'),
-                  _metric('Ø Preis', month?['avg_price'], suffix: ' €/kWh'),
-                ],
-              ),
-              _section('Letzter Ladevorgang', last),
-              _section('Gesamt', totals),
-              _section('Ladeprognose', forecast),
-              _section('Fahrzeug', _map(_data?['car'])),
-              _priceRadar(_data?['slots'], _data?['sites']),
-              _sessions(_data?['sessions']),
-              _costDevelopment(_data?['monthly']),
-              _exports(_data?['monthly']),
-              const SizedBox(height: 16),
-              Text('Daten werden direkt von deinem Ladecockpit über Tailscale abgerufen.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white54)),
-            ],
-            if (_data == null && !_loading && _error == null)
-              const Center(child: Padding(padding: EdgeInsets.all(32), child: Text('Noch keine Daten vorhanden.'))),
-          ],
-        ),
-      ),
-    );
-  }
-}
-).firstMatch(key);
-      if (match == null) return null;
-      final year = int.tryParse(match.group(1)!);
-      final month = int.tryParse(match.group(2)!);
-      if (year == null || month == null || month < 1 || month > 12) return null;
-      return year * 12 + month;
-    }
-
-    final values = months.map(totalCost).toList();
-    final maximum = values.fold<num>(0, (current, value) =>
-        value > current ? value : current);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
-          child: Text('Kostenentwicklung',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        ),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                ...List.generate(months.length, (index) {
-                  final month = months[index];
-                  final total = values[index];
-                  final homeCost = amount(month['home_cost']);
-                  final energy = amount(month['kwh']) + amount(month['home_kwh']);
-                  final ratio = maximum > 0 ? (total / maximum).clamp(0.0, 1.0).toDouble() : 0.0;
-                  final key = month['key'].toString();
-                  final parts = key.split('-');
-                  final label = parts.length == 2 ? '${parts[1]}.${parts[0]}' : key;
-
-                  String? comparison;
-                  Color? comparisonColor;
-                  if (index > 0) {
-                    final previous = months[index - 1];
-                    final previousKey = previous['key'].toString();
-                    final currentOrdinal = monthOrdinal(key);
-                    final previousOrdinal = monthOrdinal(previousKey);
-                    if (currentOrdinal != null && previousOrdinal != null &&
-                        currentOrdinal - previousOrdinal == 1) {
-                      final previousTotal = totalCost(previous);
-                      if (previousTotal > 0) {
-                        final difference = total - previousTotal;
-                        final percentage = difference / previousTotal * 100;
-                        final sign = difference > 0 ? '+' : '';
-                        comparison = '$sign${difference.toStringAsFixed(2)} € ($sign${percentage.toStringAsFixed(1)} %) gegenüber Vormonat';
-                        comparisonColor = difference > 0
-                            ? Colors.orangeAccent
-                            : difference < 0 ? Colors.greenAccent : Colors.white54;
-                      } else {
-                        comparison = 'Vormonat ohne erfasste Kosten – kein Prozentvergleich';
-                        comparisonColor = Colors.white54;
-                      }
-                    }
-                  }
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 7),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            SizedBox(width: 54, child: Text(label,
-                              style: const TextStyle(color: Colors.white70))),
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
-                                child: LinearProgressIndicator(
-                                  value: ratio,
-                                  minHeight: 10,
-                                  backgroundColor: Colors.white12,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            SizedBox(
-                              width: 76,
-                              child: Text('${total.toStringAsFixed(2)} €',
-                                textAlign: TextAlign.end,
-                                style: const TextStyle(fontWeight: FontWeight.w600)),
-                            ),
-                          ],
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 54, top: 3),
-                          child: Text(
-                            '${energy.toStringAsFixed(1)} kWh · ${amount(month['sessions']).round()} öffentliche Ladevorgänge'
-                            '${homeCost > 0 ? ' · Zuhause ${homeCost.toStringAsFixed(2)} €' : ''}',
-                            style: const TextStyle(color: Colors.white54, fontSize: 11),
-                          ),
-                        ),
-                        if (comparison != null)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 54, top: 3),
-                            child: Text(comparison,
-                              style: TextStyle(color: comparisonColor, fontSize: 11)),
-                          ),
-                        if (index != months.length - 1)
-                          const SizedBox(height: 3),
-                      ],
-                    ),
-                  );
-                }),
-                const Divider(height: 20),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Chronologischer Verlauf: öffentliches Laden plus erfasste Heimladekosten. '
-                    'Vergleiche werden nur bei direkt aufeinanderfolgenden Monaten angezeigt.',
-                    style: TextStyle(color: Colors.white54, fontSize: 11)),
-                ),
+                const Align(alignment: Alignment.centerLeft,
+                  child: Text('Chronologischer Verlauf: öffentliches Laden plus erfasste Heimladekosten. Vergleiche erscheinen nur bei direkt aufeinanderfolgenden Monaten.',
+                    style: TextStyle(color: Colors.white54, fontSize: 11))),
               ],
             ),
           ),
