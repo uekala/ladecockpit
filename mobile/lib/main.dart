@@ -166,6 +166,26 @@ class CockpitException implements Exception {
   String toString() => message;
 }
 
+String connectionErrorMessage(Object error) {
+if (error is CockpitException) return error.message;
+if (error is TimeoutException) {
+  return 'Zeitüberschreitung: Der Server hat nicht rechtzeitig geantwortet. Bitte Verbindung prüfen und erneut versuchen.';
+}
+if (error is HandshakeException) {
+  return 'Sichere Verbindung fehlgeschlagen: Bitte HTTPS-Zertifikat und Serveradresse prüfen.';
+}
+if (error is SocketException) {
+  return 'Server nicht erreichbar: Netzwerk, Serveradresse oder VPN/Tailscale-Verbindung prüfen.';
+}
+if (error is HttpException) {
+  return 'Netzwerkfehler bei der HTTP-Verbindung: Bitte Verbindung prüfen und erneut versuchen.';
+}
+if (error is FormatException) {
+  return 'Der Server hat eine ungültige Antwort gesendet. Bitte später erneut versuchen.';
+}
+return 'Verbindung fehlgeschlagen: $error';
+}
+
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
   @override
@@ -187,26 +207,6 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     _load();
   }
-
-String connectionErrorMessage(Object error) {
-  if (error is CockpitException) return error.message;
-  if (error is TimeoutException) {
-    return 'Zeitüberschreitung: Der Server hat nicht rechtzeitig geantwortet. Bitte Verbindung prüfen und erneut versuchen.';
-  }
-  if (error is HandshakeException) {
-    return 'Sichere Verbindung fehlgeschlagen: Bitte HTTPS-Zertifikat und Serveradresse prüfen.';
-  }
-  if (error is SocketException) {
-    return 'Server nicht erreichbar: Netzwerk, Serveradresse oder VPN/Tailscale-Verbindung prüfen.';
-  }
-  if (error is HttpException) {
-    return 'Netzwerkfehler bei der HTTP-Verbindung: Bitte Verbindung prüfen und erneut versuchen.';
-  }
-  if (error is FormatException) {
-    return 'Der Server hat eine ungültige Antwort gesendet. Bitte später erneut versuchen.';
-  }
-  return 'Verbindung fehlgeschlagen: $error';
-}
 
   String _fetchTimeLabel(DateTime? value) {
     if (value == null) return 'Noch kein erfolgreicher Abruf';
