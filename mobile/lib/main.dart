@@ -666,6 +666,20 @@ class _DashboardPageState extends State<DashboardPage> {
     final sites = rawSites is List
         ? rawSites.whereType<Map<String, dynamic>>().take(8).toList()
         : <Map<String, dynamic>>[];
+    num? lowestSlotPrice;
+    for (final slot in slots) {
+      final price = slot['avg_price'];
+      if (price is num && (lowestSlotPrice == null || price < lowestSlotPrice)) {
+        lowestSlotPrice = price;
+      }
+    }
+    num? lowestSitePrice;
+    for (final site in sites) {
+      final price = site['avg_price'];
+      if (price is num && (lowestSitePrice == null || price < lowestSitePrice)) {
+        lowestSitePrice = price;
+      }
+    }
     if (slots.isEmpty && sites.isEmpty) return const SizedBox.shrink();
 
     Widget priceValue(dynamic value) =>
@@ -689,10 +703,14 @@ class _DashboardPageState extends State<DashboardPage> {
             final label = slot['label']?.toString() ?? 'Zeitfenster';
             final range = slot['range']?.toString() ?? '';
             final count = slot['sessions'] is num ? (slot['sessions'] as num).round() : 0;
+            final isCheapest = slot['avg_price'] is num &&
+                lowestSlotPrice != null && slot['avg_price'] == lowestSlotPrice;
             return Card(
               child: ListTile(
                 dense: true,
-                title: Text(label),
+                leading: Icon(isCheapest ? Icons.savings_outlined : Icons.schedule,
+                  color: isCheapest ? Colors.greenAccent : Colors.white60),
+                title: Text('$label${isCheapest ? ' · Günstigste Zeit' : ''}'),
                 subtitle: Text('${range.isEmpty ? 'Zeitfenster' : range} · $count Ladevorgänge'),
                 trailing: priceValue(slot['avg_price']),
               ),
@@ -712,10 +730,14 @@ class _DashboardPageState extends State<DashboardPage> {
             final count = site['sessions'] is num ? (site['sessions'] as num).round() : 0;
             final kwh = _numberLabel(site['kwh'], digits: 1, suffix: ' kWh');
             final address = site['address']?.toString();
+            final isCheapest = site['avg_price'] is num &&
+                lowestSitePrice != null && site['avg_price'] == lowestSitePrice;
             return Card(
               child: ListTile(
-                leading: const Icon(Icons.ev_station, color: Colors.white60),
-                title: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis),
+                leading: Icon(isCheapest ? Icons.savings_outlined : Icons.ev_station,
+                  color: isCheapest ? Colors.greenAccent : Colors.white60),
+                title: Text('$label${isCheapest ? ' · Günstigster' : ''}',
+                  maxLines: 2, overflow: TextOverflow.ellipsis),
                 subtitle: Text('$network · $count Ladevorgänge · $kwh'
                   '${address != null && address.isNotEmpty ? '\n$address' : ''}'),
                 isThreeLine: address != null && address.isNotEmpty,
