@@ -61,6 +61,12 @@ _live_cache: dict = {"at": 0.0, "data": None}
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    if settings.require_password and not settings.demo and not settings.app_password:
+        raise RuntimeError(
+            "APP_PASSWORD must be set for a live standalone installation. "
+            "Set a strong password in .env, or explicitly set APP_REQUIRE_PASSWORD=false "
+            "only when authentication is provided by a trusted reverse proxy."
+        )
     tasks = []
     if not settings.demo:
         tasks.append(asyncio.create_task(sync.run_forever()))
