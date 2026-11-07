@@ -120,7 +120,7 @@ class _DashboardPageState extends State<DashboardPage> {
               keyboardType: TextInputType.url,
               decoration: const InputDecoration(
                 labelText: 'Ladecockpit-Adresse',
-                hintText: 'http://100.x.y.z:8000',
+                hintText: 'http://100.x.y.z:8077',
                 helperText: 'Tailscale-IP oder MagicDNS-Adresse inklusive Port',
               ),
             ),
