@@ -1371,9 +1371,13 @@ class _DashboardPageState extends State<DashboardPage> {
                 childAspectRatio: 1.65,
                 children: [
                   _metric('Ladevorgänge diesen Monat', month?['sessions'] ?? month?['count']),
-                  _metric('Kosten diesen Monat', month?['cost'], suffix: ' €'),
-                  _metric('Geladen diesen Monat', month?['kwh'], suffix: ' kWh'),
-                  _metric('Ø Preis', month?['avg_price'], suffix: ' €/kWh'),
+                  _metric('Gesamtkosten diesen Monat', month?['total_cost'] ?? month?['cost'], suffix: ' €'),
+                  _metric('Unterwegs geladen', month?['kwh'], suffix: ' kWh'),
+                  _metric('Ø Preis unterwegs', month?['avg_price'], suffix: ' €/kWh'),
+                  if (_map(month?['home']) != null) ...[
+                    _metric('Zu Hause geladen', _map(month?['home'])?['kwh'], suffix: ' kWh'),
+                    _metric('Heimladekosten', _map(month?['home'])?['cost'], suffix: ' €'),
+                  ],
                 ],
               ),
               _section('Letzter Ladevorgang', last),
