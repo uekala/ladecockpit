@@ -472,7 +472,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 leading: const Icon(Icons.ev_station, color: Colors.white60),
                 title: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis),
                 subtitle: Text('$network · $count Ladevorgänge · $kwh'
-                  '${address != null && address.isNotEmpty ? '\\n$address' : ''}'),
+                  '${address != null && address.isNotEmpty ? '\n$address' : ''}'),
                 isThreeLine: address != null && address.isNotEmpty,
                 trailing: priceValue(site['avg_price']),
               ),
@@ -546,7 +546,7 @@ class _DashboardPageState extends State<DashboardPage> {
       final csv = await _client.csvExport();
       if (!mounted) return;
       final rows = const LineSplitter().convert(csv);
-      final preview = rows.take(8).join('\\n');
+      final preview = rows.take(8).join('\n');
       await showDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(
@@ -555,7 +555,7 @@ class _DashboardPageState extends State<DashboardPage> {
             width: double.maxFinite,
             child: SingleChildScrollView(
               child: SelectableText(
-                '${rows.length > 8 ? '$preview\\n…\\n' : '$preview\\n'}${rows.length} Zeilen insgesamt',
+                '${rows.length > 8 ? '$preview\n…\n' : '$preview\n'}${rows.length} Zeilen insgesamt',
                 style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
               ),
             ),
