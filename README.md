@@ -98,7 +98,7 @@ Starting from scratch? The Fleet API only answers apps whose domain is registere
 cp .env.example .env
 ```
 
-Minimum: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN` (Home Assistant → Profile → Security → Long-lived access tokens) and your car's entities:
+Minimum: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN` (Home Assistant → Profile → Security → Long-lived access tokens), a strong `APP_PASSWORD` for live standalone/Docker use, and your car's entities:
 
 | Setting | Example | Unlocks |
 |---|---|---|
