@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 
 void main() => runApp(const LadecockpitApp());
@@ -567,15 +570,19 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             FilledButton.icon(
               onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: csv));
+                final directory = await getTemporaryDirectory();
+                final file = File('${directory.path}/ladecockpit-sessions.csv');
+                await file.writeAsString(csv, encoding: utf8, flush: true);
                 if (!dialogContext.mounted) return;
                 Navigator.pop(dialogContext);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('CSV-Daten in die Zwischenablage kopiert.')),
+                await Share.shareXFiles(
+                  [XFile(file.path, mimeType: 'text/csv')],
+                  text: 'Ladecockpit – Ladevorgänge als CSV',
+                  subject: 'Ladecockpit CSV-Export',
                 );
               },
               icon: const Icon(Icons.copy),
-              label: const Text('CSV kopieren'),
+              label: const Text('CSV teilen / speichern'),
             ),
           ],
         ),
