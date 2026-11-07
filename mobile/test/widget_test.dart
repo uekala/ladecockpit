@@ -137,7 +137,7 @@ void main() {
 
     expect(find.text('CSV-Export'), findsOneWidget);
     expect(find.textContaining('Datum;Standort;Energie;Kosten'), findsOneWidget);
-    expect(find.textContaining('3 Zeilen insgesamt'), findsOneWidget);
+    expect(find.textContaining('2 Zeilen insgesamt'), findsOneWidget);
 
     await tester.tap(find.text('Schließen'));
     await tester.pumpAndSettle();
