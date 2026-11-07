@@ -148,3 +148,38 @@ def test_tesla_history_invoice_and_export_work_without_home_assistant(settings, 
 
     asyncio.run(exercise_http_routes())
     asyncio.run(tesla._http.aclose())
+
+
+def test_invoice_and_export_routes_require_configured_app_password(settings, tmp_path, monkeypatch):
+    """The global Basic Auth middleware must cover invoice and export endpoints too."""
+    protected_settings = dataclasses.replace(
+        settings,
+        data_dir=tmp_path,
+        force_demo=False,
+        tesla_client_id="test-client",
+        tesla_client_secret="test-secret",
+        app_password="test-password",
+    )
+    monkeypatch.setattr(main, "settings", protected_settings)
+    monkeypatch.setattr(main, "db", DB(tmp_path / "auth-test.db"))
+
+    paths = (
+        "/api/export.csv",
+        "/api/invoice/nonexistent-session",
+        "/api/invoice/nonexistent-session/pages",
+        "/api/invoice/nonexistent-session/page/1.png",
+        "/api/invoices/2026-10.zip",
+    )
+    auth = "Basic " + __import__("base64").b64encode(b"tester:test-password").decode("ascii")
+
+    async def exercise_auth():
+        transport = httpx.ASGITransport(app=main.app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            for path in paths:
+                response = await client.get(path)
+                assert response.status_code == 401, f"{path} was not protected"
+
+                authenticated = await client.get(path, headers={"Authorization": auth})
+                assert authenticated.status_code != 401, f"{path} rejected valid credentials"
+
+    asyncio.run(exercise_auth())
