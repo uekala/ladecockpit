@@ -1129,7 +1129,12 @@ class _DashboardPageState extends State<DashboardPage> {
     final rate = data['rate'] is num ? (data['rate'] as num).toDouble() : null;
     final finish = data['finish'];
     final target = data['target'] is num ? (data['target'] as num).round() : null;
+    final socSource = data['soc_source']?.toString();
+    final asOf = data['as_of']?.toString();
     final level = soc == null ? 0.0 : (soc / 100).clamp(0.0, 1.0).toDouble();
+    final readingLabel = socSource == 'last'
+        ? 'Letzter bekannter Akkustand'
+        : socSource == 'live' ? 'Live-Akkustand' : 'Akkustand nicht verfügbar';
     final chargingText = charging == true ? 'Wird geladen'
         : charging == false ? 'Lädt derzeit nicht' : 'Ladestatus nicht verfügbar';
     final chargingColor = charging == true ? Colors.greenAccent
@@ -1154,6 +1159,24 @@ class _DashboardPageState extends State<DashboardPage> {
               style: TextStyle(fontSize: 12, letterSpacing: 1.3, color: Colors.white70))),
             if (charging == true) const Icon(Icons.bolt, color: Colors.greenAccent),
           ]),
+          if (soc != null) ...[
+            const SizedBox(height: 7),
+            Row(children: [
+              Icon(socSource == 'last' ? Icons.history : Icons.sensors,
+                size: 14,
+                color: socSource == 'last' ? Colors.orangeAccent : Colors.greenAccent),
+              const SizedBox(width: 6),
+              Expanded(child: Text(readingLabel,
+                style: TextStyle(fontSize: 12,
+                  color: socSource == 'last' ? Colors.orangeAccent : Colors.greenAccent))),
+            ]),
+            if (asOf != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 20, top: 2),
+                child: Text('Messzeitpunkt: ${_dateTimeLabel(asOf)}',
+                  style: const TextStyle(color: Colors.white54, fontSize: 11)),
+              ),
+          ],
           const SizedBox(height: 18),
           Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             SizedBox(
