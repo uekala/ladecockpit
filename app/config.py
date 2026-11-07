@@ -179,6 +179,7 @@ class Settings:
     push_max_age_h: float
     api_budget: int
     app_password: str
+    require_password: bool
     force_demo: bool
     addon: bool
     notify_problems: bool
@@ -219,6 +220,7 @@ def load() -> Settings:
     lang = _env("APP_LANG", "en").lower()[:2]
     if lang not in DEFAULT_LOCALES:
         lang = "en"
+    addon = _env("ADDON") == "1"
     return Settings(
         data_dir=Path(_env("DATA_DIR", "./data")),
         tz=ZoneInfo(_env("TZ", "Europe/Berlin")),
@@ -264,8 +266,11 @@ def load() -> Settings:
         push_max_age_h=_float("PUSH_MAX_AGE_H", 72) or 72,
         api_budget=_int("API_BUDGET_REQUESTS", 1500),
         app_password=_env("APP_PASSWORD"),
+        # Direct live deployments must authenticate by default. Home Assistant Ingress
+        # already authenticates users; keep its internal route working without Basic Auth.
+        require_password=_bool("APP_REQUIRE_PASSWORD", not addon),
         force_demo=_env("APP_MODE", "").lower() == "demo",
-        addon=_env("ADDON") == "1",
+        addon=addon,
         notify_problems=_bool("NOTIFY_PROBLEMS", True),
         publish_entities=_bool("PUBLISH_ENTITIES", True),
         month_report=_bool("MONTH_REPORT", True),
