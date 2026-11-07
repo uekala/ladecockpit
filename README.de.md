@@ -98,7 +98,7 @@ Fängst du ganz neu an? Die Fleet API antwortet nur Apps, deren Domain mit einem
 cp .env.example .env
 ```
 
-Mindestens nötig: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN` (Home Assistant → Profil → Sicherheit → Langlebige Zugriffstoken) und die Entitäten deines Autos:
+Mindestens nötig: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN` (Home Assistant → Profil → Sicherheit → Langlebige Zugriffstoken), ein starkes `APP_PASSWORD` für Live-Installationen mit Docker/Standalone und die Entitäten deines Autos:
 
 | Einstellung | Beispiel | Schaltet frei |
 |---|---|---|
@@ -221,7 +221,8 @@ Die Fleet API wird pro Abfrage abgerechnet. Ladecockpit nutzt nur Datenabfragen 
 - Die Web-App lädt nichts von anderen Diensten nach, außer dem Bild deines Autos aus Teslas Konfigurator; die Schriften bringt sie selbst mit. Ganz unten auf der Seite wählst du das Design: klassisch (ruhig, nah an der App des Autos) oder dynamisch (ein Cockpit bei Nacht, das sich bewegt und dem Akku folgt).
 - Alles bleibt bei dir: Tokens, Rechnungen und Messwerte liegen im Docker-Volume `ladecockpit-data` (SQLite und PDF-Cache).
 - Ladecockpit spricht nur mit Tesla und deinem Home Assistant und lädt – für MultiPass-Stationen in Deutschland, sofern nicht abgeschaltet – das öffentliche Ladesäulenregister der Bundesnetzagentur herunter; über dich wird dabei nichts gesendet. Die Web-App lädt außerdem das Bild deines Autos von Teslas Bildserver. Die Kartenlinks der MultiPass-Stationen öffnen eine Google-Maps-Suche nach dem Stationsnamen – nur wenn du einen anklickst.
-- Im LAN oder hinter einem Reverse-Proxy mit Anmeldung betreiben. `APP_PASSWORD` gibt einen einfachen HTTP-Basic-Schutz.
+- **Live-Installationen mit Docker/Standalone benötigen standardmäßig `APP_PASSWORD`.** Vor dem Start ein langes, einzigartiges Passwort in `.env` setzen. Der Demo-Modus funktioniert weiterhin ohne Passwort. Home-Assistant-Installationen nutzen die Anmeldung von Home Assistant über Ingress. Den optionalen direkten Port niemals ungeschützt öffentlich freigeben; dafür einen vertrauenswürdigen Reverse-Proxy mit Anmeldung oder ein privates VPN verwenden.
+- `APP_PASSWORD` aktiviert HTTP-Basic-Authentifizierung. Basic Auth verschlüsselt die Verbindung nicht: HTTPS oder ein vertrauenswürdiges verschlüsseltes VPN wie Tailscale verwenden. `APP_REQUIRE_PASSWORD=false` ist eine ausdrückliche Deaktivierung und nur hinter einem vertrauenswürdigen Reverse-Proxy mit eigener Anmeldung sinnvoll.
 - Die eigene `.env` nie committen. Sie steht bereits in `.gitignore`.
 
 ## Fehlersuche
