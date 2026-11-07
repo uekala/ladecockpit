@@ -1,6 +1,12 @@
 import 'dart:convert';
 
-import 'main.dart' show CockpitException;
+class CockpitException implements Exception {
+  const CockpitException(this.message);
+  final String message;
+
+  @override
+  String toString() => message;
+}
 
 /// Validates the metadata response returned by the invoice and report page APIs.
 Map<String, dynamic> parseDocumentPagesResponse(
