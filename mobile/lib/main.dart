@@ -293,22 +293,95 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  String _sectionLabel(String key) {
+    const labels = <String, String>{
+      'soc': 'Akkustand', 'range': 'Reichweite', 'as_of': 'Stand von',
+      'floor': 'Akku-Untergrenze', 'target': 'Ladelimit',
+      'sessions': 'Ladevorgänge', 'count': 'Anzahl',
+      'kwh': 'Geladene Energie', 'cost': 'Ladekosten',
+      'charge_cost': 'Reine Ladekosten', 'total_cost': 'Gesamtkosten',
+      'avg_price': 'Durchschnittspreis', 'price': 'Preis pro kWh',
+      'avg_kw': 'Durchschnittliche Ladeleistung', 'duration_min': 'Ladedauer',
+      'idle': 'Standgebühren', 'credit': 'Gutschriften',
+      'site': 'Standort', 'operator': 'Betreiber', 'address': 'Adresse',
+      'start': 'Beginn', 'end': 'Ende', 'network': 'Ladenetz',
+      'date': 'Voraussichtlicher Ladestopp', 'text': 'Prognose',
+      'days_to_floor': 'Tage bis zur Untergrenze',
+      'rate_pct_day': 'Akkuverlust pro Tag', 'dist_day': 'Strecke pro Tag',
+      'plan_saving': 'Mögliche Ersparnis', 'plan_site': 'Empfohlener Standort',
+      'plan_date': 'Empfohlenes Datum', 'model': 'Modell', 'trim': 'Ausstattung',
+      'paint': 'Farbe', 'wheels': 'Felgen', 'vin': 'Fahrzeug-ID',
+      'range_at_100': 'Reichweite bei 100 %', 'change_pct': 'Veränderung',
+      'since': 'Seit', 'samples': 'Messwerte', 'dc_share': 'Supercharger-Anteil',
+      'per_100': 'Kosten pro 100 km', 'kwh_per_100': 'Verbrauch pro 100 km',
+      'distance': 'Gefahrene Strecke', 'savings': 'Ersparnis gegenüber Verbrenner',
+      'fuel_equivalent': 'Vergleichbare Spritkosten', 'label': 'Bezeichnung',
+      'best_time': 'Günstigste Ladezeit', 'best_site': 'Günstigster Standort',
+      'best_time_price': 'Preis zur besten Ladezeit',
+      'best_site_price': 'Preis am günstigsten Standort',
+    };
+    return labels[key] ?? key.replaceAll('_', ' ').replaceFirstMapped(
+      RegExp(r'^[a-z]'), (match) => match.group(0)!.toUpperCase());
+  }
+
+  String _sectionValue(String key, dynamic value) {
+    if (value == null) return '–';
+    const percentKeys = {'soc', 'floor', 'target', 'change_pct', 'dc_share'};
+    const energyKeys = {'kwh'};
+    const moneyKeys = {'cost', 'charge_cost', 'total_cost', 'idle', 'credit',
+      'savings', 'fuel_equivalent', 'plan_saving'};
+    const priceKeys = {'price', 'avg_price', 'best_time_price', 'best_site_price'};
+    const distanceKeys = {'range', 'distance', 'dist_day', 'range_at_100'};
+    if (value is num) {
+      final digits = value is int || value == value.roundToDouble() ? 0 : 1;
+      final number = value.toStringAsFixed(digits);
+      if (percentKeys.contains(key)) return '$number %';
+      if (energyKeys.contains(key)) return '$number kWh';
+      if (moneyKeys.contains(key)) return '$number €';
+      if (priceKeys.contains(key)) return '$number €/kWh';
+      if (distanceKeys.contains(key)) return '$number km';
+      if (key == 'avg_kw') return '$number kW';
+      if (key == 'duration_min') return _durationLabel(value);
+      if (key == 'days_to_floor') return '$number Tage';
+      return number;
+    }
+    if (value is bool) return value ? 'Ja' : 'Nein';
+    if (value is String && value.contains('T')) return _dateTimeLabel(value);
+    return value.toString();
+  }
+
   Widget _section(String title, Map<String, dynamic>? values) {
     if (values == null || values.isEmpty) return const SizedBox.shrink();
-    final entries = values.entries.where((e) => e.value is! Map && e.value is! List).take(6).toList();
+    final entries = values.entries
+        .where((e) => e.value != null && e.value is! Map && e.value is! List)
+        .take(8).toList();
     if (entries.isEmpty) return const SizedBox.shrink();
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(4, 18, 4, 4),
         child: Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
       ),
-      ...entries.map((e) => Card(
-        child: ListTile(
-          dense: true,
-          title: Text(e.key.replaceAll('_', ' ')),
-          trailing: Text(_value(e.value), style: const TextStyle(fontWeight: FontWeight.w600)),
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(children: [
+            for (var i = 0; i < entries.length; i++) ...[
+              if (i > 0) const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Expanded(child: Text(_sectionLabel(entries[i].key),
+                    style: const TextStyle(color: Colors.white70))),
+                  const SizedBox(width: 12),
+                  Flexible(child: Text(_sectionValue(entries[i].key, entries[i].value),
+                    textAlign: TextAlign.end,
+                    style: const TextStyle(fontWeight: FontWeight.w600))),
+                ]),
+              ),
+            ],
+          ]),
         ),
-      )),
+      ),
     ]);
   }
 
