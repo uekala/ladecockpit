@@ -1,12 +1,14 @@
-"""End-to-end Tesla sync checks for standalone mode without Home Assistant."""
+""""End-to-end Tesla sync checks for standalone mode without Home Assistant."""
 import asyncio
 import dataclasses
 import time
+from pathlib import Path
 
 import httpx
 from fpdf import FPDF
 
 from app import main
+from app.db import DB
 from app.homeassistant import HAClient
 from app.sync import SyncService
 from app.tesla import TeslaClient
@@ -39,8 +41,6 @@ def test_tesla_history_invoice_and_export_work_without_home_assistant(settings, 
         operator_lookup=False,
     )
     database_path = tmp_path / "standalone.db"
-    from app.db import DB
-
     database = DB(database_path)
     pdf = invoice_pdf()
     requests = []
@@ -93,8 +93,8 @@ def test_tesla_history_invoice_and_export_work_without_home_assistant(settings, 
     monkeypatch.setattr(main, "tesla", tesla)
 
     invoice_response = asyncio.run(main.invoice("standalone-session-42"))
-    assert invoice_response.path == str(tmp_path / "invoices" / "standalone-session-42.pdf")
-    assert open(invoice_response.path, "rb").read() == pdf
+    assert Path(invoice_response.path) == tmp_path / "invoices" / "standalone-session-42.pdf"
+    assert Path(invoice_response.path).read_bytes() == pdf
 
     csv_response = asyncio.run(main.export_csv())
     csv_text = csv_response.body.decode("utf-8-sig")
