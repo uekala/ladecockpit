@@ -325,6 +325,11 @@ class _DashboardPageState extends State<DashboardPage> {
     final networks = items.map((s) => s['network']?.toString() ?? 'supercharger')
       .where((v) => v.isNotEmpty).toSet().toList()..sort();
 
+    // Keep dropdown values valid when refreshed data no longer contains a previous selection.
+    final selectedMonth = months.contains(_sessionMonthFilter) ? _sessionMonthFilter : 'all';
+    final selectedNetwork = networks.contains(_sessionNetworkFilter) ? _sessionNetworkFilter : 'all';
+    final selectedSite = sites.contains(_sessionSiteFilter) ? _sessionSiteFilter : 'all';
+
     final filtered = items.where((session) {
       final monthMatches = selectedMonth == 'all' ||
         monthKey(session) == selectedMonth;
@@ -371,11 +376,6 @@ class _DashboardPageState extends State<DashboardPage> {
       ...sites.map((s) => DropdownMenuItem(value: s, child: Text(s,
         overflow: TextOverflow.ellipsis))),
     ];
-
-    // Keep dropdown values valid when refreshed data no longer contains a previous selection.
-    final selectedMonth = months.contains(_sessionMonthFilter) ? _sessionMonthFilter : 'all';
-    final selectedNetwork = networks.contains(_sessionNetworkFilter) ? _sessionNetworkFilter : 'all';
-    final selectedSite = sites.contains(_sessionSiteFilter) ? _sessionSiteFilter : 'all';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
