@@ -103,6 +103,22 @@ class CockpitClient {
     return utf8.decode(response.bodyBytes, allowMalformed: true);
   }
 
+  Future<List<int>> invoiceZip(String month) async {
+    final uri = await _endpoint('/api/invoices/$month.zip');
+    final response = await http.get(uri, headers: await _headers())
+        .timeout(const Duration(seconds: 120));
+    if (response.statusCode == 401) {
+      throw const CockpitException('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.');
+    }
+    if (response.statusCode == 404) {
+      throw const CockpitException('Für diesen Monat sind keine Rechnungen vorhanden.');
+    }
+    if (response.statusCode != 200) {
+      throw CockpitException('Rechnungs-ZIP fehlgeschlagen (HTTP ${response.statusCode}).');
+    }
+    return response.bodyBytes;
+  }
+
   Future<Map<String, dynamic>> monthReportPages(String month) async {
     final uri = await _endpoint('/api/report/$month/pages');
     final response = await http.get(uri, headers: await _headers(json: true))
@@ -490,6 +506,26 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Future<void> _shareInvoiceZip(String month) async {
+    try {
+      final bytes = await _client.invoiceZip(month);
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/ladecockpit-rechnungen-$month.zip');
+      await file.writeAsBytes(bytes, flush: true);
+      if (!mounted) return;
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'application/zip')],
+        text: 'Ladecockpit – Rechnungen $month',
+        subject: 'Ladecockpit Rechnungen $month',
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
+  }
+
   Future<void> _showMonthlyReport(String month) async {
     try {
       final metadata = await _client.monthReportPages(month);
@@ -625,7 +661,21 @@ class _DashboardPageState extends State<DashboardPage> {
               leading: const Icon(Icons.picture_as_pdf_outlined),
               title: Text(key),
               subtitle: Text('$count Ladevorgänge · $energy'),
-              trailing: const Icon(Icons.open_in_new),
+              trailing: Wrap(
+                spacing: 0,
+                children: [
+                  IconButton(
+                    tooltip: 'Rechnungen als ZIP teilen',
+                    onPressed: () => _shareInvoiceZip(key),
+                    icon: const Icon(Icons.folder_zip_outlined),
+                  ),
+                  IconButton(
+                    tooltip: 'Monatsbericht ansehen',
+                    onPressed: () => _showMonthlyReport(key),
+                    icon: const Icon(Icons.picture_as_pdf_outlined),
+                  ),
+                ],
+              ),
               onTap: () => _showMonthlyReport(key),
             ),
           );
