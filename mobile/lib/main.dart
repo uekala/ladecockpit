@@ -159,13 +159,6 @@ Map<String, dynamic> parseDashboardResponse(int statusCode, String body) {
   return decoded;
 }
 
-class CockpitException implements Exception {
-  const CockpitException(this.message);
-  final String message;
-  @override
-  String toString() => message;
-}
-
 String connectionErrorMessage(Object error) {
 if (error is CockpitException) return error.message;
 if (error is TimeoutException) {
