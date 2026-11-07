@@ -42,17 +42,55 @@ class CockpitClient {
     await _storage.write(key: _passwordKey, value: password);
   }
 
-  Future<Map<String, dynamic>> dashboard() async {
+  Future<Map<String, String>> _headers({bool json = false}) async {
+    final secret = await password ?? '';
+    final headers = <String, String>{'Accept': json ? 'application/json' : '*/*'};
+    if (secret.isNotEmpty) {
+      headers['Authorization'] = 'Basic ${base64Encode(utf8.encode('ladecockpit:$secret'))}';
+    }
+    return headers;
+  }
+
+  Future<Uri> _endpoint(String path) async {
     final base = await serverUrl;
     if (base == null || base.isEmpty) {
       throw const CockpitException('Bitte zuerst die Serveradresse einrichten.');
     }
-    final secret = await password ?? '';
-    final headers = <String, String>{'Accept': 'application/json'};
-    if (secret.isNotEmpty) {
-      headers['Authorization'] = 'Basic ${base64Encode(utf8.encode('ladecockpit:$secret'))}';
+    final root = Uri.tryParse(base);
+    if (root == null || !root.hasScheme || root.host.isEmpty ||
+        (root.scheme != 'http' && root.scheme != 'https')) {
+      throw const CockpitException('Bitte eine gültige HTTP- oder HTTPS-Serveradresse eingeben.');
     }
-    final response = await http.get(Uri.parse('$base/api/dashboard'), headers: headers)
+    return root.resolve(path);
+  }
+
+  Future<Map<String, dynamic>> invoicePages(String sessionId) async {
+    final uri = await _endpoint('/api/invoice/${Uri.encodeComponent(sessionId)}/pages');
+    final response = await http.get(uri, headers: await _headers(json: true))
+        .timeout(const Duration(seconds: 30));
+    if (response.statusCode == 401) {
+      throw const CockpitException('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.');
+    }
+    if (response.statusCode == 404) {
+      throw const CockpitException('Die Rechnung ist auf dem Server noch nicht verfügbar.');
+    }
+    if (response.statusCode != 200) {
+      throw CockpitException('Rechnung konnte nicht geladen werden (HTTP ${response.statusCode}).');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['pages'] is! int) {
+      throw const CockpitException('Ungültige Antwort für die Rechnung.');
+    }
+    return decoded;
+  }
+
+  Future<Uri> invoicePageUri(String sessionId, int page) =>
+      _endpoint('/api/invoice/${Uri.encodeComponent(sessionId)}/page/$page.png');
+
+  Future<Map<String, dynamic>> dashboard() async {
+    final uri = await _endpoint('/api/dashboard');
+    final headers = await _headers(json: true);
+    final response = await http.get(uri, headers: headers)
         .timeout(const Duration(seconds: 20));
     if (response.statusCode == 401) {
       throw const CockpitException('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.');
@@ -227,12 +265,15 @@ class _DashboardPageState extends State<DashboardPage> {
           final invoice = session['has_invoice'] == true;
           return Card(
             child: ListTile(
+              onTap: invoice && session['id'] != null
+                  ? () => _showInvoice(session['id'].toString(), site)
+                  : null,
               leading: Icon(
                 invoice ? Icons.receipt_long_outlined : Icons.ev_station,
                 color: invoice ? Theme.of(context).colorScheme.primary : Colors.white60,
               ),
               title: Text(site, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Text('${dateLabel(session['start'])} · $network${invoice ? ' · Rechnung vorhanden' : ''}'),
+              subtitle: Text('${dateLabel(session['start'])} · $network${invoice ? ' · Rechnung öffnen' : ''}'),
               trailing: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -247,6 +288,74 @@ class _DashboardPageState extends State<DashboardPage> {
       ],
     );
   }
+
+  Future<void> _showInvoice(String sessionId, String site) async {
+    try {
+      final metadata = await _client.invoicePages(sessionId);
+      final pages = metadata['pages'] as int;
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => Dialog.fullscreen(
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text('Rechnung · $site', maxLines: 1, overflow: TextOverflow.ellipsis),
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(dialogContext),
+              ),
+            ),
+            body: ListView.builder(
+              itemCount: pages,
+              itemBuilder: (context, index) => Padding(
+                padding: const EdgeInsets.all(8),
+                child: FutureBuilder<Uri>(
+                  future: _client.invoicePageUri(sessionId, index),
+                  builder: (context, uriSnapshot) {
+                    if (uriSnapshot.hasError) {
+                      return const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text('Seite konnte nicht geladen werden.'),
+                      );
+                    }
+                    if (!uriSnapshot.hasData) {
+                      return const SizedBox(
+                        height: 240,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    return Image.network(
+                      uriSnapshot.data.toString(),
+                      headers: _invoiceHeaders,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, progress) => progress == null
+                          ? child
+                          : const SizedBox(
+                              height: 240,
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                      errorBuilder: (context, error, stack) => const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text('PDF-Seite konnte nicht geladen werden.'),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
+  }
+
+  Future<Map<String, String>> get _invoiceHeaders async =>
+      _client._headers();
 
   @override
   Widget build(BuildContext context) {
