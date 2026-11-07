@@ -265,9 +265,7 @@ class _DashboardPageState extends State<DashboardPage> {
           final invoice = session['has_invoice'] == true;
           return Card(
             child: ListTile(
-              onTap: invoice && session['id'] != null
-                  ? () => _showInvoice(session['id'].toString(), site)
-                  : null,
+              onTap: () => _showSessionDetails(session),
               leading: Icon(
                 invoice ? Icons.receipt_long_outlined : Icons.ev_station,
                 color: invoice ? Theme.of(context).colorScheme.primary : Colors.white60,
@@ -286,6 +284,99 @@ class _DashboardPageState extends State<DashboardPage> {
           );
         }),
       ],
+    );
+  }
+
+  String _dateTimeLabel(dynamic value) {
+    final date = DateTime.tryParse(value?.toString() ?? '')?.toLocal();
+    if (date == null) return '–';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$day.$month.${date.year}, $hour:$minute Uhr';
+  }
+
+  String _numberLabel(dynamic value, {int digits = 2, String suffix = ''}) {
+    final parsed = value is num ? value : num.tryParse(value?.toString() ?? '');
+    return parsed == null ? '–' : '${parsed.toStringAsFixed(digits)}$suffix';
+  }
+
+  String _durationLabel(dynamic value) {
+    final minutes = value is num ? value.round() : int.tryParse(value?.toString() ?? '');
+    if (minutes == null) return '–';
+    final hours = minutes ~/ 60;
+    final rest = minutes % 60;
+    return hours > 0 ? '${hours} Std. ${rest} Min.' : '${rest} Min.';
+  }
+
+  Widget _detailRow(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 7),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: Text(label, style: const TextStyle(color: Colors.white60))),
+        const SizedBox(width: 12),
+        Flexible(child: Text(value, textAlign: TextAlign.end,
+          style: const TextStyle(fontWeight: FontWeight.w600))),
+      ],
+    ),
+  );
+
+  Future<void> _showSessionDetails(Map<String, dynamic> session) async {
+    final site = session['site']?.toString() ?? 'Unbekannter Standort';
+    final currency = session['currency']?.toString() ?? 'EUR';
+    final network = session['network'] == 'multipass' ? 'MultiPass' : 'Supercharger';
+    final invoice = session['has_invoice'] == true;
+    final sessionId = session['id']?.toString();
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(site, maxLines: 2, overflow: TextOverflow.ellipsis),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(network, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+              const SizedBox(height: 12),
+              _detailRow('Beginn', _dateTimeLabel(session['start'])),
+              _detailRow('Ende', _dateTimeLabel(session['end'])),
+              _detailRow('Ladedauer', _durationLabel(session['duration_min'])),
+              const Divider(height: 18),
+              _detailRow('Geladene Energie', _numberLabel(session['kwh'], suffix: ' kWh')),
+              _detailRow('Gesamtkosten', _numberLabel(session['cost'], suffix: ' $currency')),
+              _detailRow('Ladekosten', _numberLabel(session['charge_cost'], suffix: ' $currency')),
+              _detailRow('Standgebühren', _numberLabel(session['idle'], suffix: ' $currency')),
+              _detailRow('Gutschrift', _numberLabel(session['credit'], suffix: ' $currency')),
+              _detailRow('Preis pro kWh', _numberLabel(session['price'], digits: 3, suffix: ' $currency/kWh')),
+              _detailRow('Durchschnittsleistung', _numberLabel(session['avg_kw'], suffix: ' kW')),
+              if (session['start_soc'] != null)
+                _detailRow('Start-Ladestand', _numberLabel(session['start_soc'], digits: 0, suffix: ' %')),
+              if ((session['operator'] ?? '').toString().isNotEmpty)
+                _detailRow('Betreiber', session['operator'].toString()),
+              if ((session['address'] ?? '').toString().isNotEmpty)
+                _detailRow('Adresse', session['address'].toString()),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Schließen'),
+          ),
+          if (invoice && sessionId != null)
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _showInvoice(sessionId, site);
+              },
+              icon: const Icon(Icons.receipt_long),
+              label: const Text('Rechnung öffnen'),
+            ),
+        ],
+      ),
     );
   }
 
