@@ -1,7 +1,6 @@
 """Browser smoke test for the standalone dashboard (no Home Assistant)."""
 from __future__ import annotations
 
-import json
 import os
 import socket
 import subprocess

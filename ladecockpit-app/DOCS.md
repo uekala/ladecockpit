@@ -50,3 +50,7 @@ These entities have no unique ID, so they cannot be renamed in the UI. After a H
 ## Problems
 
 If the Tesla sign-in expires or syncing keeps failing, Ladecockpit creates a notification in Home Assistant and fires the event `ladecockpit_problem`. You can turn this off with **Notify about problems**.
+
+## Network access and security
+
+The sidebar uses Home Assistant Ingress and is authenticated by Home Assistant. The optional `8077/tcp` port bypasses Ingress; leave it disabled unless you need direct access. If you enable it, restrict it to a trusted private network or put it behind a reverse proxy that requires authentication and HTTPS. Do not publish it directly to the internet. The standalone `APP_PASSWORD` requirement does not apply to the Ingress-only Home Assistant app.
