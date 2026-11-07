@@ -759,10 +759,25 @@ class _DashboardPageState extends State<DashboardPage> {
         : <Map<String, dynamic>>[];
     if (months.isEmpty) return const SizedBox.shrink();
 
+    // API-Daten können neueste Monate zuerst liefern. Für den Verlauf
+    // sortieren wir explizit chronologisch, statt uns auf die API-Reihenfolge
+    // zu verlassen.
+    months.sort((a, b) => a['key'].toString().compareTo(b['key'].toString()));
+
     num amount(dynamic value) =>
         value is num ? value : num.tryParse(value?.toString() ?? '') ?? 0;
-    final values = months.map((month) =>
-        amount(month['cost']) + amount(month['home_cost'])).toList();
+    num totalCost(Map<String, dynamic> month) =>
+        amount(month['cost']) + amount(month['home_cost']);
+    int? monthOrdinal(String key) {
+      final match = RegExp(r'^(\\d{4})-(\\d{2})$').firstMatch(key);
+      if (match == null) return null;
+      final year = int.tryParse(match.group(1)!);
+      final month = int.tryParse(match.group(2)!);
+      if (year == null || month == null || month < 1 || month > 12) return null;
+      return year * 12 + month;
+    }
+
+    final values = months.map(totalCost).toList();
     final maximum = values.fold<num>(0, (current, value) =>
         value > current ? value : current);
 
@@ -788,6 +803,32 @@ class _DashboardPageState extends State<DashboardPage> {
                   final key = month['key'].toString();
                   final parts = key.split('-');
                   final label = parts.length == 2 ? '${parts[1]}.${parts[0]}' : key;
+
+                  String? comparison;
+                  Color? comparisonColor;
+                  if (index > 0) {
+                    final previous = months[index - 1];
+                    final previousKey = previous['key'].toString();
+                    final currentOrdinal = monthOrdinal(key);
+                    final previousOrdinal = monthOrdinal(previousKey);
+                    if (currentOrdinal != null && previousOrdinal != null &&
+                        currentOrdinal - previousOrdinal == 1) {
+                      final previousTotal = totalCost(previous);
+                      if (previousTotal > 0) {
+                        final difference = total - previousTotal;
+                        final percentage = difference / previousTotal * 100;
+                        final sign = difference > 0 ? '+' : '';
+                        comparison = '$sign${difference.toStringAsFixed(2)} € ($sign${percentage.toStringAsFixed(1)} %) gegenüber Vormonat';
+                        comparisonColor = difference > 0
+                            ? Colors.orangeAccent
+                            : difference < 0 ? Colors.greenAccent : Colors.white54;
+                      } else {
+                        comparison = 'Vormonat ohne erfasste Kosten – kein Prozentvergleich';
+                        comparisonColor = Colors.white54;
+                      }
+                    }
+                  }
+
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 7),
                     child: Column(
@@ -824,6 +865,12 @@ class _DashboardPageState extends State<DashboardPage> {
                             style: const TextStyle(color: Colors.white54, fontSize: 11),
                           ),
                         ),
+                        if (comparison != null)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 54, top: 3),
+                            child: Text(comparison,
+                              style: TextStyle(color: comparisonColor, fontSize: 11)),
+                          ),
                         if (index != months.length - 1)
                           const SizedBox(height: 3),
                       ],
@@ -833,8 +880,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 const Divider(height: 20),
                 const Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('Öffentliches Laden plus erfasste Heimladekosten. '
-                    'Die Balken vergleichen die verfügbaren Monate.',
+                  child: Text('Chronologischer Verlauf: öffentliches Laden plus erfasste Heimladekosten. '
+                    'Vergleiche werden nur bei direkt aufeinanderfolgenden Monaten angezeigt.',
                     style: TextStyle(color: Colors.white54, fontSize: 11)),
                 ),
               ],
