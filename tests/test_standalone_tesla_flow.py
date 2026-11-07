@@ -70,9 +70,16 @@ def test_tesla_history_invoice_and_export_work_without_home_assistant(settings, 
 
     ha = HAClient(settings)
     assert ha.configured is False
+
+    async def forbidden_ha_call(*_args, **_kwargs):
+        raise AssertionError("Standalone sync must not call Home Assistant")
+
+    monkeypatch.setattr(ha, "fire_event", forbidden_ha_call)
+    monkeypatch.setattr(ha, "call_service", forbidden_ha_call)
     sync = SyncService(settings, database, tesla, ha)
 
     assert asyncio.run(sync.sync_once()) == 1
+    assert asyncio.run(sync.push_pending()) == 0
     stored = database.session("standalone-session-42")
     assert stored is not None
     assert stored["push_state"] == "backfill"
