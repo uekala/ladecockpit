@@ -75,11 +75,11 @@ def test_live_dashboard_starts_and_serves_without_home_assistant(monkeypatch, tm
         assert health.status_code == 200
         assert health.json()["mode"] == "live"
 
-        page = client.get("/")
+        page = client.get("/", auth=("test", "test-password"))
         assert page.status_code == 200
         assert "Ladecockpit" in page.text
 
-        response = client.get("/api/dashboard")
+        response = client.get("/api/dashboard", auth=("test", "test-password"))
         assert response.status_code == 200
         dashboard = response.json()
 
