@@ -1,7 +1,9 @@
 """End-to-end Tesla sync checks for standalone mode without Home Assistant."""
 import asyncio
 import dataclasses
+import io
 import time
+import zipfile
 from pathlib import Path
 
 import httpx
@@ -108,4 +110,41 @@ def test_tesla_history_invoice_and_export_work_without_home_assistant(settings, 
     assert "standalone-session-42" in csv_text
     assert "Partnerstadt, Germany" in csv_text
 
+    # Exercise the actual HTTP routes, including PDF page rendering and monthly ZIP export.
+    async def exercise_http_routes():
+        transport = httpx.ASGITransport(app=main.app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            download = await client.get("/api/invoice/standalone-session-42")
+            assert download.status_code == 200
+            assert download.headers["content-type"] == "application/pdf"
+            assert download.content == pdf
+            assert "supercharger-2026-10" in download.headers["content-disposition"]
+
+            pages = await client.get("/api/invoice/standalone-session-42/pages")
+            assert pages.status_code == 200
+            assert pages.json()["pages"] == 1
+
+            page = await client.get("/api/invoice/standalone-session-42/page/1.png")
+            assert page.status_code == 200
+            assert page.headers["content-type"] == "image/png"
+            assert page.content.startswith(b"\\x89PNG\\r\\n\\x1a\\n")
+
+            missing_page = await client.get("/api/invoice/standalone-session-42/page/2.png")
+            assert missing_page.status_code == 404
+
+            archive = await client.get("/api/invoices/2026-10.zip")
+            assert archive.status_code == 200
+            assert archive.headers["content-type"] == "application/zip"
+            with zipfile.ZipFile(io.BytesIO(archive.content)) as zipped:
+                names = zipped.namelist()
+                assert len(names) == 1
+                assert names[0].endswith("standalone-session-42.pdf")
+                assert zipped.read(names[0]) == pdf
+
+            invalid_month = await client.get("/api/invoices/2026-1.zip")
+            assert invalid_month.status_code == 400
+            empty_month = await client.get("/api/invoices/2026-09.zip")
+            assert empty_month.status_code == 404
+
+    asyncio.run(exercise_http_routes())
     asyncio.run(tesla._http.aclose())
