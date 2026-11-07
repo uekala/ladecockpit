@@ -49,52 +49,6 @@ class FakeCockpitClient extends CockpitClient {
         'monthly': [\n          {'key': '2026-01', 'sessions': 1, 'kwh': 24.5},\n        ],
       };
 
-  testWidgets('shows a clear error when monthly report is unavailable',
-      (tester) async {
-    tester.view.physicalSize = const Size(900, 1800);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(
-      MaterialApp(home: DashboardPage(client: FakeCockpitClient())),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.scrollUntilVisible(
-      find.byTooltip('Monatsbericht ansehen'),
-      350,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(find.byTooltip('Monatsbericht ansehen'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Test-Monatsbericht nicht verfügbar.'), findsOneWidget);
-  });
-
-  testWidgets('shows a clear error when monthly invoice ZIP is unavailable',
-      (tester) async {
-    tester.view.physicalSize = const Size(900, 1800);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(
-      MaterialApp(home: DashboardPage(client: FakeCockpitClient())),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.scrollUntilVisible(
-      find.byTooltip('Rechnungen als ZIP teilen'),
-      350,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(find.byTooltip('Rechnungen als ZIP teilen'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Für diesen Monat sind keine Rechnungen vorhanden.'),
-        findsOneWidget);
-  });
 }
 
 void main() {
@@ -199,5 +153,51 @@ void main() {
     await tester.tap(find.text('Schließen'));
     await tester.pumpAndSettle();
     expect(find.text('CSV-Export'), findsNothing);
+  });
+  testWidgets('shows a clear error when monthly report is unavailable',
+      (tester) async {
+    tester.view.physicalSize = const Size(900, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(home: DashboardPage(client: FakeCockpitClient())),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byTooltip('Monatsbericht ansehen'),
+      350,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byTooltip('Monatsbericht ansehen'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Test-Monatsbericht nicht verfügbar.'), findsOneWidget);
+  });
+
+  testWidgets('shows a clear error when monthly invoice ZIP is unavailable',
+      (tester) async {
+    tester.view.physicalSize = const Size(900, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(home: DashboardPage(client: FakeCockpitClient())),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byTooltip('Rechnungen als ZIP teilen'),
+      350,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byTooltip('Rechnungen als ZIP teilen'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Für diesen Monat sind keine Rechnungen vorhanden.'),
+        findsOneWidget);
   });
 }
