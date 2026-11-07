@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.2 – 2026-11-07
+
+- **Charging stations grouped by their invoice address.** When Tesla uses the same generic site name for different stations, Ladecockpit now keeps those locations separate in the MultiPass overview and site statistics if their invoice-derived addresses differ. This fixes cases such as two ALDI stations in Krefeld appearing as one location.
+
 ## 0.12.1 – 2026-11-02
 
 - **Closer match in the charging station register.** The invoice and the register do not always spell a street the same way ("Brunnenhaustraße" and "Brunnenhausstr."). Streets spelt almost alike now count as the same street, and the same house number wins over a near one – before, a station could get the operator of a neighbouring site further along the street. Stations matched by the old rule are looked up again once.
