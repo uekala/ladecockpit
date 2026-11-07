@@ -224,7 +224,7 @@ Die Tesla Fleet API kann je nach aktueller Tesla-Preisliste, Kontoguthaben und N
 
 - Die Web-App lädt nichts von anderen Diensten nach, außer dem Bild deines Autos aus Teslas Konfigurator; die Schriften bringt sie selbst mit. Ganz unten auf der Seite wählst du das Design: klassisch (ruhig, nah an der App des Autos) oder dynamisch (ein Cockpit bei Nacht, das sich bewegt und dem Akku folgt).
 - Alles bleibt bei dir: Tokens, Rechnungen und Messwerte liegen im Docker-Volume `ladecockpit-data` (SQLite und PDF-Cache).
-- Ladecockpit spricht mit Tesla und – nur wenn eingerichtet – deinem Home Assistant. Für MultiPass-Stationen in Deutschland lädt es – für MultiPass-Stationen in Deutschland, sofern nicht abgeschaltet – das öffentliche Ladesäulenregister der Bundesnetzagentur herunter; über dich wird dabei nichts gesendet. Die Web-App lädt außerdem das Bild deines Autos von Teslas Bildserver. Die Kartenlinks der MultiPass-Stationen öffnen eine Google-Maps-Suche nach dem Stationsnamen – nur wenn du einen anklickst.
+- Ladecockpit spricht mit Tesla und – nur wenn eingerichtet – deinem Home Assistant. Für MultiPass-Stationen in Deutschland lädt es, sofern nicht abgeschaltet, das öffentliche Ladesäulenregister der Bundesnetzagentur herunter; über dich wird dabei nichts gesendet. Die Web-App lädt außerdem das Bild deines Autos von Teslas Bildserver. Die Kartenlinks der MultiPass-Stationen öffnen eine Google-Maps-Suche nach dem Stationsnamen – nur wenn du einen anklickst.
 - Im LAN oder hinter einem Reverse-Proxy mit Anmeldung betreiben. `APP_PASSWORD` gibt einen einfachen HTTP-Basic-Schutz.
 - Die eigene `.env` nie committen. Sie steht bereits in `.gitignore`.
 
