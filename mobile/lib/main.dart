@@ -176,6 +176,9 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _data;
   String? _error;
   bool _loading = false;
+  String _sessionMonthFilter = 'all';
+  String _sessionNetworkFilter = 'all';
+  String _sessionSiteFilter = 'all';
 
   @override
   void initState() {
@@ -282,8 +285,24 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _sessions(dynamic raw) {
     if (raw is! List || raw.isEmpty) return const SizedBox.shrink();
-    final items = raw.whereType<Map<String, dynamic>>().take(10).toList();
+    final items = raw.whereType<Map<String, dynamic>>().toList();
     if (items.isEmpty) return const SizedBox.shrink();
+
+    String monthKey(Map<String, dynamic> item) {
+      final date = DateTime.tryParse(item['start']?.toString() ?? '')?.toLocal();
+      if (date == null) return '';
+      return '${date.year}-${date.month.toString().padLeft(2, '0')}';
+    }
+
+    String monthLabel(String key) {
+      final parts = key.split('-');
+      if (parts.length != 2) return key;
+      const names = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+        'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+      final index = int.tryParse(parts[1]);
+      if (index == null || index < 1 || index > 12) return key;
+      return '${names[index - 1]} ${parts[0]}';
+    }
 
     String dateLabel(dynamic value) {
       final date = DateTime.tryParse(value?.toString() ?? '')?.toLocal();
@@ -298,19 +317,121 @@ class _DashboardPageState extends State<DashboardPage> {
       return parsed == null ? '–' : parsed.toStringAsFixed(digits);
     }
 
+    final months = items.map(monthKey).where((v) => v.isNotEmpty).toSet().toList()
+      ..sort((a, b) => b.compareTo(a));
+    final sites = items.map((s) => s['site']?.toString() ?? '')
+      .where((v) => v.isNotEmpty).toSet().toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final networks = items.map((s) => s['network']?.toString() ?? 'supercharger')
+      .where((v) => v.isNotEmpty).toSet().toList()..sort();
+
+    final filtered = items.where((session) {
+      final monthMatches = _sessionMonthFilter == 'all' ||
+        monthKey(session) == _sessionMonthFilter;
+      final networkMatches = _sessionNetworkFilter == 'all' ||
+        (session['network']?.toString() ?? 'supercharger') == _sessionNetworkFilter;
+      final siteMatches = _sessionSiteFilter == 'all' ||
+        (session['site']?.toString() ?? '') == _sessionSiteFilter;
+      return monthMatches && networkMatches && siteMatches;
+    }).toList();
+
+    Widget filterField(String label, String value, List<DropdownMenuItem<String>> options,
+        ValueChanged<String?> onChanged, {double width = 150}) {
+      return SizedBox(
+        width: width,
+        child: DropdownButtonFormField<String>(
+          value: value,
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: label,
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          items: options,
+          onChanged: onChanged,
+        ),
+      );
+    }
+
+    final monthOptions = <DropdownMenuItem<String>>[
+      const DropdownMenuItem(value: 'all', child: Text('Alle Monate')),
+      ...months.map((m) => DropdownMenuItem(value: m, child: Text(monthLabel(m)))),
+    ];
+    final networkOptions = <DropdownMenuItem<String>>[
+      const DropdownMenuItem(value: 'all', child: Text('Alle Netzwerke')),
+      ...networks.map((n) => DropdownMenuItem(
+        value: n,
+        child: Text(n == 'multipass' ? 'MultiPass' :
+          n == 'supercharger' ? 'Supercharger' : n),
+      )),
+    ];
+    final siteOptions = <DropdownMenuItem<String>>[
+      const DropdownMenuItem(value: 'all', child: Text('Alle Standorte')),
+      ...sites.map((s) => DropdownMenuItem(value: s, child: Text(s,
+        overflow: TextOverflow.ellipsis))),
+    ];
+
+    // If the data set changes, do not leave a selected filter pointing at a missing option.
+    if (_sessionMonthFilter != 'all' && !months.contains(_sessionMonthFilter)) {
+      _sessionMonthFilter = 'all';
+    }
+    if (_sessionNetworkFilter != 'all' && !networks.contains(_sessionNetworkFilter)) {
+      _sessionNetworkFilter = 'all';
+    }
+    if (_sessionSiteFilter != 'all' && !sites.contains(_sessionSiteFilter)) {
+      _sessionSiteFilter = 'all';
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
-          child: Text(
-            'Letzte Ladevorgänge',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          child: Row(
+            children: [
+              Expanded(child: Text('Ladevorgänge',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))),
+              Text('${filtered.length} / ${items.length}',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white60)),
+            ],
           ),
         ),
-        ...items.map((session) {
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            filterField('Zeitraum', _sessionMonthFilter, monthOptions,
+              (value) => setState(() => _sessionMonthFilter = value ?? 'all'), width: 165),
+            filterField('Netzwerk', _sessionNetworkFilter, networkOptions,
+              (value) => setState(() => _sessionNetworkFilter = value ?? 'all'), width: 165),
+            filterField('Standort', _sessionSiteFilter, siteOptions,
+              (value) => setState(() => _sessionSiteFilter = value ?? 'all'), width: 210),
+          ],
+        ),
+        if (_sessionMonthFilter != 'all' || _sessionNetworkFilter != 'all' || _sessionSiteFilter != 'all')
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () => setState(() {
+                _sessionMonthFilter = 'all';
+                _sessionNetworkFilter = 'all';
+                _sessionSiteFilter = 'all';
+              }),
+              icon: const Icon(Icons.filter_alt_off, size: 17),
+              label: const Text('Filter zurücksetzen'),
+            ),
+          ),
+        if (filtered.isEmpty)
+          const Card(child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('Keine Ladevorgänge für diese Filter gefunden.'),
+          )),
+        ...filtered.take(50).map((session) {
           final site = session['site']?.toString() ?? 'Unbekannter Standort';
-          final network = session['network'] == 'multipass' ? 'MultiPass' : 'Supercharger';
+          final networkValue = session['network']?.toString() ?? 'supercharger';
+          final network = networkValue == 'multipass' ? 'MultiPass' :
+            networkValue == 'supercharger' ? 'Supercharger' : networkValue;
           final kwh = number(session['kwh']);
           final cost = number(session['cost'], digits: 2);
           final currency = session['currency']?.toString() ?? 'EUR';
@@ -335,6 +456,12 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           );
         }),
+        if (filtered.length > 50)
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text('Es werden die ersten 50 Treffer angezeigt.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white54)),
+          ),
       ],
     );
   }
