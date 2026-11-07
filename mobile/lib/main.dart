@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -86,6 +87,39 @@ class CockpitClient {
 
   Future<Uri> invoicePageUri(String sessionId, int page) =>
       _endpoint('/api/invoice/${Uri.encodeComponent(sessionId)}/page/$page.png');
+
+  Future<String> csvExport() async {
+    final uri = await _endpoint('/api/export.csv');
+    final response = await http.get(uri, headers: await _headers())
+        .timeout(const Duration(seconds: 60));
+    if (response.statusCode == 401) {
+      throw const CockpitException('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.');
+    }
+    if (response.statusCode != 200) {
+      throw CockpitException('CSV-Export fehlgeschlagen (HTTP ${response.statusCode}).');
+    }
+    return utf8.decode(response.bodyBytes, allowMalformed: true);
+  }
+
+  Future<Map<String, dynamic>> monthReportPages(String month) async {
+    final uri = await _endpoint('/api/report/$month/pages');
+    final response = await http.get(uri, headers: await _headers(json: true))
+        .timeout(const Duration(seconds: 60));
+    if (response.statusCode == 401) {
+      throw const CockpitException('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.');
+    }
+    if (response.statusCode != 200) {
+      throw CockpitException('Monatsbericht nicht verfügbar (HTTP ${response.statusCode}).');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['pages'] is! int) {
+      throw const CockpitException('Ungültige Antwort für den Monatsbericht.');
+    }
+    return decoded;
+  }
+
+  Future<Uri> monthReportPageUri(String month, int page) =>
+      _endpoint('/api/report/$month/page/$page.png');
 
   Future<Map<String, dynamic>> dashboard() async {
     final uri = await _endpoint('/api/dashboard');
@@ -454,6 +488,151 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Future<void> _showMonthlyReport(String month) async {
+    try {
+      final metadata = await _client.monthReportPages(month);
+      final pages = metadata['pages'] as int;
+      final headers = await _client._headers();
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => Dialog.fullscreen(
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text('Monatsbericht · $month'),
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(dialogContext),
+              ),
+            ),
+            body: ListView.builder(
+              itemCount: pages,
+              itemBuilder: (context, index) => Padding(
+                padding: const EdgeInsets.all(8),
+                child: FutureBuilder<Uri>(
+                  future: _client.monthReportPageUri(month, index + 1),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return SizedBox(
+                        height: 240,
+                        child: Center(child: snapshot.hasError
+                          ? const Text('Seite konnte nicht geladen werden.')
+                          : const CircularProgressIndicator()),
+                      );
+                    }
+                    return Image.network(snapshot.data.toString(), headers: headers,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text('Seite konnte nicht geladen werden.'),
+                      ));
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
+  }
+
+  Future<void> _showCsvExport() async {
+    try {
+      final csv = await _client.csvExport();
+      if (!mounted) return;
+      final rows = const LineSplitter().convert(csv);
+      final preview = rows.take(8).join('\\n');
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('CSV-Export'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: SelectableText(
+                '${rows.length > 8 ? '$preview\\n…\\n' : '$preview\\n'}${rows.length} Zeilen insgesamt',
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Schließen'),
+            ),
+            FilledButton.icon(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: csv));
+                if (!dialogContext.mounted) return;
+                Navigator.pop(dialogContext);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('CSV-Daten in die Zwischenablage kopiert.')),
+                );
+              },
+              icon: const Icon(Icons.copy),
+              label: const Text('CSV kopieren'),
+            ),
+          ],
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
+  }
+
+  Widget _exports(dynamic rawMonths) {
+    final months = rawMonths is List
+        ? rawMonths.whereType<Map<String, dynamic>>()
+            .where((month) => month['key'] is String).toList().reversed.toList()
+        : <Map<String, dynamic>>[];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
+          child: Text('Berichte & Export',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        ),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.table_chart_outlined),
+            title: const Text('Alle Ladevorgänge als CSV'),
+            subtitle: const Text('Excel-kompatibler Export der gesamten Ladehistorie'),
+            trailing: const Icon(Icons.copy),
+            onTap: _showCsvExport,
+          ),
+        ),
+        ...months.map((month) {
+          final key = month['key'].toString();
+          final count = month['sessions'] is num ? (month['sessions'] as num).round() : 0;
+          final energy = _numberLabel(month['kwh'], digits: 1, suffix: ' kWh');
+          return Card(
+            child: ListTile(
+              leading: const Icon(Icons.picture_as_pdf_outlined),
+              title: Text(key),
+              subtitle: Text('$count Ladevorgänge · $energy'),
+              trailing: const Icon(Icons.open_in_new),
+              onTap: () => _showMonthlyReport(key),
+            ),
+          );
+        }),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(4, 4, 4, 0),
+          child: Text('Monatsberichte enthalten die Kostenübersicht und vorhandene Rechnungen.',
+            style: TextStyle(color: Colors.white54, fontSize: 12)),
+        ),
+      ],
+    );
+  }
+
   Future<void> _showInvoice(String sessionId, String site) async {
     try {
       final metadata = await _client.invoicePages(sessionId);
@@ -574,6 +753,7 @@ class _DashboardPageState extends State<DashboardPage> {
               _section('Fahrzeug', _map(_data?['car'])),
               _priceRadar(_data?['slots'], _data?['sites']),
               _sessions(_data?['sessions']),
+              _exports(_data?['monthly']),
               const SizedBox(height: 16),
               Text('Daten werden direkt von deinem Ladecockpit über Tailscale abgerufen.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white54)),
