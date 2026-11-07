@@ -1120,6 +1120,94 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _vehicleHero(Map<String, dynamic>? status) {
+    final data = status ?? {};
+    final soc = data['soc'] is num ? (data['soc'] as num).toDouble() : null;
+    final range = data['range'] is num ? (data['range'] as num).round() : null;
+    final charging = data['charging'];
+    final power = data['power'] is num ? (data['power'] as num).toDouble() : null;
+    final rate = data['rate'] is num ? (data['rate'] as num).toDouble() : null;
+    final finish = data['finish'];
+    final target = data['target'] is num ? (data['target'] as num).round() : null;
+    final level = soc == null ? 0.0 : (soc / 100).clamp(0.0, 1.0).toDouble();
+    final chargingText = charging == true ? 'Wird geladen'
+        : charging == false ? 'Lädt derzeit nicht' : 'Ladestatus nicht verfügbar';
+    final chargingColor = charging == true ? Colors.greenAccent
+        : charging == false ? Colors.white70 : Colors.orangeAccent;
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft, end: Alignment.bottomRight,
+            colors: [Color(0xFF203B39), Color(0xFF172326)],
+          ),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.directions_car_filled_outlined, color: Colors.white70),
+            const SizedBox(width: 8),
+            const Expanded(child: Text('FAHRZEUGSTATUS',
+              style: TextStyle(fontSize: 12, letterSpacing: 1.3, color: Colors.white70))),
+            if (charging == true) const Icon(Icons.bolt, color: Colors.greenAccent),
+          ]),
+          const SizedBox(height: 18),
+          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            SizedBox(
+              width: 112, height: 112,
+              child: Stack(alignment: Alignment.center, children: [
+                SizedBox.expand(child: CircularProgressIndicator(
+                  value: soc == null ? null : level,
+                  strokeWidth: 9,
+                  backgroundColor: Colors.white12,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    soc == null ? Colors.white38 : Colors.greenAccent),
+                )),
+                Column(mainAxisSize: MainAxisSize.min, children: [
+                  Text(soc == null ? '–' : '${soc.round()}%',
+                    style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
+                  const Text('Akku', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                ]),
+              ]),
+            ),
+            const SizedBox(width: 22),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Reichweite', style: TextStyle(color: Colors.white70)),
+              const SizedBox(height: 3),
+              Text(range == null ? '–' : '$range km',
+                style: const TextStyle(fontSize: 27, fontWeight: FontWeight.bold)),
+              if (target != null)
+                Text('Ladelimit $target %', style: const TextStyle(color: Colors.white60, fontSize: 12)),
+            ])),
+          ]),
+          const SizedBox(height: 18),
+          Container(height: 1, color: Colors.white12),
+          const SizedBox(height: 12),
+          Row(children: [
+            Icon(charging == true ? Icons.ev_station : Icons.power_off,
+              color: chargingColor, size: 19),
+            const SizedBox(width: 8),
+            Expanded(child: Text(chargingText,
+              style: TextStyle(color: chargingColor, fontWeight: FontWeight.w600))),
+            if (power != null) Text('${power.toStringAsFixed(1)} kW',
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          ]),
+          if (charging == true && rate != null)
+            Padding(padding: const EdgeInsets.only(top: 7),
+              child: Text('Ladegeschwindigkeit: ${rate.toStringAsFixed(1)} % pro Stunde',
+                style: const TextStyle(color: Colors.white70, fontSize: 12))),
+          if (charging == true && finish is String)
+            Padding(padding: const EdgeInsets.only(top: 5),
+              child: Text('Voraussichtlich fertig: ${_dateTimeLabel(finish)}',
+                style: const TextStyle(color: Colors.white70, fontSize: 12))),
+        ]),
+      ),
+    );
+  }
+
   Widget _connectionStatus() {
     final setup = _map(_data?['setup']) ?? {};
     final sync = _map(_data?['sync']) ?? {};
@@ -1250,6 +1338,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             if (_data != null) ...[
               _connectionStatus(),
+              _vehicleHero(_map(_data?['status'])),
               Text('ÜBERSICHT', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white60, letterSpacing: 1.4)),
               const SizedBox(height: 8),
               GridView.count(
