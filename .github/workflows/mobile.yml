@@ -62,15 +62,12 @@ jobs:
           xml_dir.mkdir(parents=True, exist_ok=True)
           config = """<?xml version="1.0" encoding="utf-8"?>
           <network-security-config>
-              <domain-config cleartextTrafficPermitted="true">
-                  <domain includeSubdomains="false">homeassistant.tail1966da.ts.net</domain>
-                  <domain includeSubdomains="false">100.78.111.102</domain>
-              </domain-config>
+              <base-config cleartextTrafficPermitted="true" />
           </network-security-config>
           """
           (xml_dir / "network_security_config.xml").write_text(config, encoding="utf-8")
           tree.write(manifest, encoding="utf-8", xml_declaration=True)
-          print("Cleartext HTTP permitted only for the configured Tailscale MagicDNS host and exact Tailscale IPv4 address")
+          print("App-level endpoint allowlist restricts cleartext HTTP to the configured Tailscale MagicDNS host and exact Tailscale IPv4 address")
           PY
       - name: Use Gradle direct download host
         run: |
