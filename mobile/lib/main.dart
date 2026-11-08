@@ -884,9 +884,28 @@ class _DashboardPageState extends State<DashboardPage> {
     }
     if (slots.isEmpty && sites.isEmpty) return const SizedBox.shrink();
 
-    Widget priceValue(dynamic value) =>
-        Text(value is num ? '${value.toStringAsFixed(3)} €/kWh' : 'Noch keine Daten',
-          style: const TextStyle(fontWeight: FontWeight.w600));
+    Widget priceValue(dynamic value, {bool highlighted = false}) =>
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: (highlighted ? AppTheme.accentGreen : AppTheme.accentTeal)
+                .withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: (highlighted ? AppTheme.accentGreen : AppTheme.border)
+                  .withValues(alpha: highlighted ? 0.35 : 1),
+            ),
+          ),
+          child: Text(
+            value is num ? '${value.toStringAsFixed(3)} €' : '–',
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              color: highlighted ? AppTheme.accentGreen : AppTheme.textPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -914,7 +933,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   color: isCheapest ? Colors.greenAccent : Colors.white60),
                 title: Text('$label${isCheapest ? ' · Günstigste Zeit' : ''}'),
                 subtitle: Text('${range.isEmpty ? 'Zeitfenster' : range} · $count Ladevorgänge'),
-                trailing: priceValue(slot['avg_price']),
+                trailing: Column(\n                  mainAxisAlignment: MainAxisAlignment.center,\n                  crossAxisAlignment: CrossAxisAlignment.end,\n                  mainAxisSize: MainAxisSize.min,\n                  children: [priceValue(slot['avg_price'], highlighted: isCheapest),\n                    const SizedBox(height: 2),\n                    const Text('€/kWh', style: TextStyle(fontSize: 9, color: AppTheme.textSecondary)),\n                  ],\n                ),
               ),
             );
           }),
@@ -943,7 +962,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 subtitle: Text('$network · $count Ladevorgänge · $kwh'
                   '${address != null && address.isNotEmpty ? '\n$address' : ''}'),
                 isThreeLine: address != null && address.isNotEmpty,
-                trailing: priceValue(site['avg_price']),
+                trailing: Column(\n                  mainAxisAlignment: MainAxisAlignment.center,\n                  crossAxisAlignment: CrossAxisAlignment.end,\n                  mainAxisSize: MainAxisSize.min,\n                  children: [priceValue(site['avg_price'], highlighted: isCheapest),\n                    const SizedBox(height: 2),\n                    const Text('€/kWh', style: TextStyle(fontSize: 9, color: AppTheme.textSecondary)),\n                  ],\n                ),
               ),
             );
           }),
