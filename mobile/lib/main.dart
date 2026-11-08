@@ -1083,7 +1083,6 @@ class _DashboardPageState extends State<DashboardPage> {
                   final homeCost = amount(month['home_cost']);
                   final publicEnergy = amount(month['kwh']);
                   final homeEnergy = amount(month['home_kwh']);
-                  final energy = publicEnergy + homeEnergy;
                   final homeCostLabel = !homeEnergyKnown
                       ? 'nicht erfasst'
                       : homeCostKnown ? '${homeCost.toStringAsFixed(2)} €'
@@ -1099,8 +1098,14 @@ class _DashboardPageState extends State<DashboardPage> {
                     final previous = months[index - 1];
                     final currentOrdinal = ordinal(key);
                     final previousOrdinal = ordinal(previous['key'].toString());
+                    final previousHomeEnergyKnown = previous['home_kwh'] is num ||
+                        num.tryParse(previous['home_kwh']?.toString() ?? '') != null;
+                    final previousHomeCostKnown = previous['home_cost'] is num ||
+                        num.tryParse(previous['home_cost']?.toString() ?? '') != null;
+                    final sameHomeCostCoverage = homeEnergyKnown == previousHomeEnergyKnown &&
+                        homeCostKnown == previousHomeCostKnown;
                     if (currentOrdinal != null && previousOrdinal != null &&
-                        currentOrdinal - previousOrdinal == 1) {
+                        currentOrdinal - previousOrdinal == 1 && sameHomeCostCoverage) {
                       final previousTotal = totalCost(previous);
                       if (previousTotal > 0) {
                         final difference = total - previousTotal;
