@@ -1943,6 +1943,18 @@ class _DashboardPageState extends State<DashboardPage> {
     final last = _map(_data?['last_charge']);
     final totals = _map(_data?['totals']);
     final forecast = _map(_data?['forecast']);
+    final overviewMetrics = <Widget>[
+      if (month?['sessions'] != null || month?['count'] != null)
+        _metric('Ladevorgänge diesen Monat',
+          month?['sessions'] ?? month?['count']),
+      if (month?['total_cost'] != null || month?['cost'] != null)
+        _metric('Gesamtkosten diesen Monat',
+          month?['total_cost'] ?? month?['cost'], suffix: ' €'),
+      if (month?['kwh'] != null)
+        _metric('Unterwegs geladen', month?['kwh'], suffix: ' kWh'),
+      if (month?['avg_price'] != null)
+        _metric('Ø Preis unterwegs', month?['avg_price'], suffix: ' €/kWh'),
+    ];
     const tabTitles = ['Cockpit', 'Ladevorgänge', 'Auswertungen'];
 
     return Scaffold(
@@ -1986,23 +1998,35 @@ class _DashboardPageState extends State<DashboardPage> {
             if (_data != null && _selectedTab == 0) ...[
               _vehicleHero(_map(_data?['status']), _map(_data?['car'])),
               _connectionStatus(),
-              Text('ÜBERSICHT', style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppTheme.textSecondary, letterSpacing: 1.4)),
-              const SizedBox(height: 8),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 1.65,
+              Row(
                 children: [
-                  _metric('Ladevorgänge diesen Monat',
-                    month?['sessions'] ?? month?['count']),
-                  _metric('Gesamtkosten diesen Monat',
-                    month?['total_cost'] ?? month?['cost'], suffix: ' €'),
-                  _metric('Unterwegs geladen', month?['kwh'], suffix: ' kWh'),
-                  _metric('Ø Preis unterwegs', month?['avg_price'], suffix: ' €/kWh'),
+                  Expanded(child: Text('DIESER MONAT',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: AppTheme.textSecondary, letterSpacing: 1.4))),
+                  Text('${overviewMetrics.length} Kennzahlen',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppTheme.textSecondary)),
                 ],
               ),
+              const SizedBox(height: 8),
+              if (overviewMetrics.isNotEmpty)
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 9,
+                  mainAxisSpacing: 9,
+                  childAspectRatio: 1.85,
+                  children: overviewMetrics,
+                )
+              else
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(14),
+                    child: Text('Für diesen Monat liegen noch keine Kennzahlen vor.',
+                      style: TextStyle(color: AppTheme.textSecondary)),
+                  ),
+                ),
               _homeChargingSummary(_map(month?['home'])),
               _section('Letzter Ladevorgang', last),
               _section('Gesamt', totals),
