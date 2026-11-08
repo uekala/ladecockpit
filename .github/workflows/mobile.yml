@@ -157,6 +157,22 @@ jobs:
 
           echo "Android build failed after 5 attempts."
           exit 1
+      - name: Verify permissions in the compiled APK manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          if [ -z "$AAPT" ]; then
+            echo "Android aapt tool not found"
+            exit 1
+          fi
+          echo "Inspecting compiled APK: $APK"
+          "$AAPT" dump permissions "$APK" | tee /tmp/ladecockpit-apk-permissions.txt
+          grep -q "android.permission.INTERNET" /tmp/ladecockpit-apk-permissions.txt
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml | tee /tmp/ladecockpit-apk-manifest.txt
+          grep -q "networkSecurityConfig" /tmp/ladecockpit-apk-manifest.txt
+          echo "Verified INTERNET permission and network security config in compiled APK"
       - uses: actions/upload-artifact@v4
         with:
           name: ladecockpit-android-apk
