@@ -774,18 +774,8 @@ class _DashboardPageState extends State<DashboardPage> {
             networkValue == 'supercharger' ? 'Supercharger' : networkValue;
           final kwhValue = session['kwh'];
           final costValue = session['cost'];
-          final durationValue = session['duration_min'];
           final kwh = kwhValue == null ? null : number(kwhValue);
           final cost = costValue == null ? null : number(costValue, digits: 2);
-          final energyAmount = kwhValue is num
-              ? kwhValue : num.tryParse(kwhValue?.toString() ?? '');
-          final costAmount = costValue is num
-              ? costValue : num.tryParse(costValue?.toString() ?? '');
-          final effectivePrice = energyAmount != null && energyAmount > 0 &&
-                  costAmount != null
-              ? (costAmount / energyAmount).toStringAsFixed(3)
-              : null;
-          final duration = durationValue == null ? null : _durationLabel(durationValue);
           final currency = session['currency']?.toString() ?? 'EUR';
           final currencyLabel = currency == 'EUR' ? '€' : currency;
           final invoice = session['has_invoice'] == true;
