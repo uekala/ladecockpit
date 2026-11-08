@@ -186,7 +186,7 @@ Map<String, dynamic> parseDashboardResponse(int statusCode, String body) {
 
 String connectionErrorMessage(Object error) {
 if (error is CockpitException) {
-  return '${error.message}\\nDiagnose: ${error.runtimeType} · $error';
+  return error.message;
 }
 if (error is TimeoutException) {
   return 'Zeitüberschreitung: Der Server hat nicht rechtzeitig geantwortet. Bitte Verbindung prüfen und erneut versuchen.';
