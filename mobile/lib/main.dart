@@ -345,10 +345,10 @@ class _DashboardPageState extends State<DashboardPage> {
       if (energyKeys.contains(key)) return '$number kWh';
       if (moneyKeys.contains(key)) return '$number €';
       if (priceKeys.contains(key)) return '$number €/kWh';
+      if (key == 'dist_day') return '$number km/Tag';
       if (distanceKeys.contains(key)) return '$number km';
       if (key == 'avg_kw') return '$number kW';
       if (key == 'rate_pct_day') return '$number %/Tag';
-      if (key == 'dist_day') return '$number km/Tag';
       if (key == 'per_100') return '$number €/100 km';
       if (key == 'kwh_per_100') return '$number kWh/100 km';
       if (key == 'duration_min') return _durationLabel(value);
