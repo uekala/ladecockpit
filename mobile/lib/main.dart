@@ -941,6 +941,16 @@ class _DashboardPageState extends State<DashboardPage> {
         : networkValue == 'supercharger' ? 'Supercharger' : networkValue;
     final invoice = session['has_invoice'] == true;
     final sessionId = session['id']?.toString();
+    final energyValue = session['kwh'] is num
+        ? session['kwh'] as num
+        : num.tryParse(session['kwh']?.toString() ?? '');
+    final costValue = session['cost'] is num
+        ? session['cost'] as num
+        : num.tryParse(session['cost']?.toString() ?? '');
+    final effectivePrice = energyValue != null && energyValue > 0 &&
+            costValue != null
+        ? costValue / energyValue
+        : null;
     String? textValue(String key) {
       final value = session[key];
       if (value == null || value.toString().trim().isEmpty) return null;
@@ -967,6 +977,9 @@ class _DashboardPageState extends State<DashboardPage> {
         _detailRow('Gutschrift', _numberLabel(session['credit'], suffix: ' $currencySymbol')),
       if (session['price'] != null)
         _detailRow('Preis pro kWh', _numberLabel(session['price'], digits: 3, suffix: ' $currencySymbol/kWh')),
+      if (session['price'] == null && effectivePrice != null)
+        _detailRow('Effektivpreis (berechnet)',
+          _numberLabel(effectivePrice, digits: 3, suffix: ' $currencySymbol/kWh')),
       if (session['avg_kw'] != null)
         _detailRow('Durchschnittsleistung', _numberLabel(session['avg_kw'], suffix: ' kW')),
       if (session['start_soc'] != null)
@@ -997,6 +1010,12 @@ class _DashboardPageState extends State<DashboardPage> {
               Text(site,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800)),
+              if (textValue('address') != null) ...[
+                const SizedBox(height: 4),
+                SelectableText(textValue('address')!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.textSecondary)),
+              ],
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
