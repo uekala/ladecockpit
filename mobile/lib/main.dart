@@ -247,20 +247,36 @@ class _DashboardPageState extends State<DashboardPage> {
         title: const Text('Verbindung einrichten'),
         content: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text(
+              'Verbinde die App mit deinem Ladecockpit-Server. Deine Zugangsdaten werden geschützt auf diesem Gerät gespeichert.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 18),
             TextField(
               controller: urlController,
               keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.next,
+              autocorrect: false,
+              enableSuggestions: false,
               decoration: const InputDecoration(
-                labelText: 'Ladecockpit-Adresse',
-                hintText: 'http://100.x.y.z:8077',
-                helperText: 'Tailscale-IP oder MagicDNS-Adresse inklusive Port',
+                prefixIcon: Icon(Icons.link_rounded),
+                labelText: 'Serveradresse',
+                hintText: 'https://ladecockpit.example:8077',
+                helperText: 'Tailscale-IP oder MagicDNS-Adresse mit Port',
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: passwordController,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'App-Passwort (falls aktiviert)'),
+              textInputAction: TextInputAction.done,
+              autocorrect: false,
+              enableSuggestions: false,
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.lock_outline_rounded),
+                labelText: 'App-Passwort',
+                helperText: 'Nur erforderlich, wenn der Serverzugriff geschützt ist',
+              ),
             ),
           ]),
         ),
