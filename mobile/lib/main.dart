@@ -1794,7 +1794,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             Text('$count Ladevorgänge · $energy',
                               style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
                             const SizedBox(height: 3),
-                            Text('$monthTotal € Gesamtkosten',
+                            Text('$monthTotal € erfasste Kosten',
                               style: const TextStyle(fontSize: 12,
                                 color: AppTheme.accentGreen, fontWeight: FontWeight.w700)),
                           ],
