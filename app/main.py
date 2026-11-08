@@ -89,10 +89,46 @@ app = FastAPI(title="Ladecockpit", version=__version__, lifespan=lifespan,
               docs_url=None, redoc_url=None, openapi_url=None)
 
 
-# --- optional password (HTTP Basic, user name ignored) ------------------------------
+# --- access control: trusted Home Assistant Ingress or direct app password ----------
+SUPERVISOR_INGRESS_IP = "172.30.32.2"
+
+
+def _is_trusted_ingress(request: Request) -> bool:
+    """Trust Ingress only when the TCP peer is the Supervisor and its marker is present.
+
+    The header alone is not sufficient: direct clients can forge HTTP headers.
+    Home Assistant documents 172.30.32.2 as the only source allowed to reach
+    an Ingress app. Never use X-Forwarded-For for this trust decision.
+    """
+    peer = request.client.host if request.client else ""
+    return (
+        peer == SUPERVISOR_INGRESS_IP
+        and request.headers.get("x-hass-source") == "core.ingress"
+        and request.headers.get("x-ingress-path", "").startswith("/api/hassio_ingress/")
+    )
+
+
 @app.middleware("http")
 async def basic_auth(request: Request, call_next):
-    if settings.app_password and request.url.path != "/healthz":
+    # Keep the local container health check available.
+    if request.url.path == "/healthz" and request.client and request.client.host in {
+        "127.0.0.1", "::1", SUPERVISOR_INGRESS_IP
+    }:
+        return await call_next(request)
+
+    # Home Assistant Ingress has already authenticated the user. Only trust
+    # requests that actually arrive from the Supervisor's fixed network IP.
+    if _is_trusted_ingress(request):
+        return await call_next(request)
+
+    # Every non-Ingress request is direct access and must have its own password.
+    if settings.addon and not settings.app_password:
+        return Response(
+            status_code=403,
+            content="Direct access is disabled until an app password is configured.",
+        )
+
+    if settings.app_password:
         header = request.headers.get("authorization", "")
         ok = False
         if header.lower().startswith("basic "):
@@ -197,8 +233,7 @@ async def dashboard():
             "redirect_uri": settings.tesla_redirect_uri,
             "push_since": db.kv_get("push_since"),
             "entities": sorted(ha.entities()),
-            "addon": settings.addon,
-        },
+            "addon": settings.addon,        },
         "sync": {"last": sync.last_sync, "next": sync.next_sync,
                  "error": sync.last_error, "burst": sync.bursting,
                  "problem": db.kv_get("problem_kind")},
@@ -397,8 +432,7 @@ async def invoices_zip(month: str):
     if settings.demo:
         raise HTTPException(404, "The demo has no real invoices.")
     chosen = [s for s in db.sessions() if s.get("invoices") and s.get("start_ts")
-              and datetime.fromisoformat(s["start_ts"]).astimezone(settings.tz).strftime("%Y-%m") == month]
-    if not chosen:
+              and datetime.fromisoformat(s["start_ts"]).astimezone(settings.tz).strftime("%Y-%m") == month]    if not chosen:
         raise HTTPException(404, "No invoices in this month.")
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
