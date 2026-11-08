@@ -141,13 +141,13 @@ abstract final class AppTheme {
           ),
         ),
       ),
-      navigationBarTheme: NavigationBarThemeData(
+      navigationBarTheme: const NavigationBarThemeData(
         height: 72,
         backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
         indicatorColor: const Color(0x2639E6A5),
         labelTextStyle: const WidgetStatePropertyAll<TextStyle>(
-          const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+          TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
         ),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         elevation: 0,
