@@ -1039,6 +1039,20 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     }
     if (slots.isEmpty && sites.isEmpty) return const SizedBox.shrink();
+    Map<String, dynamic>? cheapestSlot;
+    Map<String, dynamic>? cheapestSite;
+    for (final slot in slots) {
+      if (slot['avg_price'] is num &&
+          (cheapestSlot == null || (slot['avg_price'] as num) < (cheapestSlot['avg_price'] as num))) {
+        cheapestSlot = slot;
+      }
+    }
+    for (final site in sites) {
+      if (site['avg_price'] is num &&
+          (cheapestSite == null || (site['avg_price'] as num) < (cheapestSite['avg_price'] as num))) {
+        cheapestSite = site;
+      }
+    }
 
     Widget priceValue(dynamic value, {bool highlighted = false}) =>
         Container(
@@ -1071,6 +1085,68 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Text('Preisradar',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
         ),
+        if (cheapestSlot != null || cheapestSite != null)
+          Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppTheme.accentGreen.withValues(alpha: 0.11),
+                    AppTheme.surface,
+                  ],
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.savings_outlined,
+                        color: AppTheme.accentGreen, size: 18),
+                      const SizedBox(width: 8),
+                      const Expanded(child: Text('Günstigste erfasste Option',
+                        style: TextStyle(fontWeight: FontWeight.w800))),
+                      if (cheapestSlot?['avg_price'] is num)
+                        Text('${(cheapestSlot!['avg_price'] as num).toStringAsFixed(3)} €/kWh',
+                          style: const TextStyle(color: AppTheme.accentGreen,
+                            fontWeight: FontWeight.w800)),
+                    ],
+                  ),
+                  if (cheapestSlot != null) ...[
+                    const SizedBox(height: 5),
+                    Text('Zeitfenster · ${cheapestSlot['label'] ?? cheapestSlot['range'] ?? 'Günstigste Ladezeit'}',
+                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                  ],
+                  if (cheapestSite != null) ...[
+                    const SizedBox(height: 8),
+                    Container(height: 1, color: AppTheme.border),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined,
+                          color: AppTheme.accentTeal, size: 17),
+                        const SizedBox(width: 7),
+                        Expanded(child: Text(
+                          'Standort · ${cheapestSite['label'] ?? cheapestSite['site'] ?? 'Günstigster Standort'}',
+                          maxLines: 2, overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12))),
+                        if (cheapestSite['avg_price'] is num)
+                          Text('${(cheapestSite['avg_price'] as num).toStringAsFixed(3)} €/kWh',
+                            style: const TextStyle(color: AppTheme.accentGreen,
+                              fontWeight: FontWeight.w800, fontSize: 12)),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
         if (slots.isNotEmpty) ...[
           const Padding(
             padding: EdgeInsets.fromLTRB(4, 4, 4, 6),
@@ -1128,7 +1204,12 @@ class _DashboardPageState extends State<DashboardPage> {
               leading: const Icon(Icons.ev_station, color: AppTheme.accentTeal),
               title: Text('${sites.length} Ladestandorte',
                 style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: const Text('Durchschnittspreise und Ladehäufigkeit'),
+              subtitle: Text(
+                cheapestSite == null
+                    ? 'Durchschnittspreise und Ladehäufigkeit'
+                    : 'Günstigster Standort: ${(cheapestSite['avg_price'] as num).toStringAsFixed(3)} €/kWh',
+                maxLines: 1, overflow: TextOverflow.ellipsis,
+              ),
               children: sites.map((site) {
                 final label = site['label']?.toString() ??
                     site['site']?.toString() ?? 'Unbekannter Standort';
