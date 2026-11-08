@@ -1084,7 +1084,6 @@ class _DashboardPageState extends State<DashboardPage> {
                   final publicEnergy = amount(month['kwh']);
                   final homeEnergy = amount(month['home_kwh']);
                   final energy = publicEnergy + homeEnergy;
-                  final hasHomeEnergy = homeEnergyKnown && homeEnergy > 0;
                   final homeCostLabel = !homeEnergyKnown
                       ? 'nicht erfasst'
                       : homeCostKnown ? '${homeCost.toStringAsFixed(2)} €'
