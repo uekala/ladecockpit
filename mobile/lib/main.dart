@@ -1470,33 +1470,54 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            SizedBox(width: 54, child: Text(label,
-                              style: const TextStyle(color: AppTheme.textSecondary))),
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
-                                child: SizedBox(
-                                  height: 10,
-                                  child: Row(children: [
-                                    if (publicFlex > 0)
-                                      Expanded(flex: publicFlex, child: Container(
-                                        color: Theme.of(context).colorScheme.primary)),
-                                    if (homeFlex > 0)
-                                      Expanded(flex: homeFlex, child: Container(
-                                        color: Colors.lightBlueAccent)),
-                                    if (publicFlex == 0 && homeFlex == 0)
-                                      Expanded(child: Container(color: AppTheme.border)),
-                                  ]),
-                                ),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final compact = constraints.maxWidth < 370;
+                            Widget bar = ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: SizedBox(
+                                height: 10,
+                                child: Row(children: [
+                                  if (publicFlex > 0)
+                                    Expanded(flex: publicFlex, child: Container(
+                                      color: Theme.of(context).colorScheme.primary)),
+                                  if (homeFlex > 0)
+                                    Expanded(flex: homeFlex, child: Container(
+                                      color: Colors.lightBlueAccent)),
+                                  if (publicFlex == 0 && homeFlex == 0)
+                                    Expanded(child: Container(color: AppTheme.border)),
+                                ]),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            SizedBox(width: 76, child: Text('${total.toStringAsFixed(2)} €',
-                              textAlign: TextAlign.end,
-                              style: const TextStyle(fontWeight: FontWeight.w600))),
-                          ],
+                            );
+                            if (compact) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(child: Text(label,
+                                        style: const TextStyle(color: AppTheme.textSecondary))),
+                                      Text('${total.toStringAsFixed(2)} €',
+                                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 7),
+                                  bar,
+                                ],
+                              );
+                            }
+                            return Row(
+                              children: [
+                                SizedBox(width: 54, child: Text(label,
+                                  style: const TextStyle(color: AppTheme.textSecondary))),
+                                Expanded(child: bar),
+                                const SizedBox(width: 12),
+                                SizedBox(width: 76, child: Text('${total.toStringAsFixed(2)} €',
+                                  textAlign: TextAlign.end,
+                                  style: const TextStyle(fontWeight: FontWeight.w600))),
+                              ],
+                            );
+                          },
                         ),
                         Theme(
                           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
