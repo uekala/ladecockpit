@@ -81,7 +81,7 @@ void main() {
     });
 
     expect(find.text('FAHRZEUGSTATUS'), findsOneWidget);
-    expect(find.text('–'), findsNWidgets(2));
+    expect(find.text('–'), findsNWidgets(4));
     expect(find.text('0%'), findsNothing);
     expect(find.text('Ladestatus nicht verfügbar'), findsOneWidget);
   });
