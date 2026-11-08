@@ -794,11 +794,7 @@ class _DashboardPageState extends State<DashboardPage> {
               _sessionMetric('Energie', '$kwh kWh', Icons.bolt),
             if (cost != null)
               _sessionMetric('Kosten', '$cost $currencyLabel', Icons.euro),
-            if (effectivePrice != null)
-              _sessionMetric('Effektivpreis', '$effectivePrice $currencyLabel/kWh',
-                Icons.price_check_rounded),
-            if (duration != null)
-              _sessionMetric('Dauer', duration, Icons.schedule),
+            // Keep the list glanceable; effective price and duration remain in the detail view.
           ];
           return Card(
             clipBehavior: Clip.antiAlias,
