@@ -1876,64 +1876,71 @@ class _DashboardPageState extends State<DashboardPage> {
                 style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
             ],
             const SizedBox(height: 22),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 132,
-                  height: 132,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox.expand(
-                        child: CircularProgressIndicator(
-                          value: level,
-                          strokeWidth: 10,
-                          strokeCap: StrokeCap.round,
-                          backgroundColor: Colors.white.withValues(alpha: 0.07),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            soc == null ? AppTheme.border : AppTheme.accentGreen,
-                          ),
-                        ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 360;
+                final gaugeSize = compact ? 108.0 : 132.0;
+                final gaugeGap = compact ? 14.0 : 22.0;
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: gaugeSize,
+                      height: gaugeSize,
+                      child: Stack(
+                        alignment: Alignment.center,
                         children: [
-                          Text(soc == null ? '–' : '${soc.round()}%',
-                            style: const TextStyle(fontSize: 34,
-                              height: 1.0, fontWeight: FontWeight.w800,
-                              letterSpacing: -1.2)),
-                          const SizedBox(height: 5),
-                          const Text('BATTERIE',
-                            style: TextStyle(fontSize: 9, letterSpacing: 1.2,
-                              color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+                          SizedBox.expand(
+                            child: CircularProgressIndicator(
+                              value: level,
+                              strokeWidth: compact ? 8 : 10,
+                              strokeCap: StrokeCap.round,
+                              backgroundColor: Colors.white.withValues(alpha: 0.07),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                soc == null ? AppTheme.border : AppTheme.accentGreen,
+                              ),
+                            ),
+                          ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(soc == null ? '–' : '${soc.round()}%',
+                                style: TextStyle(fontSize: compact ? 29 : 34,
+                                  height: 1.0, fontWeight: FontWeight.w800,
+                                  letterSpacing: -1.2)),
+                              const SizedBox(height: 5),
+                              const Text('BATTERIE',
+                                style: TextStyle(fontSize: 9, letterSpacing: 1.2,
+                                  color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 22),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('REICHWEITE',
-                        style: TextStyle(fontSize: 10, letterSpacing: 1.3,
-                          color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 5),
-                      Text(range == null ? '–' : '$range km',
-                        maxLines: 1, softWrap: false,
-                        style: const TextStyle(fontSize: 30,
-                          fontWeight: FontWeight.w800, letterSpacing: -1.0)),
-                      if (target != null) ...[
-                        const SizedBox(height: 8),
-                        Text('Ladelimit $target %',
-                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                    SizedBox(width: gaugeGap),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('REICHWEITE',
+                            style: TextStyle(fontSize: 10, letterSpacing: 1.3,
+                              color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 5),
+                          Text(range == null ? '–' : '$range km',
+                            maxLines: 1, softWrap: false,
+                            style: TextStyle(fontSize: compact ? 25 : 30,
+                              fontWeight: FontWeight.w800, letterSpacing: -1.0)),
+                          if (target != null) ...[
+                            const SizedBox(height: 8),
+                            Text('Ladelimit $target %',
+                              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 20),
             Container(height: 1, color: AppTheme.border),
