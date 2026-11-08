@@ -241,48 +241,120 @@ class _DashboardPageState extends State<DashboardPage> {
     final urlController = TextEditingController(text: await _client.serverUrl ?? '');
     final passwordController = TextEditingController(text: await _client.password ?? '');
     if (!mounted) return;
+    final hasSavedServer = urlController.text.trim().isNotEmpty;
     final saved = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Verbindung einrichten'),
+        title: const Row(
+          children: [
+            Icon(Icons.dns_outlined, color: AppTheme.accentGreen, size: 22),
+            SizedBox(width: 10),
+            Expanded(child: Text('Serververbindung')),
+          ],
+        ),
         content: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text(
-              'Verbinde die App mit deinem Ladecockpit-Server. Deine Zugangsdaten werden geschützt auf diesem Gerät gespeichert.',
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-            ),
-            const SizedBox(height: 18),
-            TextField(
-              controller: urlController,
-              keyboardType: TextInputType.url,
-              textInputAction: TextInputAction.next,
-              autocorrect: false,
-              enableSuggestions: false,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.link_rounded),
-                labelText: 'Serveradresse',
-                hintText: 'https://ladecockpit.example:8077',
-                helperText: 'Tailscale-IP oder MagicDNS-Adresse mit Port',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: (hasSavedServer ? AppTheme.accentGreen : AppTheme.accentTeal)
+                      .withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppTheme.border),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      hasSavedServer ? Icons.check_circle_outline : Icons.info_outline,
+                      color: hasSavedServer ? AppTheme.accentGreen : AppTheme.accentTeal,
+                      size: 19,
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        hasSavedServer
+                            ? 'Eine Serveradresse ist auf diesem Gerät hinterlegt.'
+                            : 'Hinterlege die Adresse deines Ladecockpit-Servers.',
+                        style: const TextStyle(fontSize: 12, height: 1.35),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              textInputAction: TextInputAction.done,
-              autocorrect: false,
-              enableSuggestions: false,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.lock_outline_rounded),
-                labelText: 'App-Passwort',
-                helperText: 'Nur erforderlich, wenn der Serverzugriff geschützt ist',
+              const SizedBox(height: 18),
+              const Text('SERVERZUGRIFF',
+                style: TextStyle(
+                  color: AppTheme.accentGreen,
+                  fontSize: 10,
+                  letterSpacing: 1.1,
+                  fontWeight: FontWeight.w800,
+                )),
+              const SizedBox(height: 8),
+              TextField(
+                controller: urlController,
+                keyboardType: TextInputType.url,
+                textInputAction: TextInputAction.next,
+                autocorrect: false,
+                enableSuggestions: false,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.link_rounded),
+                  labelText: 'Serveradresse',
+                  hintText: 'https://ladecockpit.example:8077',
+                  helperText: 'Tailscale-IP oder MagicDNS-Adresse inklusive Port',
+                ),
               ),
-            ),
-          ]),
+              const SizedBox(height: 16),
+              const Text('ANMELDUNG',
+                style: TextStyle(
+                  color: AppTheme.accentGreen,
+                  fontSize: 10,
+                  letterSpacing: 1.1,
+                  fontWeight: FontWeight.w800,
+                )),
+              const SizedBox(height: 8),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                autocorrect: false,
+                enableSuggestions: false,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.lock_outline_rounded),
+                  labelText: 'App-Passwort',
+                  helperText: 'Optional – nur wenn dein Server ein Passwort verlangt',
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.shield_outlined, size: 16, color: AppTheme.textSecondary),
+                  SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      'Die Zugangsdaten werden geschützt auf diesem Gerät gespeichert. Die Verbindung erfolgt direkt zu deinem Server.',
+                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, height: 1.35),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Abbrechen')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Speichern')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(context, true),
+            icon: const Icon(Icons.save_outlined, size: 18),
+            label: const Text('Speichern & verbinden'),
+          ),
         ],
       ),
     );
