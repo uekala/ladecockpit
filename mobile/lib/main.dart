@@ -484,6 +484,13 @@ class _DashboardPageState extends State<DashboardPage> {
 
     final first = entries.first;
     final summary = '${_sectionLabel(first.key)} · ${_sectionValue(first.key, first.value)}';
+    final sectionIcon = switch (title) {
+      'Letzter Ladevorgang' => Icons.ev_station_rounded,
+      'Gesamt' => Icons.insights_rounded,
+      'Ladeprognose' => Icons.battery_charging_full_rounded,
+      'Fahrzeug' => Icons.directions_car_rounded,
+      _ => Icons.tune_rounded,
+    };
 
     return Card(
       margin: const EdgeInsets.only(top: 5, bottom: 5),
@@ -493,8 +500,15 @@ class _DashboardPageState extends State<DashboardPage> {
           initiallyExpanded: false,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          leading: const Icon(Icons.tune_rounded,
-            color: AppTheme.textSecondary, size: 20),
+          leading: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppTheme.accentGreen.withValues(alpha: 0.09),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(sectionIcon, color: AppTheme.accentGreen, size: 19),
+          ),
           title: Text(title,
             style: const TextStyle(fontWeight: FontWeight.w700)),
           subtitle: Text(summary,
@@ -2533,8 +2547,10 @@ class _DashboardPageState extends State<DashboardPage> {
               Row(
                 children: [
                   Expanded(child: Text('DIESER MONAT',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: AppTheme.textSecondary, letterSpacing: 1.4))),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppTheme.accentGreen,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2))),
                   Text('${overviewMetrics.length} Kennzahlen',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: AppTheme.textSecondary)),
