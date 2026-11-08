@@ -66,6 +66,11 @@ class CockpitClient {
     return cockpitRequestHeaders(await password, json: json);
   }
 
+  static const _allowedHttpHosts = {
+    'homeassistant.tail1966da.ts.net',
+    '100.78.111.102',
+  };
+
   Future<Uri> _endpoint(String path) async {
     final base = await serverUrl;
     if (base == null || base.isEmpty) {
@@ -75,6 +80,11 @@ class CockpitClient {
     if (root == null || !root.hasScheme || root.host.isEmpty ||
         (root.scheme != 'http' && root.scheme != 'https')) {
       throw const CockpitException('Bitte eine gültige HTTP- oder HTTPS-Serveradresse eingeben.');
+    }
+    if (root.scheme == 'http' && !_allowedHttpHosts.contains(root.host.toLowerCase())) {
+      throw const CockpitException(
+        'Unverschlüsseltes HTTP ist aus Sicherheitsgründen nur für den festgelegten Tailscale-Server erlaubt. Bitte dessen MagicDNS-Adresse oder Tailscale-IP verwenden.',
+      );
     }
     return root.resolve(path);
   }
