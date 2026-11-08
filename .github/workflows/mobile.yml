@@ -59,12 +59,6 @@ jobs:
           path.write_text(content)
           import xml.etree.ElementTree as ET
           ET.parse(path)
-          impeller = '        <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />'
-          if "io.flutter.embedding.android.EnableImpeller" not in content:
-              content = content.replace("</application>", impeller + "\n    </application>", 1)
-          path.write_text(content)
-          ET.parse(path)
-          print("Impeller disabled for Android; manifest remains valid XML.")
           print(content)
           PY
       - name: Use Gradle direct download host
