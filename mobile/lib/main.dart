@@ -2096,12 +2096,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ],
             ),
-            _statusLine(
-              socSource == 'live' ? Icons.sensors_rounded :
-                hasVehicleReading ? Icons.history_rounded : Icons.info_outline,
-              'Fahrzeugdaten', vehicleDataLabel, color: vehicleDataColor),
-            if (hasVehicleReading && vehicleDataTime != null)
-              _statusLine(Icons.schedule, 'Datenstand', _dateTimeLabel(vehicleDataTime)),
+            // Fahrzeugdaten-Frische steht bereits kompakt in der Zusammenfassung
+            // und im Fahrzeug-Header; hier bleiben nur Verbindungsdetails.
             if (hasTeslaError)
               Padding(
                 padding: const EdgeInsets.only(left: 28, bottom: 5),
