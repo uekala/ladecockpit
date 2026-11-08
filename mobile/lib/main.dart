@@ -2665,7 +2665,7 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: const Icon(Icons.settings_outlined)),
         ],
       ),
-      // Diagnostic stage 3: render the real sessions tab content in the proven scroll shell.
+      // Diagnostic stage 4: isolate the real cockpit tab.
       body: ColoredBox(
         color: AppTheme.background,
         child: RefreshIndicator(
@@ -2673,19 +2673,72 @@ class _DashboardPageState extends State<DashboardPage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: [
-              _tabIntro(
-                'Ladeaktivität',
-                'Deine Ladevorgänge',
-                'Finde frühere Ladungen und filtere nach Zeitraum, Ladenetz oder Standort.',
-                Icons.ev_station_rounded,
-              ),
-              _sessions(_data?['sessions']),
-              if (_data?['sessions'] is! List || (_data?['sessions'] as List).isEmpty)
+              if (_data != null) ...[
+                _vehicleHero(_map(_data?['status']), _map(_data?['car'])),
+                _connectionStatus(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 2, 4, 9),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('MONATSÜBERBLICK',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppTheme.accentGreen,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2)),
+                      const SizedBox(height: 3),
+                      Text('Ladeaktivität und Kosten auf einen Blick',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondary)),
+                    ],
+                  ),
+                ),
+                if (overviewMetrics.isNotEmpty)
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 9,
+                    mainAxisSpacing: 9,
+                    childAspectRatio: 1.85,
+                    children: overviewMetrics,
+                  )
+                else
+                  const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(14),
+                      child: Text('Für diesen Monat liegen noch keine Kennzahlen vor.',
+                        style: TextStyle(color: AppTheme.textSecondary)),
+                    ),
+                  ),
+                _homeChargingSummary(_map(month?['home'])),
+                _section('Letzter Ladevorgang', last),
+                _section('Gesamt', totals),
+                _section('Ladeprognose', forecast),
+                _section('Fahrzeug', _map(_data?['car'])),
+                const SizedBox(height: 12),
+                Text('Daten werden direkt von deinem Ladecockpit über Tailscale abgerufen.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.textSecondary)),
+              ] else if (_error != null)
                 _loadStatePanel(
-                  icon: Icons.history_rounded,
-                  title: 'Noch keine Ladevorgänge',
-                  message: 'Sobald dein Ladecockpit Ladevorgänge erfasst hat, erscheinen sie hier.',
-                  color: AppTheme.textSecondary,
+                  icon: Icons.cloud_off_rounded,
+                  title: 'Verbindung nicht möglich',
+                  message: _error!,
+                  color: AppTheme.warning,
+                  action: FilledButton.icon(
+                    onPressed: _loading ? null : _load,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Erneut versuchen'),
+                  ),
+                )
+              else
+                _loadStatePanel(
+                  icon: Icons.electric_car_rounded,
+                  title: 'Lade dein Cockpit',
+                  message: 'Fahrzeug- und Ladedaten werden sicher vom Server abgerufen.',
+                  color: AppTheme.accentGreen,
+                  action: const LinearProgressIndicator(minHeight: 3),
                 ),
             ],
           ),
