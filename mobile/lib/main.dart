@@ -1365,25 +1365,27 @@ class _DashboardPageState extends State<DashboardPage> {
         ? '${latestParts[1]}.${latestParts[0]}' : latestKey;
     final averageCost = values.fold<num>(0, (sum, value) => sum + value) / values.length;
 
-    Widget summaryMetric(String label, String value, String detail, IconData icon) =>
+    Widget summaryMetric(String label, String value, String detail, IconData icon,
+        {bool compact = false}) =>
         Expanded(
           child: Card(
             margin: EdgeInsets.zero,
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(compact ? 9 : 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, size: 18, color: AppTheme.accentGreen),
-                  const SizedBox(height: 8),
-                  Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppTheme.textSecondary)),
+                  Icon(icon, size: compact ? 16 : 18, color: AppTheme.accentGreen),
+                  SizedBox(height: compact ? 5 : 8),
+                  Text(label, maxLines: 2, overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppTheme.textSecondary)),
                   const SizedBox(height: 3),
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: Text(value, style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w800)),
+                    child: Text(value, style: TextStyle(
+                      fontSize: compact ? 16 : 18, fontWeight: FontWeight.w800)),
                   ),
                   Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -1402,14 +1404,19 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Text('Kostenentwicklung',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
         ),
-        Row(
-          children: [
-            summaryMetric('Letzter Monat', '${values.last.toStringAsFixed(2)} €',
-              latestLabel, Icons.calendar_month_outlined),
-            const SizedBox(width: 10),
-            summaryMetric('Monatsdurchschnitt', '${averageCost.toStringAsFixed(2)} €',
-              'über ${months.length} Monate', Icons.show_chart),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 370;
+            return Row(
+              children: [
+                summaryMetric('Letzter Monat', '${values.last.toStringAsFixed(2)} €',
+                  latestLabel, Icons.calendar_month_outlined, compact: compact),
+                SizedBox(width: compact ? 7 : 10),
+                summaryMetric('Monatsdurchschnitt', '${averageCost.toStringAsFixed(2)} €',
+                  'über ${months.length} Monate', Icons.show_chart, compact: compact),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 8),
         Card(
