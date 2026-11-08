@@ -17,6 +17,7 @@ void main() {
       final message = connectionErrorMessage(const SocketException('no route'));
       expect(message, contains('Server nicht erreichbar'));
       expect(message, contains('VPN/Tailscale'));
+      expect(message, contains('no route'));
     });
 
     test('explains HTTPS handshake failures', () {
@@ -29,7 +30,7 @@ void main() {
     test('explains HTTP transport failures', () {
       expect(
         connectionErrorMessage(const HttpException('connection reset')),
-        contains('HTTP-Verbindung'),
+        contains('connection reset'),
       );
     });
 
