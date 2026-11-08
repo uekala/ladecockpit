@@ -1113,7 +1113,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
           child: Text(
-            value is num ? '${value.toStringAsFixed(3)} €' : '–',
+            value is num ? '${value.toStringAsFixed(3)} €/kWh' : '–',
             textAlign: TextAlign.end,
             style: TextStyle(
               color: highlighted ? AppTheme.accentGreen : AppTheme.textPrimary,
@@ -1127,7 +1127,17 @@ class _DashboardPageState extends State<DashboardPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
+          padding: const EdgeInsets.fromLTRB(4, 22, 4, 4),
+          child: Text('Preisradar',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        ),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(4, 0, 4, 10),
+          child: Text('Historische Durchschnittswerte aus deinen erfassten Ladevorgängen – keine Live-Tarife.',
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 22, 4, 4),
           child: Text('Preisradar',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
         ),
@@ -1156,7 +1166,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       const Icon(Icons.savings_outlined,
                         color: AppTheme.accentGreen, size: 18),
                       const SizedBox(width: 8),
-                      const Expanded(child: Text('Günstigste erfasste Option',
+                      const Expanded(child: Text('Historisch günstigste Option',
                         style: TextStyle(fontWeight: FontWeight.w800))),
                       if (cheapestSlot?['avg_price'] is num)
                         Text('${(cheapestSlot!['avg_price'] as num).toStringAsFixed(3)} €/kWh',
@@ -1253,7 +1263,7 @@ class _DashboardPageState extends State<DashboardPage> {
               subtitle: Text(
                 cheapestSite == null
                     ? 'Durchschnittspreise und Ladehäufigkeit'
-                    : 'Günstigster Standort: ${(cheapestSite['avg_price'] as num).toStringAsFixed(3)} €/kWh',
+                    : 'Niedrigster erfasster Standortpreis: ${(cheapestSite['avg_price'] as num).toStringAsFixed(3)} €/kWh',
                 maxLines: 1, overflow: TextOverflow.ellipsis,
               ),
               children: sites.map((site) {
