@@ -2239,6 +2239,49 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _tabIntro(String eyebrow, String title, String description, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 10, 2, 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppTheme.accentGreen.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(icon, color: AppTheme.accentGreen, size: 21),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(eyebrow.toUpperCase(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppTheme.accentGreen,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  )),
+                const SizedBox(height: 3),
+                Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                )),
+                const SizedBox(height: 3),
+                Text(description, style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondary,
+                  height: 1.35,
+                )),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _loadStatePanel({
     required IconData icon,
     required String title,
@@ -2392,9 +2435,29 @@ class _DashboardPageState extends State<DashboardPage> {
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.textSecondary)),
             ],
-            if (_data != null && _selectedTab == 1)
+            if (_data != null && _selectedTab == 1) ...[
+              _tabIntro(
+                'Ladeaktivität',
+                'Deine Ladevorgänge',
+                'Finde frühere Ladungen und filtere nach Zeitraum, Ladenetz oder Standort.',
+                Icons.ev_station_rounded,
+              ),
               _sessions(_data?['sessions']),
+              if (_data?['sessions'] is! List || (_data?['sessions'] as List).isEmpty)
+                _loadStatePanel(
+                  icon: Icons.history_rounded,
+                  title: 'Noch keine Ladevorgänge',
+                  message: 'Sobald dein Ladecockpit Ladevorgänge erfasst hat, erscheinen sie hier.',
+                  color: AppTheme.textSecondary,
+                ),
+            ],
             if (_data != null && _selectedTab == 2) ...[
+              _tabIntro(
+                'Kosten & Überblick',
+                'Deine Auswertungen',
+                'Behalte Ladepreise, Kostenentwicklung und deine Monatsberichte im Blick.',
+                Icons.insights_rounded,
+              ),
               _priceRadar(_data?['slots'], _data?['sites']),
               _costDevelopment(_data?['monthly']),
               _exports(_data?['monthly']),
