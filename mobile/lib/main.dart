@@ -1237,7 +1237,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       const Icon(Icons.savings_outlined,
                         color: AppTheme.accentGreen, size: 18),
                       const SizedBox(width: 8),
-                      const Expanded(child: Text('Historisch günstigste Option',
+                      const Expanded(child: Text('Günstigstes Zeitfenster',
                         style: TextStyle(fontWeight: FontWeight.w800))),
                       if (cheapestSlot?['avg_price'] is num)
                         Text('${(cheapestSlot!['avg_price'] as num).toStringAsFixed(3)} €/kWh',
