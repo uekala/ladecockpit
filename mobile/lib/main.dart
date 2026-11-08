@@ -1755,6 +1755,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _vehicleHero(Map<String, dynamic>? status, Map<String, dynamic>? car) {
     final data = status ?? {};
+    final compactCard = MediaQuery.sizeOf(context).width < 390;
     final vehicleName = car?['name']?.toString().trim();
     final vehicleImage = car?['url']?.toString().trim();
     final vehicleLabels = _map(car?['labels']) ?? {};
@@ -1794,7 +1795,8 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(20, 19, 20, 18),
+        padding: EdgeInsets.fromLTRB(compactCard ? 15 : 20, compactCard ? 15 : 19,
+          compactCard ? 15 : 20, compactCard ? 14 : 18),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -1858,7 +1860,7 @@ class _DashboardPageState extends State<DashboardPage> {
             if (vehicleImage != null && vehicleImage.isNotEmpty) ...[
               const SizedBox(height: 12),
               SizedBox(
-                height: 104,
+                height: compactCard ? 78 : 104,
                 width: double.infinity,
                 child: Image.network(
                   vehicleImage,
@@ -1875,7 +1877,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
             ],
-            const SizedBox(height: 22),
+            SizedBox(height: compactCard ? 15 : 22),
             LayoutBuilder(
               builder: (context, constraints) {
                 final compact = constraints.maxWidth < 360;
@@ -1942,9 +1944,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 );
               },
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: compactCard ? 14 : 20),
             Container(height: 1, color: AppTheme.border),
-            const SizedBox(height: 13),
+            SizedBox(height: compactCard ? 10 : 13),
             Row(
               children: [
                 Icon(
