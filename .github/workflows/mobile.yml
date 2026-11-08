@@ -2,7 +2,7 @@ name: Mobile app builds
 
 on:
   push:
-    branches: [main, "feature/mobile-app-ios-android"]
+    branches: [main, "feature/mobile-app-ios-android", "feature/mobile-automotive-design-system-all-screens"]
     paths:
       - "mobile/**"
       - ".github/workflows/mobile.yml"
