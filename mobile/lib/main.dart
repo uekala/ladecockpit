@@ -1759,18 +1759,42 @@ class _DashboardPageState extends State<DashboardPage> {
                 ],
               ),
             ],
-            if (charging == true && rate != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text('Ladegeschwindigkeit: ${rate.toStringAsFixed(1)} % pro Stunde',
-                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+            if (charging == true && (rate != null || finish is String)) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentGreen.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppTheme.accentGreen.withValues(alpha: 0.18)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.timelapse_rounded,
+                      color: AppTheme.accentGreen, size: 19),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (finish is String)
+                            Text('Voraussichtlich fertig · ${_dateTimeLabel(finish)}',
+                              style: const TextStyle(fontSize: 12,
+                                fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+                          if (rate != null) ...[
+                            if (finish is String) const SizedBox(height: 3),
+                            Text('Ladegeschwindigkeit · ${rate.toStringAsFixed(1)} % pro Stunde',
+                              style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            if (charging == true && finish is String)
-              Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: Text('Voraussichtlich fertig: ${_dateTimeLabel(finish)}',
-                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-              ),
+            ],
           ],
         ),
       ),
