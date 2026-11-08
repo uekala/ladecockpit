@@ -2032,7 +2032,6 @@ class _DashboardPageState extends State<DashboardPage> {
     final vehicleDataColor = !hasVehicleReading
         ? AppTheme.textSecondary
         : socSource == 'live' ? AppTheme.accentGreen : AppTheme.warning;
-    final vehicleDataTime = vehicleStatus['as_of']?.toString();
     final hasTeslaError = teslaError != null && teslaError.isNotEmpty;
     final hasSyncError = syncError != null && syncError.isNotEmpty;
 
