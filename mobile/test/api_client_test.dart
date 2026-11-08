@@ -103,6 +103,36 @@ void main() {
       );
     });
 
+    test('allows cleartext HTTP only to the configured Tailscale endpoints', () async {
+      for (final host in ['100.78.111.102', 'homeassistant.tail1966da.ts.net']) {
+        final api = CockpitClient(
+          httpClient: MockClient((request) async {
+            expect(request.url.host, host);
+            return http.Response('{"mode":"live"}', 200);
+          }),
+          serverUrlProvider: () async => 'http://$host:8077',
+          passwordProvider: () async => 'secret',
+        );
+        expect((await api.dashboard())['mode'], 'live');
+      }
+
+      final blocked = CockpitClient(
+        httpClient: MockClient((request) async {
+          fail('HTTP request to a non-Tailscale host must be blocked');
+        }),
+        serverUrlProvider: () async => 'http://example.com',
+        passwordProvider: () async => 'secret',
+      );
+      await expectLater(
+        blocked.dashboard(),
+        throwsA(isA<CockpitException>().having(
+          (error) => error.message,
+          'message',
+          contains('nur für den festgelegten Tailscale-Server'),
+        )),
+      );
+    });
+
     test('rejects invalid server URLs before sending a request', () async {
       final api = CockpitClient(
         httpClient: MockClient((request) async {
