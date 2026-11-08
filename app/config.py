@@ -28,6 +28,7 @@ ADDON_OPTIONS_PATH = Path(os.environ.get("ADDON_OPTIONS_PATH", "/data/options.js
 ADDON_OPTION_MAP = {
     "language": "APP_LANG",
     "locale": "APP_LOCALE",
+    "mobile_app_password": "APP_PASSWORD",
     "tesla_client_id": "TESLA_CLIENT_ID",
     "tesla_client_secret": "TESLA_CLIENT_SECRET",
     "tesla_redirect_uri": "TESLA_REDIRECT_URI",
