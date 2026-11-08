@@ -28,6 +28,33 @@ jobs:
           channel: stable
           cache: true
       - run: flutter create --platforms=android,ios --project-name ladecockpit .
+      - name: Allow private HTTP connections over Tailscale
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("android/app/src/main/AndroidManifest.xml")
+          content = path.read_text()
+          if "android:usesCleartextTraffic=" in content:
+              content = re.sub(
+                  r'android:usesCleartextTraffic="[^"]*"',
+                  'android:usesCleartextTraffic="true"',
+                  content,
+                  count=1,
+              )
+          else:
+              content, count = re.subn(
+                  r"<application\\b",
+                  '<application android:usesCleartextTraffic="true"',
+                  content,
+                  count=1,
+              )
+              if count != 1:
+                  raise SystemExit(f"Could not find application element in {path}")
+          path.write_text(content)
+          print("Enabled HTTP for private Tailscale/LAN endpoints.")
+          PY
       - name: Use Gradle direct download host
         run: |
           python3 - <<'PY'
