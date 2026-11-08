@@ -1812,6 +1812,16 @@ class _DashboardPageState extends State<DashboardPage> {
     final haError = setup['ha_error']?.toString();
     final syncError = sync['error']?.toString();
     final problem = sync['problem']?.toString();
+    final vehicleStatus = _map(_data?['status']) ?? {};
+    final socSource = vehicleStatus['soc_source']?.toString();
+    final hasVehicleReading = vehicleStatus['soc'] is num;
+    final vehicleDataLabel = !hasVehicleReading
+        ? 'Keine Fahrzeugdaten'
+        : socSource == 'live' ? 'Fahrzeugdaten live' : 'Letzter Stand';
+    final vehicleDataColor = !hasVehicleReading
+        ? AppTheme.textSecondary
+        : socSource == 'live' ? AppTheme.accentGreen : AppTheme.warning;
+    final vehicleDataTime = vehicleStatus['as_of']?.toString();
     final hasTeslaError = teslaError != null && teslaError.isNotEmpty;
     final hasSyncError = syncError != null && syncError.isNotEmpty;
 
@@ -1849,8 +1859,16 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(width: 7),
               Expanded(child: Text(summaryLabel,
                 style: TextStyle(color: summaryColor, fontSize: 12))),
-              Text('Details',
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: vehicleDataColor.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(vehicleDataLabel,
+                  style: TextStyle(color: vehicleDataColor, fontSize: 10,
+                    fontWeight: FontWeight.w700)),
+              ),
             ],
           ),
           children: [
@@ -1867,6 +1885,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ],
             ),
+            _statusLine(
+              socSource == 'live' ? Icons.sensors_rounded :
+                hasVehicleReading ? Icons.history_rounded : Icons.info_outline,
+              'Fahrzeugdaten', vehicleDataLabel, color: vehicleDataColor),
+            if (hasVehicleReading && vehicleDataTime != null)
+              _statusLine(Icons.schedule, 'Datenstand', _dateTimeLabel(vehicleDataTime)),
             if (hasTeslaError)
               Padding(
                 padding: const EdgeInsets.only(left: 28, bottom: 5),
