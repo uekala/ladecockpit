@@ -36,30 +36,36 @@ jobs:
 
           path = Path("android/app/src/main/AndroidManifest.xml")
           content = path.read_text()
-          if "android:usesCleartextTraffic=" in content:
-              content = re.sub(
-                  r'android:usesCleartextTraffic="[^"]*"',
-                  'android:usesCleartextTraffic="true"',
-                  content,
-                  count=1,
-              )
-          else:
+          content = re.sub(
+              r'android:usesCleartextTraffic="[^"]*"',
+              'android:usesCleartextTraffic="true"',
+              content,
+          )
+          if "android:usesCleartextTraffic=" not in content:
               content, count = re.subn(
-                  r"<application\b",
-                  '<application android:usesCleartextTraffic="true"',
+                  r'(<application\\b)',
+                  r'\\1 android:usesCleartextTraffic="true"',
                   content,
                   count=1,
               )
               if count != 1:
-                  raise SystemExit(f"Could not find application element in {path}")
-          internet = '<uses-permission android:name="android.permission.INTERNET" />'
-          network_state = '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />'
-          if "android.permission.INTERNET" not in content:
-              content = content.replace("<manifest", "<manifest\n    " + internet, 1)
-          if "android.permission.ACCESS_NETWORK_STATE" not in content:
-              content = content.replace("<manifest", "<manifest\n    " + network_state, 1)
+                  raise SystemExit("Could not find application element")
+          permissions = [
+              "android.permission.INTERNET",
+              "android.permission.ACCESS_NETWORK_STATE",
+          ]
+          for permission in permissions:
+              if permission not in content:
+                  content, count = re.subn(
+                      r'(<manifest\\b[^>]*>)',
+                      r'\\1\\n    <uses-permission android:name="' + permission + '" />',
+                      content,
+                      count=1,
+                  )
+                  if count != 1:
+                      raise SystemExit("Could not find manifest root element")
           path.write_text(content)
-          print("Enabled private HTTP and added INTERNET/ACCESS_NETWORK_STATE permissions.")
+          print("Android manifest configured:")
           print(content)
           PY
       - name: Use Gradle direct download host
