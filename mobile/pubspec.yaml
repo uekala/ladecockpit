@@ -18,6 +18,15 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/ladecockpit_icon.png
+  adaptive_icon_background: "#05090F"
+  adaptive_icon_foreground: assets/ladecockpit_icon.png
+  remove_alpha_ios: true
