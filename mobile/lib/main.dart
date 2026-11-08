@@ -2671,8 +2671,137 @@ class _DashboardPageState extends State<DashboardPage> {
         child: RefreshIndicator(
           onRefresh: _load,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-            children: [
+          key: ValueKey('ladecockpit-independent-tab-$_selectedTab'),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          children: [
+            if (_data != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+                child: Row(
+                  children: [
+                    if (_loading) ...[
+                      const SizedBox(
+                        width: 13,
+                        height: 13,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Daten werden aktualisiert',
+                        style: TextStyle(color: AppTheme.accentTeal, fontSize: 11,
+                          fontWeight: FontWeight.w600)),
+                    ] else ...[
+                      const Icon(Icons.check_circle_outline,
+                        color: AppTheme.accentGreen, size: 14),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _lastSuccessfulFetch == null
+                              ? 'Daten geladen'
+                              : 'Aktualisiert · ${_fetchTimeLabel(_lastSuccessfulFetch)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            if (_error != null)
+              _loadStatePanel(
+                icon: Icons.cloud_off_rounded,
+                title: _data == null ? 'Verbindung nicht möglich' : 'Aktualisierung fehlgeschlagen',
+                message: _data == null
+                    ? _error!
+                    : 'Die zuletzt geladenen Daten bleiben sichtbar. $_error',
+                color: AppTheme.warning,
+                action: Wrap(spacing: 8, runSpacing: 8, children: [
+                  FilledButton.icon(
+                    onPressed: _loading ? null : _load,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Erneut versuchen'),
+                  ),
+                  if (_data == null)
+                    OutlinedButton.icon(
+                      onPressed: _settings,
+                      icon: const Icon(Icons.settings_outlined),
+                      label: const Text('Verbindung einrichten'),
+                    ),
+                ]),
+              ),
+            if (_data == null && _loading && _error == null)
+              _loadStatePanel(
+                icon: Icons.electric_car_rounded,
+                title: 'Lade dein Cockpit',
+                message: 'Fahrzeug- und Ladedaten werden sicher vom Server abgerufen.',
+                color: AppTheme.accentGreen,
+                action: const LinearProgressIndicator(minHeight: 3),
+              ),
+            if (_data != null && _selectedTab == 0) ...[
+              _vehicleHero(_map(_data?['status']), _map(_data?['car'])),
+              _connectionStatus(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 2, 4, 9),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('MONATSÜBERBLICK',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppTheme.accentGreen,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2)),
+                    const SizedBox(height: 3),
+                    Text('Ladeaktivität und Kosten auf einen Blick',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textSecondary)),
+                  ],
+                ),
+              ),
+              if (overviewMetrics.isNotEmpty)
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 9,
+                  mainAxisSpacing: 9,
+                  childAspectRatio: 1.85,
+                  children: overviewMetrics,
+                )
+              else
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(14),
+                    child: Text('Für diesen Monat liegen noch keine Kennzahlen vor.',
+                      style: TextStyle(color: AppTheme.textSecondary)),
+                  ),
+                ),
+              _homeChargingSummary(_map(month?['home'])),
+              _section('Letzter Ladevorgang', last),
+              _section('Gesamt', totals),
+              _section('Ladeprognose', forecast),
+              _section('Fahrzeug', _map(_data?['car'])),
+              const SizedBox(height: 12),
+              Text('Daten werden direkt von deinem Ladecockpit über Tailscale abgerufen.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondary)),
+            ],
+            if (_data != null && _selectedTab == 1) ...[
+              _tabIntro(
+                'Ladeaktivität',
+                'Deine Ladevorgänge',
+                'Finde frühere Ladungen und filtere nach Zeitraum, Ladenetz oder Standort.',
+                Icons.ev_station_rounded,
+              ),
+              _sessions(_data?['sessions']),
+              if (_data?['sessions'] is! List || (_data?['sessions'] as List).isEmpty)
+                _loadStatePanel(
+                  icon: Icons.history_rounded,
+                  title: 'Noch keine Ladevorgänge',
+                  message: 'Sobald dein Ladecockpit Ladevorgänge erfasst hat, erscheinen sie hier.',
+                  color: AppTheme.textSecondary,
+                ),
+            ],
+            if (_data != null && _selectedTab == 2) ...[
               _tabIntro(
                 'Kosten & Überblick',
                 'Deine Auswertungen',
@@ -2683,6 +2812,19 @@ class _DashboardPageState extends State<DashboardPage> {
               _costDevelopment(_data?['monthly']),
               _exports(_data?['monthly']),
             ],
+            if (_data == null && !_loading && _error == null)
+              _loadStatePanel(
+                icon: Icons.directions_car_outlined,
+                title: 'Noch nicht verbunden',
+                message: 'Richte die Verbindung zu deinem Ladecockpit ein, um Fahrzeugstatus, Ladevorgänge und Kosten hier zu sehen.',
+                color: AppTheme.textSecondary,
+                action: OutlinedButton.icon(
+                  onPressed: _settings,
+                  icon: const Icon(Icons.settings_outlined),
+                  label: const Text('Verbindung einrichten'),
+                ),
+              ),
+          ],
           ),
         ),
       ),
