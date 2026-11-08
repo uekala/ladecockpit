@@ -197,6 +197,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _data;
   String? _error;
   bool _loading = false;
+  int _selectedTab = 0;
   DateTime? _lastSuccessfulFetch;
   String _sessionMonthFilter = 'all';
   String _sessionNetworkFilter = 'all';
@@ -345,46 +346,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _analyticsAndHistoryPanel() {
-    final sessions = _data?['sessions'];
-    final sessionCount = sessions is List ? sessions.length : 0;
-    final monthly = _data?['monthly'];
-    final monthCount = monthly is List ? monthly.length : 0;
-    final slotCount = _data?['slots'] is List ? (_data!['slots'] as List).length : 0;
-    final siteCount = _data?['sites'] is List ? (_data!['sites'] as List).length : 0;
-    final details = <String>[
-      if (sessionCount > 0) '$sessionCount Ladevorgänge',
-      if (slotCount + siteCount > 0) 'Preisradar',
-      if (monthCount > 0) 'Kosten & Berichte',
-    ].join(' · ');
-
-    return Card(
-      margin: const EdgeInsets.only(top: 12, bottom: 8),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          initiallyExpanded: false,
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
-          leading: const Icon(Icons.insights_rounded,
-            color: AppTheme.accentTeal, size: 21),
-          title: const Text('Auswertungen & Historie',
-            style: TextStyle(fontWeight: FontWeight.w700)),
-          subtitle: Text(details.isEmpty ? 'Weitere Informationen' : details,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-          children: [
-            _priceRadar(_data?['slots'], _data?['sites']),
-            _sessions(_data?['sessions']),
-            _costDevelopment(_data?['monthly']),
-            _exports(_data?['monthly']),
           ],
         ),
       ),
@@ -1858,18 +1819,23 @@ class _DashboardPageState extends State<DashboardPage> {
     final last = _map(_data?['last_charge']);
     final totals = _map(_data?['totals']);
     final forecast = _map(_data?['forecast']);
+    const tabTitles = ['Cockpit', 'Ladevorgänge', 'Auswertungen'];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ladecockpit', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(tabTitles[_selectedTab],
+          style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
-          IconButton(onPressed: _load, tooltip: 'Aktualisieren', icon: const Icon(Icons.refresh)),
-          IconButton(onPressed: _settings, tooltip: 'Verbindung', icon: const Icon(Icons.settings_outlined)),
+          IconButton(onPressed: _load, tooltip: 'Aktualisieren',
+            icon: const Icon(Icons.refresh)),
+          IconButton(onPressed: _settings, tooltip: 'Verbindung',
+            icon: const Icon(Icons.settings_outlined)),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
+          key: PageStorageKey('ladecockpit-tab-$_selectedTab'),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
             if (_loading) const LinearProgressIndicator(),
@@ -1887,15 +1853,17 @@ class _DashboardPageState extends State<DashboardPage> {
                       icon: const Icon(Icons.refresh),
                       label: const Text('Erneut versuchen'),
                     ),
-                    OutlinedButton(onPressed: _settings, child: const Text('Verbindung einrichten')),
+                    OutlinedButton(onPressed: _settings,
+                      child: const Text('Verbindung einrichten')),
                   ]),
                 ]),
               ),
             ),
-            if (_data != null) ...[
+            if (_data != null && _selectedTab == 0) ...[
               _vehicleHero(_map(_data?['status']), _map(_data?['car'])),
               _connectionStatus(),
-              Text('ÜBERSICHT', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppTheme.textSecondary, letterSpacing: 1.4)),
+              Text('ÜBERSICHT', style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: AppTheme.textSecondary, letterSpacing: 1.4)),
               const SizedBox(height: 8),
               GridView.count(
                 crossAxisCount: 2,
@@ -1903,8 +1871,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 physics: const NeverScrollableScrollPhysics(),
                 childAspectRatio: 1.65,
                 children: [
-                  _metric('Ladevorgänge diesen Monat', month?['sessions'] ?? month?['count']),
-                  _metric('Gesamtkosten diesen Monat', month?['total_cost'] ?? month?['cost'], suffix: ' €'),
+                  _metric('Ladevorgänge diesen Monat',
+                    month?['sessions'] ?? month?['count']),
+                  _metric('Gesamtkosten diesen Monat',
+                    month?['total_cost'] ?? month?['cost'], suffix: ' €'),
                   _metric('Unterwegs geladen', month?['kwh'], suffix: ' kWh'),
                   _metric('Ø Preis unterwegs', month?['avg_price'], suffix: ' €/kWh'),
                 ],
@@ -1914,15 +1884,45 @@ class _DashboardPageState extends State<DashboardPage> {
               _section('Gesamt', totals),
               _section('Ladeprognose', forecast),
               _section('Fahrzeug', _map(_data?['car'])),
-              _analyticsAndHistoryPanel(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text('Daten werden direkt von deinem Ladecockpit über Tailscale abgerufen.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary)),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondary)),
+            ],
+            if (_data != null && _selectedTab == 1)
+              _sessions(_data?['sessions']),
+            if (_data != null && _selectedTab == 2) ...[
+              _priceRadar(_data?['slots'], _data?['sites']),
+              _costDevelopment(_data?['monthly']),
+              _exports(_data?['monthly']),
             ],
             if (_data == null && !_loading && _error == null)
-              const Center(child: Padding(padding: EdgeInsets.all(32), child: Text('Noch keine Daten vorhanden.'))),
+              const Center(child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Text('Noch keine Daten vorhanden.'))),
           ],
         ),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedTab,
+        onDestinationSelected: (index) => setState(() => _selectedTab = index),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.directions_car_outlined),
+            selectedIcon: Icon(Icons.directions_car),
+            label: 'Cockpit',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.ev_station_outlined),
+            selectedIcon: Icon(Icons.ev_station),
+            label: 'Ladevorgänge',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.insights_outlined),
+            selectedIcon: Icon(Icons.insights),
+            label: 'Auswertung',
+          ),
+        ],
       ),
     );
   }
