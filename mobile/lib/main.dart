@@ -530,23 +530,38 @@ class _DashboardPageState extends State<DashboardPage> {
       value is Map<String, dynamic> ? value : null;
 
   Widget _sessionMetric(String label, String value, IconData icon) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 16, color: AppTheme.textSecondary),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppTheme.textSecondary)),
-              const SizedBox(height: 2),
-              Text(value, maxLines: 2, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w600)),
-            ],
+    final highlighted = label == 'Kosten';
+    final accent = highlighted ? AppTheme.accentGreen : AppTheme.textSecondary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      decoration: BoxDecoration(
+        color: (highlighted ? AppTheme.accentGreen : AppTheme.surface)
+            .withValues(alpha: highlighted ? 0.09 : 0.55),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: highlighted
+            ? AppTheme.accentGreen.withValues(alpha: 0.18)
+            : AppTheme.border.withValues(alpha: 0.7)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: accent),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppTheme.textSecondary)),
+                const SizedBox(height: 3),
+                Text(value, maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontWeight: FontWeight.w800,
+                    color: highlighted ? AppTheme.accentGreen : AppTheme.textPrimary)),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -768,9 +783,19 @@ class _DashboardPageState extends State<DashboardPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(children: [
-                      Icon(
-                        invoice ? Icons.receipt_long_outlined : Icons.ev_station,
-                        color: invoice ? Theme.of(context).colorScheme.primary : AppTheme.textSecondary,
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: (invoice ? AppTheme.accentGreen : AppTheme.accentTeal)
+                              .withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          invoice ? Icons.receipt_long_outlined : Icons.ev_station,
+                          size: 19,
+                          color: invoice ? AppTheme.accentGreen : AppTheme.accentTeal,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -797,7 +822,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       const SizedBox(height: 8),
                       LayoutBuilder(
                         builder: (context, constraints) {
-                          final columns = constraints.maxWidth < 380 ? 2 : metrics.length;
+                          final columns = constraints.maxWidth < 350 ? 1 : metrics.length.clamp(1, 3);
                           final metricWidth = (constraints.maxWidth - (columns - 1) * 8) / columns;
                           return Wrap(
                             spacing: 8,
