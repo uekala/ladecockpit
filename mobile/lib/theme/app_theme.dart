@@ -122,6 +122,31 @@ abstract final class AppTheme {
           ),
         ),
       ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          tapTargetSize: MaterialTapTargetSize.padded,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        height: 72,
+        backgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: const Color(0x3322C9C3),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        elevation: 0,
+      ),
+      listTileTheme: ListTileThemeData(
+        minVerticalPadding: 9,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        iconColor: textSecondary,
+        textColor: textPrimary,
+      ),
     );
   }
 }
