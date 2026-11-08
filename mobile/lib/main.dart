@@ -333,7 +333,13 @@ class _DashboardPageState extends State<DashboardPage> {
     const priceKeys = {'price', 'avg_price', 'best_time_price', 'best_site_price'};
     const distanceKeys = {'range', 'distance', 'dist_day', 'range_at_100'};
     if (value is num) {
-      final digits = value is int || value == value.roundToDouble() ? 0 : 1;
+      final digits = priceKeys.contains(key) ? 3
+          : moneyKeys.contains(key) || key == 'per_100' ? 2
+          : energyKeys.contains(key) || key == 'avg_kw' ||
+              percentKeys.contains(key) || key == 'rate_pct_day' ||
+              key == 'dist_day' || key == 'kwh_per_100'
+              ? 1
+              : value is int || value == value.roundToDouble() ? 0 : 1;
       final number = value.toStringAsFixed(digits);
       if (percentKeys.contains(key)) return '$number %';
       if (energyKeys.contains(key)) return '$number kWh';
