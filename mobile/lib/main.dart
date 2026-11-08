@@ -1500,43 +1500,93 @@ class _DashboardPageState extends State<DashboardPage> {
                 onPressed: () => Navigator.pop(dialogContext),
               ),
             ),
-            body: ListView.builder(
-              itemCount: pages,
-              itemBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.all(8),
-                child: FutureBuilder<Uri>(
-                  future: _client.invoicePageUri(sessionId, index + 1),
-                  builder: (context, uriSnapshot) {
-                    if (uriSnapshot.hasError) {
-                      return const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('Seite konnte nicht geladen werden.'),
-                      );
-                    }
-                    if (!uriSnapshot.hasData) {
-                      return const SizedBox(
-                        height: 240,
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    return Image.network(
-                      uriSnapshot.data.toString(),
-                      headers: headers,
-                      fit: BoxFit.contain,
-                      loadingBuilder: (context, child, progress) => progress == null
-                          ? child
-                          : const SizedBox(
+            body: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppTheme.accentGreen.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.receipt_long_outlined,
+                            color: AppTheme.accentGreen),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('LADERECHNUNG',
+                                style: TextStyle(fontSize: 10, letterSpacing: 1.1,
+                                  color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 3),
+                              Text(site, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text('${pages} ${pages == 1 ? 'Seite' : 'Seiten'}',
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
+                    itemCount: pages,
+                    itemBuilder: (context, index) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: FutureBuilder<Uri>(
+                        future: _client.invoicePageUri(sessionId, index + 1),
+                        builder: (context, uriSnapshot) {
+                          if (uriSnapshot.hasError) {
+                            return const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text('Seite konnte nicht geladen werden.'),
+                            );
+                          }
+                          if (!uriSnapshot.hasData) {
+                            return const SizedBox(
                               height: 240,
                               child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+                          return Image.network(
+                            uriSnapshot.data.toString(),
+                            headers: headers,
+                            fit: BoxFit.contain,
+                            loadingBuilder: (context, child, progress) => progress == null
+                                ? child
+                                : const SizedBox(
+                                    height: 240,
+                                    child: Center(child: CircularProgressIndicator()),
+                                  ),
+                            errorBuilder: (context, error, stack) => const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text('PDF-Seite konnte nicht geladen werden.'),
                             ),
-                      errorBuilder: (context, error, stack) => const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('PDF-Seite konnte nicht geladen werden.'),
+                          );
+                        },
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
