@@ -288,13 +288,65 @@ class _DashboardPageState extends State<DashboardPage> {
     final text = _value(value);
     if (text.isEmpty) return const SizedBox.shrink();
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white60)),
-          const SizedBox(height: 8),
-          Text('$text$suffix', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-        ]),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppTheme.surfaceElevated, AppTheme.surface],
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(15, 14, 15, 15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: AppTheme.accentTeal,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    title.toUpperCase(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 9,
+                      height: 1.25,
+                      letterSpacing: 0.8,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '$text$suffix',
+                maxLines: 1,
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 23,
+                  height: 1.05,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.7,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
