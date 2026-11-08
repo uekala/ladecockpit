@@ -28,6 +28,8 @@ jobs:
           channel: stable
           cache: true
       - run: flutter create --platforms=android,ios --project-name ladecockpit .
+      - name: Use Gradle direct download host
+        run: sed -i 's#https://services.gradle.org/distributions/#https://downloads.gradle.org/distributions/#' android/gradle/wrapper/gradle-wrapper.properties
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
