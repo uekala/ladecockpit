@@ -1079,7 +1079,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   title: Text('$label${isCheapest ? ' · Günstigster' : ''}',
                     maxLines: 2, overflow: TextOverflow.ellipsis),
                   subtitle: Text('$network · $count Ladevorgänge · $kwh'
-                    '${address != null && address.isNotEmpty ? '\\n$address' : ''}'),
+                    '${address != null && address.isNotEmpty ? '\n$address' : ''}'),
                   isThreeLine: address != null && address.isNotEmpty,
                   trailing: priceValue(site['avg_price'], highlighted: isCheapest),
                 );
