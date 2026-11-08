@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 export 'document_response.dart' show CockpitException;
 import 'document_response.dart';
+import 'theme/app_theme.dart';
 
 void main() => runApp(const LadecockpitApp());
 
@@ -17,19 +18,10 @@ class LadecockpitApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const seed = Color(0xFF43C6AC);
     return MaterialApp(
       title: 'Ladecockpit',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.dark),
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF101416),
-        cardTheme: CardThemeData(
-          color: const Color(0xFF1A2224),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        ),
-      ),
+      theme: AppTheme.dark,
       home: const DashboardPage(),
     );
   }
