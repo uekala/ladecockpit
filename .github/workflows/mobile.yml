@@ -28,6 +28,19 @@ jobs:
           channel: stable
           cache: true
       - run: flutter create --platforms=android,ios --project-name ladecockpit .
+      - name: Generate branded Android and iOS launcher icons
+        working-directory: .
+        run: |
+          python3 -m pip install --quiet cairosvg
+          python3 - <<'PY'
+          import cairosvg
+          cairosvg.svg2png(
+              url="mobile/assets/ladecockpit_icon.svg",
+              write_to="mobile/assets/ladecockpit_icon.png",
+              output_width=1024,
+              output_height=1024,
+          )
+          PY
       - name: Allow cleartext HTTP only to the configured Tailscale host
         working-directory: .
         run: |
@@ -99,6 +112,7 @@ jobs:
           path.write_text(content)
           PY
       - run: flutter pub get
+      - run: dart run flutter_launcher_icons
       - run: flutter analyze
       - run: flutter test
       - name: Build Android APK (retry transient Gradle download failures)
@@ -145,7 +159,21 @@ jobs:
           channel: stable
           cache: true
       - run: flutter create --platforms=android,ios --project-name ladecockpit .
+      - name: Generate branded Android and iOS launcher icons
+        working-directory: .
+        run: |
+          python3 -m pip install --quiet cairosvg
+          python3 - <<'PY'
+          import cairosvg
+          cairosvg.svg2png(
+              url="mobile/assets/ladecockpit_icon.svg",
+              write_to="mobile/assets/ladecockpit_icon.png",
+              output_width=1024,
+              output_height=1024,
+          )
+          PY
       - run: flutter pub get
+      - run: dart run flutter_launcher_icons
       - run: flutter analyze
       - run: flutter build ios --release --no-codesign
       - uses: actions/upload-artifact@v4
