@@ -1412,7 +1412,13 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _vehicleHero(Map<String, dynamic>? status, Map<String, dynamic>? car) {
     final data = status ?? {};
     final vehicleName = car?['name']?.toString().trim();
-    final vehicleImage = car?['image']?.toString().trim();
+    final vehicleImage = car?['url']?.toString().trim();
+    final vehicleLabels = _map(car?['labels']) ?? {};
+    final vehicleDetails = [
+      vehicleLabels['generation'], vehicleLabels['trim'],
+      vehicleLabels['paint'], vehicleLabels['wheel'],
+    ].whereType<String>().map((value) => value.trim())
+      .where((value) => value.isNotEmpty).toList();
     final soc = data['soc'] is num ? (data['soc'] as num).toDouble() : null;
     final range = data['range'] is num ? (data['range'] as num).round() : null;
     final charging = data['charging'];
@@ -1517,6 +1523,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
                 ),
               ),
+            ],
+            if (vehicleDetails.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(vehicleDetails.join('  ·  '),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
             ],
             const SizedBox(height: 22),
             Row(
