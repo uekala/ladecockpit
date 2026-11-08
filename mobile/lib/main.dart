@@ -1223,6 +1223,41 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     final values = months.map(totalCost).toList();
+    final latestMonth = months.last;
+    final latestKey = latestMonth['key'].toString();
+    final latestParts = latestKey.split('-');
+    final latestLabel = latestParts.length == 2
+        ? '${latestParts[1]}.${latestParts[0]}' : latestKey;
+    final averageCost = values.fold<num>(0, (sum, value) => sum + value) / values.length;
+
+    Widget summaryMetric(String label, String value, String detail, IconData icon) =>
+        Expanded(
+          child: Card(
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, size: 18, color: AppTheme.accentGreen),
+                  const SizedBox(height: 8),
+                  Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppTheme.textSecondary)),
+                  const SizedBox(height: 3),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(value, style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w800)),
+                  ),
+                  Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppTheme.textSecondary)),
+                ],
+              ),
+            ),
+          ),
+        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1232,6 +1267,16 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Text('Kostenentwicklung',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
         ),
+        Row(
+          children: [
+            summaryMetric('Letzter Monat', '${values.last.toStringAsFixed(2)} €',
+              latestLabel, Icons.calendar_month_outlined),
+            const SizedBox(width: 10),
+            summaryMetric('Monatsdurchschnitt', '${averageCost.toStringAsFixed(2)} €',
+              'über ${months.length} Monate', Icons.show_chart),
+          ],
+        ),
+        const SizedBox(height: 8),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
