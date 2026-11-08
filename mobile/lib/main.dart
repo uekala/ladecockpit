@@ -2833,6 +2833,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ),
+      ),
       bottomNavigationBar: NavigationBar(
         height: 72,
         elevation: 8,
