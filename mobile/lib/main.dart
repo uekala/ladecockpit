@@ -2638,7 +2638,7 @@ class _DashboardPageState extends State<DashboardPage> {
         height: 72,
         elevation: 8,
         backgroundColor: AppTheme.surface,
-        indicatorColor: AppTheme.accentGreen.withValues(alpha: 0.14),
+        indicatorColor: AppTheme.accentGreen.withValues(alpha: 0.16),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         selectedIndex: _selectedTab,
         onDestinationSelected: (index) => setState(() => _selectedTab = index),
