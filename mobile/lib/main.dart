@@ -615,7 +615,10 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _showSessionDetails(Map<String, dynamic> session) async {
     final site = session['site']?.toString() ?? 'Unbekannter Standort';
     final currency = session['currency']?.toString() ?? 'EUR';
-    final network = session['network'] == 'multipass' ? 'MultiPass' : 'Supercharger';
+    final currencySymbol = currency == 'EUR' ? '€' : currency;
+    final networkValue = session['network']?.toString() ?? 'supercharger';
+    final network = networkValue == 'multipass' ? 'MultiPass'
+        : networkValue == 'supercharger' ? 'Supercharger' : networkValue;
     final invoice = session['has_invoice'] == true;
     final sessionId = session['id']?.toString();
 
@@ -635,11 +638,11 @@ class _DashboardPageState extends State<DashboardPage> {
               _detailRow('Ladedauer', _durationLabel(session['duration_min'])),
               const Divider(height: 18),
               _detailRow('Geladene Energie', _numberLabel(session['kwh'], suffix: ' kWh')),
-              _detailRow('Gesamtkosten', _numberLabel(session['cost'], suffix: ' $currency')),
-              _detailRow('Ladekosten', _numberLabel(session['charge_cost'], suffix: ' $currency')),
-              _detailRow('Standgebühren', _numberLabel(session['idle'], suffix: ' $currency')),
-              _detailRow('Gutschrift', _numberLabel(session['credit'], suffix: ' $currency')),
-              _detailRow('Preis pro kWh', _numberLabel(session['price'], digits: 3, suffix: ' $currency/kWh')),
+              _detailRow('Gesamtkosten', _numberLabel(session['cost'], suffix: ' $currencySymbol')),
+              _detailRow('Ladekosten', _numberLabel(session['charge_cost'], suffix: ' $currencySymbol')),
+              _detailRow('Standgebühren', _numberLabel(session['idle'], suffix: ' $currencySymbol')),
+              _detailRow('Gutschrift', _numberLabel(session['credit'], suffix: ' $currencySymbol')),
+              _detailRow('Preis pro kWh', _numberLabel(session['price'], digits: 3, suffix: ' $currencySymbol/kWh')),
               _detailRow('Durchschnittsleistung', _numberLabel(session['avg_kw'], suffix: ' kW')),
               if (session['start_soc'] != null)
                 _detailRow('Start-Ladestand', _numberLabel(session['start_soc'], digits: 0, suffix: ' %')),
