@@ -1158,7 +1158,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           child: Text(
                             '${(publicEnergy + (homeEnergyKnown ? homeEnergy : 0)).toStringAsFixed(1)} kWh erfasst · ${amount(month['sessions']).round()} öffentliche Ladevorgänge'
                             '\nÖffentlich: ${publicCost.toStringAsFixed(2)} € · Zuhause: $homeCostLabel'
-                            '\nEnergie: öffentlich ${publicEnergy.toStringAsFixed(1)} kWh · zuhause ${homeEnergyKnown ? homeEnergy.toStringAsFixed(1) + ' kWh' : 'nicht erfasst'}',
+                            '\nEnergie: öffentlich ${publicEnergy.toStringAsFixed(1)} kWh · zuhause ${homeEnergyKnown ? '${homeEnergy.toStringAsFixed(1)} kWh' : 'nicht erfasst'}',
                             style: const TextStyle(color: Colors.white54, fontSize: 11)),
                         ),
                         if (comparison != null)
