@@ -1126,11 +1126,6 @@ class _DashboardPageState extends State<DashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 22, 4, 4),
-          child: Text('Preisradar',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        ),
         const Padding(
           padding: EdgeInsets.fromLTRB(4, 0, 4, 10),
           child: Text('Historische Durchschnittswerte aus deinen erfassten Ladevorgängen – keine Live-Tarife.',
