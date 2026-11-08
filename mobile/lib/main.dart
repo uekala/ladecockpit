@@ -185,7 +185,9 @@ Map<String, dynamic> parseDashboardResponse(int statusCode, String body) {
 }
 
 String connectionErrorMessage(Object error) {
-if (error is CockpitException) return error.message;
+if (error is CockpitException) {
+  return '${error.message}\\nDiagnose: ${error.runtimeType} · $error';
+}
 if (error is TimeoutException) {
   return 'Zeitüberschreitung: Der Server hat nicht rechtzeitig geantwortet. Bitte Verbindung prüfen und erneut versuchen.';
 }
@@ -207,7 +209,7 @@ if (error is HttpException) {
 if (error is FormatException) {
   return 'Der Server hat eine ungültige Antwort gesendet. Bitte später erneut versuchen.';
 }
-return 'Verbindung fehlgeschlagen: $error';
+return 'Verbindung fehlgeschlagen.\\nDiagnose: ${error.runtimeType} · $error';
 }
 
 class DashboardPage extends StatefulWidget {
