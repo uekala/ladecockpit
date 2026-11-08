@@ -1743,8 +1743,8 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
             if (_data != null) ...[
-              _connectionStatus(),
               _vehicleHero(_map(_data?['status'])),
+              _connectionStatus(),
               Text('ÜBERSICHT', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppTheme.textSecondary, letterSpacing: 1.4)),
               const SizedBox(height: 8),
               GridView.count(
