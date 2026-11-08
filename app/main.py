@@ -233,7 +233,8 @@ async def dashboard():
             "redirect_uri": settings.tesla_redirect_uri,
             "push_since": db.kv_get("push_since"),
             "entities": sorted(ha.entities()),
-            "addon": settings.addon,        },
+            "addon": settings.addon,
+        },
         "sync": {"last": sync.last_sync, "next": sync.next_sync,
                  "error": sync.last_error, "burst": sync.bursting,
                  "problem": db.kv_get("problem_kind")},
@@ -432,7 +433,8 @@ async def invoices_zip(month: str):
     if settings.demo:
         raise HTTPException(404, "The demo has no real invoices.")
     chosen = [s for s in db.sessions() if s.get("invoices") and s.get("start_ts")
-              and datetime.fromisoformat(s["start_ts"]).astimezone(settings.tz).strftime("%Y-%m") == month]    if not chosen:
+              and datetime.fromisoformat(s["start_ts"]).astimezone(settings.tz).strftime("%Y-%m") == month]
+    if not chosen:
         raise HTTPException(404, "No invoices in this month.")
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
