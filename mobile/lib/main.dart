@@ -183,10 +183,16 @@ if (error is HandshakeException) {
   return 'Sichere Verbindung fehlgeschlagen: Bitte HTTPS-Zertifikat und Serveradresse prüfen.';
 }
 if (error is SocketException) {
-  return 'Server nicht erreichbar: Netzwerk, Serveradresse oder VPN/Tailscale-Verbindung prüfen.';
+  final details = <String>[
+    error.message,
+    if (error.osError != null) error.osError!.message,
+    if (error.address != null) 'Adresse: ${error.address}',
+    if (error.port != null) 'Port: ${error.port}',
+  ].where((part) => part.trim().isNotEmpty).toSet().join(' · ');
+  return 'Server nicht erreichbar: Netzwerk, Serveradresse oder VPN/Tailscale-Verbindung prüfen.\nDiagnose: $details';
 }
 if (error is HttpException) {
-  return 'Netzwerkfehler bei der HTTP-Verbindung: Bitte Verbindung prüfen und erneut versuchen.';
+  return 'Netzwerkfehler bei der HTTP-Verbindung: ${error.message}';
 }
 if (error is FormatException) {
   return 'Der Server hat eine ungültige Antwort gesendet. Bitte später erneut versuchen.';
