@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00D9FF"/>
+      <stop offset="1" stop-color="#1677FF"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#00D9FF"/>
+      <stop offset="1" stop-color="#31E879"/>
+    </linearGradient>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0" stop-color="#10283B"/>
+      <stop offset="1" stop-color="#05090F"/>
+    </radialGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" rx="230" fill="url(#bg)"/>
+  <path d="M205 505 A310 310 0 0 1 819 505" fill="none" stroke="#173A55" stroke-width="34" stroke-linecap="round"/>
+  <path d="M205 505 A310 310 0 0 1 512 195" fill="none" stroke="url(#blue)" stroke-width="34" stroke-linecap="round" filter="url(#glow)"/>
+  <path d="M512 195 A310 310 0 0 1 819 505" fill="none" stroke="url(#green)" stroke-width="34" stroke-linecap="round"/>
+  <g fill="none" stroke="#F4FAFF" stroke-width="23" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M190 675 L222 579 Q237 536 283 519 L365 421 Q391 390 441 390 H583 Q633 390 659 421 L741 519 Q787 536 802 579 L834 675 Q842 703 815 716 H209 Q182 703 190 675Z"/>
+    <path d="M305 521 L365 438 Q383 415 420 415 H604 Q641 415 659 438 L719 521"/>
+    <path d="M235 602 H789"/>
+  </g>
+  <path d="M244 610 L330 630 L292 649 L244 641Z" fill="#00D9FF" filter="url(#glow)"/>
+  <path d="M780 610 L694 630 L732 649 L780 641Z" fill="#00D9FF" filter="url(#glow)"/>
+  <path d="M246 756 H778" stroke="url(#blue)" stroke-width="14" stroke-linecap="round" filter="url(#glow)"/>
+  <g transform="translate(755 430)">
+    <rect x="0" y="0" width="150" height="270" rx="34" fill="#0A1723" stroke="#F4FAFF" stroke-width="18"/>
+    <path d="M76 57 L42 135 H76 L62 211 L116 117 H82 L98 57Z" fill="#00D9FF" filter="url(#glow)"/>
+    <path d="M0 190 H-28 Q-55 190 -55 220 V245" fill="none" stroke="#F4FAFF" stroke-width="16" stroke-linecap="round"/>
+  </g>
+</svg>
