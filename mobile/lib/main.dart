@@ -643,47 +643,78 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
         ),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final compact = constraints.maxWidth < 520;
-            final fields = [
-              filterField('Zeitraum', selectedMonth, monthOptions,
-                (value) => setState(() => _sessionMonthFilter = value ?? 'all'),
-                width: compact ? double.infinity : 165),
-              filterField('Netzwerk', selectedNetwork, networkOptions,
-                (value) => setState(() => _sessionNetworkFilter = value ?? 'all'),
-                width: compact ? double.infinity : 165),
-              filterField('Standort', selectedSite, siteOptions,
-                (value) => setState(() => _sessionSiteFilter = value ?? 'all'),
-                width: compact ? double.infinity : 210),
-            ];
-            if (compact) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        Builder(builder: (context) {
+          final filtersActive = selectedMonth != 'all' ||
+              selectedNetwork != 'all' || selectedSite != 'all';
+          final filterSummary = [
+            selectedMonth == 'all' ? 'Alle Zeiträume' : monthLabel(selectedMonth),
+            selectedNetwork == 'all' ? 'Alle Netzwerke' :
+              (selectedNetwork == 'multipass' ? 'MultiPass' :
+                selectedNetwork == 'supercharger' ? 'Supercharger' : selectedNetwork),
+            selectedSite == 'all' ? 'Alle Standorte' : selectedSite,
+          ].join(' · ');
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ExpansionTile(
+              initiallyExpanded: false,
+              leading: Icon(Icons.tune,
+                color: filtersActive ? Theme.of(context).colorScheme.primary : AppTheme.textSecondary),
+              title: Row(
                 children: [
-                  for (var i = 0; i < fields.length; i++) ...[
-                    if (i > 0) const SizedBox(height: 8),
-                    fields[i],
-                  ],
+                  const Expanded(child: Text('Filter', style: TextStyle(fontWeight: FontWeight.w600))),
+                  if (filtersActive)
+                    Text('Aktiv', style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
                 ],
-              );
-            }
-            return Wrap(spacing: 8, runSpacing: 8, children: fields);
-          },
-        ),
-        if (_sessionMonthFilter != 'all' || _sessionNetworkFilter != 'all' || _sessionSiteFilter != 'all')
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () => setState(() {
-                _sessionMonthFilter = 'all';
-                _sessionNetworkFilter = 'all';
-                _sessionSiteFilter = 'all';
-              }),
-              icon: const Icon(Icons.filter_alt_off, size: 17),
-              label: const Text('Filter zurücksetzen'),
+              ),
+              subtitle: Text(filterSummary, maxLines: 1, overflow: TextOverflow.ellipsis),
+              childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              children: [
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxWidth < 520;
+                    final fields = [
+                      filterField('Zeitraum', selectedMonth, monthOptions,
+                        (value) => setState(() => _sessionMonthFilter = value ?? 'all'),
+                        width: compact ? double.infinity : 165),
+                      filterField('Netzwerk', selectedNetwork, networkOptions,
+                        (value) => setState(() => _sessionNetworkFilter = value ?? 'all'),
+                        width: compact ? double.infinity : 165),
+                      filterField('Standort', selectedSite, siteOptions,
+                        (value) => setState(() => _sessionSiteFilter = value ?? 'all'),
+                        width: compact ? double.infinity : 210),
+                    ];
+                    if (compact) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (var i = 0; i < fields.length; i++) ...[
+                            if (i > 0) const SizedBox(height: 8),
+                            fields[i],
+                          ],
+                        ],
+                      );
+                    }
+                    return Wrap(spacing: 8, runSpacing: 8, children: fields);
+                  },
+                ),
+                if (filtersActive)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => setState(() {
+                        _sessionMonthFilter = 'all';
+                        _sessionNetworkFilter = 'all';
+                        _sessionSiteFilter = 'all';
+                      }),
+                      icon: const Icon(Icons.filter_alt_off, size: 17),
+                      label: const Text('Filter zurücksetzen'),
+                    ),
+                  ),
+              ],
             ),
-          ),
+          );
+        }),
         if (filtered.isEmpty)
           const Card(child: Padding(
             padding: EdgeInsets.all(16),
@@ -716,7 +747,7 @@ class _DashboardPageState extends State<DashboardPage> {
             child: InkWell(
               onTap: () => _showSessionDetails(session),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 13, 16, 14),
+                padding: const EdgeInsets.fromLTRB(13, 10, 13, 11),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -745,9 +776,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
                     ]),
                     if (metrics.isNotEmpty) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 9),
                       const Divider(height: 1),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
