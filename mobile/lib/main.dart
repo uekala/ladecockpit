@@ -1455,19 +1455,36 @@ class _DashboardPageState extends State<DashboardPage> {
                               style: const TextStyle(fontWeight: FontWeight.w600))),
                           ],
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 54, top: 3),
-                          child: Text(
-                            '${(publicEnergy + (homeEnergyKnown ? homeEnergy : 0)).toStringAsFixed(1)} kWh erfasst · ${amount(month['sessions']).round()} öffentliche Ladevorgänge'
-                            '\nÖffentlich: ${publicCost.toStringAsFixed(2)} € · Zuhause: $homeCostLabel'
-                            '\nEnergie: öffentlich ${publicEnergy.toStringAsFixed(1)} kWh · zuhause ${homeEnergyKnown ? '${homeEnergy.toStringAsFixed(1)} kWh' : 'nicht erfasst'}',
-                            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
-                        ),
-                        if (comparison != null)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 54, top: 3),
-                            child: Text(comparison, style: TextStyle(color: comparisonColor, fontSize: 11)),
+                        Theme(
+                          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            tilePadding: const EdgeInsets.only(left: 48, right: 4),
+                            childrenPadding: const EdgeInsets.only(left: 54, right: 4, bottom: 8),
+                            dense: true,
+                            visualDensity: VisualDensity.compact,
+                            title: Text(
+                              '${(publicEnergy + (homeEnergyKnown ? homeEnergy : 0)).toStringAsFixed(1)} kWh · ${amount(month['sessions']).round()} öffentliche Ladevorgänge',
+                              style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                            children: [
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Öffentlich: ${publicCost.toStringAsFixed(2)} € · Zuhause: $homeCostLabel'
+                                  '\\nEnergie: öffentlich ${publicEnergy.toStringAsFixed(1)} kWh · zuhause ${homeEnergyKnown ? '${homeEnergy.toStringAsFixed(1)} kWh' : 'nicht erfasst'}',
+                                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+                              ),
+                              if (comparison != null)
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Text(comparison,
+                                      style: TextStyle(color: comparisonColor, fontSize: 11)),
+                                  ),
+                                ),
+                            ],
                           ),
+                        ),
                         if (index != months.length - 1) const SizedBox(height: 3),
                       ],
                     ),
