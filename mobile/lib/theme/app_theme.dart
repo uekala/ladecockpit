@@ -122,6 +122,16 @@ abstract final class AppTheme {
           ),
         ),
       ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: accentTeal,
+          minimumSize: const Size(48, 48),
+          tapTargetSize: MaterialTapTargetSize.padded,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
           minimumSize: const Size(48, 48),
@@ -135,7 +145,8 @@ abstract final class AppTheme {
         height: 72,
         backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: const Color(0x3322C9C3),
+        indicatorColor: const Color(0x2639E6A5),
+        labelTextStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         elevation: 0,
       ),
