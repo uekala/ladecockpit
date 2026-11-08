@@ -31,8 +31,9 @@ jobs:
       - name: Generate branded Android and iOS launcher icons
         working-directory: .
         run: |
-          python3 -m pip install --quiet cairosvg
-          python3 - <<'PY'
+          python3 -m venv /tmp/ladecockpit-icon-venv
+          /tmp/ladecockpit-icon-venv/bin/python -m pip install --quiet cairosvg
+          /tmp/ladecockpit-icon-venv/bin/python - <<'PY'
           import cairosvg
           cairosvg.svg2png(
               url="mobile/assets/ladecockpit_icon.svg",
@@ -162,8 +163,9 @@ jobs:
       - name: Generate branded Android and iOS launcher icons
         working-directory: .
         run: |
-          python3 -m pip install --quiet cairosvg
-          python3 - <<'PY'
+          python3 -m venv /tmp/ladecockpit-icon-venv
+          /tmp/ladecockpit-icon-venv/bin/python -m pip install --quiet cairosvg
+          /tmp/ladecockpit-icon-venv/bin/python - <<'PY'
           import cairosvg
           cairosvg.svg2png(
               url="mobile/assets/ladecockpit_icon.svg",
