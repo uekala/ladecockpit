@@ -30,6 +30,19 @@ jobs:
       - run: flutter create --platforms=android,ios --project-name ladecockpit .
       - name: Use Gradle direct download host
         run: sed -i 's#https://services.gradle.org/distributions/#https://downloads.gradle.org/distributions/#' android/gradle/wrapper/gradle-wrapper.properties
+      - name: Prefer Google-hosted Maven Central mirror
+        run: |
+          mkdir -p "$HOME/.gradle/init.d"
+          cat > "$HOME/.gradle/init.d/maven-central-mirror.gradle" <<'EOF'
+          allprojects {
+              repositories {
+                  maven {
+                      name = "GoogleMavenCentralMirror"
+                      url = uri("https://maven-central.storage-download.googleapis.com/maven2/")
+                  }
+              }
+          }
+          EOF
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
