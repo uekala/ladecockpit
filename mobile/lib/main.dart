@@ -1058,8 +1058,6 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     final values = months.map(totalCost).toList();
-    final maximum = values.fold<num>(0, (current, value) =>
-        value > current ? value : current);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1078,10 +1076,19 @@ class _DashboardPageState extends State<DashboardPage> {
                   final month = months[index];
                   final total = values[index];
                   final publicCost = amount(month['cost']);
+                  final homeCostKnown = month['home_cost'] is num ||
+                      num.tryParse(month['home_cost']?.toString() ?? '') != null;
+                  final homeEnergyKnown = month['home_kwh'] is num ||
+                      num.tryParse(month['home_kwh']?.toString() ?? '') != null;
                   final homeCost = amount(month['home_cost']);
                   final publicEnergy = amount(month['kwh']);
                   final homeEnergy = amount(month['home_kwh']);
                   final energy = publicEnergy + homeEnergy;
+                  final hasHomeEnergy = homeEnergyKnown && homeEnergy > 0;
+                  final homeCostLabel = !homeEnergyKnown
+                      ? 'nicht erfasst'
+                      : homeCostKnown ? '${homeCost.toStringAsFixed(2)} €'
+                      : 'Preis nicht hinterlegt';
                   final publicFlex = (publicCost * 1000).round().clamp(0, 100000000);
                   final homeFlex = (homeCost * 1000).round().clamp(0, 100000000);
                   final key = month['key'].toString();
@@ -1145,9 +1152,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         Padding(
                           padding: const EdgeInsets.only(left: 54, top: 3),
                           child: Text(
-                            '${energy.toStringAsFixed(1)} kWh gesamt · ${amount(month['sessions']).round()} öffentliche Ladevorgänge'
-                            '\nUnterwegs: ${publicCost.toStringAsFixed(2)} € · Zuhause: ${homeCost.toStringAsFixed(2)} €'
-                            '\nEnergie: unterwegs ${publicEnergy.toStringAsFixed(1)} kWh · zuhause ${homeEnergy.toStringAsFixed(1)} kWh',
+                            '${(publicEnergy + (homeEnergyKnown ? homeEnergy : 0)).toStringAsFixed(1)} kWh erfasst · ${amount(month['sessions']).round()} öffentliche Ladevorgänge'
+                            '\nÖffentlich: ${publicCost.toStringAsFixed(2)} € · Zuhause: $homeCostLabel'
+                            '\nEnergie: öffentlich ${publicEnergy.toStringAsFixed(1)} kWh · zuhause ${homeEnergyKnown ? homeEnergy.toStringAsFixed(1) + ' kWh' : 'nicht erfasst'}',
                             style: const TextStyle(color: Colors.white54, fontSize: 11)),
                         ),
                         if (comparison != null)
@@ -1165,13 +1172,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   spacing: 14,
                   runSpacing: 8,
                   children: [
-                    _costLegend(Theme.of(context).colorScheme.primary, 'Unterwegs'),
-                    _costLegend(Colors.lightBlueAccent, 'Zuhause'),
+                    _costLegend(Theme.of(context).colorScheme.primary, 'Öffentlich'),
+                    _costLegend(Colors.lightBlueAccent, 'Zuhause · erfasste Kosten'),
                   ],
                 ),
                 const SizedBox(height: 8),
                 const Align(alignment: Alignment.centerLeft,
-                  child: Text('Balken zeigen die Kostenanteile. Der Vergleich berücksichtigt beide Ladearten, sofern Heimladekosten erfasst sind.',
+                  child: Text('Nicht erfasste Heimladekosten werden nicht als 0 € gewertet. Balken zeigen nur bekannte Kosten; Vergleiche berücksichtigen nur die erfassten Beträge.',
                     style: TextStyle(color: Colors.white54, fontSize: 11))),
               ],
             ),
