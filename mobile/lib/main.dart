@@ -1017,6 +1017,37 @@ class _DashboardPageState extends State<DashboardPage> {
                     color: AppTheme.textSecondary)),
               ],
               const SizedBox(height: 8),
+              if (energyValue != null || costValue != null)
+                Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (energyValue != null)
+                          SizedBox(
+                            width: 142,
+                            child: _sessionMetric(
+                              'Geladen',
+                              _numberLabel(energyValue, digits: 1, suffix: ' kWh'),
+                              Icons.bolt_rounded,
+                            ),
+                          ),
+                        if (costValue != null)
+                          SizedBox(
+                            width: 142,
+                            child: _sessionMetric(
+                              'Gesamtkosten',
+                              _numberLabel(costValue, suffix: ' $currencySymbol'),
+                              Icons.euro_rounded,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
