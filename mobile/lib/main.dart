@@ -1042,13 +1042,34 @@ class _DashboardPageState extends State<DashboardPage> {
             final isCheapest = slot['avg_price'] is num &&
                 lowestSlotPrice != null && slot['avg_price'] == lowestSlotPrice;
             return Card(
-              child: ListTile(
-                dense: true,
-                leading: Icon(isCheapest ? Icons.savings_outlined : Icons.schedule,
-                  color: isCheapest ? AppTheme.accentGreen : AppTheme.textSecondary),
-                title: Text('$label${isCheapest ? ' · Günstigste Zeit' : ''}'),
-                subtitle: Text('${range.isEmpty ? 'Zeitfenster' : range} · $count Ladevorgänge'),
-                trailing: Column(\n                  mainAxisAlignment: MainAxisAlignment.center,\n                  crossAxisAlignment: CrossAxisAlignment.end,\n                  mainAxisSize: MainAxisSize.min,\n                  children: [priceValue(slot['avg_price'], highlighted: isCheapest),\n                    const SizedBox(height: 2),\n                    const Text('€/kWh', style: TextStyle(fontSize: 9, color: AppTheme.textSecondary)),\n                  ],\n                ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(isCheapest ? Icons.savings_outlined : Icons.schedule,
+                          color: isCheapest ? AppTheme.accentGreen : AppTheme.textSecondary,
+                          size: 19),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Text('$label${isCheapest ? ' · Günstigste Zeit' : ''}',
+                            maxLines: 2, overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600)),
+                        ),
+                        const SizedBox(width: 8),
+                        priceValue(slot['avg_price'], highlighted: isCheapest),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 28, top: 4),
+                      child: Text('${range.isEmpty ? 'Zeitfenster' : range} · $count Ladevorgänge · €/kWh',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondary)),
+                    ),
+                  ],
+                ),
               ),
             );
           }),
@@ -1076,19 +1097,36 @@ class _DashboardPageState extends State<DashboardPage> {
                 final address = site['address']?.toString();
                 final isCheapest = site['avg_price'] is num &&
                     lowestSitePrice != null && site['avg_price'] == lowestSitePrice;
-                return ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                  leading: Icon(isCheapest ? Icons.savings_outlined : Icons.location_on_outlined,
-                    color: isCheapest ? AppTheme.accentGreen : AppTheme.textSecondary),
-                  title: Text('$label${isCheapest ? ' · Günstigster' : ''}',
-                    maxLines: 2, overflow: TextOverflow.ellipsis),
-                  subtitle: Text('$network · $count Ladevorgänge · $kwh'
-                    '${address != null && address.isNotEmpty ? '\n$address' : ''}'),
-                  isThreeLine: address != null && address.isNotEmpty,
-                  trailing: priceValue(site['avg_price'], highlighted: isCheapest),
-                );
-              }).toList(),
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 9, 16, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(isCheapest ? Icons.savings_outlined : Icons.location_on_outlined,
+                            color: isCheapest ? AppTheme.accentGreen : AppTheme.textSecondary,
+                            size: 19),
+                          const SizedBox(width: 9),
+                          Expanded(
+                            child: Text('$label${isCheapest ? ' · Günstigster' : ''}',
+                              maxLines: 2, overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                          ),
+                          const SizedBox(width: 8),
+                          priceValue(site['avg_price'], highlighted: isCheapest),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 28, top: 4),
+                        child: Text('$network · $count Ladevorgänge · $kwh'
+                          '${address != null && address.isNotEmpty ? '\n$address' : ''}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondary)),
+                      ),
+                    ],
+                  ),
+                );              }).toList(),
             ),
           ),
         ],
