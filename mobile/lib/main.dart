@@ -679,17 +679,8 @@ class _DashboardPageState extends State<DashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
-          child: Row(
-            children: [
-              Expanded(child: Text('Ladevorgänge',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))),
-              Text('${filtered.length} / ${items.length}',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppTheme.textSecondary)),
-            ],
-          ),
-        ),
+        _sectionHeading('Ladevorgänge',
+          trailing: '${filtered.length} / ${items.length}'),
         Builder(builder: (context) {
           final filtersActive = selectedMonth != 'all' ||
               selectedNetwork != 'all' || selectedSite != 'all';
@@ -1148,11 +1139,7 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Text('Historische Durchschnittswerte aus deinen erfassten Ladevorgängen – keine Live-Tarife.',
             style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 22, 4, 4),
-          child: Text('Preisradar',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        ),
+        _sectionHeading('Preisradar'),
         if (cheapestSlot != null || cheapestSite != null)
           Card(
             margin: const EdgeInsets.only(bottom: 12),
@@ -1589,22 +1576,8 @@ class _DashboardPageState extends State<DashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
-          child: Row(
-            children: [
-              const Icon(Icons.trending_up_rounded,
-                color: AppTheme.accentGreen, size: 19),
-              const SizedBox(width: 8),
-              Expanded(child: Text('Kostenentwicklung',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold))),
-              Text('${months.length} Monate',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppTheme.textSecondary)),
-            ],
-          ),
-        ),
+        _sectionHeading('Kostenentwicklung',
+          icon: Icons.trending_up_rounded, trailing: '${months.length} Monate'),
         LayoutBuilder(
           builder: (context, constraints) {
             final compact = constraints.maxWidth < 370;
@@ -1793,11 +1766,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
-          child: Text('Berichte & Export',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        ),
+        _sectionHeading('Berichte & Export'),
         Card(
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
@@ -2444,6 +2413,29 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _sectionHeading(String title, {IconData? icon, String? trailing}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(icon, color: AppTheme.accentGreen, size: 19),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: Text(title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold)),
+          ),
+          if (trailing != null)
+            Text(trailing,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppTheme.textSecondary)),
+        ],
       ),
     );
   }
