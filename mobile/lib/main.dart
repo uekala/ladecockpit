@@ -1523,8 +1523,19 @@ class _DashboardPageState extends State<DashboardPage> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
-          child: Text('Kostenentwicklung',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          child: Row(
+            children: [
+              const Icon(Icons.trending_up_rounded,
+                color: AppTheme.accentGreen, size: 19),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Kostenentwicklung',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold))),
+              Text('${months.length} Monate',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppTheme.textSecondary)),
+            ],
+          ),
         ),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -1705,6 +1716,8 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _exports(dynamic rawMonths) {
+    num amount(dynamic value) =>
+        value is num ? value : num.tryParse(value?.toString() ?? '') ?? 0;
     final months = rawMonths is List
         ? rawMonths.whereType<Map<String, dynamic>>()
             .where((month) => month['key'] is String).toList().reversed.toList()
@@ -1749,6 +1762,8 @@ class _DashboardPageState extends State<DashboardPage> {
           final label = parts.length == 2 ? '${parts[1]}.${parts[0]}' : key;
           final count = month['sessions'] is num ? (month['sessions'] as num).round() : 0;
           final energy = _numberLabel(month['kwh'], digits: 1, suffix: ' kWh');
+          final monthTotal = (amount(month['cost']) + amount(month['home_cost']))
+              .toStringAsFixed(2);
           return Card(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
@@ -1778,6 +1793,10 @@ class _DashboardPageState extends State<DashboardPage> {
                             const SizedBox(height: 3),
                             Text('$count Ladevorgänge · $energy',
                               style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                            const SizedBox(height: 3),
+                            Text('$monthTotal € Gesamtkosten',
+                              style: const TextStyle(fontSize: 12,
+                                color: AppTheme.accentGreen, fontWeight: FontWeight.w700)),
                           ],
                         ),
                       ),
