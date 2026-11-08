@@ -28,6 +28,49 @@ jobs:
           channel: stable
           cache: true
       - run: flutter create --platforms=android,ios --project-name ladecockpit .
+      - name: Generate branded Android and iOS launcher icons
+        working-directory: .
+        run: |
+          python3 -m venv /tmp/ladecockpit-icon-venv
+          /tmp/ladecockpit-icon-venv/bin/python -m pip install --quiet cairosvg
+          /tmp/ladecockpit-icon-venv/bin/python - <<'PY'
+          import cairosvg
+          cairosvg.svg2png(
+              url="mobile/assets/ladecockpit_icon.svg",
+              write_to="mobile/assets/ladecockpit_icon.png",
+              output_width=1024,
+              output_height=1024,
+          )
+          PY
+      - name: Allow cleartext HTTP only to the configured Tailscale host
+        working-directory: .
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          android_dir = Path("mobile/android/app/src/main")
+          manifest = android_dir / "AndroidManifest.xml"
+          android_ns = "http://schemas.android.com/apk/res/android"
+          ET.register_namespace("android", android_ns)
+          tree = ET.parse(manifest)
+          application = tree.getroot().find("application")
+          if application is None:
+              raise SystemExit("AndroidManifest.xml has no application element")
+          application.set(f"{{{android_ns}}}networkSecurityConfig", "@xml/network_security_config")
+          xml_dir = android_dir / "res" / "xml"
+          xml_dir.mkdir(parents=True, exist_ok=True)
+          config = """<?xml version="1.0" encoding="utf-8"?>
+          <network-security-config>
+              <domain-config cleartextTrafficPermitted="true">
+                  <domain includeSubdomains="false">homeassistant.tail1966da.ts.net</domain>
+              </domain-config>
+          </network-security-config>
+          """
+          (xml_dir / "network_security_config.xml").write_text(config, encoding="utf-8")
+          tree.write(manifest, encoding="utf-8", xml_declaration=True)
+          print("Cleartext HTTP permitted only for homeassistant.tail1966da.ts.net")
+          PY
       - name: Use Gradle direct download host
         run: |
           python3 - <<'PY'
@@ -70,6 +113,7 @@ jobs:
           path.write_text(content)
           PY
       - run: flutter pub get
+      - run: dart run flutter_launcher_icons
       - run: flutter analyze
       - run: flutter test
       - name: Build Android APK (retry transient Gradle download failures)
@@ -116,7 +160,22 @@ jobs:
           channel: stable
           cache: true
       - run: flutter create --platforms=android,ios --project-name ladecockpit .
+      - name: Generate branded Android and iOS launcher icons
+        working-directory: .
+        run: |
+          python3 -m venv /tmp/ladecockpit-icon-venv
+          /tmp/ladecockpit-icon-venv/bin/python -m pip install --quiet cairosvg
+          /tmp/ladecockpit-icon-venv/bin/python - <<'PY'
+          import cairosvg
+          cairosvg.svg2png(
+              url="mobile/assets/ladecockpit_icon.svg",
+              write_to="mobile/assets/ladecockpit_icon.png",
+              output_width=1024,
+              output_height=1024,
+          )
+          PY
       - run: flutter pub get
+      - run: dart run flutter_launcher_icons
       - run: flutter analyze
       - run: flutter build ios --release --no-codesign
       - uses: actions/upload-artifact@v4
