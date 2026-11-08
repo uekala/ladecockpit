@@ -2,6 +2,9 @@ configuration:
   language:
     name: Sprache
     description: Sprache der Web-App und der Texte, die an Home Assistant gehen.
+  mobile_app_password:
+    name: Mobiles App-Passwort
+    description: Passwort für den direkten Zugriff der mobilen App über dein vertrauenswürdiges LAN oder VPN. Direkten Port erst nach dem Setzen aktivieren.
   locale:
     name: Zahlen- und Datumsformat
     description: Optional, z. B. de-DE, en-GB oder en-US.
