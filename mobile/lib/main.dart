@@ -1123,30 +1123,90 @@ class _DashboardPageState extends State<DashboardPage> {
                 onPressed: () => Navigator.pop(dialogContext),
               ),
             ),
-            body: ListView.builder(
-              itemCount: pages,
-              itemBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.all(8),
-                child: FutureBuilder<Uri>(
-                  future: _client.monthReportPageUri(month, index + 1),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return SizedBox(
-                        height: 240,
-                        child: Center(child: snapshot.hasError
-                          ? const Text('Seite konnte nicht geladen werden.')
-                          : const CircularProgressIndicator()),
-                      );
-                    }
-                    return Image.network(snapshot.data.toString(), headers: headers,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('Seite konnte nicht geladen werden.'),
-                      ));
-                  },
+            body: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppTheme.accentTeal.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.assessment_outlined,
+                            color: AppTheme.accentTeal),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('MONATSAUSWERTUNG',
+                                style: TextStyle(fontSize: 10, letterSpacing: 1.1,
+                                  color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+                              SizedBox(height: 3),
+                              Text('Dein Ladebericht',
+                                style: TextStyle(fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text('${pages} ${pages == 1 ? 'Seite' : 'Seiten'}',
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
+                    itemCount: pages,
+                    itemBuilder: (context, index) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: FutureBuilder<Uri>(
+                        future: _client.monthReportPageUri(month, index + 1),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text('Seite konnte nicht geladen werden.'),
+                            );
+                          }
+                          if (!snapshot.hasData) {
+                            return const SizedBox(
+                              height: 240,
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+                          return Image.network(snapshot.data.toString(), headers: headers,
+                            fit: BoxFit.contain,
+                            loadingBuilder: (context, child, progress) => progress == null
+                                ? child
+                                : const SizedBox(
+                                    height: 240,
+                                    child: Center(child: CircularProgressIndicator()),
+                                  ),
+                            errorBuilder: (_, __, ___) => const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text('Seite konnte nicht geladen werden.'),
+                            ));
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
