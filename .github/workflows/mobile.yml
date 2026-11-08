@@ -52,8 +52,15 @@ jobs:
               )
               if count != 1:
                   raise SystemExit(f"Could not find application element in {path}")
+          internet = '<uses-permission android:name="android.permission.INTERNET" />'
+          network_state = '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />'
+          if "android.permission.INTERNET" not in content:
+              content = content.replace("<manifest", "<manifest\\n    " + internet, 1)
+          if "android.permission.ACCESS_NETWORK_STATE" not in content:
+              content = content.replace("<manifest", "<manifest\\n    " + network_state, 1)
           path.write_text(content)
-          print("Enabled HTTP for private Tailscale/LAN endpoints.")
+          print("Enabled private HTTP and added INTERNET/ACCESS_NETWORK_STATE permissions.")
+          print(content)
           PY
       - name: Use Gradle direct download host
         run: |
