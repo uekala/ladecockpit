@@ -695,6 +695,24 @@ class _DashboardPageState extends State<DashboardPage> {
     ),
   );
 
+  Widget _detailGroup(String title, List<Widget> rows) {
+    if (rows.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: Theme.of(context).colorScheme.primary,
+            fontWeight: FontWeight.w700,
+          )),
+          const SizedBox(height: 4),
+          ...rows,
+        ],
+      ),
+    );
+  }
+
   Future<void> _showSessionDetails(Map<String, dynamic> session) async {
     final site = session['site']?.toString() ?? 'Unbekannter Standort';
     final currency = session['currency']?.toString() ?? 'EUR';
@@ -704,6 +722,43 @@ class _DashboardPageState extends State<DashboardPage> {
         : networkValue == 'supercharger' ? 'Supercharger' : networkValue;
     final invoice = session['has_invoice'] == true;
     final sessionId = session['id']?.toString();
+    String? textValue(String key) {
+      final value = session[key];
+      if (value == null || value.toString().trim().isEmpty) return null;
+      return value.toString();
+    }
+    final timingRows = <Widget>[
+      if (textValue('start') != null)
+        _detailRow('Beginn', _dateTimeLabel(session['start'])),
+      if (textValue('end') != null)
+        _detailRow('Ende', _dateTimeLabel(session['end'])),
+      if (session['duration_min'] != null)
+        _detailRow('Ladedauer', _durationLabel(session['duration_min'])),
+    ];
+    final costRows = <Widget>[
+      if (session['kwh'] != null)
+        _detailRow('Geladene Energie', _numberLabel(session['kwh'], suffix: ' kWh')),
+      if (session['cost'] != null)
+        _detailRow('Gesamtkosten', _numberLabel(session['cost'], suffix: ' $currencySymbol')),
+      if (session['charge_cost'] != null)
+        _detailRow('Ladekosten', _numberLabel(session['charge_cost'], suffix: ' $currencySymbol')),
+      if (session['idle'] != null)
+        _detailRow('Standgebühren', _numberLabel(session['idle'], suffix: ' $currencySymbol')),
+      if (session['credit'] != null)
+        _detailRow('Gutschrift', _numberLabel(session['credit'], suffix: ' $currencySymbol')),
+      if (session['price'] != null)
+        _detailRow('Preis pro kWh', _numberLabel(session['price'], digits: 3, suffix: ' $currencySymbol/kWh')),
+      if (session['avg_kw'] != null)
+        _detailRow('Durchschnittsleistung', _numberLabel(session['avg_kw'], suffix: ' kW')),
+      if (session['start_soc'] != null)
+        _detailRow('Start-Ladestand', _numberLabel(session['start_soc'], digits: 0, suffix: ' %')),
+    ];
+    final locationRows = <Widget>[
+      if (textValue('operator') != null)
+        _detailRow('Betreiber', textValue('operator')!),
+      if (textValue('address') != null)
+        _detailRow('Adresse', textValue('address')!),
+    ];
 
     await showDialog<void>(
       context: context,
@@ -714,25 +769,16 @@ class _DashboardPageState extends State<DashboardPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(network, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-              const SizedBox(height: 12),
-              _detailRow('Beginn', _dateTimeLabel(session['start'])),
-              _detailRow('Ende', _dateTimeLabel(session['end'])),
-              _detailRow('Ladedauer', _durationLabel(session['duration_min'])),
-              const Divider(height: 18),
-              _detailRow('Geladene Energie', _numberLabel(session['kwh'], suffix: ' kWh')),
-              _detailRow('Gesamtkosten', _numberLabel(session['cost'], suffix: ' $currencySymbol')),
-              _detailRow('Ladekosten', _numberLabel(session['charge_cost'], suffix: ' $currencySymbol')),
-              _detailRow('Standgebühren', _numberLabel(session['idle'], suffix: ' $currencySymbol')),
-              _detailRow('Gutschrift', _numberLabel(session['credit'], suffix: ' $currencySymbol')),
-              _detailRow('Preis pro kWh', _numberLabel(session['price'], digits: 3, suffix: ' $currencySymbol/kWh')),
-              _detailRow('Durchschnittsleistung', _numberLabel(session['avg_kw'], suffix: ' kW')),
-              if (session['start_soc'] != null)
-                _detailRow('Start-Ladestand', _numberLabel(session['start_soc'], digits: 0, suffix: ' %')),
-              if ((session['operator'] ?? '').toString().isNotEmpty)
-                _detailRow('Betreiber', session['operator'].toString()),
-              if ((session['address'] ?? '').toString().isNotEmpty)
-                _detailRow('Adresse', session['address'].toString()),
+              Row(children: [
+                Icon(Icons.ev_station, size: 18,
+                  color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 8),
+                Expanded(child: Text(network,
+                  style: TextStyle(color: Theme.of(context).colorScheme.primary))),
+              ]),
+              _detailGroup('ZEITRAUM', timingRows),
+              _detailGroup('ENERGIE UND KOSTEN', costRows),
+              _detailGroup('STANDORT', locationRows),
             ],
           ),
         ),
