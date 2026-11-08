@@ -439,7 +439,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 padding: const EdgeInsets.symmetric(vertical: 9),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Expanded(child: Text(_sectionLabel(entries[i].key),
-                    style: const TextStyle(color: Colors.white70))),
+                    style: const TextStyle(color: AppTheme.textSecondary))),
                   const SizedBox(width: 12),
                   Flexible(child: Text(_sectionValue(entries[i].key, entries[i].value),
                     textAlign: TextAlign.end,
@@ -460,13 +460,13 @@ class _DashboardPageState extends State<DashboardPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: Colors.white54),
+        Icon(icon, size: 16, color: AppTheme.textSecondary),
         const SizedBox(width: 6),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white54)),
+              Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppTheme.textSecondary)),
               const SizedBox(height: 2),
               Text(value, maxLines: 2, overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -582,7 +582,7 @@ class _DashboardPageState extends State<DashboardPage> {
               Expanded(child: Text('Ladevorgänge',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))),
               Text('${filtered.length} / ${items.length}',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white60)),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppTheme.textSecondary)),
             ],
           ),
         ),
@@ -666,7 +666,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     Row(children: [
                       Icon(
                         invoice ? Icons.receipt_long_outlined : Icons.ev_station,
-                        color: invoice ? Theme.of(context).colorScheme.primary : Colors.white60,
+                        color: invoice ? Theme.of(context).colorScheme.primary : AppTheme.textSecondary,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -680,12 +680,12 @@ class _DashboardPageState extends State<DashboardPage> {
                               '${dateLabel(session['start'])} · $network${invoice ? ' · Rechnung vorhanden' : ''}',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white60),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: Colors.white38),
+                      const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
                     ]),
                     if (metrics.isNotEmpty) ...[
                       const SizedBox(height: 12),
@@ -711,7 +711,7 @@ class _DashboardPageState extends State<DashboardPage> {
           Padding(
             padding: const EdgeInsets.all(8),
             child: Text('Es werden die ersten 50 Treffer angezeigt.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white54)),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary)),
           ),
       ],
     );
@@ -745,7 +745,7 @@ class _DashboardPageState extends State<DashboardPage> {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: Text(label, style: const TextStyle(color: Colors.white60))),
+        Expanded(child: Text(label, style: const TextStyle(color: AppTheme.textSecondary))),
         const SizedBox(width: 12),
         Flexible(child: Text(value, textAlign: TextAlign.end,
           style: const TextStyle(fontWeight: FontWeight.w600))),
@@ -918,7 +918,7 @@ class _DashboardPageState extends State<DashboardPage> {
         if (slots.isNotEmpty) ...[
           const Padding(
             padding: EdgeInsets.fromLTRB(4, 4, 4, 6),
-            child: Text('Tarif nach Ladezeit', style: TextStyle(color: Colors.white70)),
+            child: Text('Tarif nach Ladezeit', style: TextStyle(color: AppTheme.textSecondary)),
           ),
           ...slots.map((slot) {
             final label = slot['label']?.toString() ?? 'Zeitfenster';
@@ -930,7 +930,7 @@ class _DashboardPageState extends State<DashboardPage> {
               child: ListTile(
                 dense: true,
                 leading: Icon(isCheapest ? Icons.savings_outlined : Icons.schedule,
-                  color: isCheapest ? Colors.greenAccent : Colors.white60),
+                  color: isCheapest ? AppTheme.accentGreen : AppTheme.textSecondary),
                 title: Text('$label${isCheapest ? ' · Günstigste Zeit' : ''}'),
                 subtitle: Text('${range.isEmpty ? 'Zeitfenster' : range} · $count Ladevorgänge'),
                 trailing: Column(\n                  mainAxisAlignment: MainAxisAlignment.center,\n                  crossAxisAlignment: CrossAxisAlignment.end,\n                  mainAxisSize: MainAxisSize.min,\n                  children: [priceValue(slot['avg_price'], highlighted: isCheapest),\n                    const SizedBox(height: 2),\n                    const Text('€/kWh', style: TextStyle(fontSize: 9, color: AppTheme.textSecondary)),\n                  ],\n                ),
@@ -942,7 +942,7 @@ class _DashboardPageState extends State<DashboardPage> {
           const Padding(
             padding: EdgeInsets.fromLTRB(4, 14, 4, 6),
             child: Text('Deine häufigsten Ladestandorte',
-              style: TextStyle(color: Colors.white70)),
+              style: TextStyle(color: AppTheme.textSecondary)),
           ),
           ...sites.map((site) {
             final label = site['label']?.toString() ??
@@ -956,7 +956,7 @@ class _DashboardPageState extends State<DashboardPage> {
             return Card(
               child: ListTile(
                 leading: Icon(isCheapest ? Icons.savings_outlined : Icons.ev_station,
-                  color: isCheapest ? Colors.greenAccent : Colors.white60),
+                  color: isCheapest ? AppTheme.accentGreen : AppTheme.textSecondary),
                 title: Text('$label${isCheapest ? ' · Günstigster' : ''}',
                   maxLines: 2, overflow: TextOverflow.ellipsis),
                 subtitle: Text('$network · $count Ladevorgänge · $kwh'
@@ -970,7 +970,7 @@ class _DashboardPageState extends State<DashboardPage> {
         const Padding(
           padding: EdgeInsets.fromLTRB(4, 4, 4, 0),
           child: Text('Preiswerte basieren auf den erfassten Rechnungsdaten und sind keine Live-Tarife.',
-            style: TextStyle(color: Colors.white54, fontSize: 12)),
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
         ),
       ],
     );
@@ -1106,7 +1106,7 @@ class _DashboardPageState extends State<DashboardPage> {
       Container(width: 9, height: 9, decoration: BoxDecoration(
         color: color, borderRadius: BorderRadius.circular(2))),
       const SizedBox(width: 6),
-      Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+      Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
     ],
   );
 
@@ -1189,11 +1189,11 @@ class _DashboardPageState extends State<DashboardPage> {
                         final percentage = difference / previousTotal * 100;
                         final sign = difference > 0 ? '+' : '';
                         comparison = '$sign${difference.toStringAsFixed(2)} € ($sign${percentage.toStringAsFixed(1)} %) gegenüber Vormonat';
-                        comparisonColor = difference > 0 ? Colors.orangeAccent :
-                            difference < 0 ? Colors.greenAccent : Colors.white54;
+                        comparisonColor = difference > 0 ? AppTheme.warning :
+                            difference < 0 ? AppTheme.accentGreen : AppTheme.textSecondary;
                       } else {
                         comparison = 'Vormonat ohne erfasste Kosten – kein Prozentvergleich';
-                        comparisonColor = Colors.white54;
+                        comparisonColor = AppTheme.textSecondary;
                       }
                     }
                   }
@@ -1205,7 +1205,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         Row(
                           children: [
                             SizedBox(width: 54, child: Text(label,
-                              style: const TextStyle(color: Colors.white70))),
+                              style: const TextStyle(color: AppTheme.textSecondary))),
                             Expanded(
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(6),
@@ -1219,7 +1219,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                       Expanded(flex: homeFlex, child: Container(
                                         color: Colors.lightBlueAccent)),
                                     if (publicFlex == 0 && homeFlex == 0)
-                                      Expanded(child: Container(color: Colors.white12)),
+                                      Expanded(child: Container(color: AppTheme.border)),
                                   ]),
                                 ),
                               ),
@@ -1236,7 +1236,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             '${(publicEnergy + (homeEnergyKnown ? homeEnergy : 0)).toStringAsFixed(1)} kWh erfasst · ${amount(month['sessions']).round()} öffentliche Ladevorgänge'
                             '\nÖffentlich: ${publicCost.toStringAsFixed(2)} € · Zuhause: $homeCostLabel'
                             '\nEnergie: öffentlich ${publicEnergy.toStringAsFixed(1)} kWh · zuhause ${homeEnergyKnown ? '${homeEnergy.toStringAsFixed(1)} kWh' : 'nicht erfasst'}',
-                            style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
                         ),
                         if (comparison != null)
                           Padding(
@@ -1260,7 +1260,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 const SizedBox(height: 8),
                 const Align(alignment: Alignment.centerLeft,
                   child: Text('Nicht erfasste Heimladekosten werden nicht als 0 € gewertet. Balken zeigen nur bekannte Kosten; Vergleiche berücksichtigen nur die erfassten Beträge.',
-                    style: TextStyle(color: Colors.white54, fontSize: 11))),
+                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 11))),
               ],
             ),
           ),
@@ -1322,7 +1322,7 @@ class _DashboardPageState extends State<DashboardPage> {
         const Padding(
           padding: EdgeInsets.fromLTRB(4, 4, 4, 0),
           child: Text('Monatsberichte enthalten die Kostenübersicht und vorhandene Rechnungen.',
-            style: TextStyle(color: Colors.white54, fontSize: 12)),
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
         ),
       ],
     );
@@ -1399,9 +1399,9 @@ class _DashboardPageState extends State<DashboardPage> {
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: color ?? Colors.white70),
+          Icon(icon, size: 18, color: color ?? AppTheme.textSecondary),
           const SizedBox(width: 10),
-          Expanded(child: Text(label, style: const TextStyle(color: Colors.white70))),
+          Expanded(child: Text(label, style: const TextStyle(color: AppTheme.textSecondary))),
           Flexible(child: Text(value, textAlign: TextAlign.end,
             style: TextStyle(fontWeight: FontWeight.w600, color: color))),
         ],
@@ -1631,11 +1631,11 @@ class _DashboardPageState extends State<DashboardPage> {
     final teslaLabel = !teslaConfigured
         ? 'Nicht eingerichtet'
         : teslaConnected ? 'Verbunden' : 'Nicht verbunden';
-    final teslaColor = teslaConnected ? Colors.greenAccent : Colors.orangeAccent;
+    final teslaColor = teslaConnected ? AppTheme.accentGreen : AppTheme.warning;
     final haLabel = !haConfigured
         ? 'Nicht eingerichtet (optional)'
         : haOk ? 'Verbunden' : 'Nicht erreichbar';
-    final haColor = !haConfigured || haOk ? Colors.greenAccent : Colors.orangeAccent;
+    final haColor = !haConfigured || haOk ? AppTheme.accentGreen : AppTheme.warning;
 
     return Card(
       child: Padding(
@@ -1663,14 +1663,14 @@ class _DashboardPageState extends State<DashboardPage> {
             if (hasTeslaError)
               Padding(
                 padding: const EdgeInsets.only(left: 28, bottom: 5),
-                child: Text(teslaError, style: const TextStyle(color: Colors.orangeAccent, fontSize: 12)),
+                child: Text(teslaError, style: const TextStyle(color: AppTheme.warning, fontSize: 12)),
               ),
             _statusLine(!haConfigured || haOk ? Icons.home_outlined : Icons.warning_amber_rounded,
               'Home Assistant', haLabel, color: haColor),
             if (haConfigured && !haOk && haError != null && haError.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(left: 28, bottom: 5),
-                child: Text(haError, style: const TextStyle(color: Colors.orangeAccent, fontSize: 12)),
+                child: Text(haError, style: const TextStyle(color: AppTheme.warning, fontSize: 12)),
               ),
             const Divider(height: 18),
             _statusLine(Icons.history, 'Letzte Synchronisation', _dateTimeLabel(sync['last'])),
@@ -1683,10 +1683,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.error_outline, color: Colors.orangeAccent, size: 18),
+                    const Icon(Icons.error_outline, color: AppTheme.warning, size: 18),
                     const SizedBox(width: 8),
                     Expanded(child: Text(syncError,
-                      style: const TextStyle(color: Colors.orangeAccent, fontSize: 12))),
+                      style: const TextStyle(color: AppTheme.warning, fontSize: 12))),
                   ],
                 ),
               ),
@@ -1694,7 +1694,7 @@ class _DashboardPageState extends State<DashboardPage> {
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text('Hinweis: $problem',
-                  style: const TextStyle(color: Colors.white60, fontSize: 12)),
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
               ),
           ],
         ),
@@ -1727,7 +1727,7 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Icon(Icons.cloud_off, color: Colors.orange),
+                  const Icon(Icons.cloud_off, color: AppTheme.warning),
                   const SizedBox(height: 8),
                   Text(_error!),
                   const SizedBox(height: 8),
@@ -1745,7 +1745,7 @@ class _DashboardPageState extends State<DashboardPage> {
             if (_data != null) ...[
               _connectionStatus(),
               _vehicleHero(_map(_data?['status'])),
-              Text('ÜBERSICHT', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white60, letterSpacing: 1.4)),
+              Text('ÜBERSICHT', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppTheme.textSecondary, letterSpacing: 1.4)),
               const SizedBox(height: 8),
               GridView.count(
                 crossAxisCount: 2,
@@ -1773,7 +1773,7 @@ class _DashboardPageState extends State<DashboardPage> {
               _exports(_data?['monthly']),
               const SizedBox(height: 16),
               Text('Daten werden direkt von deinem Ladecockpit über Tailscale abgerufen.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white54)),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary)),
             ],
             if (_data == null && !_loading && _error == null)
               const Center(child: Padding(padding: EdgeInsets.all(32), child: Text('Noch keine Daten vorhanden.'))),
