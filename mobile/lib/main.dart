@@ -1409,8 +1409,10 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _vehicleHero(Map<String, dynamic>? status) {
+  Widget _vehicleHero(Map<String, dynamic>? status, Map<String, dynamic>? car) {
     final data = status ?? {};
+    final vehicleName = car?['name']?.toString().trim();
+    final vehicleImage = car?['image']?.toString().trim();
     final soc = data['soc'] is num ? (data['soc'] as num).toDouble() : null;
     final range = data['range'] is num ? (data['range'] as num).round() : null;
     final charging = data['charging'];
@@ -1475,8 +1477,10 @@ class _DashboardPageState extends State<DashboardPage> {
                         style: TextStyle(fontSize: 11, letterSpacing: 1.5,
                           color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
                       SizedBox(height: 3),
-                      Text('Dein Ladecockpit',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      Text(vehicleName == null || vehicleName.isEmpty
+                          ? 'Dein Ladecockpit' : vehicleName,
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ),
@@ -1501,6 +1505,19 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
               ],
             ),
+            if (vehicleImage != null && vehicleImage.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 104,
+                width: double.infinity,
+                child: Image.network(
+                  vehicleImage,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                  errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                ),
+              ),
+            ],
             const SizedBox(height: 22),
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -1743,7 +1760,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
             if (_data != null) ...[
-              _vehicleHero(_map(_data?['status'])),
+              _vehicleHero(_map(_data?['status']), _map(_data?['car'])),
               _connectionStatus(),
               Text('ÜBERSICHT', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppTheme.textSecondary, letterSpacing: 1.4)),
               const SizedBox(height: 8),
