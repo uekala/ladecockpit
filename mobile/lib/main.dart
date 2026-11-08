@@ -1666,45 +1666,69 @@ class _DashboardPageState extends State<DashboardPage> {
         ? 'Nicht eingerichtet (optional)'
         : haOk ? 'Verbunden' : 'Nicht erreichbar';
     final haColor = !haConfigured || haOk ? AppTheme.accentGreen : AppTheme.warning;
+    final hasProblem = !teslaConnected || (haConfigured && !haOk) ||
+        hasTeslaError || hasSyncError;
+    final summaryColor = hasProblem ? AppTheme.warning : AppTheme.accentGreen;
+    final summaryLabel = hasProblem ? 'Verbindung prüfen' : 'Alles verbunden';
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      margin: const EdgeInsets.only(bottom: 14),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: false,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          leading: Icon(
+            hasProblem ? Icons.cloud_off_outlined : Icons.cloud_done_outlined,
+            color: summaryColor,
+          ),
+          title: const Text('Verbindungen',
+            style: TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Row(
+            children: [
+              Container(width: 7, height: 7, decoration: BoxDecoration(
+                color: summaryColor, shape: BoxShape.circle)),
+              const SizedBox(width: 7),
+              Expanded(child: Text(summaryLabel,
+                style: TextStyle(color: summaryColor, fontSize: 12))),
+              Text('Details',
+                style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+            ],
+          ),
           children: [
             Row(
               children: [
-                const Icon(Icons.sync, size: 19),
-                const SizedBox(width: 8),
-                Expanded(child: Text('Verbindung & Synchronisation',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
+                Expanded(child: _statusLine(
+                  teslaConnected ? Icons.check_circle : Icons.cloud_off,
+                  'Tesla', teslaLabel, color: teslaColor)),
                 IconButton(
                   tooltip: 'Status aktualisieren',
                   visualDensity: VisualDensity.compact,
                   onPressed: _loading ? null : _load,
-                  icon: const Icon(Icons.refresh, size: 20),
+                  icon: const Icon(Icons.refresh, size: 19),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            _statusLine(teslaConnected ? Icons.check_circle : Icons.cloud_off,
-              'Tesla', teslaLabel, color: teslaColor),
             if (hasTeslaError)
               Padding(
                 padding: const EdgeInsets.only(left: 28, bottom: 5),
-                child: Text(teslaError, style: const TextStyle(color: AppTheme.warning, fontSize: 12)),
+                child: Text(teslaError,
+                  style: const TextStyle(color: AppTheme.warning, fontSize: 12)),
               ),
-            _statusLine(!haConfigured || haOk ? Icons.home_outlined : Icons.warning_amber_rounded,
+            _statusLine(
+              !haConfigured || haOk ? Icons.home_outlined : Icons.warning_amber_rounded,
               'Home Assistant', haLabel, color: haColor),
             if (haConfigured && !haOk && haError != null && haError.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(left: 28, bottom: 5),
-                child: Text(haError, style: const TextStyle(color: AppTheme.warning, fontSize: 12)),
+                child: Text(haError,
+                  style: const TextStyle(color: AppTheme.warning, fontSize: 12)),
               ),
             const Divider(height: 18),
             _statusLine(Icons.history, 'Letzte Synchronisation', _dateTimeLabel(sync['last'])),
-            _statusLine(Icons.download_done, 'Letzter erfolgreicher App-Abruf', _fetchTimeLabel(_lastSuccessfulFetch)),
+            _statusLine(Icons.download_done,
+              'Letzter erfolgreicher App-Abruf', _fetchTimeLabel(_lastSuccessfulFetch)),
             if (sync['next'] != null)
               _statusLine(Icons.schedule, 'Nächste Synchronisation', _dateTimeLabel(sync['next'])),
             if (hasSyncError)
