@@ -398,6 +398,27 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _map(dynamic value) =>
       value is Map<String, dynamic> ? value : null;
 
+  Widget _sessionMetric(String label, String value, IconData icon) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: Colors.white54),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white54)),
+              const SizedBox(height: 2),
+              Text(value, maxLines: 2, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _sessions(dynamic raw) {
     if (raw is! List || raw.isEmpty) return const SizedBox.shrink();
     final items = raw.whereType<Map<String, dynamic>>().toList();
@@ -558,26 +579,72 @@ class _DashboardPageState extends State<DashboardPage> {
           final networkValue = session['network']?.toString() ?? 'supercharger';
           final network = networkValue == 'multipass' ? 'MultiPass' :
             networkValue == 'supercharger' ? 'Supercharger' : networkValue;
-          final kwh = number(session['kwh']);
-          final cost = number(session['cost'], digits: 2);
+          final kwhValue = session['kwh'];
+          final costValue = session['cost'];
+          final durationValue = session['duration_min'];
+          final kwh = kwhValue == null ? null : number(kwhValue);
+          final cost = costValue == null ? null : number(costValue, digits: 2);
+          final duration = durationValue == null ? null : _durationLabel(durationValue);
           final currency = session['currency']?.toString() ?? 'EUR';
+          final currencyLabel = currency == 'EUR' ? '€' : currency;
           final invoice = session['has_invoice'] == true;
+          final metrics = <Widget>[
+            if (kwh != null)
+              _sessionMetric('Energie', '$kwh kWh', Icons.bolt),
+            if (cost != null)
+              _sessionMetric('Kosten', '$cost $currencyLabel', Icons.euro),
+            if (duration != null)
+              _sessionMetric('Dauer', duration, Icons.schedule),
+          ];
           return Card(
-            child: ListTile(
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
               onTap: () => _showSessionDetails(session),
-              leading: Icon(
-                invoice ? Icons.receipt_long_outlined : Icons.ev_station,
-                color: invoice ? Theme.of(context).colorScheme.primary : Colors.white60,
-              ),
-              title: Text(site, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Text('${dateLabel(session['start'])} · $network${invoice ? ' · Rechnung öffnen' : ''}'),
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text('$kwh kWh', style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Text('$cost $currency', style: Theme.of(context).textTheme.bodySmall),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 13, 16, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Icon(
+                        invoice ? Icons.receipt_long_outlined : Icons.ev_station,
+                        color: invoice ? Theme.of(context).colorScheme.primary : Colors.white60,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(site, maxLines: 1, overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 3),
+                            Text(
+                              '${dateLabel(session['start'])} · $network${invoice ? ' · Rechnung vorhanden' : ''}',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white60),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: Colors.white38),
+                    ]),
+                    if (metrics.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      const Divider(height: 1),
+                      const SizedBox(height: 10),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (var i = 0; i < metrics.length; i++) ...[
+                            if (i > 0) const SizedBox(width: 8),
+                            Expanded(child: metrics[i]),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           );
