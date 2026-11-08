@@ -1946,14 +1946,23 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             if (vehicleImage != null && vehicleImage.isNotEmpty) ...[
               const SizedBox(height: 12),
-              SizedBox(
-                height: compactCard ? 78 : 104,
+              Container(
+                height: compactCard ? 82 : 108,
                 width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.025),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.045)),
+                ),
                 child: Image.network(
                   vehicleImage,
                   fit: BoxFit.contain,
                   alignment: Alignment.center,
-                  errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Icon(Icons.directions_car_filled_rounded,
+                      size: 42, color: AppTheme.textSecondary),
+                  ),
                 ),
               ),
             ],
