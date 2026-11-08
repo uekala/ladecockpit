@@ -1351,103 +1351,194 @@ class _DashboardPageState extends State<DashboardPage> {
     final asOf = data['as_of']?.toString();
     final level = soc == null ? 0.0 : (soc / 100).clamp(0.0, 1.0).toDouble();
     final readingLabel = socSource == 'last'
-        ? 'Letzter bekannter Akkustand'
-        : socSource == 'live' ? 'Live-Akkustand' : 'Akkustand';
+        ? 'LETZTER BEKANNTER STAND'
+        : socSource == 'live' ? 'LIVE-FAHRZEUGDATEN' : 'AKKUSTAND';
     final readingColor = socSource == 'last'
-        ? Colors.orangeAccent
-        : socSource == 'live' ? Colors.greenAccent : Colors.white70;
+        ? AppTheme.warning
+        : socSource == 'live' ? AppTheme.accentGreen : AppTheme.textSecondary;
     final chargingText = charging == true ? 'Wird geladen'
         : charging == false ? 'Lädt derzeit nicht' : 'Ladestatus nicht verfügbar';
-    final chargingColor = charging == true ? Colors.greenAccent
-        : charging == false ? Colors.white70 : Colors.orangeAccent;
+    final chargingColor = charging == true
+        ? AppTheme.accentGreen
+        : charging == false ? AppTheme.textSecondary : AppTheme.warning;
 
     return Card(
       clipBehavior: Clip.antiAlias,
+      margin: const EdgeInsets.only(top: 4, bottom: 18),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+        side: const BorderSide(color: AppTheme.border),
+      ),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.fromLTRB(20, 19, 20, 18),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft, end: Alignment.bottomRight,
-            colors: [Color(0xFF203B39), Color(0xFF172326)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF172B30), Color(0xFF101820), Color(0xFF0D1218)],
           ),
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Icon(Icons.directions_car_filled_outlined, color: Colors.white70),
-            const SizedBox(width: 8),
-            const Expanded(child: Text('FAHRZEUGSTATUS',
-              style: TextStyle(fontSize: 12, letterSpacing: 1.3, color: Colors.white70))),
-            if (charging == true) const Icon(Icons.bolt, color: Colors.greenAccent),
-          ]),
-          if (soc != null) ...[
-            const SizedBox(height: 7),
-            Row(children: [
-              Icon(socSource == 'last' ? Icons.history : Icons.sensors,
-                size: 14,
-                color: readingColor),
-              const SizedBox(width: 6),
-              Expanded(child: Text(readingLabel,
-                style: TextStyle(fontSize: 12,
-                  color: readingColor))),
-            ]),
-            if (asOf != null)
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentTeal.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(color: AppTheme.accentTeal.withValues(alpha: 0.22)),
+                  ),
+                  child: const Icon(Icons.electric_car_outlined,
+                    color: AppTheme.accentTeal, size: 21),
+                ),
+                const SizedBox(width: 11),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('FAHRZEUGSTATUS',
+                        style: TextStyle(fontSize: 11, letterSpacing: 1.5,
+                          color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+                      SizedBox(height: 3),
+                      Text('Dein Ladecockpit',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+                if (charging == true)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentGreen.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppTheme.accentGreen.withValues(alpha: 0.25)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.bolt, color: AppTheme.accentGreen, size: 15),
+                        SizedBox(width: 4),
+                        Text('LÄDT', style: TextStyle(fontSize: 10,
+                          letterSpacing: 0.8, color: AppTheme.accentGreen,
+                          fontWeight: FontWeight.w800)),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 22),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 132,
+                  height: 132,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox.expand(
+                        child: CircularProgressIndicator(
+                          value: level,
+                          strokeWidth: 10,
+                          strokeCap: StrokeCap.round,
+                          backgroundColor: Colors.white.withValues(alpha: 0.07),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            soc == null ? AppTheme.border : AppTheme.accentGreen,
+                          ),
+                        ),
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(soc == null ? '–' : '${soc.round()}%',
+                            style: const TextStyle(fontSize: 34,
+                              height: 1.0, fontWeight: FontWeight.w800,
+                              letterSpacing: -1.2)),
+                          const SizedBox(height: 5),
+                          const Text('BATTERIE',
+                            style: TextStyle(fontSize: 9, letterSpacing: 1.2,
+                              color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 22),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('REICHWEITE',
+                        style: TextStyle(fontSize: 10, letterSpacing: 1.3,
+                          color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 5),
+                      Text(range == null ? '–' : '$range km',
+                        maxLines: 1, softWrap: false,
+                        style: const TextStyle(fontSize: 30,
+                          fontWeight: FontWeight.w800, letterSpacing: -1.0)),
+                      if (target != null) ...[
+                        const SizedBox(height: 8),
+                        Text('Ladelimit $target %',
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Container(height: 1, color: AppTheme.border),
+            const SizedBox(height: 13),
+            Row(
+              children: [
+                Icon(
+                  charging == true ? Icons.ev_station_rounded : Icons.power_rounded,
+                  color: chargingColor, size: 19),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(chargingText,
+                    style: TextStyle(color: chargingColor,
+                      fontWeight: FontWeight.w700, fontSize: 13)),
+                ),
+                if (power != null)
+                  Text('${power.toStringAsFixed(1)} kW',
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+              ],
+            ),
+            if (soc != null) ...[
+              const SizedBox(height: 11),
+              Row(
+                children: [
+                  Icon(socSource == 'last' ? Icons.history_rounded : Icons.sensors_rounded,
+                    size: 14, color: readingColor),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(readingLabel,
+                    style: TextStyle(fontSize: 10, letterSpacing: 0.8,
+                      color: readingColor, fontWeight: FontWeight.w700))),
+                  if (asOf != null)
+                    Text(_dateTimeLabel(asOf),
+                      style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary)),
+                ],
+              ),
+            ],
+            if (charging == true && rate != null)
               Padding(
-                padding: const EdgeInsets.only(left: 20, top: 2),
-                child: Text('Messzeitpunkt: ${_dateTimeLabel(asOf)}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                padding: const EdgeInsets.only(top: 8),
+                child: Text('Ladegeschwindigkeit: ${rate.toStringAsFixed(1)} % pro Stunde',
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+              ),
+            if (charging == true && finish is String)
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Text('Voraussichtlich fertig: ${_dateTimeLabel(finish)}',
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
               ),
           ],
-          const SizedBox(height: 18),
-          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-            SizedBox(
-              width: 112, height: 112,
-              child: Stack(alignment: Alignment.center, children: [
-                SizedBox.expand(child: CircularProgressIndicator(
-                  value: level,
-                  strokeWidth: 9,
-                  backgroundColor: Colors.white12,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    soc == null ? Colors.white24 : Colors.greenAccent),
-                )),
-                Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(soc == null ? '–' : '${soc.round()}%',
-                    style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
-                  const Text('Akku', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                ]),
-              ]),
-            ),
-            const SizedBox(width: 22),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Reichweite', style: TextStyle(color: Colors.white70)),
-              const SizedBox(height: 3),
-              Text(range == null ? '–' : '$range km',
-                style: const TextStyle(fontSize: 27, fontWeight: FontWeight.bold)),
-              if (target != null)
-                Text('Ladelimit $target %', style: const TextStyle(color: Colors.white60, fontSize: 12)),
-            ])),
-          ]),
-          const SizedBox(height: 18),
-          Container(height: 1, color: Colors.white12),
-          const SizedBox(height: 12),
-          Row(children: [
-            Icon(charging == true ? Icons.ev_station : Icons.power_off,
-              color: chargingColor, size: 19),
-            const SizedBox(width: 8),
-            Expanded(child: Text(chargingText,
-              style: TextStyle(color: chargingColor, fontWeight: FontWeight.w600))),
-            if (power != null) Text('${power.toStringAsFixed(1)} kW',
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          ]),
-          if (charging == true && rate != null)
-            Padding(padding: const EdgeInsets.only(top: 7),
-              child: Text('Ladegeschwindigkeit: ${rate.toStringAsFixed(1)} % pro Stunde',
-                style: const TextStyle(color: Colors.white70, fontSize: 12))),
-          if (charging == true && finish is String)
-            Padding(padding: const EdgeInsets.only(top: 5),
-              child: Text('Voraussichtlich fertig: ${_dateTimeLabel(finish)}',
-                style: const TextStyle(color: Colors.white70, fontSize: 12))),
-        ]),
+        ),
       ),
     );
   }
