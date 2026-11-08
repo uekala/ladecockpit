@@ -1023,6 +1023,16 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Widget _costLegend(Color color, String label) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(width: 9, height: 9, decoration: BoxDecoration(
+        color: color, borderRadius: BorderRadius.circular(2))),
+      const SizedBox(width: 6),
+      Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+    ],
+  );
+
   Widget _costDevelopment(dynamic rawMonths) {
     final months = rawMonths is List
         ? rawMonths.whereType<Map<String, dynamic>>()
@@ -1067,9 +1077,13 @@ class _DashboardPageState extends State<DashboardPage> {
                 ...List.generate(months.length, (index) {
                   final month = months[index];
                   final total = values[index];
+                  final publicCost = amount(month['cost']);
                   final homeCost = amount(month['home_cost']);
-                  final energy = amount(month['kwh']) + amount(month['home_kwh']);
-                  final ratio = maximum > 0 ? (total / maximum).clamp(0.0, 1.0).toDouble() : 0.0;
+                  final publicEnergy = amount(month['kwh']);
+                  final homeEnergy = amount(month['home_kwh']);
+                  final energy = publicEnergy + homeEnergy;
+                  final publicFlex = (publicCost * 1000).round().clamp(0, 100000000);
+                  final homeFlex = (homeCost * 1000).round().clamp(0, 100000000);
                   final key = month['key'].toString();
                   final parts = key.split('-');
                   final label = parts.length == 2 ? '${parts[1]}.${parts[0]}' : key;
@@ -1107,8 +1121,19 @@ class _DashboardPageState extends State<DashboardPage> {
                             Expanded(
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(6),
-                                child: LinearProgressIndicator(value: ratio, minHeight: 10,
-                                  backgroundColor: Colors.white12),
+                                child: SizedBox(
+                                  height: 10,
+                                  child: Row(children: [
+                                    if (publicFlex > 0)
+                                      Expanded(flex: publicFlex, child: Container(
+                                        color: Theme.of(context).colorScheme.primary)),
+                                    if (homeFlex > 0)
+                                      Expanded(flex: homeFlex, child: Container(
+                                        color: Colors.lightBlueAccent)),
+                                    if (publicFlex == 0 && homeFlex == 0)
+                                      Expanded(child: Container(color: Colors.white12)),
+                                  ]),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -1120,8 +1145,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         Padding(
                           padding: const EdgeInsets.only(left: 54, top: 3),
                           child: Text(
-                            '${energy.toStringAsFixed(1)} kWh · ${amount(month['sessions']).round()} öffentliche Ladevorgänge'
-                            '${homeCost > 0 ? ' · Zuhause ${homeCost.toStringAsFixed(2)} €' : ''}',
+                            '${energy.toStringAsFixed(1)} kWh gesamt · ${amount(month['sessions']).round()} öffentliche Ladevorgänge'
+                            '\nUnterwegs: ${publicCost.toStringAsFixed(2)} € · Zuhause: ${homeCost.toStringAsFixed(2)} €'
+                            '\nEnergie: unterwegs ${publicEnergy.toStringAsFixed(1)} kWh · zuhause ${homeEnergy.toStringAsFixed(1)} kWh',
                             style: const TextStyle(color: Colors.white54, fontSize: 11)),
                         ),
                         if (comparison != null)
@@ -1135,8 +1161,17 @@ class _DashboardPageState extends State<DashboardPage> {
                   );
                 }),
                 const Divider(height: 20),
+                Wrap(
+                  spacing: 14,
+                  runSpacing: 8,
+                  children: [
+                    _costLegend(Theme.of(context).colorScheme.primary, 'Unterwegs'),
+                    _costLegend(Colors.lightBlueAccent, 'Zuhause'),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 const Align(alignment: Alignment.centerLeft,
-                  child: Text('Chronologischer Verlauf: öffentliches Laden plus erfasste Heimladekosten. Vergleiche erscheinen nur bei direkt aufeinanderfolgenden Monaten.',
+                  child: Text('Balken zeigen die Kostenanteile. Der Vergleich berücksichtigt beide Ladearten, sofern Heimladekosten erfasst sind.',
                     style: TextStyle(color: Colors.white54, fontSize: 11))),
               ],
             ),
