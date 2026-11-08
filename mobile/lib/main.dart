@@ -2263,6 +2263,11 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
       bottomNavigationBar: NavigationBar(
+        height: 72,
+        elevation: 8,
+        backgroundColor: AppTheme.surface,
+        indicatorColor: AppTheme.accentGreen.withValues(alpha: 0.14),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         selectedIndex: _selectedTab,
         onDestinationSelected: (index) => setState(() => _selectedTab = index),
         destinations: const [
