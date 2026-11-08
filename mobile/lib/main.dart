@@ -1470,7 +1470,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   'Öffentlich: ${publicCost.toStringAsFixed(2)} € · Zuhause: $homeCostLabel'
-                                  '\\nEnergie: öffentlich ${publicEnergy.toStringAsFixed(1)} kWh · zuhause ${homeEnergyKnown ? '${homeEnergy.toStringAsFixed(1)} kWh' : 'nicht erfasst'}',
+                                  '\nEnergie: öffentlich ${publicEnergy.toStringAsFixed(1)} kWh · zuhause ${homeEnergyKnown ? '${homeEnergy.toStringAsFixed(1)} kWh' : 'nicht erfasst'}',
                                   style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
                               ),
                               if (comparison != null)
