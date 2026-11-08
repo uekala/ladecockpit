@@ -351,6 +351,46 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _analyticsAndHistoryPanel() {
+    final sessions = _data?['sessions'];
+    final sessionCount = sessions is List ? sessions.length : 0;
+    final monthly = _data?['monthly'];
+    final monthCount = monthly is List ? monthly.length : 0;
+    final slotCount = _data?['slots'] is List ? (_data!['slots'] as List).length : 0;
+    final siteCount = _data?['sites'] is List ? (_data!['sites'] as List).length : 0;
+    final details = <String>[
+      if (sessionCount > 0) '$sessionCount Ladevorgänge',
+      if (slotCount + siteCount > 0) 'Preisradar',
+      if (monthCount > 0) 'Kosten & Berichte',
+    ].join(' · ');
+
+    return Card(
+      margin: const EdgeInsets.only(top: 12, bottom: 8),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: false,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
+          leading: const Icon(Icons.insights_rounded,
+            color: AppTheme.accentTeal, size: 21),
+          title: const Text('Auswertungen & Historie',
+            style: TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Text(details.isEmpty ? 'Weitere Informationen' : details,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          children: [
+            _priceRadar(_data?['slots'], _data?['sites']),
+            _sessions(_data?['sessions']),
+            _costDevelopment(_data?['monthly']),
+            _exports(_data?['monthly']),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _homeChargingSummary(Map<String, dynamic>? home) {
     if (home == null || (home['kwh'] == null && home['cost'] == null)) {
       return const SizedBox.shrink();
@@ -1874,10 +1914,7 @@ class _DashboardPageState extends State<DashboardPage> {
               _section('Gesamt', totals),
               _section('Ladeprognose', forecast),
               _section('Fahrzeug', _map(_data?['car'])),
-              _priceRadar(_data?['slots'], _data?['sites']),
-              _sessions(_data?['sessions']),
-              _costDevelopment(_data?['monthly']),
-              _exports(_data?['monthly']),
+              _analyticsAndHistoryPanel(),
               const SizedBox(height: 16),
               Text('Daten werden direkt von deinem Ladecockpit über Tailscale abgerufen.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary)),
