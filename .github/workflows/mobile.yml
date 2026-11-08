@@ -29,7 +29,29 @@ jobs:
           cache: true
       - run: flutter create --platforms=android,ios --project-name ladecockpit .
       - name: Use Gradle direct download host
-        run: sed -i 's#https://services.gradle.org/distributions/#https://downloads.gradle.org/distributions/#' android/gradle/wrapper/gradle-wrapper.properties
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("android/gradle/wrapper/gradle-wrapper.properties")
+          content = path.read_text()
+          updated, count = re.subn(
+              r"https\\://github\\.com/gradle/gradle-distributions/releases/download/v[^/]+/",
+              r"https\\://downloads.gradle.org/distributions/",
+              content,
+          )
+          if count == 0:
+              updated, count = re.subn(
+                  r"https\\://services.gradle.org/distributions/",
+                  r"https\\://downloads.gradle.org/distributions/",
+                  content,
+              )
+          if count == 0:
+              raise SystemExit(f"No known Gradle distribution URL found in {path}")
+          path.write_text(updated)
+          print(next(line for line in updated.splitlines() if line.startswith("distributionUrl=")))
+          PY
       - name: Add Google-hosted Maven Central mirror to Gradle settings
         run: |
           python3 - <<'PY'
