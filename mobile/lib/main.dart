@@ -2382,12 +2382,20 @@ class _DashboardPageState extends State<DashboardPage> {
     final hasSyncError = syncError != null && syncError.isNotEmpty;
 
     final teslaLabel = !teslaConfigured
-        ? 'Nicht eingerichtet'
+        ? 'Einrichtung fehlt'
         : teslaConnected ? 'Verbunden' : 'Nicht verbunden';
     final teslaColor = teslaConnected ? AppTheme.accentGreen : AppTheme.warning;
+    final teslaHint = !teslaConfigured
+        ? 'Tesla-Zugang muss zuerst auf dem Ladecockpit-Server eingerichtet werden.'
+        : !teslaConnected && !hasTeslaError
+            ? 'Der Tesla-Zugang ist eingerichtet, aktuell besteht aber keine Verbindung.'
+            : null;
     final haLabel = !haConfigured
-        ? 'Nicht eingerichtet (optional)'
+        ? 'Nicht eingerichtet · optional'
         : haOk ? 'Verbunden' : 'Nicht erreichbar';
+    final haHint = haConfigured && !haOk && (haError == null || haError.isEmpty)
+        ? 'Home Assistant ist eingerichtet, antwortet aktuell aber nicht.'
+        : null;
     final haColor = !haConfigured || haOk ? AppTheme.accentGreen : AppTheme.warning;
     final hasProblem = !teslaConnected || (haConfigured && !haOk) ||
         hasTeslaError || hasSyncError;
@@ -2443,20 +2451,32 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             // Fahrzeugdaten-Frische steht bereits kompakt in der Zusammenfassung
             // und im Fahrzeug-Header; hier bleiben nur Verbindungsdetails.
+            if (teslaHint != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 28, bottom: 5),
+                child: Text(teslaHint,
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11, height: 1.35)),
+              ),
             if (hasTeslaError)
               Padding(
                 padding: const EdgeInsets.only(left: 28, bottom: 5),
-                child: Text(teslaError,
-                  style: const TextStyle(color: AppTheme.warning, fontSize: 12)),
+                child: Text('Tesla-Fehler: $teslaError',
+                  style: const TextStyle(color: AppTheme.warning, fontSize: 12, height: 1.35)),
               ),
             _statusLine(
               !haConfigured || haOk ? Icons.home_outlined : Icons.warning_amber_rounded,
               'Home Assistant', haLabel, color: haColor),
+            if (haHint != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 28, bottom: 5),
+                child: Text(haHint,
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11, height: 1.35)),
+              ),
             if (haConfigured && !haOk && haError != null && haError.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(left: 28, bottom: 5),
-                child: Text(haError,
-                  style: const TextStyle(color: AppTheme.warning, fontSize: 12)),
+                child: Text('Home-Assistant-Fehler: $haError',
+                  style: const TextStyle(color: AppTheme.warning, fontSize: 12, height: 1.35)),
               ),
             const Divider(height: 18),
             _statusLine(Icons.history, 'Letzte Synchronisation', _dateTimeLabel(sync['last'])),
