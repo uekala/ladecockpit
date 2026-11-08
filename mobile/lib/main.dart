@@ -2665,36 +2665,47 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: const Icon(Icons.settings_outlined)),
         ],
       ),
-      // Temporary diagnostic: bypass scrolling, refresh and all dashboard
-      // content. This isolates the Android body surface from its child widgets.
+      // Diagnostic stage 2: keep the original scroll/refresh infrastructure,
+      // but render only simple native Flutter widgets inside it.
       body: ColoredBox(
         color: AppTheme.background,
-        child: SizedBox.expand(
-          child: Center(
-            child: Container(
-              margin: const EdgeInsets.all(24),
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppTheme.accentGreen, width: 2),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.check_circle_outline,
-                    color: AppTheme.accentGreen, size: 44),
-                  const SizedBox(height: 16),
-                  const Text('ANDROID RENDER-TEST',
-                    style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-                  const SizedBox(height: 8),
-                  Text('Tab: ${tabTitles[_selectedTab]}',
-                    style: const TextStyle(color: AppTheme.textSecondary)),
-                  const SizedBox(height: 8),
-                  Text(_data == null ? 'Keine Dashboarddaten geladen' : 'Dashboarddaten geladen',
-                    style: const TextStyle(color: AppTheme.accentGreen)),
-                ],
-              ),
+        child: RefreshIndicator(
+          onRefresh: _load,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.check_circle_outline,
+                          color: AppTheme.accentGreen, size: 44),
+                        const SizedBox(height: 16),
+                        const Text('SCROLL-RENDER-TEST',
+                          style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+                        const SizedBox(height: 8),
+                        Text('Tab: ${tabTitles[_selectedTab]}',
+                          style: const TextStyle(color: AppTheme.textSecondary)),
+                        const SizedBox(height: 8),
+                        Text(_data == null ? 'Keine Dashboarddaten geladen' : 'Dashboarddaten geladen',
+                          style: const TextStyle(color: AppTheme.accentGreen)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text('Scroll- und Refresh-Bereich aktiv',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppTheme.textSecondary)),
+                const SizedBox(height: 900),
+                const Text('Ende des Testbereichs',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppTheme.textSecondary)),
+              ],
             ),
           ),
         ),
