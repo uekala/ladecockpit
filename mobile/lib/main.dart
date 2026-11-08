@@ -2672,10 +2672,13 @@ class _DashboardPageState extends State<DashboardPage> {
         key: ValueKey('ladecockpit-page-$_selectedTab'),
         child: RefreshIndicator(
           onRefresh: _load,
-          child: ListView(
+          child: SingleChildScrollView(
           key: PageStorageKey('ladecockpit-tab-$_selectedTab'),
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-          children: [
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             if (_data != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
@@ -2826,7 +2829,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   label: const Text('Verbindung einrichten'),
                 ),
               ),
-          ],
+            ],
           ),
         ),
       ),
