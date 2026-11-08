@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.3 – 2026-11-08
+
+- **Secure mobile app access.** Optional add-on setting *Mobile app password* protects direct access on port 8077 with HTTP Basic Auth. Direct access stays disabled until a password is configured; Home Assistant Ingress continues to use Home Assistant authentication.
+- The direct port is optional and must only be used on a trusted private network or VPN. Never expose it publicly.
+
+
 ## 0.12.2 – 2026-11-07
 
 - **Charging stations grouped by their invoice address.** When Tesla uses the same generic site name for different stations, Ladecockpit now keeps those locations separate in the MultiPass overview and site statistics if their invoice-derived addresses differ. This fixes cases such as two ALDI stations in Krefeld appearing as one location.
