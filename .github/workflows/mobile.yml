@@ -55,7 +55,7 @@ jobs:
           )
           for permission in permissions:
               if permission not in content:
-                  content = content[:manifest_end] + "\\n" + permission + content[manifest_end:]
+                  content = content[:manifest_end] + "\n" + permission + content[manifest_end:]
           path.write_text(content)
           import xml.etree.ElementTree as ET
           ET.parse(path)
