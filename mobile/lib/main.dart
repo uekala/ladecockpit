@@ -2285,13 +2285,24 @@ class _DashboardPageState extends State<DashboardPage> {
                 const SizedBox(width: 9),
                 Expanded(
                   child: Text(chargingText,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: chargingColor,
                       fontWeight: FontWeight.w700, fontSize: 13)),
                 ),
-                if (power != null)
-                  Text('${power.toStringAsFixed(1)} kW',
-                    maxLines: 1,
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                if (power != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text('${power.toStringAsFixed(1)} kW',
+                      maxLines: 1,
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                  ),
+                ],
               ],
             ),
             if (soc != null) ...[
@@ -2306,7 +2317,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       color: readingColor, fontWeight: FontWeight.w700))),
                   if (asOf != null)
                     Flexible(
-                      child: Text(_dateTimeLabel(asOf),
+                      child: Text('Stand · ${_dateTimeLabel(asOf)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.end,
