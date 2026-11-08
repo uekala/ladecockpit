@@ -779,14 +779,19 @@ class _DashboardPageState extends State<DashboardPage> {
                       const SizedBox(height: 9),
                       const Divider(height: 1),
                       const SizedBox(height: 8),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (var i = 0; i < metrics.length; i++) ...[
-                            if (i > 0) const SizedBox(width: 8),
-                            Expanded(child: metrics[i]),
-                          ],
-                        ],
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final columns = constraints.maxWidth < 380 ? 2 : metrics.length;
+                          final metricWidth = (constraints.maxWidth - (columns - 1) * 8) / columns;
+                          return Wrap(
+                            spacing: 8,
+                            runSpacing: 10,
+                            children: [
+                              for (final metric in metrics)
+                                SizedBox(width: metricWidth, child: metric),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ],
