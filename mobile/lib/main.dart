@@ -605,7 +605,9 @@ class _DashboardPageState extends State<DashboardPage> {
       if (date == null) return 'Datum unbekannt';
       final day = date.day.toString().padLeft(2, '0');
       final month = date.month.toString().padLeft(2, '0');
-      return '$day.$month.${date.year}';
+      final hour = date.hour.toString().padLeft(2, '0');
+      final minute = date.minute.toString().padLeft(2, '0');
+      return '$day.$month.${date.year} · $hour:$minute Uhr';
     }
 
     String number(dynamic value, {int digits = 1}) {
@@ -775,6 +777,14 @@ class _DashboardPageState extends State<DashboardPage> {
           final durationValue = session['duration_min'];
           final kwh = kwhValue == null ? null : number(kwhValue);
           final cost = costValue == null ? null : number(costValue, digits: 2);
+          final energyAmount = kwhValue is num
+              ? kwhValue : num.tryParse(kwhValue?.toString() ?? '');
+          final costAmount = costValue is num
+              ? costValue : num.tryParse(costValue?.toString() ?? '');
+          final effectivePrice = energyAmount != null && energyAmount > 0 &&
+                  costAmount != null
+              ? (costAmount / energyAmount).toStringAsFixed(3)
+              : null;
           final duration = durationValue == null ? null : _durationLabel(durationValue);
           final currency = session['currency']?.toString() ?? 'EUR';
           final currencyLabel = currency == 'EUR' ? '€' : currency;
@@ -784,6 +794,9 @@ class _DashboardPageState extends State<DashboardPage> {
               _sessionMetric('Energie', '$kwh kWh', Icons.bolt),
             if (cost != null)
               _sessionMetric('Kosten', '$cost $currencyLabel', Icons.euro),
+            if (effectivePrice != null)
+              _sessionMetric('Effektivpreis', '$effectivePrice $currencyLabel/kWh',
+                Icons.price_check_rounded),
             if (duration != null)
               _sessionMetric('Dauer', duration, Icons.schedule),
           ];
