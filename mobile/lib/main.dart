@@ -1499,25 +1499,70 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.table_chart_outlined),
-            title: const Text('Alle Ladevorgänge als CSV'),
-            subtitle: const Text('Excel-kompatibler Export der gesamten Ladehistorie'),
-            trailing: const Icon(Icons.copy),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            leading: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppTheme.accentTeal.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(Icons.table_chart_outlined, color: AppTheme.accentTeal),
+            ),
+            title: const Text('Ladehistorie exportieren',
+              style: TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: const Text('Alle Ladevorgänge als CSV für Excel'),
+            trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
             onTap: _showCsvExport,
           ),
         ),
+        if (months.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
+            child: Text('MONATSBERICHTE',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppTheme.textSecondary, letterSpacing: 1.1, fontWeight: FontWeight.w700)),
+          ),
         ...months.map((month) {
           final key = month['key'].toString();
+          final parts = key.split('-');
+          final label = parts.length == 2 ? '${parts[1]}.${parts[0]}' : key;
           final count = month['sessions'] is num ? (month['sessions'] as num).round() : 0;
           final energy = _numberLabel(month['kwh'], digits: 1, suffix: ' kWh');
           return Card(
-            child: ListTile(
-              leading: const Icon(Icons.picture_as_pdf_outlined),
-              title: Text(key),
-              subtitle: Text('$count Ladevorgänge · $energy'),
-              trailing: Wrap(
-                spacing: 0,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+              child: Row(
                 children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentGreen.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: const Icon(Icons.calendar_month_outlined,
+                      color: AppTheme.accentGreen),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () => _showMonthlyReport(key),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 3),
+                            Text('$count Ladevorgänge · $energy',
+                              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                   IconButton(
                     tooltip: 'Rechnungen als ZIP teilen',
                     onPressed: () => _shareInvoiceZip(key),
@@ -1526,19 +1571,26 @@ class _DashboardPageState extends State<DashboardPage> {
                   IconButton(
                     tooltip: 'Monatsbericht ansehen',
                     onPressed: () => _showMonthlyReport(key),
-                    icon: const Icon(Icons.picture_as_pdf_outlined),
+                    icon: const Icon(Icons.picture_as_pdf_outlined,
+                      color: AppTheme.accentTeal),
                   ),
                 ],
               ),
-              onTap: () => _showMonthlyReport(key),
             ),
           );
         }),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(4, 4, 4, 0),
-          child: Text('Monatsberichte enthalten die Kostenübersicht und vorhandene Rechnungen.',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-        ),
+        if (months.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Text('Sobald Monatsdaten vorhanden sind, erscheinen deine Berichte hier.',
+              style: TextStyle(color: AppTheme.textSecondary)),
+          )
+        else
+          const Padding(
+            padding: EdgeInsets.fromLTRB(4, 4, 4, 0),
+            child: Text('Monatsbericht öffnen oder die zugehörigen Rechnungen gesammelt teilen.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          ),
       ],
     );
   }
