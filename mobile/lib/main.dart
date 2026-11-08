@@ -507,17 +507,33 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
         ),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            filterField('Zeitraum', selectedMonth, monthOptions,
-              (value) => setState(() => _sessionMonthFilter = value ?? 'all'), width: 165),
-            filterField('Netzwerk', selectedNetwork, networkOptions,
-              (value) => setState(() => _sessionNetworkFilter = value ?? 'all'), width: 165),
-            filterField('Standort', selectedSite, siteOptions,
-              (value) => setState(() => _sessionSiteFilter = value ?? 'all'), width: 210),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 520;
+            final fields = [
+              filterField('Zeitraum', selectedMonth, monthOptions,
+                (value) => setState(() => _sessionMonthFilter = value ?? 'all'),
+                width: compact ? double.infinity : 165),
+              filterField('Netzwerk', selectedNetwork, networkOptions,
+                (value) => setState(() => _sessionNetworkFilter = value ?? 'all'),
+                width: compact ? double.infinity : 165),
+              filterField('Standort', selectedSite, siteOptions,
+                (value) => setState(() => _sessionSiteFilter = value ?? 'all'),
+                width: compact ? double.infinity : 210),
+            ];
+            if (compact) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var i = 0; i < fields.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 8),
+                    fields[i],
+                  ],
+                ],
+              );
+            }
+            return Wrap(spacing: 8, runSpacing: 8, children: fields);
+          },
         ),
         if (_sessionMonthFilter != 'all' || _sessionNetworkFilter != 'all' || _sessionSiteFilter != 'all')
           Align(
