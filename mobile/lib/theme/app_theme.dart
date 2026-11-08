@@ -145,8 +145,8 @@ abstract final class AppTheme {
         height: 72,
         backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: const Color(0x2639E6A5),
-        labelTextStyle: const WidgetStatePropertyAll<TextStyle>(
+        indicatorColor: Color(0x2639E6A5),
+        labelTextStyle: WidgetStatePropertyAll<TextStyle>(
           TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
         ),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
