@@ -2605,19 +2605,23 @@ class _DashboardPageState extends State<DashboardPage> {
             if (_data != null && _selectedTab == 0) ...[
               _vehicleHero(_map(_data?['status']), _map(_data?['car'])),
               _connectionStatus(),
-              Row(
-                children: [
-                  Expanded(child: Text('DIESER MONAT',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppTheme.accentGreen,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2))),
-                  Text('${overviewMetrics.length} Kennzahlen',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppTheme.textSecondary)),
-                ],
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 2, 4, 9),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('MONATSÜBERBLICK',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppTheme.accentGreen,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2)),
+                    const SizedBox(height: 3),
+                    Text('Ladeaktivität und Kosten auf einen Blick',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textSecondary)),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
               if (overviewMetrics.isNotEmpty)
                 GridView.count(
                   crossAxisCount: 2,
