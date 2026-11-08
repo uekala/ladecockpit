@@ -40,8 +40,22 @@ class CockpitClient {
   static const _urlKey = 'server_url';
   static const _passwordKey = 'app_password';
 
-  Future<String?> get serverUrl => _storage.read(key: _urlKey);
-  Future<String?> get password => _storage.read(key: _passwordKey);
+  CockpitClient({
+    http.Client? httpClient,
+    Future<String?> Function()? serverUrlProvider,
+    Future<String?> Function()? passwordProvider,
+  })  : _http = httpClient ?? http.Client(),
+        _serverUrlProvider = serverUrlProvider,
+        _passwordProvider = passwordProvider;
+
+  final http.Client _http;
+  final Future<String?> Function()? _serverUrlProvider;
+  final Future<String?> Function()? _passwordProvider;
+
+  Future<String?> get serverUrl =>
+      _serverUrlProvider?.call() ?? _storage.read(key: _urlKey);
+  Future<String?> get password =>
+      _passwordProvider?.call() ?? _storage.read(key: _passwordKey);
 
   Future<void> saveConnection(String url, String password) async {
     await _storage.write(key: _urlKey, value: url.trim().replaceAll(RegExp(r'/+$'), ''));
@@ -67,7 +81,7 @@ class CockpitClient {
 
   Future<Map<String, dynamic>> invoicePages(String sessionId) async {
     final uri = await _endpoint('/api/invoice/${Uri.encodeComponent(sessionId)}/pages');
-    final response = await http.get(uri, headers: await _headers(json: true))
+    final response = await _http.get(uri, headers: await _headers(json: true))
         .timeout(const Duration(seconds: 30));
     return parseDocumentPagesResponse(
       response.statusCode,
@@ -82,7 +96,7 @@ class CockpitClient {
 
   Future<String> csvExport() async {
     final uri = await _endpoint('/api/export.csv');
-    final response = await http.get(uri, headers: await _headers())
+    final response = await _http.get(uri, headers: await _headers())
         .timeout(const Duration(seconds: 60));
     if (response.statusCode == 401) {
       throw const CockpitException('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.');
@@ -95,7 +109,7 @@ class CockpitClient {
 
   Future<List<int>> invoiceZip(String month) async {
     final uri = await _endpoint('/api/invoices/$month.zip');
-    final response = await http.get(uri, headers: await _headers())
+    final response = await _http.get(uri, headers: await _headers())
         .timeout(const Duration(seconds: 120));
     if (response.statusCode == 401) {
       throw const CockpitException('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.');
@@ -111,7 +125,7 @@ class CockpitClient {
 
   Future<Map<String, dynamic>> monthReportPages(String month) async {
     final uri = await _endpoint('/api/report/$month/pages');
-    final response = await http.get(uri, headers: await _headers(json: true))
+    final response = await _http.get(uri, headers: await _headers(json: true))
         .timeout(const Duration(seconds: 60));
     return parseDocumentPagesResponse(
       response.statusCode,
@@ -126,7 +140,7 @@ class CockpitClient {
   Future<Map<String, dynamic>> dashboard() async {
     final uri = await _endpoint('/api/dashboard');
     final headers = await _headers(json: true);
-    final response = await http.get(uri, headers: headers)
+    final response = await _http.get(uri, headers: headers)
         .timeout(const Duration(seconds: 20));
     return parseDashboardResponse(response.statusCode, response.body);
   }
