@@ -43,7 +43,7 @@ jobs:
           )
           if "android:usesCleartextTraffic=" not in content:
               content, count = re.subn(
-                  r'(<application\\b)',
+                  r'(<application\b)',
                   r'\\1 android:usesCleartextTraffic="true"',
                   content,
                   count=1,
@@ -57,8 +57,8 @@ jobs:
           for permission in permissions:
               if permission not in content:
                   content, count = re.subn(
-                      r'(<manifest\\b[^>]*>)',
-                      r'\\1\\n    <uses-permission android:name="' + permission + '" />',
+                      r'(<manifest\b[^>]*>)',
+                      r'\1\n    <uses-permission android:name="' + permission + '" />',
                       content,
                       count=1,
                   )
