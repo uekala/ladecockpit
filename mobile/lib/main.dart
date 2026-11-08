@@ -1469,14 +1469,14 @@ class _DashboardPageState extends State<DashboardPage> {
                     color: AppTheme.accentTeal, size: 21),
                 ),
                 const SizedBox(width: 11),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('FAHRZEUGSTATUS',
+                      const Text('FAHRZEUGSTATUS',
                         style: TextStyle(fontSize: 11, letterSpacing: 1.5,
                           color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
-                      SizedBox(height: 3),
+                      const SizedBox(height: 3),
                       Text(vehicleName == null || vehicleName.isEmpty
                           ? 'Dein Ladecockpit' : vehicleName,
                         maxLines: 1, overflow: TextOverflow.ellipsis,
