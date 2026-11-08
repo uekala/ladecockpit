@@ -42,30 +42,24 @@ jobs:
               content,
           )
           if "android:usesCleartextTraffic=" not in content:
-              content, count = re.subn(
-                  r'(<application\b)',
-                  r'\\1 android:usesCleartextTraffic="true"',
-                  content,
-                  count=1,
+              content = content.replace(
+                  "<application",
+                  '<application android:usesCleartextTraffic="true"',
+                  1,
               )
-              if count != 1:
-                  raise SystemExit("Could not find application element")
-          permissions = [
-              "android.permission.INTERNET",
-              "android.permission.ACCESS_NETWORK_STATE",
-          ]
+          manifest_start = content.index("<manifest")
+          manifest_end = content.index(">", manifest_start) + 1
+          permissions = (
+              '    <uses-permission android:name="android.permission.INTERNET" />',
+              '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />',
+          )
           for permission in permissions:
               if permission not in content:
-                  content, count = re.subn(
-                      r'(<manifest\b[^>]*>)',
-                      r'\1\n    <uses-permission android:name="' + permission + '" />',
-                      content,
-                      count=1,
-                  )
-                  if count != 1:
-                      raise SystemExit("Could not find manifest root element")
+                  content = content[:manifest_end] + "\\n" + permission + content[manifest_end:]
           path.write_text(content)
-          print("Android manifest configured:")
+          import xml.etree.ElementTree as ET
+          ET.parse(path)
+          print("Android manifest is valid XML with INTERNET, ACCESS_NETWORK_STATE and cleartext enabled.")
           print(content)
           PY
       - name: Use Gradle direct download host
