@@ -351,6 +351,46 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _homeChargingSummary(Map<String, dynamic>? home) {
+    if (home == null || (home['kwh'] == null && home['cost'] == null)) {
+      return const SizedBox.shrink();
+    }
+    final energy = home['kwh'] == null ? '–' : '${_sectionValue('kwh', home['kwh'])}';
+    final cost = home['cost'] == null ? '–' : '${_sectionValue('total_cost', home['cost'])}';
+    return Card(
+      margin: const EdgeInsets.only(top: 2, bottom: 10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppTheme.accentTeal.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: const Icon(Icons.home_outlined,
+                color: AppTheme.accentTeal, size: 19),
+            ),
+            const SizedBox(width: 11),
+            const Expanded(child: Text('Zuhause geladen',
+              style: TextStyle(fontWeight: FontWeight.w600))),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(energy, style: const TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text(cost, style: const TextStyle(
+                  color: AppTheme.textSecondary, fontSize: 11)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   String _sectionLabel(String key) {
     const labels = <String, String>{
       'soc': 'Akkustand', 'range': 'Reichweite', 'as_of': 'Stand von',
@@ -1811,12 +1851,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   _metric('Gesamtkosten diesen Monat', month?['total_cost'] ?? month?['cost'], suffix: ' €'),
                   _metric('Unterwegs geladen', month?['kwh'], suffix: ' kWh'),
                   _metric('Ø Preis unterwegs', month?['avg_price'], suffix: ' €/kWh'),
-                  if (_map(month?['home']) != null) ...[
-                    _metric('Zu Hause geladen', _map(month?['home'])?['kwh'], suffix: ' kWh'),
-                    _metric('Heimladekosten', _map(month?['home'])?['cost'], suffix: ' €'),
-                  ],
                 ],
               ),
+              _homeChargingSummary(_map(month?['home'])),
               _section('Letzter Ladevorgang', last),
               _section('Gesamt', totals),
               _section('Ladeprognose', forecast),
