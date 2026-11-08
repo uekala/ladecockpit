@@ -2239,6 +2239,45 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _loadStatePanel({
+    required IconData icon,
+    required String title,
+    required String message,
+    required Color color,
+    Widget? action,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(top: 12, bottom: 14),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 13),
+            Text(title, style: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 5),
+            Text(message, style: const TextStyle(
+              color: AppTheme.textSecondary, height: 1.4)),
+            if (action != null) ...[
+              const SizedBox(height: 14),
+              action,
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final month = _map(_data?['month']);
@@ -2276,27 +2315,41 @@ class _DashboardPageState extends State<DashboardPage> {
           key: PageStorageKey('ladecockpit-tab-$_selectedTab'),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
-            if (_loading) const LinearProgressIndicator(),
-            if (_error != null) Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Icon(Icons.cloud_off, color: AppTheme.warning),
-                  const SizedBox(height: 8),
-                  Text(_error!),
-                  const SizedBox(height: 8),
-                  Wrap(spacing: 8, runSpacing: 8, children: [
-                    FilledButton.icon(
-                      onPressed: _loading ? null : _load,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Erneut versuchen'),
+            if (_loading && _data != null)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 10),
+                child: LinearProgressIndicator(minHeight: 2),
+              ),
+            if (_error != null)
+              _loadStatePanel(
+                icon: Icons.cloud_off_rounded,
+                title: _data == null ? 'Verbindung nicht möglich' : 'Aktualisierung fehlgeschlagen',
+                message: _data == null
+                    ? _error!
+                    : 'Die zuletzt geladenen Daten bleiben sichtbar. $_error',
+                color: AppTheme.warning,
+                action: Wrap(spacing: 8, runSpacing: 8, children: [
+                  FilledButton.icon(
+                    onPressed: _loading ? null : _load,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Erneut versuchen'),
+                  ),
+                  if (_data == null)
+                    OutlinedButton.icon(
+                      onPressed: _settings,
+                      icon: const Icon(Icons.settings_outlined),
+                      label: const Text('Verbindung einrichten'),
                     ),
-                    OutlinedButton(onPressed: _settings,
-                      child: const Text('Verbindung einrichten')),
-                  ]),
                 ]),
               ),
-            ),
+            if (_data == null && _loading && _error == null)
+              _loadStatePanel(
+                icon: Icons.electric_car_rounded,
+                title: 'Lade dein Cockpit',
+                message: 'Fahrzeug- und Ladedaten werden sicher vom Server abgerufen.',
+                color: AppTheme.accentGreen,
+                action: const LinearProgressIndicator(minHeight: 3),
+              ),
             if (_data != null && _selectedTab == 0) ...[
               _vehicleHero(_map(_data?['status']), _map(_data?['car'])),
               _connectionStatus(),
@@ -2347,9 +2400,17 @@ class _DashboardPageState extends State<DashboardPage> {
               _exports(_data?['monthly']),
             ],
             if (_data == null && !_loading && _error == null)
-              const Center(child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Text('Noch keine Daten vorhanden.'))),
+              _loadStatePanel(
+                icon: Icons.directions_car_outlined,
+                title: 'Noch nicht verbunden',
+                message: 'Richte die Verbindung zu deinem Ladecockpit ein, um Fahrzeugstatus, Ladevorgänge und Kosten hier zu sehen.',
+                color: AppTheme.textSecondary,
+                action: OutlinedButton.icon(
+                  onPressed: _settings,
+                  icon: const Icon(Icons.settings_outlined),
+                  label: const Text('Verbindung einrichten'),
+                ),
+              ),
           ],
         ),
       ),
