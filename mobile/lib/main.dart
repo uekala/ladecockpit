@@ -444,8 +444,8 @@ class _DashboardPageState extends State<DashboardPage> {
     if (home == null || (home['kwh'] == null && home['cost'] == null)) {
       return const SizedBox.shrink();
     }
-    final energy = home['kwh'] == null ? '–' : '${_sectionValue('kwh', home['kwh'])}';
-    final cost = home['cost'] == null ? '–' : '${_sectionValue('total_cost', home['cost'])}';
+    final energy = home['kwh'] == null ? '–' : _sectionValue('kwh', home['kwh']);
+    final cost = home['cost'] == null ? '–' : _sectionValue('total_cost', home['cost']);
     return Card(
       margin: const EdgeInsets.only(top: 2, bottom: 10),
       child: Padding(
@@ -1464,7 +1464,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text('${pages} ${pages == 1 ? 'Seite' : 'Seiten'}',
+                        Text('$pages ${pages == 1 ? 'Seite' : 'Seiten'}',
                           style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
                       ],
                     ),
@@ -1999,7 +1999,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text('${pages} ${pages == 1 ? 'Seite' : 'Seiten'}',
+                        Text('$pages ${pages == 1 ? 'Seite' : 'Seiten'}',
                           style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
                       ],
                     ),
