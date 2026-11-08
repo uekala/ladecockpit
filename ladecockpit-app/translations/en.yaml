@@ -2,6 +2,9 @@ configuration:
   language:
     name: Language
     description: Language of the web app and of the texts sent to Home Assistant.
+  mobile_app_password:
+    name: Mobile app password
+    description: Password required for direct mobile app access over your trusted LAN or VPN. Keep the direct port disabled until this is set.
   locale:
     name: Number and date format
     description: Optional, e.g. en-GB, en-US or de-DE.
