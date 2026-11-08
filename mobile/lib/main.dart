@@ -464,33 +464,49 @@ class _DashboardPageState extends State<DashboardPage> {
         .where((e) => e.value != null && e.value is! Map && e.value is! List)
         .take(8).toList();
     if (entries.isEmpty) return const SizedBox.shrink();
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(4, 18, 4, 4),
-        child: Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-      ),
-      Card(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(children: [
+
+    final first = entries.first;
+    final summary = '${_sectionLabel(first.key)} · ${_sectionValue(first.key, first.value)}';
+
+    return Card(
+      margin: const EdgeInsets.only(top: 5, bottom: 5),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: false,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          leading: const Icon(Icons.tune_rounded,
+            color: AppTheme.textSecondary, size: 20),
+          title: Text(title,
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Text(summary,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          children: [
             for (var i = 0; i < entries.length; i++) ...[
               if (i > 0) const Divider(height: 1),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 9),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Expanded(child: Text(_sectionLabel(entries[i].key),
-                    style: const TextStyle(color: AppTheme.textSecondary))),
-                  const SizedBox(width: 12),
-                  Flexible(child: Text(_sectionValue(entries[i].key, entries[i].value),
-                    textAlign: TextAlign.end,
-                    style: const TextStyle(fontWeight: FontWeight.w600))),
-                ]),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: Text(_sectionLabel(entries[i].key),
+                      style: const TextStyle(color: AppTheme.textSecondary))),
+                    const SizedBox(width: 12),
+                    Flexible(child: Text(
+                      _sectionValue(entries[i].key, entries[i].value),
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(fontWeight: FontWeight.w600))),
+                  ],
+                ),
               ),
             ],
-          ]),
+          ],
         ),
       ),
-    ]);
+    );
   }
 
   Map<String, dynamic>? _map(dynamic value) =>
