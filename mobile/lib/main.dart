@@ -2195,6 +2195,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 if (power != null)
                   Text('${power.toStringAsFixed(1)} kW',
+                    maxLines: 1,
                     style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
               ],
             ),
@@ -2209,8 +2210,14 @@ class _DashboardPageState extends State<DashboardPage> {
                     style: TextStyle(fontSize: 10, letterSpacing: 0.8,
                       color: readingColor, fontWeight: FontWeight.w700))),
                   if (asOf != null)
-                    Text(_dateTimeLabel(asOf),
-                      style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary)),
+                    Flexible(
+                      child: Text(_dateTimeLabel(asOf),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                        style: const TextStyle(fontSize: 10,
+                          color: AppTheme.textSecondary)),
+                    ),
                 ],
               ),
             ],
