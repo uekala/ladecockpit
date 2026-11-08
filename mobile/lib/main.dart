@@ -2547,8 +2547,17 @@ class _DashboardPageState extends State<DashboardPage> {
         title: Text(tabTitles[_selectedTab],
           style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
-          IconButton(onPressed: _load, tooltip: 'Aktualisieren',
-            icon: const Icon(Icons.refresh)),
+          IconButton(
+            onPressed: _loading ? null : _load,
+            tooltip: _loading ? 'Wird aktualisiert' : 'Aktualisieren',
+            icon: _loading
+                ? const SizedBox(
+                    width: 19,
+                    height: 19,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+          ),
           IconButton(onPressed: _settings, tooltip: 'Verbindung',
             icon: const Icon(Icons.settings_outlined)),
         ],
@@ -2559,10 +2568,38 @@ class _DashboardPageState extends State<DashboardPage> {
           key: PageStorageKey('ladecockpit-tab-$_selectedTab'),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
-            if (_loading && _data != null)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 10),
-                child: LinearProgressIndicator(minHeight: 2),
+            if (_data != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+                child: Row(
+                  children: [
+                    if (_loading) ...[
+                      const SizedBox(
+                        width: 13,
+                        height: 13,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Daten werden aktualisiert',
+                        style: TextStyle(color: AppTheme.accentTeal, fontSize: 11,
+                          fontWeight: FontWeight.w600)),
+                    ] else ...[
+                      const Icon(Icons.check_circle_outline,
+                        color: AppTheme.accentGreen, size: 14),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _lastSuccessfulFetch == null
+                              ? 'Daten geladen'
+                              : 'Aktualisiert · ${_fetchTimeLabel(_lastSuccessfulFetch)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             if (_error != null)
               _loadStatePanel(
