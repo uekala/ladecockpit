@@ -1049,33 +1049,43 @@ class _DashboardPageState extends State<DashboardPage> {
           }),
         ],
         if (sites.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.fromLTRB(4, 14, 4, 6),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
             child: Text('Deine häufigsten Ladestandorte',
-              style: TextStyle(color: AppTheme.textSecondary)),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
           ),
-          ...sites.map((site) {
-            final label = site['label']?.toString() ??
-                site['site']?.toString() ?? 'Unbekannter Standort';
-            final network = site['network'] == 'multipass' ? 'MultiPass' : 'Supercharger';
-            final count = site['sessions'] is num ? (site['sessions'] as num).round() : 0;
-            final kwh = _numberLabel(site['kwh'], digits: 1, suffix: ' kWh');
-            final address = site['address']?.toString();
-            final isCheapest = site['avg_price'] is num &&
-                lowestSitePrice != null && site['avg_price'] == lowestSitePrice;
-            return Card(
-              child: ListTile(
-                leading: Icon(isCheapest ? Icons.savings_outlined : Icons.ev_station,
-                  color: isCheapest ? AppTheme.accentGreen : AppTheme.textSecondary),
-                title: Text('$label${isCheapest ? ' · Günstigster' : ''}',
-                  maxLines: 2, overflow: TextOverflow.ellipsis),
-                subtitle: Text('$network · $count Ladevorgänge · $kwh'
-                  '${address != null && address.isNotEmpty ? '\n$address' : ''}'),
-                isThreeLine: address != null && address.isNotEmpty,
-                trailing: Column(\n                  mainAxisAlignment: MainAxisAlignment.center,\n                  crossAxisAlignment: CrossAxisAlignment.end,\n                  mainAxisSize: MainAxisSize.min,\n                  children: [priceValue(site['avg_price'], highlighted: isCheapest),\n                    const SizedBox(height: 2),\n                    const Text('€/kWh', style: TextStyle(fontSize: 9, color: AppTheme.textSecondary)),\n                  ],\n                ),
-              ),
-            );
-          }),
+          Card(
+            child: ExpansionTile(
+              initiallyExpanded: false,
+              leading: const Icon(Icons.ev_station, color: AppTheme.accentTeal),
+              title: Text('${sites.length} Ladestandorte',
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: const Text('Durchschnittspreise und Ladehäufigkeit'),
+              children: sites.map((site) {
+                final label = site['label']?.toString() ??
+                    site['site']?.toString() ?? 'Unbekannter Standort';
+                final network = site['network'] == 'multipass' ? 'MultiPass' : 'Supercharger';
+                final count = site['sessions'] is num ? (site['sessions'] as num).round() : 0;
+                final kwh = _numberLabel(site['kwh'], digits: 1, suffix: ' kWh');
+                final address = site['address']?.toString();
+                final isCheapest = site['avg_price'] is num &&
+                    lowestSitePrice != null && site['avg_price'] == lowestSitePrice;
+                return ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  leading: Icon(isCheapest ? Icons.savings_outlined : Icons.location_on_outlined,
+                    color: isCheapest ? AppTheme.accentGreen : AppTheme.textSecondary),
+                  title: Text('$label${isCheapest ? ' · Günstigster' : ''}',
+                    maxLines: 2, overflow: TextOverflow.ellipsis),
+                  subtitle: Text('$network · $count Ladevorgänge · $kwh'
+                    '${address != null && address.isNotEmpty ? '\\n$address' : ''}'),
+                  isThreeLine: address != null && address.isNotEmpty,
+                  trailing: priceValue(site['avg_price'], highlighted: isCheapest),
+                );
+              }).toList(),
+            ),
+          ),
         ],
         const Padding(
           padding: EdgeInsets.fromLTRB(4, 4, 4, 0),
