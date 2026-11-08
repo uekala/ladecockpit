@@ -908,41 +908,63 @@ class _DashboardPageState extends State<DashboardPage> {
 
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(site, maxLines: 2, overflow: TextOverflow.ellipsis),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (dialogContext) => Dialog.fullscreen(
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Ladevorgang'),
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              tooltip: 'Schließen',
+              onPressed: () => Navigator.pop(dialogContext),
+            ),
+          ),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
-              Row(children: [
-                Icon(Icons.ev_station, size: 18,
-                  color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Expanded(child: Text(network,
-                  style: TextStyle(color: Theme.of(context).colorScheme.primary))),
-              ]),
+              Text(site,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  Chip(
+                    avatar: const Icon(Icons.ev_station, size: 16),
+                    label: Text(network),
+                  ),
+                  if (invoice)
+                    const Chip(
+                      avatar: Icon(Icons.receipt_long, size: 16),
+                      label: Text('Rechnung vorhanden'),
+                    ),
+                ],
+              ),
               _detailGroup('ZEITRAUM', timingRows),
               _detailGroup('ENERGIE UND KOSTEN', costRows),
               _detailGroup('STANDORT', locationRows),
+              if (!invoice)
+                const Padding(
+                  padding: EdgeInsets.only(top: 18),
+                  child: Text('Für diesen Ladevorgang ist keine Rechnung hinterlegt.',
+                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                ),
             ],
           ),
+          bottomNavigationBar: invoice && sessionId != null
+              ? SafeArea(
+                  minimum: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                      _showInvoice(sessionId, site);
+                    },
+                    icon: const Icon(Icons.receipt_long),
+                    label: const Text('Rechnung öffnen'),
+                  ),
+                )
+              : null,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Schließen'),
-          ),
-          if (invoice && sessionId != null)
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                _showInvoice(sessionId, site);
-              },
-              icon: const Icon(Icons.receipt_long),
-              label: const Text('Rechnung öffnen'),
-            ),
-        ],
       ),
     );
   }
