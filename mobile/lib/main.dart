@@ -2665,48 +2665,29 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: const Icon(Icons.settings_outlined)),
         ],
       ),
-      // Diagnostic stage 2: keep the original scroll/refresh infrastructure,
-      // but render only simple native Flutter widgets inside it.
+      // Diagnostic stage 3: render the real sessions tab content in the proven scroll shell.
       body: ColoredBox(
         color: AppTheme.background,
         child: RefreshIndicator(
           onRefresh: _load,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.check_circle_outline,
-                          color: AppTheme.accentGreen, size: 44),
-                        const SizedBox(height: 16),
-                        const Text('SCROLL-RENDER-TEST',
-                          style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-                        const SizedBox(height: 8),
-                        Text('Tab: ${tabTitles[_selectedTab]}',
-                          style: const TextStyle(color: AppTheme.textSecondary)),
-                        const SizedBox(height: 8),
-                        Text(_data == null ? 'Keine Dashboarddaten geladen' : 'Dashboarddaten geladen',
-                          style: const TextStyle(color: AppTheme.accentGreen)),
-                      ],
-                    ),
-                  ),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+            children: [
+              _tabIntro(
+                'Ladeaktivität',
+                'Deine Ladevorgänge',
+                'Finde frühere Ladungen und filtere nach Zeitraum, Ladenetz oder Standort.',
+                Icons.ev_station_rounded,
+              ),
+              _sessions(_data?['sessions']),
+              if (_data?['sessions'] is! List || (_data?['sessions'] as List).isEmpty)
+                _loadStatePanel(
+                  icon: Icons.history_rounded,
+                  title: 'Noch keine Ladevorgänge',
+                  message: 'Sobald dein Ladecockpit Ladevorgänge erfasst hat, erscheinen sie hier.',
+                  color: AppTheme.textSecondary,
                 ),
-                const SizedBox(height: 24),
-                const Text('Scroll- und Refresh-Bereich aktiv',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppTheme.textSecondary)),
-                const SizedBox(height: 900),
-                const Text('Ende des Testbereichs',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppTheme.textSecondary)),
-              ],
-            ),
+            ],
           ),
         ),
       ),
