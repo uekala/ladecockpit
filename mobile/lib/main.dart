@@ -2665,9 +2665,14 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: const Icon(Icons.settings_outlined)),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
+      // Rebuild the complete scroll subtree when switching tabs. This avoids
+      // stale Flutter render layers being reused between substantially different
+      // dashboard pages on some Android devices.
+      body: KeyedSubtree(
+        key: ValueKey('ladecockpit-page-$_selectedTab'),
+        child: RefreshIndicator(
+          onRefresh: _load,
+          child: ListView(
           key: PageStorageKey('ladecockpit-tab-$_selectedTab'),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
@@ -2822,6 +2827,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
           ],
+          ),
         ),
       ),
       bottomNavigationBar: NavigationBar(
