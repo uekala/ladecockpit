@@ -28,6 +28,61 @@ jobs:
           channel: stable
           cache: true
       - run: flutter create --platforms=android,ios --project-name ladecockpit .
+      - name: Configure persistent Android release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Missing GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/ladecockpit-release.jks
+          cat > android/key.properties <<EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=../app/ladecockpit-release.jks
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("android/app/build.gradle.kts")
+          content = path.read_text()
+          imports = "import java.util.Properties\n\n"
+          if not content.startswith("import java.util.Properties"):
+              content = imports + content
+          marker = "android {"
+          signing = """android {
+              val keystoreProperties = Properties()
+              val keystorePropertiesFile = rootProject.file("key.properties")
+              keystoreProperties.load(keystorePropertiesFile.inputStream())
+
+              signingConfigs {
+                  create("release") {
+                      keyAlias = keystoreProperties["keyAlias"] as String
+                      keyPassword = keystoreProperties["keyPassword"] as String
+                      storeFile = file(keystoreProperties["storeFile"] as String)
+                      storePassword = keystoreProperties["storePassword"] as String
+                  }
+              }
+          """
+          if "create(\"release\")" not in content:
+              if marker not in content:
+                  raise SystemExit("android block not found in generated Gradle file")
+              content = content.replace(marker, signing, 1)
+          debug = 'signingConfig = signingConfigs.getByName("debug")'
+          release = 'signingConfig = signingConfigs.getByName("release")'
+          if debug in content:
+              content = content.replace(debug, release)
+          elif release not in content:
+              raise SystemExit("release signingConfig line not found in generated Gradle file")
+          path.write_text(content)
+          PY
       - name: Allow private HTTP connections over Tailscale
         run: |
           python3 - <<'PY'
