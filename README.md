@@ -1,12 +1,12 @@
 # Ladecockpit
 
-**Your real Supercharger invoices in Home Assistant – plus a small web app that shows what charging actually costs you.**
+**Your real Tesla charging invoices in a self-hosted web app – Home Assistant is optional.**
 
 [Deutsch](README.de.md)
 
 ![Ladecockpit with demo data while the car charges: on the desktop in the dynamic look with the glowing battery ring, power, finish time and countdown, next charging stop and last invoice; on a phone the price radar of the dynamic look with the time slot of right now; on a second phone the classic look in light mode](docs/screenshot.png)
 
-Most Home Assistant setups estimate Supercharger costs from the car's kWh and a fixed price, or ask you to type the price in after every session. Ladecockpit fetches the actual invoice from the Tesla Fleet API instead (billed kWh, price per kWh, idle fees, site, PDF) and hands it to Home Assistant.
+Ladecockpit fetches your actual charging invoices from the Tesla Fleet API (billed kWh, price per kWh, idle fees, site and PDF) and stores them locally. Use the web app on its own, or optionally connect Home Assistant for live vehicle data, sensors and automations.
 
 ## Features
 
@@ -34,30 +34,30 @@ Most Home Assistant setups estimate Supercharger costs from the car's kWh and a 
 - **Works while the car is offline.** Keeps its own history of battery level and odometer, e.g. for a car parked without reception.
 - **Cheap on the Tesla API.** Live data comes from Home Assistant. Tesla is only asked for the charging history, about 150–200 requests per month (≈ $0.40).
 - **Read-only.** There is no code that sends commands to the car or wakes it.
-- **Runs as a Home Assistant app** (sidebar, no extra server) or as a Docker container anywhere.
+- **Runs standalone with Docker** on your NAS, mini-PC or home server. Home Assistant is optional and adds live vehicle data, sensors and automations.
+- **Private edition is free.** Self-hosted, no mandatory account, subscription or Ladecockpit cloud.
 - English and German, demo mode without any credentials, installable on the phone's home screen.
 
 ## How it works
 
-```
-Home Assistant ──(battery, odometer, charging state)──► Ladecockpit ──(charging history)──► Tesla Fleet API
-      ▲                                                     │
-      └──────── event "ladecockpit_invoice" ◄───────────────┘
-                (blueprint books kWh + cost into your helpers)
-```
+**Standalone:** Ladecockpit connects directly to the Tesla Fleet API, imports charging history and invoices, and stores sessions, PDFs and tokens in its local data volume. The web app, monthly PDF and CSV export work without Home Assistant.
 
-1. Ladecockpit polls a few entities of your car in Home Assistant (local, free) every minute.
-2. When the charging state leaves `charging`, it asks Tesla for the charging history every 10 minutes until the new invoice is there (at most 3 hours). Otherwise it syncs every 6 hours.
-3. Each new invoice is sent exactly once as the event `ladecockpit_invoice`.
-4. On the very first sync, all past invoices are only imported (shown in the app) and **not** sent, so totals you already keep in Home Assistant are not counted twice.
+**Optional Home Assistant connection:** If configured, Ladecockpit can additionally read vehicle entities, publish sensors and send invoice events for your automations. Live battery/charging information and HA-based comparisons require suitable entities.
+
+1. Tesla charging history is synced on the configured schedule (default every 6 hours).
+2. After a charging session, optional Home Assistant charging-state detection can trigger more frequent checks for the invoice.
+3. Each new invoice can be sent once as the event `ladecockpit_invoice` when Home Assistant is configured.
+4. On the first sync, existing sessions are imported but not pushed to Home Assistant, so existing totals are not counted twice.
 
 ## Requirements
 
 - Home Assistant OS or Supervised (for the app), **or** Docker on any machine that runs 24/7
 - A Tesla account and a **Tesla developer app** with Fleet API access
-- Optional but recommended: Home Assistant with an integration that exposes your car's entities (Tesla Fleet, Teslemetry, Tessie, …)
+- Optional: Home Assistant with an integration that exposes your car's entities (Tesla Fleet, Teslemetry, Tessie, …). It is not required for charging history, invoices, the web app or exports.
 
-## Install as Home Assistant app (recommended)
+## Install as Home Assistant app
+
+Use this option if you want Ladecockpit in the Home Assistant sidebar and invoice events/sensors. For a standalone private installation, use Docker below.
 
 [![Add the Ladecockpit repository to your Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fuekala%2Fladecockpit)
 
@@ -98,7 +98,9 @@ Starting from scratch? The Fleet API only answers apps whose domain is registere
 cp .env.example .env
 ```
 
-Minimum: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN` (Home Assistant → Profile → Security → Long-lived access tokens), a strong `APP_PASSWORD` for live standalone/Docker use, and your car's entities:
+**Required for standalone operation:** `TESLA_CLIENT_ID` and `TESLA_CLIENT_SECRET`. Set `APP_LANG=de` for the German interface. Standalone live deployments require `APP_PASSWORD` by default. Set a long, unique password in `.env` before starting. Demo mode still works without a password.
+
+**Optional Home Assistant connection:** Set `HA_URL` and `HA_TOKEN` (Home Assistant → Profile → Security → Long-lived access tokens) only if you want HA features. Add only the entities you actually have:
 
 | Setting | Example | Unlocks |
 |---|---|---|
@@ -112,7 +114,7 @@ Minimum: `TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`, `HA_URL`, `HA_TOKEN` (Home As
 | `HA_ENT_HOME_ENERGY`, `HA_ENT_HOME_PRICE` / `HOME_PRICE` | `sensor.wall_connector_energy`, `0.32` | charging at home |
 | `HA_ENT_OUTSIDE_TEMP` | `weather.home` | consumption by temperature |
 
-Use the IP of Home Assistant in `HA_URL`. `.local` names often do not resolve inside containers. All settings are listed in [.env.example](.env.example).
+Use the IP of Home Assistant in `HA_URL`. `.local` names often do not resolve inside containers. Without `HA_URL` and `HA_TOKEN`, the standalone Tesla features remain available; HA-specific cards and live readings are simply unavailable. All settings are listed in [.env.example](.env.example).
 
 ### 3. Run
 
@@ -129,7 +131,9 @@ Open `http://localhost:8077` on the machine running the container and click **Si
 
 The redirect URI points to `localhost`. If the container runs elsewhere, either open an SSH tunnel (`ssh -L 8077:localhost:8077 your-server`) or copy the full address from the browser bar after signing in (the page itself will not load) and paste it under "The redirect after sign-in does not land here?".
 
-### 5. Book invoices in Home Assistant
+### 5. Optional: book invoices in Home Assistant
+
+This section is only needed if you use Home Assistant. A standalone installation does not need helpers or a blueprint.
 
 1. Create two **Number** helpers (Settings → Devices & services → Helpers), e.g. "Charging energy total" (kWh) and "Charging cost total". Set the **maximum high** (e.g. 1000000), the default of 100 is reached quickly. Optionally add a **Text** helper for the last session.
 2. Import the blueprint:
@@ -252,7 +256,7 @@ If a MultiPass session is shown as Supercharger (or the other way round), please
 
 ## Costs
 
-The Fleet API is billed per request. Ladecockpit only uses data requests for the charging history and invoices. With default settings that is about 150–200 requests per month: a sync every 6 hours plus a few checks after each session (≈ $0.40 at $0.002 per request), well inside the $10 monthly credit Tesla gives every developer account. `API_BUDGET_REQUESTS` (default 1500) is a hard stop. The app shows the count of the current month.
+The Tesla Fleet API may charge per request, depending on Tesla's current pricing, account credits and usage. Ladecockpit limits requests to charging history and invoice retrieval; actual costs depend on your sessions, sync interval and invoice availability. Do not treat any historical estimate as a guaranteed price. `API_BUDGET_REQUESTS` (default 1500) is a hard stop, and the app shows the current month's request count. The software itself is free; Tesla API charges, if any, are separate.
 
 ## Privacy and security
 
