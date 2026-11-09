@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.12.4 – 2026-11-09
+
+- **Month report and invoice view no longer get stuck on a broken invoice file.** A download that is not a PDF, or one that was cut short, is no longer kept; Ladecockpit fetches the invoice again the next time it is needed.
+- Dependencies updated: pypdf 6.21.2 → 6.21.4 (security fixes).
+
 ## 0.12.3 – 2026-11-08
 
 - **Secure mobile app access.** Optional add-on setting *Mobile app password* protects direct access on port 8077 with HTTP Basic Auth. Direct access stays disabled until a password is configured; Home Assistant Ingress continues to use Home Assistant authentication.
