@@ -181,13 +181,16 @@ return 'Verbindung fehlgeschlagen: $error';
 }
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  const DashboardPage({super.key, this.client});
+
+  final CockpitClient? client;
+
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  final _client = CockpitClient();
+  late final CockpitClient _client;
   Map<String, dynamic>? _data;
   String? _error;
   bool _loading = false;
@@ -199,6 +202,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
+    _client = widget.client ?? CockpitClient();
     _load();
   }
 
