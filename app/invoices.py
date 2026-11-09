@@ -16,6 +16,7 @@ from pathlib import Path
 from pypdf import PdfReader
 
 from .networks import MULTIPASS, SUPERCHARGER, invoice_series
+from .tesla import TeslaError
 
 log = logging.getLogger("ladecockpit.invoices")
 
@@ -29,11 +30,36 @@ def cache_path(data_dir: Path, session_id: str) -> Path:
     return folder / f"{safe_id}.pdf"
 
 
+def is_pdf(data: bytes) -> bool:
+    """Whether the bytes start like a PDF (the header may follow a few stray bytes)."""
+    return b"%PDF-" in data[:1024]
+
+
+def _cached_pdf_ok(path: Path) -> bool:
+    try:
+        with path.open("rb") as f:
+            return is_pdf(f.read(1024))
+    except OSError:
+        return False
+
+
 async def pdf_path(tesla, data_dir: Path, session: dict) -> Path:
-    """Path of the cached invoice PDF of a session (fetched from Tesla on first use)."""
+    """Path of the cached invoice PDF of a session (fetched from Tesla on first use).
+
+    Only real PDFs are kept, and written in one step: an answer that is not a PDF, or a write that
+    was cut short, must not stay in the cache and break the month report and the invoice view for good.
+    A cached file that is not a PDF is fetched again."""
     path = cache_path(data_dir, session["session_id"])
+    if path.exists() and not _cached_pdf_ok(path):
+        log.warning("Cached invoice of session %s is not a PDF – fetching it again", session["session_id"])
+        path.unlink(missing_ok=True)
     if not path.exists():
-        path.write_bytes(await tesla.invoice_pdf(session["invoices"][0]["id"]))
+        data = await tesla.invoice_pdf(session["invoices"][0]["id"])
+        if not is_pdf(data):
+            raise TeslaError("Tesla did not return a PDF for this invoice.")
+        tmp = path.with_suffix(".tmp")
+        tmp.write_bytes(data)
+        tmp.replace(path)
     return path
 
 

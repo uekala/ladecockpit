@@ -3,13 +3,14 @@ import json
 import sqlite3
 from datetime import datetime, timedelta, timezone
 
+import pytest
 from fpdf import FPDF
 
 from app import invoices
 from app.db import DB
 from app.networks import MULTIPASS, SUPERCHARGER, classify
 from app.sync import SyncService
-from app.tesla import parse_session
+from app.tesla import TeslaError, parse_session
 
 from test_networks import SUPERCHARGER_RAW
 
@@ -187,3 +188,26 @@ def test_one_rejected_token_refresh_is_not_a_lost_sign_in(settings, db):
         pass
     assert asyncio.run(client._access_token()) == "a"                                 # success resets the count
     assert db.kv_get("tesla_refresh_failures") is None and client.auth_error is None
+
+
+def test_only_real_pdfs_are_kept(tmp_path):
+    session = {"session_id": "7", "invoices": [{"id": "c7"}]}
+    tesla = InvoiceTesla({"c7": b"<html>Service unavailable</html>"})
+    with pytest.raises(TeslaError):                      # an answer that is no PDF is not cached
+        asyncio.run(invoices.pdf_path(tesla, tmp_path, session))
+    assert not invoices.cache_path(tmp_path, "7").exists()
+    assert not list((tmp_path / "invoices").glob("*.tmp"))
+    tesla.files["c7"] = MULTIPASS_PDF
+    path = asyncio.run(invoices.pdf_path(tesla, tmp_path, session))
+    assert path.read_bytes() == MULTIPASS_PDF
+    asyncio.run(invoices.pdf_path(tesla, tmp_path, session))
+    assert tesla.asked == ["c7", "c7"]                   # the second good fetch stays cached
+
+
+def test_a_cached_file_that_is_no_pdf_is_fetched_again(tmp_path):
+    session = {"session_id": "8", "invoices": [{"id": "c8"}]}
+    broken = invoices.cache_path(tmp_path, "8")
+    broken.write_bytes(b"%PD")                           # e.g. a write that was cut short
+    tesla = InvoiceTesla({"c8": SUPERCHARGER_PDF})
+    path = asyncio.run(invoices.pdf_path(tesla, tmp_path, session))
+    assert path.read_bytes() == SUPERCHARGER_PDF and tesla.asked == ["c8"]
