@@ -33,3 +33,17 @@ jobs:
           context: .
           push: false
           tags: ladecockpit:ci
+
+  browser-standalone:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt playwright
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: Test standalone dashboard in desktop and mobile browsers
+        run: python scripts/browser_standalone_smoke.py
