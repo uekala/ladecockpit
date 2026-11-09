@@ -136,6 +136,8 @@ class CockpitClient {
         .timeout(const Duration(seconds: 20));
     return parseDashboardResponse(response.statusCode, response.body);
   }
+
+  void dispose() => _http.close();
 }
 
 Map<String, String> cockpitRequestHeaders(String? password, {bool json = false}) {
@@ -207,6 +209,12 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _client.dispose();
+    super.dispose();
   }
 
   String _fetchTimeLabel(DateTime? value) {
@@ -2671,7 +2679,8 @@ class _DashboardPageState extends State<DashboardPage> {
         child: RefreshIndicator(
           onRefresh: _load,
           child: ListView(
-          key: ValueKey('ladecockpit-independent-tab-$_selectedTab'),
+          key: PageStorageKey('ladecockpit-tab-$_selectedTab'),
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
             if (_data != null)
