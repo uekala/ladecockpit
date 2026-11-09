@@ -11,6 +11,11 @@ on:
       - "mobile/**"
       - ".github/workflows/mobile.yml"
   workflow_dispatch:
+    inputs:
+      release:
+        description: "Release-Build: Abbruch, wenn der Signaturschlüssel fehlt"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -126,16 +131,32 @@ jobs:
           content = content.replace(marker, mirror)
           path.write_text(content)
           PY
+      - name: Configure persistent release signing
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          REQUIRED: ${{ github.event_name == 'workflow_dispatch' && inputs.release && '--required' || '' }}
+        run: python3 tool/configure-android-signing.py $REQUIRED
       - run: flutter pub get
       - run: dart run flutter_launcher_icons
       - run: flutter analyze
       - run: flutter test
       - name: Build Android APK (retry transient Gradle download failures)
         shell: bash
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          # versionCode muss bei jedem Update steigen; die Laufnummer dieses Workflows tut das.
+          BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 1))
+          echo "Build-Nummer: $BUILD_NUMBER"
           for attempt in 1 2 3 4 5; do
             set +e
-            flutter build apk --release 2>&1 | tee /tmp/ladecockpit-android-build.log
+            flutter build apk --release --build-number="$BUILD_NUMBER" 2>&1 | tee /tmp/ladecockpit-android-build.log
             status=${PIPESTATUS[0]}
             set -e
 
@@ -173,6 +194,19 @@ jobs:
           "$AAPT" dump xmltree "$APK" AndroidManifest.xml | tee /tmp/ladecockpit-apk-manifest.txt
           grep -q "networkSecurityConfig" /tmp/ladecockpit-apk-manifest.txt
           echo "Verified INTERNET permission and network security config in compiled APK"
+      - name: Verify release signature
+        if: steps.signing.outputs.signed == 'true'
+        env:
+          ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
+        run: bash tool/verify-apk-signature.sh build/app/outputs/flutter-apk/app-release.apk
+      - name: Note unsigned test build
+        if: steps.signing.outputs.signed != 'true'
+        run: |
+          echo "::warning::Ohne Release-Schlüssel gebaut: Diese APK trägt den Debug-Schlüssel des Runners und lässt sich nicht als Update über eine installierte App installieren."
+          echo "Test-Build mit Debug-Schlüssel – nicht als Update installierbar." >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove keystore from runner
+        if: always()
+        run: rm -f android/app/release-upload.jks
       - uses: actions/upload-artifact@v4
         with:
           name: ladecockpit-android-apk
