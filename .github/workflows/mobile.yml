@@ -104,9 +104,10 @@ jobs:
           PY
       - run: flutter pub get
       - run: dart run flutter_launcher_icons
-      # Temporary isolated rendering diagnostic bypasses the dashboard widgets;
-      # analyzer unused-element warnings are expected until the normal body returns.
-      - run: flutter test
+      - name: Analyze Flutter code
+        run: flutter analyze
+      - name: Run Flutter tests
+        run: flutter test
       - name: Build Android APK (retry transient Gradle download failures)
         shell: bash
         run: |
@@ -152,9 +153,8 @@ jobs:
           cache: true
       - run: flutter create --platforms=android,ios --project-name ladecockpit .
       - run: flutter pub get
-      # Temporary isolated rendering diagnostic bypasses the dashboard widgets;
-      # analyzer unused-element warnings are expected until the normal body returns.
-      - run: flutter build ios --release --no-codesign
+      - name: Build iOS release
+        run: flutter build ios --release --no-codesign
       - uses: actions/upload-artifact@v4
         with:
           name: ladecockpit-ios-build
