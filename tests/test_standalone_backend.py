@@ -71,7 +71,8 @@ def test_live_dashboard_starts_and_serves_without_home_assistant(monkeypatch, tm
     assert main.ha.configured is False
 
     with TestClient(main.app) as client:
-        health = client.get("/healthz")
+        # /healthz is only open without a password from localhost (container health check).
+        health = client.get("/healthz", auth=("test", "test-password"))
         assert health.status_code == 200
         assert health.json()["mode"] == "live"
 
