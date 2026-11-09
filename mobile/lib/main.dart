@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 export 'document_response.dart' show CockpitException;
 import 'document_response.dart';
+import 'theme/app_theme.dart';
 
 void main() => runApp(const LadecockpitApp());
 
@@ -17,19 +18,10 @@ class LadecockpitApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const seed = Color(0xFF43C6AC);
     return MaterialApp(
       title: 'Ladecockpit',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.dark),
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF101416),
-        cardTheme: CardThemeData(
-          color: const Color(0xFF1A2224),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        ),
-      ),
+      theme: AppTheme.dark,
       home: const DashboardPage(),
     );
   }
@@ -223,6 +215,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _data;
   String? _error;
   bool _loading = false;
+  int _selectedTab = 0;
   DateTime? _lastSuccessfulFetch;
   String _sessionMonthFilter = 'all';
   String _sessionNetworkFilter = 'all';
@@ -265,42 +258,137 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _settings() async {
     final urlController = TextEditingController(text: await _client.serverUrl ?? '');
     final passwordController = TextEditingController(text: await _client.password ?? '');
-    if (!mounted) return;
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Verbindung einrichten'),
-        content: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            TextField(
-              controller: urlController,
-              keyboardType: TextInputType.url,
-              decoration: const InputDecoration(
-                labelText: 'Ladecockpit-Adresse',
-                hintText: 'http://100.x.y.z:8077',
-                helperText: 'Tailscale-IP oder MagicDNS-Adresse inklusive Port',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'App-Passwort (falls aktiviert)'),
-            ),
-          ]),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Abbrechen')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Speichern')),
-        ],
-      ),
-    );
-    if (saved == true) {
-      await _client.saveConnection(urlController.text, passwordController.text);
-      await _load();
+    if (!mounted) {
+      urlController.dispose();
+      passwordController.dispose();
+      return;
     }
-    urlController.dispose();
-    passwordController.dispose();
+    final hasSavedServer = urlController.text.trim().isNotEmpty;
+    try {
+      final saved = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.dns_outlined, color: AppTheme.accentGreen, size: 22),
+              SizedBox(width: 10),
+              Expanded(child: Text('Serververbindung')),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: (hasSavedServer ? AppTheme.accentGreen : AppTheme.accentTeal)
+                        .withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        hasSavedServer ? Icons.check_circle_outline : Icons.info_outline,
+                        color: hasSavedServer ? AppTheme.accentGreen : AppTheme.accentTeal,
+                        size: 19,
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Text(
+                          hasSavedServer
+                              ? 'Eine Serveradresse ist auf diesem Gerät hinterlegt.'
+                              : 'Hinterlege die Adresse deines Ladecockpit-Servers.',
+                          style: const TextStyle(fontSize: 12, height: 1.35),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text('SERVERZUGRIFF',
+                  style: TextStyle(
+                    color: AppTheme.accentGreen,
+                    fontSize: 10,
+                    letterSpacing: 1.1,
+                    fontWeight: FontWeight.w800,
+                  )),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: urlController,
+                  keyboardType: TextInputType.url,
+                  textInputAction: TextInputAction.next,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.link_rounded),
+                    labelText: 'Serveradresse',
+                    hintText: 'https://ladecockpit.example:8077',
+                    helperText: 'Tailscale-IP oder MagicDNS-Adresse inklusive Port',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text('ANMELDUNG',
+                  style: TextStyle(
+                    color: AppTheme.accentGreen,
+                    fontSize: 10,
+                    letterSpacing: 1.1,
+                    fontWeight: FontWeight.w800,
+                  )),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.lock_outline_rounded),
+                    labelText: 'App-Passwort',
+                    helperText: 'Optional – nur wenn dein Server ein Passwort verlangt',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.shield_outlined, size: 16, color: AppTheme.textSecondary),
+                    SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        'Die Zugangsdaten werden geschützt auf diesem Gerät gespeichert. Die Verbindung erfolgt direkt zu deinem Server.',
+                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, height: 1.35),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Abbrechen'),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(context, true),
+              icon: const Icon(Icons.save_outlined, size: 18),
+              label: const Text('Speichern & verbinden'),
+            ),
+          ],
+        ),
+      );
+      if (saved == true) {
+        await _client.saveConnection(urlController.text, passwordController.text);
+        await _load();
+      }
+    } finally {
+      urlController.dispose();
+      passwordController.dispose();
+    }
   }
 
   String _value(dynamic value) {
@@ -314,13 +402,105 @@ class _DashboardPageState extends State<DashboardPage> {
     final text = _value(value);
     if (text.isEmpty) return const SizedBox.shrink();
     return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppTheme.surfaceElevated, AppTheme.surface],
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(15, 14, 15, 15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: AppTheme.accentTeal,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    title.toUpperCase(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 9,
+                      height: 1.25,
+                      letterSpacing: 0.8,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '$text$suffix',
+                maxLines: 1,
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 23,
+                  height: 1.05,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.7,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _homeChargingSummary(Map<String, dynamic>? home) {
+    if (home == null || (home['kwh'] == null && home['cost'] == null)) {
+      return const SizedBox.shrink();
+    }
+    final energy = home['kwh'] == null ? '–' : _sectionValue('kwh', home['kwh']);
+    final cost = home['cost'] == null ? '–' : _sectionValue('total_cost', home['cost']);
+    return Card(
+      margin: const EdgeInsets.only(top: 2, bottom: 10),
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white60)),
-          const SizedBox(height: 8),
-          Text('$text$suffix', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-        ]),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppTheme.accentTeal.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: const Icon(Icons.home_outlined,
+                color: AppTheme.accentTeal, size: 19),
+            ),
+            const SizedBox(width: 11),
+            const Expanded(child: Text('Zuhause geladen',
+              style: TextStyle(fontWeight: FontWeight.w600))),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(energy, style: const TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text(cost, style: const TextStyle(
+                  color: AppTheme.textSecondary, fontSize: 11)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -398,56 +578,101 @@ class _DashboardPageState extends State<DashboardPage> {
         .where((e) => e.value != null && e.value is! Map && e.value is! List)
         .take(8).toList();
     if (entries.isEmpty) return const SizedBox.shrink();
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(4, 18, 4, 4),
-        child: Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-      ),
-      Card(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(children: [
+
+    final first = entries.first;
+    final summary = '${_sectionLabel(first.key)} · ${_sectionValue(first.key, first.value)}';
+    final sectionIcon = switch (title) {
+      'Letzter Ladevorgang' => Icons.ev_station_rounded,
+      'Gesamt' => Icons.insights_rounded,
+      'Ladeprognose' => Icons.battery_charging_full_rounded,
+      'Fahrzeug' => Icons.directions_car_rounded,
+      _ => Icons.tune_rounded,
+    };
+
+    return Card(
+      margin: const EdgeInsets.only(top: 5, bottom: 5),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: false,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          leading: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppTheme.accentGreen.withValues(alpha: 0.09),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(sectionIcon, color: AppTheme.accentGreen, size: 19),
+          ),
+          title: Text(title,
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Text(summary,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          children: [
             for (var i = 0; i < entries.length; i++) ...[
               if (i > 0) const Divider(height: 1),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 9),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Expanded(child: Text(_sectionLabel(entries[i].key),
-                    style: const TextStyle(color: Colors.white70))),
-                  const SizedBox(width: 12),
-                  Flexible(child: Text(_sectionValue(entries[i].key, entries[i].value),
-                    textAlign: TextAlign.end,
-                    style: const TextStyle(fontWeight: FontWeight.w600))),
-                ]),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: Text(_sectionLabel(entries[i].key),
+                      style: const TextStyle(color: AppTheme.textSecondary))),
+                    const SizedBox(width: 12),
+                    Flexible(child: Text(
+                      _sectionValue(entries[i].key, entries[i].value),
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(fontWeight: FontWeight.w600))),
+                  ],
+                ),
               ),
             ],
-          ]),
+          ],
         ),
       ),
-    ]);
+    );
   }
 
   Map<String, dynamic>? _map(dynamic value) =>
       value is Map<String, dynamic> ? value : null;
 
   Widget _sessionMetric(String label, String value, IconData icon) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 16, color: Colors.white54),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white54)),
-              const SizedBox(height: 2),
-              Text(value, maxLines: 2, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w600)),
-            ],
+    final highlighted = label == 'Kosten';
+    final accent = highlighted ? AppTheme.accentGreen : AppTheme.textSecondary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      decoration: BoxDecoration(
+        color: (highlighted ? AppTheme.accentGreen : AppTheme.surface)
+            .withValues(alpha: highlighted ? 0.09 : 0.55),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: highlighted
+            ? AppTheme.accentGreen.withValues(alpha: 0.18)
+            : AppTheme.border.withValues(alpha: 0.7)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: accent),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppTheme.textSecondary)),
+                const SizedBox(height: 3),
+                Text(value, maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontWeight: FontWeight.w800,
+                    color: highlighted ? AppTheme.accentGreen : AppTheme.textPrimary)),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -477,7 +702,9 @@ class _DashboardPageState extends State<DashboardPage> {
       if (date == null) return 'Datum unbekannt';
       final day = date.day.toString().padLeft(2, '0');
       final month = date.month.toString().padLeft(2, '0');
-      return '$day.$month.${date.year}';
+      final hour = date.hour.toString().padLeft(2, '0');
+      final minute = date.minute.toString().padLeft(2, '0');
+      return '$day.$month.${date.year} · $hour:$minute Uhr';
     }
 
     String number(dynamic value, {int digits = 1}) {
@@ -549,58 +776,80 @@ class _DashboardPageState extends State<DashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
-          child: Row(
-            children: [
-              Expanded(child: Text('Ladevorgänge',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))),
-              Text('${filtered.length} / ${items.length}',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white60)),
-            ],
-          ),
-        ),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final compact = constraints.maxWidth < 520;
-            final fields = [
-              filterField('Zeitraum', selectedMonth, monthOptions,
-                (value) => setState(() => _sessionMonthFilter = value ?? 'all'),
-                width: compact ? double.infinity : 165),
-              filterField('Netzwerk', selectedNetwork, networkOptions,
-                (value) => setState(() => _sessionNetworkFilter = value ?? 'all'),
-                width: compact ? double.infinity : 165),
-              filterField('Standort', selectedSite, siteOptions,
-                (value) => setState(() => _sessionSiteFilter = value ?? 'all'),
-                width: compact ? double.infinity : 210),
-            ];
-            if (compact) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        _sectionHeading('Ladevorgänge',
+          trailing: '${filtered.length} / ${items.length}'),
+        Builder(builder: (context) {
+          final filtersActive = selectedMonth != 'all' ||
+              selectedNetwork != 'all' || selectedSite != 'all';
+          final filterSummary = [
+            selectedMonth == 'all' ? 'Alle Zeiträume' : monthLabel(selectedMonth),
+            selectedNetwork == 'all' ? 'Alle Netzwerke' :
+              (selectedNetwork == 'multipass' ? 'MultiPass' :
+                selectedNetwork == 'supercharger' ? 'Supercharger' : selectedNetwork),
+            selectedSite == 'all' ? 'Alle Standorte' : selectedSite,
+          ].join(' · ');
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ExpansionTile(
+              initiallyExpanded: false,
+              leading: Icon(Icons.tune,
+                color: filtersActive ? Theme.of(context).colorScheme.primary : AppTheme.textSecondary),
+              title: Row(
                 children: [
-                  for (var i = 0; i < fields.length; i++) ...[
-                    if (i > 0) const SizedBox(height: 8),
-                    fields[i],
-                  ],
+                  const Expanded(child: Text('Filter', style: TextStyle(fontWeight: FontWeight.w600))),
+                  if (filtersActive)
+                    Text('Aktiv', style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
                 ],
-              );
-            }
-            return Wrap(spacing: 8, runSpacing: 8, children: fields);
-          },
-        ),
-        if (_sessionMonthFilter != 'all' || _sessionNetworkFilter != 'all' || _sessionSiteFilter != 'all')
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () => setState(() {
-                _sessionMonthFilter = 'all';
-                _sessionNetworkFilter = 'all';
-                _sessionSiteFilter = 'all';
-              }),
-              icon: const Icon(Icons.filter_alt_off, size: 17),
-              label: const Text('Filter zurücksetzen'),
+              ),
+              subtitle: Text(filterSummary, maxLines: 1, overflow: TextOverflow.ellipsis),
+              childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              children: [
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxWidth < 520;
+                    final fields = [
+                      filterField('Zeitraum', selectedMonth, monthOptions,
+                        (value) => setState(() => _sessionMonthFilter = value ?? 'all'),
+                        width: compact ? double.infinity : 165),
+                      filterField('Netzwerk', selectedNetwork, networkOptions,
+                        (value) => setState(() => _sessionNetworkFilter = value ?? 'all'),
+                        width: compact ? double.infinity : 165),
+                      filterField('Standort', selectedSite, siteOptions,
+                        (value) => setState(() => _sessionSiteFilter = value ?? 'all'),
+                        width: compact ? double.infinity : 210),
+                    ];
+                    if (compact) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (var i = 0; i < fields.length; i++) ...[
+                            if (i > 0) const SizedBox(height: 8),
+                            fields[i],
+                          ],
+                        ],
+                      );
+                    }
+                    return Wrap(spacing: 8, runSpacing: 8, children: fields);
+                  },
+                ),
+                if (filtersActive)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => setState(() {
+                        _sessionMonthFilter = 'all';
+                        _sessionNetworkFilter = 'all';
+                        _sessionSiteFilter = 'all';
+                      }),
+                      icon: const Icon(Icons.filter_alt_off, size: 17),
+                      label: const Text('Filter zurücksetzen'),
+                    ),
+                  ),
+              ],
             ),
-          ),
+          );
+        }),
         if (filtered.isEmpty)
           const Card(child: Padding(
             padding: EdgeInsets.all(16),
@@ -613,10 +862,8 @@ class _DashboardPageState extends State<DashboardPage> {
             networkValue == 'supercharger' ? 'Supercharger' : networkValue;
           final kwhValue = session['kwh'];
           final costValue = session['cost'];
-          final durationValue = session['duration_min'];
           final kwh = kwhValue == null ? null : number(kwhValue);
           final cost = costValue == null ? null : number(costValue, digits: 2);
-          final duration = durationValue == null ? null : _durationLabel(durationValue);
           final currency = session['currency']?.toString() ?? 'EUR';
           final currencyLabel = currency == 'EUR' ? '€' : currency;
           final invoice = session['has_invoice'] == true;
@@ -625,22 +872,31 @@ class _DashboardPageState extends State<DashboardPage> {
               _sessionMetric('Energie', '$kwh kWh', Icons.bolt),
             if (cost != null)
               _sessionMetric('Kosten', '$cost $currencyLabel', Icons.euro),
-            if (duration != null)
-              _sessionMetric('Dauer', duration, Icons.schedule),
+            // Keep the list glanceable; effective price and duration remain in the detail view.
           ];
           return Card(
             clipBehavior: Clip.antiAlias,
             child: InkWell(
               onTap: () => _showSessionDetails(session),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 13, 16, 14),
+                padding: const EdgeInsets.fromLTRB(13, 10, 13, 11),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(children: [
-                      Icon(
-                        invoice ? Icons.receipt_long_outlined : Icons.ev_station,
-                        color: invoice ? Theme.of(context).colorScheme.primary : Colors.white60,
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: (invoice ? AppTheme.accentGreen : AppTheme.accentTeal)
+                              .withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          invoice ? Icons.receipt_long_outlined : Icons.ev_station,
+                          size: 19,
+                          color: invoice ? AppTheme.accentGreen : AppTheme.accentTeal,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -654,25 +910,30 @@ class _DashboardPageState extends State<DashboardPage> {
                               '${dateLabel(session['start'])} · $network${invoice ? ' · Rechnung vorhanden' : ''}',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white60),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: Colors.white38),
+                      const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
                     ]),
                     if (metrics.isNotEmpty) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 9),
                       const Divider(height: 1),
-                      const SizedBox(height: 10),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (var i = 0; i < metrics.length; i++) ...[
-                            if (i > 0) const SizedBox(width: 8),
-                            Expanded(child: metrics[i]),
-                          ],
-                        ],
+                      const SizedBox(height: 8),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final columns = constraints.maxWidth < 350 ? 1 : metrics.length.clamp(1, 3);
+                          final metricWidth = (constraints.maxWidth - (columns - 1) * 8) / columns;
+                          return Wrap(
+                            spacing: 8,
+                            runSpacing: 10,
+                            children: [
+                              for (final metric in metrics)
+                                SizedBox(width: metricWidth, child: metric),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ],
@@ -685,7 +946,7 @@ class _DashboardPageState extends State<DashboardPage> {
           Padding(
             padding: const EdgeInsets.all(8),
             child: Text('Es werden die ersten 50 Treffer angezeigt.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white54)),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary)),
           ),
       ],
     );
@@ -719,7 +980,7 @@ class _DashboardPageState extends State<DashboardPage> {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: Text(label, style: const TextStyle(color: Colors.white60))),
+        Expanded(child: Text(label, style: const TextStyle(color: AppTheme.textSecondary))),
         const SizedBox(width: 12),
         Flexible(child: Text(value, textAlign: TextAlign.end,
           style: const TextStyle(fontWeight: FontWeight.w600))),
@@ -754,6 +1015,16 @@ class _DashboardPageState extends State<DashboardPage> {
         : networkValue == 'supercharger' ? 'Supercharger' : networkValue;
     final invoice = session['has_invoice'] == true;
     final sessionId = session['id']?.toString();
+    final energyValue = session['kwh'] is num
+        ? session['kwh'] as num
+        : num.tryParse(session['kwh']?.toString() ?? '');
+    final costValue = session['cost'] is num
+        ? session['cost'] as num
+        : num.tryParse(session['cost']?.toString() ?? '');
+    final effectivePrice = energyValue != null && energyValue > 0 &&
+            costValue != null
+        ? costValue / energyValue
+        : null;
     String? textValue(String key) {
       final value = session[key];
       if (value == null || value.toString().trim().isEmpty) return null;
@@ -780,6 +1051,9 @@ class _DashboardPageState extends State<DashboardPage> {
         _detailRow('Gutschrift', _numberLabel(session['credit'], suffix: ' $currencySymbol')),
       if (session['price'] != null)
         _detailRow('Preis pro kWh', _numberLabel(session['price'], digits: 3, suffix: ' $currencySymbol/kWh')),
+      if (session['price'] == null && effectivePrice != null)
+        _detailRow('Effektivpreis (berechnet)',
+          _numberLabel(effectivePrice, digits: 3, suffix: ' $currencySymbol/kWh')),
       if (session['avg_kw'] != null)
         _detailRow('Durchschnittsleistung', _numberLabel(session['avg_kw'], suffix: ' kW')),
       if (session['start_soc'] != null)
@@ -794,41 +1068,100 @@ class _DashboardPageState extends State<DashboardPage> {
 
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(site, maxLines: 2, overflow: TextOverflow.ellipsis),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (dialogContext) => Dialog.fullscreen(
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Ladevorgang'),
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              tooltip: 'Schließen',
+              onPressed: () => Navigator.pop(dialogContext),
+            ),
+          ),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
-              Row(children: [
-                Icon(Icons.ev_station, size: 18,
-                  color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Expanded(child: Text(network,
-                  style: TextStyle(color: Theme.of(context).colorScheme.primary))),
-              ]),
+              Text(site,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800)),
+              if (textValue('address') != null) ...[
+                const SizedBox(height: 4),
+                SelectableText(textValue('address')!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.textSecondary)),
+              ],
+              const SizedBox(height: 8),
+              if (energyValue != null || costValue != null)
+                Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (energyValue != null)
+                          SizedBox(
+                            width: 142,
+                            child: _sessionMetric(
+                              'Geladen',
+                              _numberLabel(energyValue, digits: 1, suffix: ' kWh'),
+                              Icons.bolt_rounded,
+                            ),
+                          ),
+                        if (costValue != null)
+                          SizedBox(
+                            width: 142,
+                            child: _sessionMetric(
+                              'Gesamtkosten',
+                              _numberLabel(costValue, suffix: ' $currencySymbol'),
+                              Icons.euro_rounded,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  Chip(
+                    avatar: const Icon(Icons.ev_station, size: 16),
+                    label: Text(network),
+                  ),
+                  if (invoice)
+                    const Chip(
+                      avatar: Icon(Icons.receipt_long, size: 16),
+                      label: Text('Rechnung vorhanden'),
+                    ),
+                ],
+              ),
               _detailGroup('ZEITRAUM', timingRows),
               _detailGroup('ENERGIE UND KOSTEN', costRows),
               _detailGroup('STANDORT', locationRows),
+              if (!invoice)
+                const Padding(
+                  padding: EdgeInsets.only(top: 18),
+                  child: Text('Für diesen Ladevorgang ist keine Rechnung hinterlegt.',
+                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                ),
             ],
           ),
+          bottomNavigationBar: invoice && sessionId != null
+              ? SafeArea(
+                  minimum: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                      _showInvoice(sessionId, site);
+                    },
+                    icon: const Icon(Icons.receipt_long),
+                    label: const Text('Rechnung öffnen'),
+                  ),
+                )
+              : null,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Schließen'),
-          ),
-          if (invoice && sessionId != null)
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                _showInvoice(sessionId, site);
-              },
-              icon: const Icon(Icons.receipt_long),
-              label: const Text('Rechnung öffnen'),
-            ),
-        ],
       ),
     );
   }
@@ -857,23 +1190,119 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     }
     if (slots.isEmpty && sites.isEmpty) return const SizedBox.shrink();
+    Map<String, dynamic>? cheapestSlot;
+    Map<String, dynamic>? cheapestSite;
+    for (final slot in slots) {
+      if (slot['avg_price'] is num &&
+          (cheapestSlot == null || (slot['avg_price'] as num) < (cheapestSlot['avg_price'] as num))) {
+        cheapestSlot = slot;
+      }
+    }
+    for (final site in sites) {
+      if (site['avg_price'] is num &&
+          (cheapestSite == null || (site['avg_price'] as num) < (cheapestSite['avg_price'] as num))) {
+        cheapestSite = site;
+      }
+    }
 
-    Widget priceValue(dynamic value) =>
-        Text(value is num ? '${value.toStringAsFixed(3)} €/kWh' : 'Noch keine Daten',
-          style: const TextStyle(fontWeight: FontWeight.w600));
+    Widget priceValue(dynamic value, {bool highlighted = false}) =>
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: (highlighted ? AppTheme.accentGreen : AppTheme.accentTeal)
+                .withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: (highlighted ? AppTheme.accentGreen : AppTheme.border)
+                  .withValues(alpha: highlighted ? 0.35 : 1),
+            ),
+          ),
+          child: Text(
+            value is num ? '${value.toStringAsFixed(3)} €/kWh' : '–',
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              color: highlighted ? AppTheme.accentGreen : AppTheme.textPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
-          child: Text('Preisradar',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(4, 0, 4, 10),
+          child: Text('Historische Durchschnittswerte aus deinen erfassten Ladevorgängen – keine Live-Tarife.',
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
         ),
+        _sectionHeading('Preisradar'),
+        if (cheapestSlot != null || cheapestSite != null)
+          Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppTheme.accentGreen.withValues(alpha: 0.11),
+                    AppTheme.surface,
+                  ],
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.savings_outlined,
+                        color: AppTheme.accentGreen, size: 18),
+                      const SizedBox(width: 8),
+                      const Expanded(child: Text('Günstigstes Zeitfenster',
+                        style: TextStyle(fontWeight: FontWeight.w800))),
+                      if (cheapestSlot?['avg_price'] is num)
+                        Text('${(cheapestSlot!['avg_price'] as num).toStringAsFixed(3)} €/kWh',
+                          style: const TextStyle(color: AppTheme.accentGreen,
+                            fontWeight: FontWeight.w800)),
+                    ],
+                  ),
+                  if (cheapestSlot != null) ...[
+                    const SizedBox(height: 5),
+                    Text('Zeitfenster · ${cheapestSlot['label'] ?? cheapestSlot['range'] ?? 'Günstigste Ladezeit'}',
+                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                  ],
+                  if (cheapestSite != null) ...[
+                    const SizedBox(height: 8),
+                    Container(height: 1, color: AppTheme.border),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined,
+                          color: AppTheme.accentTeal, size: 17),
+                        const SizedBox(width: 7),
+                        Expanded(child: Text(
+                          'Standort · ${cheapestSite['label'] ?? cheapestSite['site'] ?? 'Günstigster Standort'}',
+                          maxLines: 2, overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12))),
+                        if (cheapestSite['avg_price'] is num)
+                          Text('${(cheapestSite['avg_price'] as num).toStringAsFixed(3)} €/kWh',
+                            style: const TextStyle(color: AppTheme.accentGreen,
+                              fontWeight: FontWeight.w800, fontSize: 12)),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
         if (slots.isNotEmpty) ...[
           const Padding(
             padding: EdgeInsets.fromLTRB(4, 4, 4, 6),
-            child: Text('Tarif nach Ladezeit', style: TextStyle(color: Colors.white70)),
+            child: Text('Tarif nach Ladezeit', style: TextStyle(color: AppTheme.textSecondary)),
           ),
           ...slots.map((slot) {
             final label = slot['label']?.toString() ?? 'Zeitfenster';
@@ -882,50 +1311,103 @@ class _DashboardPageState extends State<DashboardPage> {
             final isCheapest = slot['avg_price'] is num &&
                 lowestSlotPrice != null && slot['avg_price'] == lowestSlotPrice;
             return Card(
-              child: ListTile(
-                dense: true,
-                leading: Icon(isCheapest ? Icons.savings_outlined : Icons.schedule,
-                  color: isCheapest ? Colors.greenAccent : Colors.white60),
-                title: Text('$label${isCheapest ? ' · Günstigste Zeit' : ''}'),
-                subtitle: Text('${range.isEmpty ? 'Zeitfenster' : range} · $count Ladevorgänge'),
-                trailing: priceValue(slot['avg_price']),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(isCheapest ? Icons.savings_outlined : Icons.schedule,
+                          color: isCheapest ? AppTheme.accentGreen : AppTheme.textSecondary,
+                          size: 19),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Text('$label${isCheapest ? ' · Günstigste Zeit' : ''}',
+                            maxLines: 2, overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600)),
+                        ),
+                        const SizedBox(width: 8),
+                        priceValue(slot['avg_price'], highlighted: isCheapest),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 28, top: 4),
+                      child: Text('${range.isEmpty ? 'Zeitfenster' : range} · $count Ladevorgänge · €/kWh',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondary)),
+                    ),
+                  ],
+                ),
               ),
             );
           }),
         ],
         if (sites.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.fromLTRB(4, 14, 4, 6),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
             child: Text('Deine häufigsten Ladestandorte',
-              style: TextStyle(color: Colors.white70)),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
           ),
-          ...sites.map((site) {
-            final label = site['label']?.toString() ??
-                site['site']?.toString() ?? 'Unbekannter Standort';
-            final network = site['network'] == 'multipass' ? 'MultiPass' : 'Supercharger';
-            final count = site['sessions'] is num ? (site['sessions'] as num).round() : 0;
-            final kwh = _numberLabel(site['kwh'], digits: 1, suffix: ' kWh');
-            final address = site['address']?.toString();
-            final isCheapest = site['avg_price'] is num &&
-                lowestSitePrice != null && site['avg_price'] == lowestSitePrice;
-            return Card(
-              child: ListTile(
-                leading: Icon(isCheapest ? Icons.savings_outlined : Icons.ev_station,
-                  color: isCheapest ? Colors.greenAccent : Colors.white60),
-                title: Text('$label${isCheapest ? ' · Günstigster' : ''}',
-                  maxLines: 2, overflow: TextOverflow.ellipsis),
-                subtitle: Text('$network · $count Ladevorgänge · $kwh'
-                  '${address != null && address.isNotEmpty ? '\n$address' : ''}'),
-                isThreeLine: address != null && address.isNotEmpty,
-                trailing: priceValue(site['avg_price']),
+          Card(
+            child: ExpansionTile(
+              initiallyExpanded: false,
+              leading: const Icon(Icons.ev_station, color: AppTheme.accentTeal),
+              title: Text('${sites.length} Ladestandorte',
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(
+                cheapestSite == null
+                    ? 'Durchschnittspreise und Ladehäufigkeit'
+                    : 'Niedrigster erfasster Standortpreis: ${(cheapestSite['avg_price'] as num).toStringAsFixed(3)} €/kWh',
+                maxLines: 1, overflow: TextOverflow.ellipsis,
               ),
-            );
-          }),
+              children: sites.map((site) {
+                final label = site['label']?.toString() ??
+                    site['site']?.toString() ?? 'Unbekannter Standort';
+                final network = site['network'] == 'multipass' ? 'MultiPass' : 'Supercharger';
+                final count = site['sessions'] is num ? (site['sessions'] as num).round() : 0;
+                final kwh = _numberLabel(site['kwh'], digits: 1, suffix: ' kWh');
+                final address = site['address']?.toString();
+                final isCheapest = site['avg_price'] is num &&
+                    lowestSitePrice != null && site['avg_price'] == lowestSitePrice;
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 9, 16, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(isCheapest ? Icons.savings_outlined : Icons.location_on_outlined,
+                            color: isCheapest ? AppTheme.accentGreen : AppTheme.textSecondary,
+                            size: 19),
+                          const SizedBox(width: 9),
+                          Expanded(
+                            child: Text('$label${isCheapest ? ' · Günstigster' : ''}',
+                              maxLines: 2, overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                          ),
+                          const SizedBox(width: 8),
+                          priceValue(site['avg_price'], highlighted: isCheapest),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 28, top: 4),
+                        child: Text('$network · $count Ladevorgänge · $kwh'
+                          '${address != null && address.isNotEmpty ? '\n$address' : ''}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondary)),
+                      ),
+                    ],
+                  ),
+                );              }).toList(),
+            ),
+          ),
         ],
         const Padding(
           padding: EdgeInsets.fromLTRB(4, 4, 4, 0),
           child: Text('Preiswerte basieren auf den erfassten Rechnungsdaten und sind keine Live-Tarife.',
-            style: TextStyle(color: Colors.white54, fontSize: 12)),
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
         ),
       ],
     );
@@ -968,30 +1450,90 @@ class _DashboardPageState extends State<DashboardPage> {
                 onPressed: () => Navigator.pop(dialogContext),
               ),
             ),
-            body: ListView.builder(
-              itemCount: pages,
-              itemBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.all(8),
-                child: FutureBuilder<Uri>(
-                  future: _client.monthReportPageUri(month, index + 1),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return SizedBox(
-                        height: 240,
-                        child: Center(child: snapshot.hasError
-                          ? const Text('Seite konnte nicht geladen werden.')
-                          : const CircularProgressIndicator()),
-                      );
-                    }
-                    return Image.network(snapshot.data.toString(), headers: headers,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('Seite konnte nicht geladen werden.'),
-                      ));
-                  },
+            body: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppTheme.accentTeal.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.assessment_outlined,
+                            color: AppTheme.accentTeal),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('MONATSAUSWERTUNG',
+                                style: TextStyle(fontSize: 10, letterSpacing: 1.1,
+                                  color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+                              SizedBox(height: 3),
+                              Text('Dein Ladebericht',
+                                style: TextStyle(fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text('$pages ${pages == 1 ? 'Seite' : 'Seiten'}',
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
+                    itemCount: pages,
+                    itemBuilder: (context, index) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: FutureBuilder<Uri>(
+                        future: _client.monthReportPageUri(month, index + 1),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text('Seite konnte nicht geladen werden.'),
+                            );
+                          }
+                          if (!snapshot.hasData) {
+                            return const SizedBox(
+                              height: 240,
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+                          return Image.network(snapshot.data.toString(), headers: headers,
+                            fit: BoxFit.contain,
+                            loadingBuilder: (context, child, progress) => progress == null
+                                ? child
+                                : const SizedBox(
+                                    height: 240,
+                                    child: Center(child: CircularProgressIndicator()),
+                                  ),
+                            errorBuilder: (_, __, ___) => const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text('Seite konnte nicht geladen werden.'),
+                            ));
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -1061,7 +1603,7 @@ class _DashboardPageState extends State<DashboardPage> {
       Container(width: 9, height: 9, decoration: BoxDecoration(
         color: color, borderRadius: BorderRadius.circular(2))),
       const SizedBox(width: 6),
-      Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+      Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
     ],
   );
 
@@ -1090,15 +1632,64 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     final values = months.map(totalCost).toList();
+    final latestMonth = months.last;
+    final latestKey = latestMonth['key'].toString();
+    final latestParts = latestKey.split('-');
+    final latestLabel = latestParts.length == 2
+        ? '${latestParts[1]}.${latestParts[0]}' : latestKey;
+    final averageCost = values.fold<num>(0, (sum, value) => sum + value) / values.length;
+
+    Widget summaryMetric(String label, String value, String detail, IconData icon,
+        {bool compact = false}) =>
+        Expanded(
+          child: Card(
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: EdgeInsets.all(compact ? 9 : 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, size: compact ? 16 : 18, color: AppTheme.accentGreen),
+                  SizedBox(height: compact ? 5 : 8),
+                  Text(label, maxLines: 2, overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppTheme.textSecondary)),
+                  const SizedBox(height: 3),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(value, style: TextStyle(
+                      fontSize: compact ? 16 : 18, fontWeight: FontWeight.w800)),
+                  ),
+                  Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppTheme.textSecondary)),
+                ],
+              ),
+            ),
+          ),
+        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
-          child: Text('Kostenentwicklung',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        _sectionHeading('Kostenentwicklung',
+          icon: Icons.trending_up_rounded, trailing: '${months.length} Monate'),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 370;
+            return Row(
+              children: [
+                summaryMetric('Letzter Monat', '${values.last.toStringAsFixed(2)} €',
+                  latestLabel, Icons.calendar_month_outlined, compact: compact),
+                SizedBox(width: compact ? 7 : 10),
+                summaryMetric('Monatsdurchschnitt', '${averageCost.toStringAsFixed(2)} €',
+                  'über ${months.length} Monate', Icons.show_chart, compact: compact),
+              ],
+            );
+          },
         ),
+        const SizedBox(height: 8),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -1144,11 +1735,11 @@ class _DashboardPageState extends State<DashboardPage> {
                         final percentage = difference / previousTotal * 100;
                         final sign = difference > 0 ? '+' : '';
                         comparison = '$sign${difference.toStringAsFixed(2)} € ($sign${percentage.toStringAsFixed(1)} %) gegenüber Vormonat';
-                        comparisonColor = difference > 0 ? Colors.orangeAccent :
-                            difference < 0 ? Colors.greenAccent : Colors.white54;
+                        comparisonColor = difference > 0 ? AppTheme.warning :
+                            difference < 0 ? AppTheme.accentGreen : AppTheme.textSecondary;
                       } else {
                         comparison = 'Vormonat ohne erfasste Kosten – kein Prozentvergleich';
-                        comparisonColor = Colors.white54;
+                        comparisonColor = AppTheme.textSecondary;
                       }
                     }
                   }
@@ -1157,47 +1748,85 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            SizedBox(width: 54, child: Text(label,
-                              style: const TextStyle(color: Colors.white70))),
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
-                                child: SizedBox(
-                                  height: 10,
-                                  child: Row(children: [
-                                    if (publicFlex > 0)
-                                      Expanded(flex: publicFlex, child: Container(
-                                        color: Theme.of(context).colorScheme.primary)),
-                                    if (homeFlex > 0)
-                                      Expanded(flex: homeFlex, child: Container(
-                                        color: Colors.lightBlueAccent)),
-                                    if (publicFlex == 0 && homeFlex == 0)
-                                      Expanded(child: Container(color: Colors.white12)),
-                                  ]),
-                                ),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final compact = constraints.maxWidth < 370;
+                            Widget bar = ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: SizedBox(
+                                height: 10,
+                                child: Row(children: [
+                                  if (publicFlex > 0)
+                                    Expanded(flex: publicFlex, child: Container(
+                                      color: Theme.of(context).colorScheme.primary)),
+                                  if (homeFlex > 0)
+                                    Expanded(flex: homeFlex, child: Container(
+                                      color: Colors.lightBlueAccent)),
+                                  if (publicFlex == 0 && homeFlex == 0)
+                                    Expanded(child: Container(color: AppTheme.border)),
+                                ]),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            SizedBox(width: 76, child: Text('${total.toStringAsFixed(2)} €',
-                              textAlign: TextAlign.end,
-                              style: const TextStyle(fontWeight: FontWeight.w600))),
-                          ],
+                            );
+                            if (compact) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(child: Text(label,
+                                        style: const TextStyle(color: AppTheme.textSecondary))),
+                                      Text('${total.toStringAsFixed(2)} €',
+                                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 7),
+                                  bar,
+                                ],
+                              );
+                            }
+                            return Row(
+                              children: [
+                                SizedBox(width: 54, child: Text(label,
+                                  style: const TextStyle(color: AppTheme.textSecondary))),
+                                Expanded(child: bar),
+                                const SizedBox(width: 12),
+                                SizedBox(width: 76, child: Text('${total.toStringAsFixed(2)} €',
+                                  textAlign: TextAlign.end,
+                                  style: const TextStyle(fontWeight: FontWeight.w600))),
+                              ],
+                            );
+                          },
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 54, top: 3),
-                          child: Text(
-                            '${(publicEnergy + (homeEnergyKnown ? homeEnergy : 0)).toStringAsFixed(1)} kWh erfasst · ${amount(month['sessions']).round()} öffentliche Ladevorgänge'
-                            '\nÖffentlich: ${publicCost.toStringAsFixed(2)} € · Zuhause: $homeCostLabel'
-                            '\nEnergie: öffentlich ${publicEnergy.toStringAsFixed(1)} kWh · zuhause ${homeEnergyKnown ? '${homeEnergy.toStringAsFixed(1)} kWh' : 'nicht erfasst'}',
-                            style: const TextStyle(color: Colors.white54, fontSize: 11)),
-                        ),
-                        if (comparison != null)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 54, top: 3),
-                            child: Text(comparison, style: TextStyle(color: comparisonColor, fontSize: 11)),
+                        Theme(
+                          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            tilePadding: const EdgeInsets.only(left: 48, right: 4),
+                            childrenPadding: const EdgeInsets.only(left: 54, right: 4, bottom: 8),
+                            dense: true,
+                            visualDensity: VisualDensity.compact,
+                            title: Text(
+                              '${(publicEnergy + (homeEnergyKnown ? homeEnergy : 0)).toStringAsFixed(1)} kWh · ${amount(month['sessions']).round()} öffentliche Ladevorgänge',
+                              style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                            children: [
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Öffentlich: ${publicCost.toStringAsFixed(2)} € · Zuhause: $homeCostLabel'
+                                  '\nEnergie: öffentlich ${publicEnergy.toStringAsFixed(1)} kWh · zuhause ${homeEnergyKnown ? '${homeEnergy.toStringAsFixed(1)} kWh' : 'nicht erfasst'}',
+                                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+                              ),
+                              if (comparison != null)
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Text(comparison,
+                                      style: TextStyle(color: comparisonColor, fontSize: 11)),
+                                  ),
+                                ),
+                            ],
                           ),
+                        ),
                         if (index != months.length - 1) const SizedBox(height: 3),
                       ],
                     ),
@@ -1215,7 +1844,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 const SizedBox(height: 8),
                 const Align(alignment: Alignment.centerLeft,
                   child: Text('Nicht erfasste Heimladekosten werden nicht als 0 € gewertet. Balken zeigen nur bekannte Kosten; Vergleiche berücksichtigen nur die erfassten Beträge.',
-                    style: TextStyle(color: Colors.white54, fontSize: 11))),
+                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 11))),
               ],
             ),
           ),
@@ -1225,6 +1854,8 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _exports(dynamic rawMonths) {
+    num amount(dynamic value) =>
+        value is num ? value : num.tryParse(value?.toString() ?? '') ?? 0;
     final months = rawMonths is List
         ? rawMonths.whereType<Map<String, dynamic>>()
             .where((month) => month['key'] is String).toList().reversed.toList()
@@ -1232,32 +1863,79 @@ class _DashboardPageState extends State<DashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
-          child: Text('Berichte & Export',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        ),
+        _sectionHeading('Berichte & Export'),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.table_chart_outlined),
-            title: const Text('Alle Ladevorgänge als CSV'),
-            subtitle: const Text('Excel-kompatibler Export der gesamten Ladehistorie'),
-            trailing: const Icon(Icons.copy),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            leading: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppTheme.accentTeal.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(Icons.table_chart_outlined, color: AppTheme.accentTeal),
+            ),
+            title: const Text('Ladehistorie exportieren',
+              style: TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: const Text('Alle Ladevorgänge als CSV für Excel'),
+            trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
             onTap: _showCsvExport,
           ),
         ),
+        if (months.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
+            child: Text('MONATSBERICHTE',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppTheme.textSecondary, letterSpacing: 1.1, fontWeight: FontWeight.w700)),
+          ),
         ...months.map((month) {
           final key = month['key'].toString();
+          final parts = key.split('-');
+          final label = parts.length == 2 ? '${parts[1]}.${parts[0]}' : key;
           final count = month['sessions'] is num ? (month['sessions'] as num).round() : 0;
           final energy = _numberLabel(month['kwh'], digits: 1, suffix: ' kWh');
+          final monthTotal = (amount(month['cost']) + amount(month['home_cost']))
+              .toStringAsFixed(2);
           return Card(
-            child: ListTile(
-              leading: const Icon(Icons.picture_as_pdf_outlined),
-              title: Text(key),
-              subtitle: Text('$count Ladevorgänge · $energy'),
-              trailing: Wrap(
-                spacing: 0,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+              child: Row(
                 children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentGreen.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: const Icon(Icons.calendar_month_outlined,
+                      color: AppTheme.accentGreen),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () => _showMonthlyReport(key),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 3),
+                            Text('$count Ladevorgänge · $energy',
+                              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                            const SizedBox(height: 3),
+                            Text('$monthTotal € erfasste Kosten',
+                              style: const TextStyle(fontSize: 12,
+                                color: AppTheme.accentGreen, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                   IconButton(
                     tooltip: 'Rechnungen als ZIP teilen',
                     onPressed: () => _shareInvoiceZip(key),
@@ -1266,19 +1944,26 @@ class _DashboardPageState extends State<DashboardPage> {
                   IconButton(
                     tooltip: 'Monatsbericht ansehen',
                     onPressed: () => _showMonthlyReport(key),
-                    icon: const Icon(Icons.picture_as_pdf_outlined),
+                    icon: const Icon(Icons.picture_as_pdf_outlined,
+                      color: AppTheme.accentTeal),
                   ),
                 ],
               ),
-              onTap: () => _showMonthlyReport(key),
             ),
           );
         }),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(4, 4, 4, 0),
-          child: Text('Monatsberichte enthalten die Kostenübersicht und vorhandene Rechnungen.',
-            style: TextStyle(color: Colors.white54, fontSize: 12)),
-        ),
+        if (months.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Text('Sobald Monatsdaten vorhanden sind, erscheinen deine Berichte hier.',
+              style: TextStyle(color: AppTheme.textSecondary)),
+          )
+        else
+          const Padding(
+            padding: EdgeInsets.fromLTRB(4, 4, 4, 0),
+            child: Text('Monatsbericht öffnen oder die zugehörigen Rechnungen gesammelt teilen.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          ),
       ],
     );
   }
@@ -1300,43 +1985,93 @@ class _DashboardPageState extends State<DashboardPage> {
                 onPressed: () => Navigator.pop(dialogContext),
               ),
             ),
-            body: ListView.builder(
-              itemCount: pages,
-              itemBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.all(8),
-                child: FutureBuilder<Uri>(
-                  future: _client.invoicePageUri(sessionId, index + 1),
-                  builder: (context, uriSnapshot) {
-                    if (uriSnapshot.hasError) {
-                      return const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('Seite konnte nicht geladen werden.'),
-                      );
-                    }
-                    if (!uriSnapshot.hasData) {
-                      return const SizedBox(
-                        height: 240,
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    return Image.network(
-                      uriSnapshot.data.toString(),
-                      headers: headers,
-                      fit: BoxFit.contain,
-                      loadingBuilder: (context, child, progress) => progress == null
-                          ? child
-                          : const SizedBox(
+            body: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppTheme.accentGreen.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.receipt_long_outlined,
+                            color: AppTheme.accentGreen),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('LADERECHNUNG',
+                                style: TextStyle(fontSize: 10, letterSpacing: 1.1,
+                                  color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 3),
+                              Text(site, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text('$pages ${pages == 1 ? 'Seite' : 'Seiten'}',
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
+                    itemCount: pages,
+                    itemBuilder: (context, index) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: FutureBuilder<Uri>(
+                        future: _client.invoicePageUri(sessionId, index + 1),
+                        builder: (context, uriSnapshot) {
+                          if (uriSnapshot.hasError) {
+                            return const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text('Seite konnte nicht geladen werden.'),
+                            );
+                          }
+                          if (!uriSnapshot.hasData) {
+                            return const SizedBox(
                               height: 240,
                               child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+                          return Image.network(
+                            uriSnapshot.data.toString(),
+                            headers: headers,
+                            fit: BoxFit.contain,
+                            loadingBuilder: (context, child, progress) => progress == null
+                                ? child
+                                : const SizedBox(
+                                    height: 240,
+                                    child: Center(child: CircularProgressIndicator()),
+                                  ),
+                            errorBuilder: (context, error, stack) => const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text('PDF-Seite konnte nicht geladen werden.'),
                             ),
-                      errorBuilder: (context, error, stack) => const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('PDF-Seite konnte nicht geladen werden.'),
+                          );
+                        },
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -1354,9 +2089,9 @@ class _DashboardPageState extends State<DashboardPage> {
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: color ?? Colors.white70),
+          Icon(icon, size: 18, color: color ?? AppTheme.textSecondary),
           const SizedBox(width: 10),
-          Expanded(child: Text(label, style: const TextStyle(color: Colors.white70))),
+          Expanded(child: Text(label, style: const TextStyle(color: AppTheme.textSecondary))),
           Flexible(child: Text(value, textAlign: TextAlign.end,
             style: TextStyle(fontWeight: FontWeight.w600, color: color))),
         ],
@@ -1364,8 +2099,17 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _vehicleHero(Map<String, dynamic>? status) {
+  Widget _vehicleHero(Map<String, dynamic>? status, Map<String, dynamic>? car) {
     final data = status ?? {};
+    final compactCard = MediaQuery.sizeOf(context).width < 390;
+    final vehicleName = car?['name']?.toString().trim();
+    final vehicleImage = car?['url']?.toString().trim();
+    final vehicleLabels = _map(car?['labels']) ?? {};
+    final vehicleDetails = [
+      vehicleLabels['generation'], vehicleLabels['trim'],
+      vehicleLabels['paint'], vehicleLabels['wheel'],
+    ].whereType<String>().map((value) => value.trim())
+      .where((value) => value.isNotEmpty).toList();
     final soc = data['soc'] is num ? (data['soc'] as num).toDouble() : null;
     final range = data['range'] is num ? (data['range'] as num).round() : null;
     final charging = data['charging'];
@@ -1377,103 +2121,275 @@ class _DashboardPageState extends State<DashboardPage> {
     final asOf = data['as_of']?.toString();
     final level = soc == null ? 0.0 : (soc / 100).clamp(0.0, 1.0).toDouble();
     final readingLabel = socSource == 'last'
-        ? 'Letzter bekannter Akkustand'
-        : socSource == 'live' ? 'Live-Akkustand' : 'Akkustand';
+        ? 'LETZTER BEKANNTER STAND'
+        : socSource == 'live' ? 'LIVE-FAHRZEUGDATEN' : 'AKKUSTAND';
     final readingColor = socSource == 'last'
-        ? Colors.orangeAccent
-        : socSource == 'live' ? Colors.greenAccent : Colors.white70;
+        ? AppTheme.warning
+        : socSource == 'live' ? AppTheme.accentGreen : AppTheme.textSecondary;
     final chargingText = charging == true ? 'Wird geladen'
         : charging == false ? 'Lädt derzeit nicht' : 'Ladestatus nicht verfügbar';
-    final chargingColor = charging == true ? Colors.greenAccent
-        : charging == false ? Colors.white70 : Colors.orangeAccent;
+    final chargingColor = charging == true
+        ? AppTheme.accentGreen
+        : charging == false ? AppTheme.textSecondary : AppTheme.warning;
 
     return Card(
       clipBehavior: Clip.antiAlias,
+      margin: const EdgeInsets.only(top: 4, bottom: 18),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+        side: const BorderSide(color: AppTheme.border),
+      ),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(18),
+        padding: EdgeInsets.fromLTRB(compactCard ? 15 : 20, compactCard ? 15 : 19,
+          compactCard ? 15 : 20, compactCard ? 14 : 18),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft, end: Alignment.bottomRight,
-            colors: [Color(0xFF203B39), Color(0xFF172326)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF172B30), Color(0xFF101820), Color(0xFF0D1218)],
           ),
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Icon(Icons.directions_car_filled_outlined, color: Colors.white70),
-            const SizedBox(width: 8),
-            const Expanded(child: Text('FAHRZEUGSTATUS',
-              style: TextStyle(fontSize: 12, letterSpacing: 1.3, color: Colors.white70))),
-            if (charging == true) const Icon(Icons.bolt, color: Colors.greenAccent),
-          ]),
-          if (soc != null) ...[
-            const SizedBox(height: 7),
-            Row(children: [
-              Icon(socSource == 'last' ? Icons.history : Icons.sensors,
-                size: 14,
-                color: readingColor),
-              const SizedBox(width: 6),
-              Expanded(child: Text(readingLabel,
-                style: TextStyle(fontSize: 12,
-                  color: readingColor))),
-            ]),
-            if (asOf != null)
-              Padding(
-                padding: const EdgeInsets.only(left: 20, top: 2),
-                child: Text('Messzeitpunkt: ${_dateTimeLabel(asOf)}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11)),
-              ),
-          ],
-          const SizedBox(height: 18),
-          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-            SizedBox(
-              width: 112, height: 112,
-              child: Stack(alignment: Alignment.center, children: [
-                SizedBox.expand(child: CircularProgressIndicator(
-                  value: level,
-                  strokeWidth: 9,
-                  backgroundColor: Colors.white12,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    soc == null ? Colors.white24 : Colors.greenAccent),
-                )),
-                Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(soc == null ? '–' : '${soc.round()}%',
-                    style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
-                  const Text('Akku', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                ]),
-              ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentTeal.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(color: AppTheme.accentTeal.withValues(alpha: 0.22)),
+                  ),
+                  child: const Icon(Icons.electric_car_outlined,
+                    color: AppTheme.accentTeal, size: 21),
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('FAHRZEUGSTATUS',
+                        style: TextStyle(fontSize: 11, letterSpacing: 1.5,
+                          color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 3),
+                      Text(vehicleName == null || vehicleName.isEmpty
+                          ? 'Dein Ladecockpit' : vehicleName,
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+                if (charging == true)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentGreen.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppTheme.accentGreen.withValues(alpha: 0.25)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.bolt, color: AppTheme.accentGreen, size: 15),
+                        SizedBox(width: 4),
+                        Text('LÄDT', style: TextStyle(fontSize: 10,
+                          letterSpacing: 0.8, color: AppTheme.accentGreen,
+                          fontWeight: FontWeight.w800)),
+                      ],
+                    ),
+                  ),
+              ],
             ),
-            const SizedBox(width: 22),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Reichweite', style: TextStyle(color: Colors.white70)),
-              const SizedBox(height: 3),
-              Text(range == null ? '–' : '$range km',
-                style: const TextStyle(fontSize: 27, fontWeight: FontWeight.bold)),
-              if (target != null)
-                Text('Ladelimit $target %', style: const TextStyle(color: Colors.white60, fontSize: 12)),
-            ])),
-          ]),
-          const SizedBox(height: 18),
-          Container(height: 1, color: Colors.white12),
-          const SizedBox(height: 12),
-          Row(children: [
-            Icon(charging == true ? Icons.ev_station : Icons.power_off,
-              color: chargingColor, size: 19),
-            const SizedBox(width: 8),
-            Expanded(child: Text(chargingText,
-              style: TextStyle(color: chargingColor, fontWeight: FontWeight.w600))),
-            if (power != null) Text('${power.toStringAsFixed(1)} kW',
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          ]),
-          if (charging == true && rate != null)
-            Padding(padding: const EdgeInsets.only(top: 7),
-              child: Text('Ladegeschwindigkeit: ${rate.toStringAsFixed(1)} % pro Stunde',
-                style: const TextStyle(color: Colors.white70, fontSize: 12))),
-          if (charging == true && finish is String)
-            Padding(padding: const EdgeInsets.only(top: 5),
-              child: Text('Voraussichtlich fertig: ${_dateTimeLabel(finish)}',
-                style: const TextStyle(color: Colors.white70, fontSize: 12))),
-        ]),
+            if (vehicleImage != null && vehicleImage.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                height: compactCard ? 82 : 108,
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.025),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.045)),
+                ),
+                child: Image.network(
+                  vehicleImage,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Icon(Icons.directions_car_filled_rounded,
+                      size: 42, color: AppTheme.textSecondary),
+                  ),
+                ),
+              ),
+            ],
+            if (vehicleDetails.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(vehicleDetails.join('  ·  '),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+            ],
+            SizedBox(height: compactCard ? 15 : 22),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 360;
+                final gaugeSize = compact ? 108.0 : 132.0;
+                final gaugeGap = compact ? 14.0 : 22.0;
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: gaugeSize,
+                      height: gaugeSize,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox.expand(
+                            child: CircularProgressIndicator(
+                              value: level,
+                              strokeWidth: compact ? 8 : 10,
+                              strokeCap: StrokeCap.round,
+                              backgroundColor: Colors.white.withValues(alpha: 0.07),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                soc == null ? AppTheme.border : AppTheme.accentGreen,
+                              ),
+                            ),
+                          ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(soc == null ? '–' : '${soc.round()}%',
+                                style: TextStyle(fontSize: compact ? 29 : 34,
+                                  height: 1.0, fontWeight: FontWeight.w800,
+                                  letterSpacing: -1.2)),
+                              const SizedBox(height: 5),
+                              const Text('BATTERIE',
+                                style: TextStyle(fontSize: 9, letterSpacing: 1.2,
+                                  color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: gaugeGap),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('REICHWEITE',
+                            style: TextStyle(fontSize: 10, letterSpacing: 1.3,
+                              color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 5),
+                          Text(range == null ? '–' : '$range km',
+                            maxLines: 1, softWrap: false,
+                            style: TextStyle(fontSize: compact ? 25 : 30,
+                              fontWeight: FontWeight.w800, letterSpacing: -1.0)),
+                          if (target != null) ...[
+                            const SizedBox(height: 8),
+                            Text('Ladelimit $target %',
+                              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            SizedBox(height: compactCard ? 14 : 20),
+            Container(height: 1, color: AppTheme.border),
+            SizedBox(height: compactCard ? 10 : 13),
+            Row(
+              children: [
+                Icon(
+                  charging == true ? Icons.ev_station_rounded : Icons.power_rounded,
+                  color: chargingColor, size: 19),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(chargingText,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: chargingColor,
+                      fontWeight: FontWeight.w700, fontSize: 13)),
+                ),
+                if (power != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text('${power.toStringAsFixed(1)} kW',
+                      maxLines: 1,
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                  ),
+                ],
+              ],
+            ),
+            if (soc != null) ...[
+              const SizedBox(height: 11),
+              Row(
+                children: [
+                  Icon(socSource == 'last' ? Icons.history_rounded : Icons.sensors_rounded,
+                    size: 14, color: readingColor),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(readingLabel,
+                    style: TextStyle(fontSize: 10, letterSpacing: 0.8,
+                      color: readingColor, fontWeight: FontWeight.w700))),
+                  if (asOf != null)
+                    Flexible(
+                      child: Text('Stand · ${_dateTimeLabel(asOf)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                        style: const TextStyle(fontSize: 10,
+                          color: AppTheme.textSecondary)),
+                    ),
+                ],
+              ),
+            ],
+            if (charging == true && (rate != null || finish is String)) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentGreen.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppTheme.accentGreen.withValues(alpha: 0.18)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.timelapse_rounded,
+                      color: AppTheme.accentGreen, size: 19),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (finish is String)
+                            Text('Voraussichtlich fertig · ${_dateTimeLabel(finish)}',
+                              style: const TextStyle(fontSize: 12,
+                                fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+                          if (rate != null) ...[
+                            if (finish is String) const SizedBox(height: 3),
+                            Text('Ladegeschwindigkeit · ${rate.toStringAsFixed(1)} % pro Stunde',
+                              style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -1489,56 +2405,119 @@ class _DashboardPageState extends State<DashboardPage> {
     final haError = setup['ha_error']?.toString();
     final syncError = sync['error']?.toString();
     final problem = sync['problem']?.toString();
+    final vehicleStatus = _map(_data?['status']) ?? {};
+    final socSource = vehicleStatus['soc_source']?.toString();
+    final hasVehicleReading = vehicleStatus['soc'] is num;
+    final vehicleDataLabel = !hasVehicleReading
+        ? 'Keine Fahrzeugdaten'
+        : socSource == 'live' ? 'Fahrzeugdaten live' : 'Letzter Stand';
+    final vehicleDataColor = !hasVehicleReading
+        ? AppTheme.textSecondary
+        : socSource == 'live' ? AppTheme.accentGreen : AppTheme.warning;
     final hasTeslaError = teslaError != null && teslaError.isNotEmpty;
     final hasSyncError = syncError != null && syncError.isNotEmpty;
 
     final teslaLabel = !teslaConfigured
-        ? 'Nicht eingerichtet'
+        ? 'Einrichtung fehlt'
         : teslaConnected ? 'Verbunden' : 'Nicht verbunden';
-    final teslaColor = teslaConnected ? Colors.greenAccent : Colors.orangeAccent;
+    final teslaColor = teslaConnected ? AppTheme.accentGreen : AppTheme.warning;
+    final teslaHint = !teslaConfigured
+        ? 'Tesla-Zugang muss zuerst auf dem Ladecockpit-Server eingerichtet werden.'
+        : !teslaConnected && !hasTeslaError
+            ? 'Der Tesla-Zugang ist eingerichtet, aktuell besteht aber keine Verbindung.'
+            : null;
     final haLabel = !haConfigured
-        ? 'Nicht eingerichtet (optional)'
+        ? 'Nicht eingerichtet · optional'
         : haOk ? 'Verbunden' : 'Nicht erreichbar';
-    final haColor = !haConfigured || haOk ? Colors.greenAccent : Colors.orangeAccent;
+    final haHint = haConfigured && !haOk && (haError == null || haError.isEmpty)
+        ? 'Home Assistant ist eingerichtet, antwortet aktuell aber nicht.'
+        : null;
+    final haColor = !haConfigured || haOk ? AppTheme.accentGreen : AppTheme.warning;
+    final hasProblem = !teslaConnected || (haConfigured && !haOk) ||
+        hasTeslaError || hasSyncError;
+    final summaryColor = hasProblem ? AppTheme.warning : AppTheme.accentGreen;
+    final summaryLabel = hasProblem ? 'Verbindung prüfen' : 'Alles verbunden';
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      margin: const EdgeInsets.only(bottom: 14),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: false,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          leading: Icon(
+            hasProblem ? Icons.cloud_off_outlined : Icons.cloud_done_outlined,
+            color: summaryColor,
+          ),
+          title: const Text('Verbindungen',
+            style: TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Row(
+            children: [
+              Container(width: 7, height: 7, decoration: BoxDecoration(
+                color: summaryColor, shape: BoxShape.circle)),
+              const SizedBox(width: 7),
+              Expanded(child: Text(summaryLabel,
+                style: TextStyle(color: summaryColor, fontSize: 12))),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: vehicleDataColor.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(vehicleDataLabel,
+                  style: TextStyle(color: vehicleDataColor, fontSize: 10,
+                    fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
           children: [
             Row(
               children: [
-                const Icon(Icons.sync, size: 19),
-                const SizedBox(width: 8),
-                Expanded(child: Text('Verbindung & Synchronisation',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
+                Expanded(child: _statusLine(
+                  teslaConnected ? Icons.check_circle : Icons.cloud_off,
+                  'Tesla', teslaLabel, color: teslaColor)),
                 IconButton(
                   tooltip: 'Status aktualisieren',
                   visualDensity: VisualDensity.compact,
                   onPressed: _loading ? null : _load,
-                  icon: const Icon(Icons.refresh, size: 20),
+                  icon: const Icon(Icons.refresh, size: 19),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            _statusLine(teslaConnected ? Icons.check_circle : Icons.cloud_off,
-              'Tesla', teslaLabel, color: teslaColor),
+            // Fahrzeugdaten-Frische steht bereits kompakt in der Zusammenfassung
+            // und im Fahrzeug-Header; hier bleiben nur Verbindungsdetails.
+            if (teslaHint != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 28, bottom: 5),
+                child: Text(teslaHint,
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11, height: 1.35)),
+              ),
             if (hasTeslaError)
               Padding(
                 padding: const EdgeInsets.only(left: 28, bottom: 5),
-                child: Text(teslaError, style: const TextStyle(color: Colors.orangeAccent, fontSize: 12)),
+                child: Text('Tesla-Fehler: $teslaError',
+                  style: const TextStyle(color: AppTheme.warning, fontSize: 12, height: 1.35)),
               ),
-            _statusLine(!haConfigured || haOk ? Icons.home_outlined : Icons.warning_amber_rounded,
+            _statusLine(
+              !haConfigured || haOk ? Icons.home_outlined : Icons.warning_amber_rounded,
               'Home Assistant', haLabel, color: haColor),
+            if (haHint != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 28, bottom: 5),
+                child: Text(haHint,
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11, height: 1.35)),
+              ),
             if (haConfigured && !haOk && haError != null && haError.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(left: 28, bottom: 5),
-                child: Text(haError, style: const TextStyle(color: Colors.orangeAccent, fontSize: 12)),
+                child: Text('Home-Assistant-Fehler: $haError',
+                  style: const TextStyle(color: AppTheme.warning, fontSize: 12, height: 1.35)),
               ),
             const Divider(height: 18),
             _statusLine(Icons.history, 'Letzte Synchronisation', _dateTimeLabel(sync['last'])),
-            _statusLine(Icons.download_done, 'Letzter erfolgreicher App-Abruf', _fetchTimeLabel(_lastSuccessfulFetch)),
+            _statusLine(Icons.download_done,
+              'Letzter erfolgreicher App-Abruf', _fetchTimeLabel(_lastSuccessfulFetch)),
             if (sync['next'] != null)
               _statusLine(Icons.schedule, 'Nächste Synchronisation', _dateTimeLabel(sync['next'])),
             if (hasSyncError)
@@ -1547,10 +2526,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.error_outline, color: Colors.orangeAccent, size: 18),
+                    const Icon(Icons.error_outline, color: AppTheme.warning, size: 18),
                     const SizedBox(width: 8),
                     Expanded(child: Text(syncError,
-                      style: const TextStyle(color: Colors.orangeAccent, fontSize: 12))),
+                      style: const TextStyle(color: AppTheme.warning, fontSize: 12))),
                   ],
                 ),
               ),
@@ -1558,8 +2537,113 @@ class _DashboardPageState extends State<DashboardPage> {
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text('Hinweis: $problem',
-                  style: const TextStyle(color: Colors.white60, fontSize: 12)),
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionHeading(String title, {IconData? icon, String? trailing}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(icon, color: AppTheme.accentGreen, size: 19),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: Text(title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold)),
+          ),
+          if (trailing != null)
+            Text(trailing,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppTheme.textSecondary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _tabIntro(String eyebrow, String title, String description, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 10, 2, 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppTheme.accentGreen.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(icon, color: AppTheme.accentGreen, size: 21),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(eyebrow.toUpperCase(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppTheme.accentGreen,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  )),
+                const SizedBox(height: 3),
+                Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                )),
+                const SizedBox(height: 3),
+                Text(description, style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondary,
+                  height: 1.35,
+                )),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _loadStatePanel({
+    required IconData icon,
+    required String title,
+    required String message,
+    required Color color,
+    Widget? action,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(top: 12, bottom: 14),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 13),
+            Text(title, style: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 5),
+            Text(message, style: const TextStyle(
+              color: AppTheme.textSecondary, height: 1.4)),
+            if (action != null) ...[
+              const SizedBox(height: 14),
+              action,
+            ],
           ],
         ),
       ),
@@ -1572,77 +2656,228 @@ class _DashboardPageState extends State<DashboardPage> {
     final last = _map(_data?['last_charge']);
     final totals = _map(_data?['totals']);
     final forecast = _map(_data?['forecast']);
+    final overviewMetrics = <Widget>[
+      if (month?['sessions'] != null || month?['count'] != null)
+        _metric('Ladevorgänge diesen Monat',
+          month?['sessions'] ?? month?['count']),
+      if (month?['total_cost'] != null || month?['cost'] != null)
+        _metric('Gesamtkosten diesen Monat',
+          month?['total_cost'] ?? month?['cost'], suffix: ' €'),
+      if (month?['kwh'] != null)
+        _metric('Unterwegs geladen', month?['kwh'], suffix: ' kWh'),
+      if (month?['avg_price'] != null)
+        _metric('Ø Preis unterwegs', month?['avg_price'], suffix: ' €/kWh'),
+    ];
+    const tabTitles = ['Cockpit', 'Ladevorgänge', 'Auswertungen'];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ladecockpit', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(tabTitles[_selectedTab],
+          style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
-          IconButton(onPressed: _load, tooltip: 'Aktualisieren', icon: const Icon(Icons.refresh)),
-          IconButton(onPressed: _settings, tooltip: 'Verbindung', icon: const Icon(Icons.settings_outlined)),
+          IconButton(
+            onPressed: _loading ? null : _load,
+            tooltip: _loading ? 'Wird aktualisiert' : 'Aktualisieren',
+            icon: _loading
+                ? const SizedBox(
+                    width: 19,
+                    height: 19,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+          ),
+          IconButton(onPressed: _settings, tooltip: 'Verbindung',
+            icon: const Icon(Icons.settings_outlined)),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
+      body: ColoredBox(
+        color: AppTheme.background,
+        child: RefreshIndicator(
+          onRefresh: _load,
+          child: ListView(
+          key: PageStorageKey('ladecockpit-tab-$_selectedTab'),
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
-            if (_loading) const LinearProgressIndicator(),
-            if (_error != null) Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Icon(Icons.cloud_off, color: Colors.orange),
-                  const SizedBox(height: 8),
-                  Text(_error!),
-                  const SizedBox(height: 8),
-                  Wrap(spacing: 8, runSpacing: 8, children: [
-                    FilledButton.icon(
-                      onPressed: _loading ? null : _load,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Erneut versuchen'),
+            if (_data != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+                child: Row(
+                  children: [
+                    if (_loading) ...[
+                      const SizedBox(
+                        width: 13,
+                        height: 13,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Daten werden aktualisiert',
+                        style: TextStyle(color: AppTheme.accentTeal, fontSize: 11,
+                          fontWeight: FontWeight.w600)),
+                    ] else ...[
+                      const Icon(Icons.check_circle_outline,
+                        color: AppTheme.accentGreen, size: 14),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _lastSuccessfulFetch == null
+                              ? 'Daten geladen'
+                              : 'Aktualisiert · ${_fetchTimeLabel(_lastSuccessfulFetch)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            if (_error != null)
+              _loadStatePanel(
+                icon: Icons.cloud_off_rounded,
+                title: _data == null ? 'Verbindung nicht möglich' : 'Aktualisierung fehlgeschlagen',
+                message: _data == null
+                    ? _error!
+                    : 'Die zuletzt geladenen Daten bleiben sichtbar. $_error',
+                color: AppTheme.warning,
+                action: Wrap(spacing: 8, runSpacing: 8, children: [
+                  FilledButton.icon(
+                    onPressed: _loading ? null : _load,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Erneut versuchen'),
+                  ),
+                  if (_data == null)
+                    OutlinedButton.icon(
+                      onPressed: _settings,
+                      icon: const Icon(Icons.settings_outlined),
+                      label: const Text('Verbindung einrichten'),
                     ),
-                    OutlinedButton(onPressed: _settings, child: const Text('Verbindung einrichten')),
-                  ]),
                 ]),
               ),
-            ),
-            if (_data != null) ...[
-              _connectionStatus(),
-              _vehicleHero(_map(_data?['status'])),
-              Text('ÜBERSICHT', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white60, letterSpacing: 1.4)),
-              const SizedBox(height: 8),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 1.65,
-                children: [
-                  _metric('Ladevorgänge diesen Monat', month?['sessions'] ?? month?['count']),
-                  _metric('Gesamtkosten diesen Monat', month?['total_cost'] ?? month?['cost'], suffix: ' €'),
-                  _metric('Unterwegs geladen', month?['kwh'], suffix: ' kWh'),
-                  _metric('Ø Preis unterwegs', month?['avg_price'], suffix: ' €/kWh'),
-                  if (_map(month?['home']) != null) ...[
-                    _metric('Zu Hause geladen', _map(month?['home'])?['kwh'], suffix: ' kWh'),
-                    _metric('Heimladekosten', _map(month?['home'])?['cost'], suffix: ' €'),
-                  ],
-                ],
+            if (_data == null && _loading && _error == null)
+              _loadStatePanel(
+                icon: Icons.electric_car_rounded,
+                title: 'Lade dein Cockpit',
+                message: 'Fahrzeug- und Ladedaten werden sicher vom Server abgerufen.',
+                color: AppTheme.accentGreen,
+                action: const LinearProgressIndicator(minHeight: 3),
               ),
+            if (_data != null && _selectedTab == 0) ...[
+              _vehicleHero(_map(_data?['status']), _map(_data?['car'])),
+              _connectionStatus(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 2, 4, 9),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('MONATSÜBERBLICK',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppTheme.accentGreen,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2)),
+                    const SizedBox(height: 3),
+                    Text('Ladeaktivität und Kosten auf einen Blick',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textSecondary)),
+                  ],
+                ),
+              ),
+              if (overviewMetrics.isNotEmpty)
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 9,
+                  mainAxisSpacing: 9,
+                  childAspectRatio: 1.85,
+                  children: overviewMetrics,
+                )
+              else
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(14),
+                    child: Text('Für diesen Monat liegen noch keine Kennzahlen vor.',
+                      style: TextStyle(color: AppTheme.textSecondary)),
+                  ),
+                ),
+              _homeChargingSummary(_map(month?['home'])),
               _section('Letzter Ladevorgang', last),
               _section('Gesamt', totals),
               _section('Ladeprognose', forecast),
               _section('Fahrzeug', _map(_data?['car'])),
-              _priceRadar(_data?['slots'], _data?['sites']),
+              const SizedBox(height: 12),
+              Text('Daten werden direkt von deinem Ladecockpit über Tailscale abgerufen.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondary)),
+            ],
+            if (_data != null && _selectedTab == 1) ...[
+              _tabIntro(
+                'Ladeaktivität',
+                'Deine Ladevorgänge',
+                'Finde frühere Ladungen und filtere nach Zeitraum, Ladenetz oder Standort.',
+                Icons.ev_station_rounded,
+              ),
               _sessions(_data?['sessions']),
+              if (_data?['sessions'] is! List || (_data?['sessions'] as List).isEmpty)
+                _loadStatePanel(
+                  icon: Icons.history_rounded,
+                  title: 'Noch keine Ladevorgänge',
+                  message: 'Sobald dein Ladecockpit Ladevorgänge erfasst hat, erscheinen sie hier.',
+                  color: AppTheme.textSecondary,
+                ),
+            ],
+            if (_data != null && _selectedTab == 2) ...[
+              _tabIntro(
+                'Kosten & Überblick',
+                'Deine Auswertungen',
+                'Behalte Ladepreise, Kostenentwicklung und deine Monatsberichte im Blick.',
+                Icons.insights_rounded,
+              ),
+              _priceRadar(_data?['slots'], _data?['sites']),
               _costDevelopment(_data?['monthly']),
               _exports(_data?['monthly']),
-              const SizedBox(height: 16),
-              Text('Daten werden direkt von deinem Ladecockpit über Tailscale abgerufen.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white54)),
             ],
             if (_data == null && !_loading && _error == null)
-              const Center(child: Padding(padding: EdgeInsets.all(32), child: Text('Noch keine Daten vorhanden.'))),
+              _loadStatePanel(
+                icon: Icons.directions_car_outlined,
+                title: 'Noch nicht verbunden',
+                message: 'Richte die Verbindung zu deinem Ladecockpit ein, um Fahrzeugstatus, Ladevorgänge und Kosten hier zu sehen.',
+                color: AppTheme.textSecondary,
+                action: OutlinedButton.icon(
+                  onPressed: _settings,
+                  icon: const Icon(Icons.settings_outlined),
+                  label: const Text('Verbindung einrichten'),
+                ),
+              ),
           ],
+          ),
         ),
+      ),
+      bottomNavigationBar: NavigationBar(
+        height: 72,
+        elevation: 8,
+        backgroundColor: AppTheme.surface,
+        indicatorColor: AppTheme.accentGreen.withValues(alpha: 0.16),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        selectedIndex: _selectedTab,
+        onDestinationSelected: (index) => setState(() => _selectedTab = index),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.directions_car_outlined),
+            selectedIcon: Icon(Icons.directions_car),
+            label: 'Cockpit',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.ev_station_outlined),
+            selectedIcon: Icon(Icons.ev_station),
+            label: 'Ladevorgänge',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.insights_outlined),
+            selectedIcon: Icon(Icons.insights),
+            label: 'Auswertung',
+          ),
+        ],
       ),
     );
   }

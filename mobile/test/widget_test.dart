@@ -1,9 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ladecockpit_mobile/main.dart';
 
 void main() {
-  testWidgets('shows the Ladecockpit app bar', (tester) async {
+  testWidgets('sets the Ladecockpit app title', (tester) async {
     await tester.pumpWidget(const LadecockpitApp());
-    expect(find.text('Ladecockpit'), findsOneWidget);
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.title, 'Ladecockpit');
   });
 }
