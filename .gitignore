@@ -21,3 +21,7 @@ venv/
 .idea/
 .DS_Store
 Thumbs.db
+# Android signing material never belongs in git
+*.jks
+*.keystore
+mobile/android/key.properties

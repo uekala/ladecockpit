@@ -55,3 +55,22 @@ flutter build ios --release --no-codesign
 ```
 
 An iOS archive suitable for TestFlight/App Store distribution still requires Apple signing credentials and provisioning. Android Play distribution requires a separately configured signing key.
+
+## Android updates and signing
+
+Android only installs an update over an existing app when both are signed with the same key and the build number (`versionCode`) is higher. CI regenerates the Android project with `flutter create` on every run; without its own configuration Flutter signs release builds with the runner's random debug key. That is why a new APK could not be installed over an installed one.
+
+How it works now:
+
+- `tool/configure-android-signing.py` signs release builds with a persistent upload key from GitHub Actions secrets. Passwords stay in environment variables; nothing is written to the repository. The keystore is deleted from the runner after the build.
+- The build number is the workflow run number + 1, so it rises with every build.
+- `tool/verify-apk-signature.sh` fails the build if a signed APK carries a debug key or, when the repository variable `ANDROID_SIGNING_CERT_SHA256` is set, any other certificate.
+- Without the secrets (for example in pull requests from Dependabot) the build still runs, carries the debug key and is marked as a test build that cannot be installed as an update. A manual run with **release** enabled fails instead.
+
+One-time setup (by the repository owner; never commit the key or paste it into a chat):
+
+1. `keytool -genkeypair -v -keystore ladecockpit-upload.jks -keyalg RSA -keysize 4096 -validity 10000 -alias upload`
+2. Store the keystore and both passwords safely (password manager plus an offline copy). Without this key no further updates are possible.
+3. `base64 -w0 ladecockpit-upload.jks | gh secret set ANDROID_KEYSTORE_BASE64`, then `gh secret set ANDROID_KEYSTORE_PASSWORD`, `gh secret set ANDROID_KEY_ALIAS` (value `upload`) and `gh secret set ANDROID_KEY_PASSWORD`.
+4. `keytool -list -v -keystore ladecockpit-upload.jks -alias upload | grep SHA256`, then `gh variable set ANDROID_SIGNING_CERT_SHA256 --body "<value>"`.
+5. Uninstall the currently installed app once; from then on every signed build installs as an update.
