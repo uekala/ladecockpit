@@ -209,7 +209,7 @@ if (error is HttpException) {
 if (error is FormatException) {
   return 'Der Server hat eine ungültige Antwort gesendet. Bitte später erneut versuchen.';
 }
-return 'Verbindung fehlgeschlagen.\\nDiagnose: ${error.runtimeType} · $error';
+return 'Verbindung fehlgeschlagen.\nDiagnose: ${error.runtimeType} · $error';
 }
 
 class DashboardPage extends StatefulWidget {
