@@ -25,7 +25,12 @@ done
 gh auth status >/dev/null 2>&1 || fail "gh ist nicht angemeldet (gh auth login)"
 gh repo view "$REPO" >/dev/null 2>&1 || fail "Repository $REPO nicht erreichbar"
 
-if gh secret list --repo "$REPO" | awk '{print $1}' | grep -qx ANDROID_KEYSTORE_BASE64; then
+# Erst die Abfrage selbst absichern: Ein API-/Berechtigungsfehler darf nicht wie
+# eine leere Secret-Liste behandelt werden, sonst könnte ein neuer Schlüssel
+# erzeugt und über den vorhandenen Update-Schlüssel geschrieben werden.
+SECRET_LIST="$(gh secret list --repo "$REPO")" \\
+  || fail "GitHub-Secrets für $REPO konnten nicht sicher abgefragt werden; abgebrochen."
+if printf '%s\\n' "$SECRET_LIST" | awk '{print $1}' | grep -qx ANDROID_KEYSTORE_BASE64; then
   fail "$REPO hat bereits einen Signaturschlüssel. Ein neuer Schlüssel würde Updates installierter Apps verhindern; abgebrochen."
 fi
 
