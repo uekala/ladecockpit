@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.5 – 2026-11-11
+
+- **Mobile app connects to any Ladecockpit in your own network.** Plain HTTP is accepted for Tailscale addresses (`100.64.0.0/10`, `*.ts.net`), home networks (`10.x`, `172.16–31.x`, `192.168.x`, `fc00::/7`) and local names (`*.local`, `*.home.arpa`, `*.internal`, names without a dot). Every other address needs HTTPS. Before, plain HTTP was only accepted for one fixed address.
+- **Docker without Home Assistant, documented.** The README walks through the standalone setup; Home Assistant stays optional throughout. Note for Docker users: since 0.12.3 a live installation needs `APP_PASSWORD` (HTTP Basic Auth) to start. Demo mode does not.
+- Mobile app: an unknown connection error shows its diagnosis on a line of its own.
+- Android builds are signed with a persistent key once it is set up in the repository, so a new APK installs as an update.
+- Bug reports and ideas have their own issue forms.
+- Dependencies updated: fastapi 0.161.1 → 0.162.4, fpdf2 2.8.9 → 2.9.0, pypdf 6.21.4 → 7.0.1, pypdfium2 5.14.0 → 5.15.2, tzdata ≥ 2026.6. GitHub Actions moved to versions that run on Node 24.
+
 ## 0.12.4 – 2026-11-09
 
 - **Month report and invoice view no longer get stuck on a broken invoice file.** A download that is not a PDF, or one that was cut short, is no longer kept; Ladecockpit fetches the invoice again the next time it is needed.

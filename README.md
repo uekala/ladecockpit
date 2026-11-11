@@ -32,10 +32,10 @@ Ladecockpit fetches your actual charging invoices from the Tesla Fleet API (bill
 - **Two looks.** *Classic*, calm and close to the car's own app, or *Dynamic*, a cockpit at night: the battery as a glowing ring that energy runs through while charging, light that follows the battery and the time of day, figures that count up, and a price radar that marks the time slot you are in.
 - **Your car, as it looks.** A picture of your Tesla from Tesla's own configurator, for every Model S, 3, X, Y and the Cybertruck: pick generation, trim, paint, wheels and view in the web app (the model is recognised from the VIN). The picture also goes to Home Assistant as `sensor.ladecockpit_car`.
 - **Works while the car is offline.** Keeps its own history of battery level and odometer, e.g. for a car parked without reception.
-- **Cheap on the Tesla API.** Live data comes from Home Assistant. Tesla is only asked for the charging history, about 150–200 requests per month (≈ $0.40).
+- **Cheap on the Tesla API.** Live data comes from Home Assistant. Tesla is only asked for the charging history, about 150–200 requests per month (≈ $0.40) – usually well within the monthly credit Tesla currently gives personal developer accounts.
 - **Read-only.** There is no code that sends commands to the car or wakes it.
 - **Runs standalone with Docker** on your NAS, mini-PC or home server. Home Assistant is optional and adds live vehicle data, sensors and automations.
-- **Private edition is free.** Self-hosted, no mandatory account, subscription or Ladecockpit cloud.
+- **Free and open source.** No price, subscription or ads, no mandatory account and no Ladecockpit cloud.
 - English and German, demo mode without any credentials, installable on the phone's home screen.
 
 ## How it works
@@ -67,6 +67,12 @@ Use this option if you want Ladecockpit in the Home Assistant sidebar and invoic
 4. Book the invoices with the blueprint (see [step 5](#5-book-invoices-in-home-assistant)).
 
 Run only one Ladecockpit at a time. Two instances would report every invoice twice. The [app documentation](ladecockpit-app/DOCS.md) has the details.
+
+## Mobile app (preview)
+
+A native app for Android and iOS shows the same dashboard as the web app and talks only to your own Ladecockpit – over Tailscale or your home network, no cloud in between. It is a preview: build it yourself for now. Plain HTTP is only accepted for private and Tailscale addresses; everything else needs HTTPS. Set a password first (`APP_PASSWORD` for Docker, *Mobile app password* in the Home Assistant app). Setup and build steps are in [mobile/README.md](mobile/README.md).
+
+On a phone, the web app itself also works well: open it in the browser and add it to the home screen.
 
 ## Quick start with Docker (demo)
 
@@ -256,7 +262,7 @@ If a MultiPass session is shown as Supercharger (or the other way round), please
 
 ## Costs
 
-The Tesla Fleet API may charge per request, depending on Tesla's current pricing, account credits and usage. Ladecockpit limits requests to charging history and invoice retrieval; actual costs depend on your sessions, sync interval and invoice availability. Do not treat any historical estimate as a guaranteed price. `API_BUDGET_REQUESTS` (default 1500) is a hard stop, and the app shows the current month's request count. The software itself is free; Tesla API charges, if any, are separate.
+The Tesla Fleet API may charge per request, depending on Tesla's current pricing, account credits and usage. Ladecockpit limits requests to charging history and invoice retrieval; actual costs depend on your sessions, sync interval and invoice availability. Do not treat any historical estimate as a guaranteed price. Tesla currently gives personal developer accounts a monthly credit, which usually covers Ladecockpit's 150–200 requests per month; check the usage page of your app on developer.tesla.com. `API_BUDGET_REQUESTS` (default 1500) is a hard stop, and the app shows the current month's request count. The software itself is free; Tesla API charges, if any, are separate.
 
 ## Privacy and security
 

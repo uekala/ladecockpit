@@ -27,7 +27,7 @@ jobs:
       run:
         working-directory: mobile
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -47,7 +47,7 @@ jobs:
               output_height=1024,
           )
           PY
-      - name: Allow cleartext HTTP only to the configured Tailscale host
+      - name: Allow cleartext HTTP at platform level (the app limits it to private networks)
         working-directory: .
         run: |
           python3 - <<'PY'
@@ -88,7 +88,7 @@ jobs:
           ):
               raise SystemExit("Release manifest is missing android.permission.INTERNET")
           print("Verified android.permission.INTERNET in the main release manifest")
-          print("App-level endpoint allowlist restricts cleartext HTTP to the configured Tailscale host and exact Tailscale IPv4 address")
+          print("The app itself allows cleartext HTTP only to private network and Tailscale addresses")
           PY
       - name: Use Gradle direct download host
         run: |
@@ -207,7 +207,7 @@ jobs:
       - name: Remove keystore from runner
         if: always()
         run: rm -f android/app/release-upload.jks
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ladecockpit-android-apk
           path: mobile/build/app/outputs/flutter-apk/app-release.apk
@@ -218,7 +218,7 @@ jobs:
       run:
         working-directory: mobile
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -242,7 +242,7 @@ jobs:
       - run: dart run flutter_launcher_icons
       - run: flutter analyze
       - run: flutter build ios --release --no-codesign
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ladecockpit-ios-build
           path: mobile/build/ios/iphoneos/Runner.app
