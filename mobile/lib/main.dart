@@ -421,15 +421,16 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  String _value(dynamic value) {
+  String _value(dynamic value, {int? digits}) {
     if (value == null) return '–';
+    if (value is num && digits != null) return value.toStringAsFixed(digits);
     if (value is double) return value.toStringAsFixed(1);
     if (value is Map || value is List) return '';
     return value.toString();
   }
 
-  Widget _metric(String title, dynamic value, {String suffix = ''}) {
-    final text = _value(value);
+  Widget _metric(String title, dynamic value, {String suffix = '', int? digits}) {
+    final text = _value(value, digits: digits);
     if (text.isEmpty) return const SizedBox.shrink();
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -2692,11 +2693,11 @@ class _DashboardPageState extends State<DashboardPage> {
           month?['sessions'] ?? month?['count']),
       if (month?['total_cost'] != null || month?['cost'] != null)
         _metric('Gesamtkosten diesen Monat',
-          month?['total_cost'] ?? month?['cost'], suffix: ' €'),
+          month?['total_cost'] ?? month?['cost'], suffix: ' €', digits: 2),
       if (month?['kwh'] != null)
         _metric('Unterwegs geladen', month?['kwh'], suffix: ' kWh'),
       if (month?['avg_price'] != null)
-        _metric('Ø Preis unterwegs', month?['avg_price'], suffix: ' €/kWh'),
+        _metric('Ø Preis unterwegs', month?['avg_price'], suffix: ' €/kWh', digits: 2),
     ];
     const tabTitles = ['Cockpit', 'Ladevorgänge', 'Auswertungen'];
 
