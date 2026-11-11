@@ -41,6 +41,13 @@ void main() {
       );
     });
 
+    test('puts the diagnosis of unknown errors on its own line', () {
+      final message = connectionErrorMessage(StateError('kaputt'));
+      expect(message, startsWith('Verbindung fehlgeschlagen.\nDiagnose: StateError'));
+      expect(message, contains('kaputt'));
+      expect(message, isNot(contains(r'\n')));
+    });
+
     test('keeps actionable authentication messages', () {
       const error = CockpitException('Anmeldung fehlgeschlagen. Passwort prüfen.');
       expect(connectionErrorMessage(error), error.message);
