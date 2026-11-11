@@ -8,6 +8,7 @@ Flutter client for the existing Ladecockpit FastAPI service.
 - Reads the existing `GET /api/dashboard` endpoint.
 - Connection URL and app password are stored using the platform secure-storage plugin.
 - Intended for private access over an existing Tailscale connection; no public port forwarding is required.
+- Automotive dark design: central theme tokens in `lib/theme/app_theme.dart`, rules and colour table in [`docs/mobile-automotive-design-system.md`](../docs/mobile-automotive-design-system.md). The dashboard is split into three tabs (Cockpit, Ladevorgänge, Auswertung) with a bottom navigation bar.
 
 ## Local development
 
