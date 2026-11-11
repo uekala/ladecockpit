@@ -1,0 +1,24 @@
+name: Idee vorschlagen / Suggest an idea
+description: Eine neue Funktion oder Verbesserung. / A new feature or improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idee / Idea
+      description: Was soll Ladecockpit können? / What should Ladecockpit do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Wofür? / What for?
+      description: In welcher Situation hilft dir das? / In which situation would it help you?
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installation
+      options:
+        - Home-Assistant-App / Home Assistant app
+        - Docker
+        - Handy-App / Mobile app

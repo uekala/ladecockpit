@@ -66,10 +66,40 @@ class CockpitClient {
     return cockpitRequestHeaders(await password, json: json);
   }
 
-  static const _allowedHttpHosts = {
-    'homeassistant.tail1966da.ts.net',
-    '100.78.111.102',
-  };
+  /// Unverschlüsseltes HTTP ist nur zu Adressen erlaubt, die nicht über das
+  /// offene Internet laufen: Tailscale (100.64.0.0/10, *.ts.net,
+  /// fd7a:115c:a1e0::/48), private Heimnetze (10/8, 172.16/12, 192.168/16,
+  /// fc00::/7), das Gerät selbst und lokale Namen (.local, .home.arpa,
+  /// .internal und Namen ohne Punkt). Alles andere braucht HTTPS.
+  static bool allowsCleartextHttp(String host) {
+    var name = host.toLowerCase();
+    if (name.startsWith('[') && name.endsWith(']')) {
+      name = name.substring(1, name.length - 1);
+    }
+    if (name.endsWith('.')) {
+      name = name.substring(0, name.length - 1);
+    }
+    if (name.isEmpty) return false;
+    final address = InternetAddress.tryParse(name);
+    if (address != null) return _isPrivateAddress(address);
+    if (name == 'localhost' || !name.contains('.')) return true;
+    return const ['.ts.net', '.local', '.home.arpa', '.internal'].any(name.endsWith);
+  }
+
+  static bool _isPrivateAddress(InternetAddress address) {
+    if (address.isLoopback) return true;
+    final b = address.rawAddress;
+    if (address.type == InternetAddressType.IPv4) {
+      return b[0] == 10 ||
+          (b[0] == 172 && b[1] >= 16 && b[1] <= 31) ||
+          (b[0] == 192 && b[1] == 168) ||
+          (b[0] == 100 && b[1] >= 64 && b[1] <= 127);
+    }
+    if (address.type == InternetAddressType.IPv6) {
+      return (b[0] & 0xfe) == 0xfc;
+    }
+    return false;
+  }
 
   Future<Uri> _endpoint(String path) async {
     final base = await serverUrl;
@@ -81,9 +111,9 @@ class CockpitClient {
         (root.scheme != 'http' && root.scheme != 'https')) {
       throw const CockpitException('Bitte eine gültige HTTP- oder HTTPS-Serveradresse eingeben.');
     }
-    if (root.scheme == 'http' && !_allowedHttpHosts.contains(root.host.toLowerCase())) {
+    if (root.scheme == 'http' && !allowsCleartextHttp(root.host)) {
       throw const CockpitException(
-        'Unverschlüsseltes HTTP ist aus Sicherheitsgründen nur für den festgelegten Tailscale-Server erlaubt. Bitte dessen MagicDNS-Adresse oder Tailscale-IP verwenden.',
+        'Unverschlüsseltes HTTP ist aus Sicherheitsgründen nur im eigenen Netz erlaubt (Tailscale oder Heimnetz). Für andere Adressen bitte HTTPS verwenden.',
       );
     }
     return root.resolve(path);

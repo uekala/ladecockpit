@@ -32,10 +32,10 @@ Ladecockpit holt deine echten Laderechnungen direkt über die Tesla Fleet API (a
 - **Zwei Designs.** *Klassisch*, ruhig und nah an der App des Autos, oder *Dynamisch*, ein Cockpit bei Nacht: der Akku als leuchtender Ring, durch den beim Laden Energie fließt, Licht, das dem Akku und der Tageszeit folgt, Zahlen, die hochzählen, und ein Preis-Radar, das das aktuelle Zeitfenster markiert.
 - **Dein Auto, wie es aussieht.** Ein Bild deines Teslas aus Teslas eigenem Konfigurator, für jedes Model S, 3, X, Y und den Cybertruck: Generation, Ausstattung, Farbe, Felgen und Ansicht in der Web-App wählen (das Modell wird aus der FIN erkannt). Das Bild geht als `sensor.ladecockpit_car` auch an Home Assistant.
 - **Funktioniert auch offline.** Speichert einen eigenen Verlauf von Akkustand und Kilometerstand, z. B. für ein Auto in der Tiefgarage ohne Empfang.
-- **Sparsam bei der Tesla-API.** Live-Daten kommen aus Home Assistant. Tesla wird nur nach der Ladehistorie gefragt, etwa 150–200 Abfragen im Monat (≈ 0,40 $).
+- **Sparsam bei der Tesla-API.** Live-Daten kommen aus Home Assistant. Tesla wird nur nach der Ladehistorie gefragt, etwa 150–200 Abfragen im Monat (≈ 0,40 $) – das liegt meist deutlich unter dem monatlichen Guthaben, das Tesla privaten Entwicklerkonten derzeit gibt.
 - **Nur lesend.** Es gibt keinen Code, der Befehle ans Auto schickt oder es weckt.
 - **Läuft eigenständig mit Docker** auf NAS, Mini-PC oder Homeserver. Home Assistant ist optional und ergänzt Live-Fahrzeugdaten, Sensoren und Automationen.
-- **Private Version dauerhaft kostenlos.** Self-hosted, ohne Pflichtkonto, Abo oder Ladecockpit-Cloud.
+- **Kostenlos und Open Source.** Kein Kaufpreis, kein Abo, keine Werbung, kein Pflichtkonto und keine Ladecockpit-Cloud.
 - Deutsch und Englisch, Demo-Modus ohne Zugangsdaten, als App auf den Handy-Startbildschirm legbar.
 
 ## So funktioniert es
@@ -67,6 +67,12 @@ Diese Variante ist sinnvoll, wenn du Ladecockpit in der Home-Assistant-Seitenlei
 4. Rechnungen mit dem Blueprint buchen (siehe [Schritt 5](#5-rechnungen-in-home-assistant-buchen)).
 
 Immer nur ein Ladecockpit gleichzeitig betreiben. Zwei Instanzen würden jede Rechnung doppelt melden. Details stehen in der [App-Dokumentation](ladecockpit-app/DOCS.md).
+
+## Handy-App (Vorschau)
+
+Eine eigene App für Android und iOS zeigt dasselbe Dashboard wie die Web-App und spricht nur mit deinem eigenen Ladecockpit – über Tailscale oder dein Heimnetz, ohne Cloud dazwischen. Sie ist eine Vorschau und wird vorerst selbst gebaut. Unverschlüsseltes HTTP nimmt sie nur für private und Tailscale-Adressen an, alles andere braucht HTTPS. Vorher ein Passwort setzen (`APP_PASSWORD` bei Docker, *Mobiles App-Passwort* in der Home-Assistant-App). Einrichtung und Build stehen in [mobile/README.md](mobile/README.md) (englisch).
+
+Auf dem Handy funktioniert auch die Web-App selbst gut: im Browser öffnen und zum Startbildschirm hinzufügen.
 
 ## Schnellstart mit Docker (Demo)
 
@@ -218,7 +224,7 @@ Wird eine MultiPass-Ladung als Supercharger angezeigt (oder umgekehrt), bitte ei
 
 ## Kosten
 
-Die Tesla Fleet API kann je nach aktueller Tesla-Preisliste, Kontoguthaben und Nutzung pro Abfrage Kosten verursachen. Ladecockpit begrenzt die Abfragen auf Ladehistorie und Rechnungsabruf; die tatsächlichen Kosten hängen unter anderem von Ladungen, Synchronisationsintervall und Verfügbarkeit der Rechnungen ab. Frühere Kostenschätzungen sind keine Preisgarantie. `API_BUDGET_REQUESTS` (Standard 1500) ist eine harte Obergrenze. Die App zeigt den Zählerstand des laufenden Monats. Die Software selbst ist kostenlos; mögliche Tesla-API-Kosten sind davon getrennt.
+Die Tesla Fleet API kann je nach aktueller Tesla-Preisliste, Kontoguthaben und Nutzung pro Abfrage Kosten verursachen. Ladecockpit begrenzt die Abfragen auf Ladehistorie und Rechnungsabruf; die tatsächlichen Kosten hängen unter anderem von Ladungen, Synchronisationsintervall und Verfügbarkeit der Rechnungen ab. Frühere Kostenschätzungen sind keine Preisgarantie. Tesla gibt privaten Entwicklerkonten derzeit ein monatliches Guthaben, das die 150–200 Abfragen von Ladecockpit im Monat üblicherweise abdeckt; den Verbrauch zeigt die Übersicht deiner App auf developer.tesla.com. `API_BUDGET_REQUESTS` (Standard 1500) ist eine harte Obergrenze. Die App zeigt den Zählerstand des laufenden Monats. Die Software selbst ist kostenlos; mögliche Tesla-API-Kosten sind davon getrennt.
 
 ## Datenschutz und Sicherheit
 

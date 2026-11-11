@@ -1,0 +1,48 @@
+name: Problem melden / Report a problem
+description: Etwas funktioniert nicht wie erwartet. / Something does not work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke fürs Melden! Bitte keine Tokens, Passwörter, VIN, Namen oder Adressen posten.
+        Thanks for reporting! Please do not post tokens, passwords, VINs, names or addresses.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Home-Assistant-App unter Info, bei Docker in der ersten Log-Zeile oder unter `/healthz`. / Home Assistant app under Info; for Docker in the first log line or at `/healthz`.
+      placeholder: "0.12.5"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installation
+      options:
+        - Home-Assistant-App / Home Assistant app
+        - Docker
+        - Handy-App / Mobile app
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: Was ist passiert? / What happened?
+      description: Und was hättest du erwartet? / And what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log
+      description: Die passenden Zeilen aus dem Log der App bzw. `docker compose logs`. / The matching lines from the app log or `docker compose logs`.
+      render: text
+  - type: textarea
+    id: raw
+    attributes:
+      label: Rohdaten von Tesla / Raw Tesla data (`/api/debug/raw`)
+      description: |
+        Nur bei falschen Beträgen oder falschem Netz (Supercharger/MultiPass): die betroffene Ladung aus `/api/debug/raw`, anonymisiert.
+        Only for wrong amounts or a wrong network (Supercharger/MultiPass): the affected session from `/api/debug/raw`, anonymised.
+      render: json

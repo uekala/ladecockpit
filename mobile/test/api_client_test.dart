@@ -103,14 +103,60 @@ void main() {
       );
     });
 
-    test('allows cleartext HTTP only to the configured Tailscale endpoints', () async {
-      for (final host in ['100.78.111.102', 'homeassistant.tail1966da.ts.net']) {
+    test('classifies private and public hosts for cleartext HTTP', () {
+      const private = [
+        '100.64.0.1',
+        '100.127.255.254',
+        'ladecockpit.example-tailnet.ts.net',
+        '10.0.0.5',
+        '172.16.0.1',
+        '172.31.255.254',
+        '192.168.1.20',
+        '127.0.0.1',
+        'localhost',
+        'homeassistant',
+        'homeassistant.local',
+        'nas.home.arpa',
+        'server.internal',
+        'fd7a:115c:a1e0::1',
+        '[fd7a:115c:a1e0::1]',
+        '::1',
+        'HomeAssistant.Local.',
+      ];
+      const public = [
+        'example.com',
+        '8.8.8.8',
+        '100.63.255.255',
+        '100.128.0.1',
+        '172.15.0.1',
+        '172.32.0.1',
+        '192.169.0.1',
+        '2001:db8::1',
+        'ts.net.example.com',
+        'local.example.com',
+        '',
+      ];
+      for (final host in private) {
+        expect(CockpitClient.allowsCleartextHttp(host), isTrue, reason: host);
+      }
+      for (final host in public) {
+        expect(CockpitClient.allowsCleartextHttp(host), isFalse, reason: host);
+      }
+    });
+
+    test('allows cleartext HTTP only inside private networks', () async {
+      for (final url in [
+        'http://100.101.102.103:8077',
+        'http://ladecockpit.example-tailnet.ts.net:8077',
+        'http://192.168.1.20:8077',
+        'http://[fd7a:115c:a1e0::1]:8077',
+      ]) {
         final api = CockpitClient(
           httpClient: MockClient((request) async {
-            expect(request.url.host, host);
+            expect(request.url.host, Uri.parse(url).host);
             return http.Response('{"mode":"live"}', 200);
           }),
-          serverUrlProvider: () async => 'http://$host:8077',
+          serverUrlProvider: () async => url,
           passwordProvider: () async => 'secret',
         );
         expect((await api.dashboard())['mode'], 'live');
@@ -118,7 +164,7 @@ void main() {
 
       final blocked = CockpitClient(
         httpClient: MockClient((request) async {
-          fail('HTTP request to a non-Tailscale host must be blocked');
+          fail('HTTP request to a public host must be blocked');
         }),
         serverUrlProvider: () async => 'http://example.com',
         passwordProvider: () async => 'secret',
@@ -128,7 +174,7 @@ void main() {
         throwsA(isA<CockpitException>().having(
           (error) => error.message,
           'message',
-          contains('nur für den festgelegten Tailscale-Server'),
+          contains('nur im eigenen Netz erlaubt'),
         )),
       );
     });

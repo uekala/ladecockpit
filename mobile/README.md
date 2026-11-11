@@ -30,6 +30,8 @@ http://100.x.y.z:8077
 
 Use the actual Tailscale IP or MagicDNS hostname and the port configured for the Ladecockpit service. Prefer HTTPS through Tailscale Serve or a reverse proxy. If you use plain HTTP, keep the endpoint reachable only inside your trusted Tailscale network; never expose it publicly.
 
+The app accepts plain HTTP only for addresses that do not cross the open internet: Tailscale (`100.64.0.0/10`, `*.ts.net`, `fd7a:115c:a1e0::/48`), private home networks (`10.x`, `172.16–31.x`, `192.168.x`, `fc00::/7`), and local names (`*.local`, `*.home.arpa`, `*.internal`, names without a dot). Every other address needs HTTPS.
+
 For a live standalone/Docker installation, `APP_PASSWORD` is required by default. Enter the same password in the app; it is stored in platform secure storage, not in source code.
 
 ### Home Assistant add-on: secure direct access
