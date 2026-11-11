@@ -70,10 +70,14 @@ How it works now:
 - `tool/verify-apk-signature.sh` fails the build if a signed APK carries a debug key or, when the repository variable `ANDROID_SIGNING_CERT_SHA256` is set, any other certificate.
 - Without the secrets (for example in pull requests from Dependabot) the build still runs, carries the debug key and is marked as a test build that cannot be installed as an update. A manual run with **release** enabled fails instead.
 
-One-time setup (by the repository owner; never commit the key or paste it into a chat):
+One-time setup and verification (by the repository owner; never commit the key or paste it into a chat):
 
-1. `keytool -genkeypair -v -keystore ladecockpit-upload.jks -keyalg RSA -keysize 4096 -validity 10000 -alias upload`
-2. Store the keystore and both passwords safely (password manager plus an offline copy). Without this key no further updates are possible.
-3. `base64 -w0 ladecockpit-upload.jks | gh secret set ANDROID_KEYSTORE_BASE64`, then `gh secret set ANDROID_KEYSTORE_PASSWORD`, `gh secret set ANDROID_KEY_ALIAS` (value `upload`) and `gh secret set ANDROID_KEY_PASSWORD`.
-4. `keytool -list -v -keystore ladecockpit-upload.jks -alias upload | grep SHA256`, then `gh variable set ANDROID_SIGNING_CERT_SHA256 --body "<value>"`.
-5. Uninstall the currently installed app once; from then on every signed build installs as an update.
+1. **Create the key and the secrets on your own computer** (Linux, macOS, or Git Bash/WSL on Windows; needs `keytool` from a JDK and a logged-in `gh`):
+   `bash mobile/tool/setup-android-signing.sh uekala/ladecockpit`
+   The script asks for a password, creates `ladecockpit-upload.jks` (or reuses an existing one), sets the four secrets and the variable `ANDROID_SIGNING_CERT_SHA256`. It refuses to run if the repository already has a key, because a second key would break updates.
+2. **Back up** the keystore file and the password (password manager plus an offline copy). Without them no further updates are possible.
+3. **First signed build:** `gh workflow run "Mobile app builds" --repo uekala/ladecockpit --ref main -f release=true`. In the run summary, the section "Android-Signatur" must show the certificate and "Abgleich mit `ANDROID_SIGNING_CERT_SHA256`: ok".
+4. Download the APK (`gh run download <run-id> --repo uekala/ladecockpit -n ladecockpit-android-apk`), uninstall the currently installed app once, then `adb install app-release.apk`.
+5. **Update test:** start the workflow a second time, download the new APK and run `adb install -r app-release.apk`. It must report `Success`; `adb shell dumpsys package com.example.ladecockpit | grep versionCode` shows the higher build number. Only then is the signing fix verified.
+
+Note: the Android application ID is currently `com.example.ladecockpit` (no `--org` in `flutter create`). It cannot change later without losing the update path, so decide on the final ID before the first signed build.
