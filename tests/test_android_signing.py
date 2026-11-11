@@ -23,12 +23,12 @@ FLUTTER_TEMPLATE = """plugins {
 }
 
 android {
-    namespace = "com.example.ladecockpit"
+    namespace = "io.github.uekala.ladecockpit"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     defaultConfig {
-        applicationId = "com.example.ladecockpit"
+        applicationId = "io.github.uekala.ladecockpit"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

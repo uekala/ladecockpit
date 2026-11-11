@@ -32,7 +32,9 @@ jobs:
         with:
           channel: stable
           cache: true
-      - run: flutter create --platforms=android,ios --project-name ladecockpit .
+      - run: flutter create --platforms=android,ios --org io.github.uekala --project-name ladecockpit .
+      - name: Check the Android application ID
+        run: grep -q 'applicationId = "io.github.uekala.ladecockpit"' android/app/build.gradle.kts
       - name: Generate branded Android and iOS launcher icons
         working-directory: .
         run: |
@@ -223,7 +225,9 @@ jobs:
         with:
           channel: stable
           cache: true
-      - run: flutter create --platforms=android,ios --project-name ladecockpit .
+      - run: flutter create --platforms=android,ios --org io.github.uekala --project-name ladecockpit .
+      - name: Check the iOS bundle identifier
+        run: grep -q 'PRODUCT_BUNDLE_IDENTIFIER = io.github.uekala.ladecockpit;' ios/Runner.xcodeproj/project.pbxproj
       - name: Generate branded Android and iOS launcher icons
         working-directory: .
         run: |
