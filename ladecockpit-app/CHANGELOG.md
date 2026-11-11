@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.6 – 2026-11-11
+
+- **Mobile app in a new look.** Dark cockpit design with the car and battery in focus, larger figures and clearer cards. Functions are unchanged.
+- Android signing: a script sets up the signing key on your own computer (`mobile/tool/setup-android-signing.sh`); `mobile/README.md` describes how to verify a signed update.
+- The web app, the Home Assistant app and the Docker image are unchanged.
+
 ## 0.12.5 – 2026-11-11
 
 - **Mobile app connects to any Ladecockpit in your own network.** Plain HTTP is accepted for Tailscale addresses (`100.64.0.0/10`, `*.ts.net`), home networks (`10.x`, `172.16–31.x`, `192.168.x`, `fc00::/7`) and local names (`*.local`, `*.home.arpa`, `*.internal`, names without a dot). Every other address needs HTTPS. Before, plain HTTP was only accepted for one fixed address.
