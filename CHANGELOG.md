@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.9 – 2026-11-12
+
+- **Mobile app: no more grey boxes.** The expandable cards (connections, last session, totals, charging forecast, vehicle, filters, sites, months) showed up as grey boxes and loaded nothing. They read their open/closed state from the same storage slot as the scroll position of the page and broke on it. Each card now has its own slot.
+- Mobile app: the figures in the month overview shrink instead of being cut off when a title takes two lines.
+- New tests render every tab and every card of the mobile app with demo data and with each part of the data missing.
+- The web app, the Home Assistant app and the Docker image are unchanged.
+
 ## 0.12.8 – 2026-11-12
 
 - **Mobile app tells you about updates.** On Android, the app asks GitHub once per start whether a newer release exists and shows a banner with *Update laden*; Android then offers to install the APK over the installed app. Only the public release information is fetched, no charging data is sent. The check can be switched off in the connection settings (*Nach Updates suchen*). Test builds and iOS never check.
