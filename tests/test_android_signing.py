@@ -177,3 +177,46 @@ def test_verify_rejects_other_certificate_and_debug_key(tmp_path):
     result = _verify(debug_env)
     assert result.returncode == 1
     assert "Debug-Schlüssel" in result.stdout
+
+
+@pytest.mark.parametrize("script", sorted(TOOL.glob("*.sh")), ids=lambda p: p.name)
+def test_shell_scripts_parse(script: Path) -> None:
+    subprocess.run(["bash", "-n", str(script)], check=True)
+
+
+def _stub(bin_dir: Path, name: str, body: str) -> None:
+    path = bin_dir / name
+    path.write_text("#!/usr/bin/env bash\n" + body, encoding="utf-8")
+    path.chmod(path.stat().st_mode | stat.S_IXUSR)
+
+
+def _run_setup(tmp_path: Path, secret_list: str, list_rc: int = 0) -> subprocess.CompletedProcess:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    _stub(bin_dir, "keytool", "exit 99\n")
+    _stub(bin_dir, "gh", (
+        'if [[ "$1 $2" == "secret list" ]]; then\n'
+        f"  printf '%b' {secret_list!r}\n"
+        f"  exit {list_rc}\n"
+        "fi\n"
+        'if [[ "$1" == "secret" || "$1" == "variable" ]]; then echo WROTE >> "$GH_LOG"; fi\n'
+        "exit 0\n"
+    ))
+    env = {**os.environ, "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+           "GH_LOG": str(tmp_path / "gh.log")}
+    return subprocess.run(["bash", str(TOOL / "setup-android-signing.sh"), "owner/repo"],
+                          cwd=tmp_path, env=env, input="", capture_output=True, text=True)
+
+
+def test_setup_refuses_when_key_already_exists(tmp_path: Path) -> None:
+    result = _run_setup(tmp_path, "ANDROID_KEY_ALIAS\t2026-11-11\nANDROID_KEYSTORE_BASE64\t2026-11-11\n")
+    assert result.returncode != 0
+    assert "bereits einen Signaturschlüssel" in result.stderr
+    assert not (tmp_path / "gh.log").exists()
+
+
+def test_setup_stops_when_secret_list_fails(tmp_path: Path) -> None:
+    result = _run_setup(tmp_path, "", list_rc=1)
+    assert result.returncode != 0
+    assert "nicht sicher abgefragt" in result.stderr
+    assert not (tmp_path / "gh.log").exists()
