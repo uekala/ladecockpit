@@ -113,6 +113,34 @@ void main() {
     expect(errors, isEmpty, reason: errors.join('\n'));
   });
 
+  testWidgets('cockpit cards show readable summaries and German numbers', (tester) async {
+    tester.view.physicalSize = const Size(1080, 16000);
+    tester.view.devicePixelRatio = 2.75;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final client = CockpitClient(
+      httpClient: MockClient((request) async => http.Response(
+            jsonEncode(_demo()),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          )),
+      serverUrlProvider: () async => 'http://192.168.1.20:8077',
+      passwordProvider: () async => 'secret',
+    );
+    await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.dark,
+      home: DashboardPage(client: client, updates: UpdateChecker(isAndroid: false)),
+    ));
+    await _settle(tester);
+    expect(find.text('Weiterstadt · 10.11. · 9,54 €'), findsOneWidget);
+    expect(find.text('11 Ladevorgänge · 368,5 kWh · 169,48 €'), findsOneWidget);
+    expect(find.text('Model 3 · Pearl White Multi-Coat · 18″ Photon'), findsOneWidget);
+    expect(find.text('82,02 €'), findsWidgets);
+    expect(find.text('0,47 €/kWh'), findsWidgets);
+    expect(find.textContaining('https://'), findsNothing);
+    expect(find.textContaining('demo-1010'), findsNothing);
+  });
+
   test('fixture is valid', () {
     expect(kIsWeb, isFalse);
     expect(_demo()['sessions'], isA<List>());
