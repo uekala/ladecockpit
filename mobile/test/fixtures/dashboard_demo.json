@@ -49,19 +49,19 @@
         "date_label": "Di., 17.11.",
         "basis_days": 13.5,
         "dist_day": 55.5,
-        "text": "Sp\u00e4testens Di., 17.11. laden \u2013 in etwa 5 Tagen.",
+        "text": "Spätestens Di., 17.11. laden – in etwa 5 Tagen.",
         "plan": {
             "date": "2026-11-16",
-            "when": "Mo., 16.11., 20\u201324 Uhr",
+            "when": "Mo., 16.11., 20–24 Uhr",
             "slot": "Abends",
-            "range": "20\u201324 Uhr",
+            "range": "20–24 Uhr",
             "site": "Mainz",
             "price": 0.3499,
             "average": 0.4805,
             "kwh": 32,
             "saving": 4.11,
             "sessions": 2,
-            "text": "Tipp: Mo., 16.11., 20\u201324 Uhr in Mainz laden \u2013 dort hast du bisher \u00d8 0,35 \u20ac/kWh gezahlt statt 0,48 \u20ac/kWh, rund 4,11 \u20ac weniger bei 32 kWh."
+            "text": "Tipp: Mo., 16.11., 20–24 Uhr in Mainz laden – dort hast du bisher Ø 0,35 €/kWh gezahlt statt 0,48 €/kWh, rund 4,11 € weniger bei 32 kWh."
         }
     },
     "last_charge": {
@@ -185,7 +185,7 @@
         {
             "id": "night",
             "label": "Nachts",
-            "range": "0\u20136 Uhr",
+            "range": "0–6 Uhr",
             "avg_price": null,
             "sessions": 0,
             "kwh": 0
@@ -193,7 +193,7 @@
         {
             "id": "morning",
             "label": "Morgens",
-            "range": "6\u201311 Uhr",
+            "range": "6–11 Uhr",
             "avg_price": 0.4962,
             "sessions": 2,
             "kwh": 63.2
@@ -201,7 +201,7 @@
         {
             "id": "midday",
             "label": "Mittags",
-            "range": "11\u201316 Uhr",
+            "range": "11–16 Uhr",
             "avg_price": 0.5391,
             "sessions": 3,
             "kwh": 99.4
@@ -209,7 +209,7 @@
         {
             "id": "afternoon",
             "label": "Nachmittags",
-            "range": "16\u201320 Uhr",
+            "range": "16–20 Uhr",
             "avg_price": 0.5242,
             "sessions": 4,
             "kwh": 115.2
@@ -217,7 +217,7 @@
         {
             "id": "evening",
             "label": "Abends",
-            "range": "20\u201324 Uhr",
+            "range": "20–24 Uhr",
             "avg_price": 0.3499,
             "sessions": 2,
             "kwh": 90.7
@@ -367,44 +367,44 @@
         "kwh": 58.8,
         "cost": 34.14,
         "avg_price": 0.5806,
-        "text": "MultiPass hat bisher an 2 Stationen funktioniert \u2013 Anbieter: EnBW, IONITY."
+        "text": "MultiPass hat bisher an 2 Stationen funktioniert – Anbieter: EnBW, IONITY."
     },
     "insights": [
         {
             "kind": "slot",
-            "text": "Abends (20\u201324 Uhr) l\u00e4dst du am g\u00fcnstigsten: \u00d8 0,35 \u20ac/kWh, 0,13 \u20ac/kWh unter deinem Schnitt."
+            "text": "Abends (20–24 Uhr) lädst du am günstigsten: Ø 0,35 €/kWh, 0,13 €/kWh unter deinem Schnitt."
         },
         {
             "kind": "site",
-            "text": "Am g\u00fcnstigsten warst du in Mainz (\u00d8 0,39 \u20ac/kWh), am teuersten in IONITY (\u00d8 0,59 \u20ac/kWh)."
+            "text": "Am günstigsten warst du in Mainz (Ø 0,39 €/kWh), am teuersten in IONITY (Ø 0,59 €/kWh)."
         },
         {
             "kind": "network",
-            "text": "MultiPass-Ladungen (2) kosten dich im Schnitt 0,58 \u20ac/kWh, am Supercharger sind es 0,46 \u20ac/kWh."
+            "text": "MultiPass-Ladungen (2) kosten dich im Schnitt 0,58 €/kWh, am Supercharger sind es 0,46 €/kWh."
         },
         {
             "kind": "credit",
-            "text": "Tesla-Gutschriften haben bisher 10,00 \u20ac \u00fcbernommen. Gezahlt hast du \u00d8 0,45 \u20ac/kWh, der Listenpreis lag bei \u00d8 0,48 \u20ac/kWh \u2013 Preisvergleiche nutzen den Listenpreis."
+            "text": "Tesla-Gutschriften haben bisher 10,00 € übernommen. Gezahlt hast du Ø 0,45 €/kWh, der Listenpreis lag bei Ø 0,48 €/kWh – Preisvergleiche nutzen den Listenpreis."
         },
         {
             "kind": "idle",
-            "text": "Blockiergeb\u00fchren bisher: 2,40 \u20ac bei 1 Ladung \u2013 rechtzeitig abstecken spart Geld."
+            "text": "Blockiergebühren bisher: 2,40 € bei 1 Ladung – rechtzeitig abstecken spart Geld."
         },
         {
             "kind": "speed",
-            "text": "Am 19.10. in Mainz hast du nur mit \u00d8 38 kW geladen, sonst bekommst du dort rund 81 kW. H\u00e4ufige Gr\u00fcnde: ein kalter Akku (den Supercharger vorher als Navi-Ziel eingeben, dann heizt das Auto vor) oder eine geteilte oder gedrosselte S\u00e4ule."
+            "text": "Am 19.10. in Mainz hast du nur mit Ø 38 kW geladen, sonst bekommst du dort rund 81 kW. Häufige Gründe: ein kalter Akku (den Supercharger vorher als Navi-Ziel eingeben, dann heizt das Auto vor) oder eine geteilte oder gedrosselte Säule."
         },
         {
             "kind": "reference",
-            "text": "Mit dem Referenzpreis von 0,49 \u20ac/kWh w\u00e4ren es diesen Monat 78,99 \u20ac gewesen \u2013 laut Rechnungen sind es 75,20 \u20ac (\u22123,79 \u20ac)."
+            "text": "Mit dem Referenzpreis von 0,49 €/kWh wären es diesen Monat 78,99 € gewesen – laut Rechnungen sind es 75,20 € (−3,79 €)."
         },
         {
             "kind": "fuel",
-            "text": "Die 645 km diesen Monat h\u00e4tten mit dem Verbrenner (7,2 L/100 km, 1,79 \u20ac/L) etwa 83,14 \u20ac gekostet \u2013 gespart: 1,10 \u20ac."
+            "text": "Die 645 km diesen Monat hätten mit dem Verbrenner (7,2 L/100 km, 1,79 €/L) etwa 83,14 € gekostet – gespart: 1,10 €."
         },
         {
             "kind": "climate",
-            "text": "Bei 0 bis 10 \u00b0C braucht dein Tesla rund 40 % mehr Akku pro 100 km als bei 10 bis 20 \u00b0C."
+            "text": "Bei 0 bis 10 °C braucht dein Tesla rund 40 % mehr Akku pro 100 km als bei 10 bis 20 °C."
         }
     ],
     "compare": {
@@ -831,11 +831,14 @@
         "auto": true,
         "labels": {
             "generation": "Model 3 (ab 2024)",
-            "trim": "Hinterradantrieb \u00b7 Maximale Reichweite",
+            "trim": "Hinterradantrieb · Maximale Reichweite",
             "paint": "Pearl White Multi-Coat",
-            "wheel": "18\u2033 Photon",
-            "view": "Schr\u00e4g von vorne"
+            "wheel": "18″ Photon",
+            "view": "Schräg von vorne"
         }
     },
-    "look": "classic"
+    "look": "classic",
+    "years": [
+        2026
+    ]
 }

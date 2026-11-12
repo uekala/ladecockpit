@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:ladecockpit_mobile/dashboard_cache.dart';
 import 'package:ladecockpit_mobile/main.dart';
 import 'package:ladecockpit_mobile/theme/app_theme.dart';
 import 'package:ladecockpit_mobile/update_check.dart';
@@ -141,8 +142,76 @@ void main() {
     expect(find.textContaining('demo-1010'), findsNothing);
   });
 
+  testWidgets('shows the last figures the phone kept when the server is unreachable', (tester) async {
+    tester.view.physicalSize = const Size(1080, 16000);
+    tester.view.devicePixelRatio = 2.75;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final cache = _MemoryCache()..stored = CachedDashboard(_demo(), DateTime(2026, 11, 12, 18, 30));
+    final client = CockpitClient(
+      httpClient: MockClient((request) async => throw const SocketException('Network is unreachable')),
+      serverUrlProvider: () async => 'http://192.168.1.20:8077',
+      passwordProvider: () async => 'secret',
+    );
+    await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.dark,
+      home: DashboardPage(client: client, updates: UpdateChecker(isAndroid: false), cache: cache),
+    ));
+    await _settle(tester);
+    expect(find.text('Keine Verbindung zum Server'), findsOneWidget);
+    expect(find.text('Letzter Stand · 12.11.2026, 18:30 Uhr'), findsOneWidget);
+    expect(find.text('Weiterstadt · 10.11. · 9,54 €'), findsOneWidget);
+    expect(cache.writes, 0);
+  });
+
+  testWidgets('keeps a copy after a successful load and lists the year overview', (tester) async {
+    tester.view.physicalSize = const Size(1080, 16000);
+    tester.view.devicePixelRatio = 2.75;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final cache = _MemoryCache();
+    final client = CockpitClient(
+      httpClient: MockClient((request) async => http.Response(
+            jsonEncode(_demo()),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          )),
+      serverUrlProvider: () async => 'http://192.168.1.20:8077',
+      passwordProvider: () async => 'secret',
+    );
+    await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.dark,
+      home: DashboardPage(client: client, updates: UpdateChecker(isAndroid: false), cache: cache),
+    ));
+    await _settle(tester);
+    expect(cache.writes, 1);
+    expect(cache.stored?.data['mode'], 'demo');
+    expect(find.textContaining('Letzter Stand'), findsNothing);
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Auswertung').first);
+    await _settle(tester);
+    expect(find.text('Jahresübersicht 2026'), findsOneWidget);
+  });
+
   test('fixture is valid', () {
     expect(kIsWeb, isFalse);
     expect(_demo()['sessions'], isA<List>());
   });
+}
+
+/// Stands in for the file on the phone.
+class _MemoryCache extends DashboardCache {
+  CachedDashboard? stored;
+  int writes = 0;
+
+  @override
+  Future<void> write(Map<String, dynamic> data, DateTime fetchedAt) async {
+    writes++;
+    stored = CachedDashboard(data, fetchedAt);
+  }
+
+  @override
+  Future<CachedDashboard?> read() async => stored;
+
+  @override
+  Future<void> clear() async => stored = null;
 }

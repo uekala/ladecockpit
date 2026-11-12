@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 export 'document_response.dart' show CockpitException;
+import 'dashboard_cache.dart';
 import 'document_response.dart';
 import 'format.dart';
 import 'theme/app_theme.dart';
@@ -172,6 +173,20 @@ class CockpitClient {
   Future<Uri> monthReportPageUri(String month, int page) =>
       _endpoint('/api/report/$month/page/$page.png');
 
+  Future<Map<String, dynamic>> yearReportPages(String year) async {
+    final uri = await _endpoint('/api/year/$year/pages');
+    final response = await _http.get(uri, headers: await _headers(json: true))
+        .timeout(const Duration(seconds: 60));
+    return parseDocumentPagesResponse(
+      response.statusCode,
+      response.body,
+      documentLabel: 'die Jahresübersicht',
+    );
+  }
+
+  Future<Uri> yearReportPageUri(String year, int page) =>
+      _endpoint('/api/year/$year/page/$page.png');
+
   Future<Map<String, dynamic>> dashboard() async {
     final uri = await _endpoint('/api/dashboard');
     final headers = await _headers(json: true);
@@ -238,11 +253,12 @@ return 'Verbindung fehlgeschlagen.\nDiagnose: ${error.runtimeType} · $error';
 }
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key, this.client, this.updates});
+  const DashboardPage({super.key, this.client, this.updates, this.cache});
 
-  /// Injectable for tests; the app uses the default client.
+  /// Injectable for tests; the app uses the defaults.
   final CockpitClient? client;
   final UpdateChecker? updates;
+  final DashboardCache? cache;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -251,6 +267,9 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   late final CockpitClient _client = widget.client ?? CockpitClient();
   late final UpdateChecker _updates = widget.updates ?? UpdateChecker();
+  late final DashboardCache _cache = widget.cache ?? DashboardCache();
+  // True while the figures on screen come from the phone's own copy.
+  bool _fromCache = false;
   Map<String, dynamic>? _data;
   String? _error;
   bool _loading = false;
@@ -313,14 +332,28 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() { _loading = true; _error = null; });
     try {
       final data = await _client.dashboard();
+      final now = DateTime.now();
       if (mounted) {
         setState(() {
           _data = data;
-          _lastSuccessfulFetch = DateTime.now();
+          _lastSuccessfulFetch = now;
+          _fromCache = false;
         });
       }
+      unawaited(_cache.write(data, now));
     } catch (e) {
-      if (mounted) setState(() => _error = connectionErrorMessage(e));
+      // Nothing on screen yet: show the last figures the phone has kept.
+      final cached = _data == null ? await _cache.read() : null;
+      if (mounted) {
+        setState(() {
+          _error = connectionErrorMessage(e);
+          if (cached != null) {
+            _data = cached.data;
+            _lastSuccessfulFetch = cached.fetchedAt;
+            _fromCache = true;
+          }
+        });
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -335,6 +368,7 @@ class _DashboardPageState extends State<DashboardPage> {
       return;
     }
     final hasSavedServer = urlController.text.trim().isNotEmpty;
+    final previousUrl = urlController.text.trim();
     final showUpdateSwitch = _updates.supported;
     var updateCheck = showUpdateSwitch && await _updates.enabled;
     if (!mounted) {
@@ -477,6 +511,11 @@ class _DashboardPageState extends State<DashboardPage> {
       if (saved == true) {
         if (showUpdateSwitch) await _updates.setEnabled(updateCheck);
         await _client.saveConnection(urlController.text, passwordController.text);
+        if (urlController.text.trim() != previousUrl) {
+          // Another server: its figures must not mix with the old ones.
+          await _cache.clear();
+          if (mounted) setState(() => _data = null);
+        }
         await _load();
       }
     } finally {
@@ -1573,9 +1612,11 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  Future<void> _showMonthlyReport(String month) async {
+  Future<void> _showMonthlyReport(String month, {bool year = false}) async {
     try {
-      final metadata = await _client.monthReportPages(month);
+      final metadata = year
+          ? await _client.yearReportPages(month)
+          : await _client.monthReportPages(month);
       final pages = metadata['pages'] as int;
       final headers = await _client._headers();
       if (!mounted) return;
@@ -1584,7 +1625,7 @@ class _DashboardPageState extends State<DashboardPage> {
         builder: (dialogContext) => Dialog.fullscreen(
           child: Scaffold(
             appBar: AppBar(
-              title: Text('Monatsbericht · $month'),
+              title: Text(year ? 'Jahresübersicht · $month' : 'Monatsbericht · $month'),
               leading: IconButton(
                 icon: const Icon(Icons.close),
                 onPressed: () => Navigator.pop(dialogContext),
@@ -1615,16 +1656,16 @@ class _DashboardPageState extends State<DashboardPage> {
                             color: AppTheme.accentTeal),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('MONATSAUSWERTUNG',
-                                style: TextStyle(fontSize: 10, letterSpacing: 1.1,
+                              Text(year ? 'JAHRESÜBERSICHT' : 'MONATSAUSWERTUNG',
+                                style: const TextStyle(fontSize: 10, letterSpacing: 1.1,
                                   color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
-                              SizedBox(height: 3),
-                              Text('Dein Ladebericht',
-                                style: TextStyle(fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 3),
+                              Text(year ? 'Deine Ladekosten im Jahr' : 'Dein Ladebericht',
+                                style: const TextStyle(fontWeight: FontWeight.w700)),
                             ],
                           ),
                         ),
@@ -1642,7 +1683,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     itemBuilder: (context, index) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: FutureBuilder<Uri>(
-                        future: _client.monthReportPageUri(month, index + 1),
+                        future: year
+                            ? _client.yearReportPageUri(month, index + 1)
+                            : _client.monthReportPageUri(month, index + 1),
                         builder: (context, snapshot) {
                           if (snapshot.hasError) {
                             return const Padding(
@@ -1994,7 +2037,8 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _exports(dynamic rawMonths) {
+  Widget _exports(dynamic rawMonths, dynamic rawYears) {
+    final years = rawYears is List ? rawYears.whereType<int>().toList() : <int>[];
     num amount(dynamic value) =>
         value is num ? value : num.tryParse(value?.toString() ?? '') ?? 0;
     final months = rawMonths is List
@@ -2024,6 +2068,26 @@ class _DashboardPageState extends State<DashboardPage> {
             onTap: _showCsvExport,
           ),
         ),
+        for (final year in years)
+          Card(
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+              leading: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppTheme.accentGreen.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(Icons.calendar_month_outlined, color: AppTheme.accentGreen),
+              ),
+              title: Text('Jahresübersicht $year',
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: const Text('Eine Zeile je Monat, z. B. für Steuer oder Arbeitgeber'),
+              trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+              onTap: () => _showMonthlyReport('$year', year: true),
+            ),
+          ),
         if (months.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
@@ -2869,14 +2933,16 @@ class _DashboardPageState extends State<DashboardPage> {
                         style: TextStyle(color: AppTheme.accentTeal, fontSize: 11,
                           fontWeight: FontWeight.w600)),
                     ] else ...[
-                      const Icon(Icons.check_circle_outline,
-                        color: AppTheme.accentGreen, size: 14),
+                      Icon(_fromCache ? Icons.history_rounded : Icons.check_circle_outline,
+                        color: _fromCache ? AppTheme.warning : AppTheme.accentGreen, size: 14),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           _lastSuccessfulFetch == null
                               ? 'Daten geladen'
-                              : 'Aktualisiert · ${_fetchTimeLabel(_lastSuccessfulFetch)}',
+                              : _fromCache
+                                  ? 'Letzter Stand · ${_fetchTimeLabel(_lastSuccessfulFetch)}'
+                                  : 'Aktualisiert · ${_fetchTimeLabel(_lastSuccessfulFetch)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
@@ -2889,10 +2955,13 @@ class _DashboardPageState extends State<DashboardPage> {
             if (_error != null)
               _loadStatePanel(
                 icon: Icons.cloud_off_rounded,
-                title: _data == null ? 'Verbindung nicht möglich' : 'Aktualisierung fehlgeschlagen',
+                title: _data == null ? 'Verbindung nicht möglich'
+                    : _fromCache ? 'Keine Verbindung zum Server' : 'Aktualisierung fehlgeschlagen',
                 message: _data == null
                     ? _error!
-                    : 'Die zuletzt geladenen Daten bleiben sichtbar. $_error',
+                    : _fromCache
+                        ? 'Du siehst den letzten Stand, den dein Handy gespeichert hat. $_error'
+                        : 'Die zuletzt geladenen Daten bleiben sichtbar. $_error',
                 color: AppTheme.warning,
                 action: Wrap(spacing: 8, runSpacing: 8, children: [
                   FilledButton.icon(
@@ -3004,7 +3073,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               _priceRadar(_data?['slots'], _data?['sites']),
               _costDevelopment(_data?['monthly']),
-              _exports(_data?['monthly']),
+              _exports(_data?['monthly'], _data?['years']),
             ],
             if (_data == null && !_loading && _error == null)
               _loadStatePanel(
