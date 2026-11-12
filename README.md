@@ -213,7 +213,7 @@ In the web app, **Connections & API costs** offers **Download backup** and **Res
 - The Tesla sign-in is not in the file. After moving to another device, sign in with Tesla there once.
 - Restoring replaces the charging history of the installation with the one in the backup. The file is checked first; a broken or foreign file changes nothing.
 - Sessions already reported to Home Assistant stay marked as reported and are not booked twice.
-- From the command line: `curl -u ladecockpit:PASSWORD -o backup.zip http://HOST:8077/api/backup.zip` and `curl -u ladecockpit:PASSWORD -H "Content-Type: application/zip" --data-binary @backup.zip http://HOST:8077/api/restore`.
+- For scripts: `GET /api/backup.zip` returns the file, `POST /api/restore` restores it (body: the ZIP file, `Content-Type: application/zip`).
 
 ## Year overview
 

@@ -197,7 +197,7 @@ In der Web-App unter **Verbindungen & API-Kosten** gibt es **Sicherung herunterl
 - Die Tesla-Anmeldung steckt nicht in der Datei. Nach einem Umzug auf ein anderes Gerät meldest du dich dort einmal neu bei Tesla an.
 - Beim Einspielen wird die Ladehistorie der Installation durch die aus der Sicherung ersetzt. Die Datei wird vorher geprüft; eine defekte oder fremde Datei ändert nichts.
 - Bereits an Home Assistant gemeldete Ladungen bleiben als gemeldet markiert und werden nicht doppelt gebucht.
-- Per Kommandozeile: `curl -u ladecockpit:PASSWORT -o sicherung.zip http://HOST:8077/api/backup.zip` und `curl -u ladecockpit:PASSWORT -H "Content-Type: application/zip" --data-binary @sicherung.zip http://HOST:8077/api/restore`.
+- Für Skripte: `GET /api/backup.zip` liefert die Datei, `POST /api/restore` spielt sie ein (Inhalt: die ZIP-Datei, `Content-Type: application/zip`).
 
 ### Jahresübersicht
 
