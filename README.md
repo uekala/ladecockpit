@@ -22,6 +22,9 @@ Ladecockpit fetches your actual charging invoices from the Tesla Fleet API (bill
 - **Battery health.** Range at 100 % over time, from the readings Ladecockpit keeps anyway, and the Supercharger share of your charging.
 - **Consumption by outside temperature.** How much more battery your car uses when it is cold.
 - **Monthly PDF.** A cover sheet with all sessions (net, VAT, gross, credits) plus all invoices of a month in one PDF – for tax or your employer.
+- **Year overview.** One page per year with a line per month: sessions, kWh, net, VAT, gross and credits – for a tax return or billing your employer.
+- **Backup.** Download charging history, readings and invoices in one file and restore them on another device. The Tesla sign-in is left out on purpose.
+- **Guided setup.** When the Tesla access is missing, the web app walks through the Tesla developer app in five steps, with the redirect address ready to copy.
 - **Charging power and efficiency.** Average kW per session and per Supercharger, kWh per 100 km/mi including charging losses.
 - **Slow sessions spotted.** A session that got far less power than you usually get at that Supercharger is marked, with the usual value and the common reasons (cold battery, shared or throttled stall).
 - **Reconciliation.** Compares your Home Assistant totals with the invoices.
@@ -71,6 +74,8 @@ Run only one Ladecockpit at a time. Two instances would report every invoice twi
 ## Mobile app (preview)
 
 A native app for Android and iOS shows the same dashboard as the web app and talks only to your own Ladecockpit – over Tailscale or your home network, no cloud in between. It is a preview. For Android, every [release](https://github.com/uekala/ladecockpit/releases) from 0.12.7 on has a signed APK (`ladecockpit-<version>.apk`) that installs as an update over the previous one. From 0.12.8 on, the Android app asks GitHub once per start whether a newer release exists and offers the download – no charging data is sent, and the check can be switched off in the connection settings. For iOS, build it yourself. Plain HTTP is only accepted for private and Tailscale addresses; everything else needs HTTPS. Set a password first (`APP_PASSWORD` for Docker, *Mobile app password* in the Home Assistant app). Setup and build steps are in [mobile/README.md](mobile/README.md).
+
+The app follows the language of your Ladecockpit (`APP_LANG`, German or English). When the server cannot be reached, for example because Tailscale is off, it shows the last figures the phone has kept, with date and time.
 
 On a phone, the web app itself also works well: open it in the browser and add it to the home screen.
 
@@ -200,6 +205,19 @@ content: >-
 | `avg_power_kw`, `typical_power_kw` | `47`, `118` – average power of this session and what you usually get at this site (`null` until there are two other sessions of at least 20 kWh there) |
 | `slow` | `true` when the session got less than 60 % of the usual power (only for sessions of at least 20 kWh that started below 50 %) |
 | `text` | `"18.0 kWh · €6.66 · €0.37/kWh · Oct 21, 18:18"` |
+
+## Backup and moving
+
+In the web app, **Connections & API costs** offers **Download backup** and **Restore backup**. The file (`ladecockpit-backup-YYYY-MM-DD.zip`) holds the charging history, the battery and odometer readings, the settings made in the web app and all invoices fetched so far.
+
+- The Tesla sign-in is not in the file. After moving to another device, sign in with Tesla there once.
+- Restoring replaces the charging history of the installation with the one in the backup. The file is checked first; a broken or foreign file changes nothing.
+- Sessions already reported to Home Assistant stay marked as reported and are not booked twice.
+- For scripts: `GET /api/backup.zip` returns the file, `POST /api/restore` restores it (body: the ZIP file, `Content-Type: application/zip`).
+
+## Year overview
+
+**Export** lists a **year overview** as PDF for every year with sessions (`/api/year/2026.pdf`): one line per month with sessions, kWh, net, VAT, gross and credits, followed by the total, the MultiPass share and charging at home. The invoices themselves are attached to the monthly reports.
 
 ## Monthly report
 

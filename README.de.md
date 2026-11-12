@@ -22,6 +22,9 @@ Ladecockpit holt deine echten Laderechnungen direkt über die Tesla Fleet API (a
 - **Akku-Gesundheit.** Reichweite bei 100 % im Zeitverlauf, aus den Messwerten, die Ladecockpit ohnehin speichert, dazu der Supercharger-Anteil.
 - **Verbrauch nach Außentemperatur.** Wie viel mehr Akku das Auto bei Kälte braucht.
 - **Monats-PDF.** Deckblatt mit allen Ladungen (netto, MwSt., brutto, Gutschriften) plus alle Rechnungen eines Monats in einer PDF – für Steuer oder Arbeitgeber.
+- **Jahresübersicht.** Eine Seite je Jahr mit einer Zeile pro Monat: Ladungen, kWh, netto, MwSt., brutto und Gutschriften – für die Steuererklärung oder die Abrechnung mit dem Arbeitgeber.
+- **Datensicherung.** Ladehistorie, Messwerte und Rechnungen in einer Datei herunterladen und auf einem anderen Gerät wieder einspielen. Die Tesla-Anmeldung ist bewusst nicht enthalten.
+- **Geführte Einrichtung.** Fehlt der Tesla-Zugang, führt die Web-App in fünf Schritten durch die Tesla-Developer-App, mit der Weiterleitungs-Adresse zum Kopieren.
 - **Ladeleistung und Verbrauch.** Ø kW pro Ladung und pro Supercharger, kWh pro 100 km/mi inklusive Ladeverlusten.
 - **Langsame Ladungen erkannt.** Hat eine Ladung deutlich weniger Leistung bekommen als sonst an diesem Supercharger, wird sie markiert, mit dem üblichen Wert und den häufigen Gründen (kalter Akku, geteilte oder gedrosselte Säule).
 - **Abgleich.** Vergleicht deine Summen in Home Assistant mit den Rechnungen.
@@ -71,6 +74,8 @@ Immer nur ein Ladecockpit gleichzeitig betreiben. Zwei Instanzen würden jede Re
 ## Handy-App (Vorschau)
 
 Eine eigene App für Android und iOS zeigt dasselbe Dashboard wie die Web-App und spricht nur mit deinem eigenen Ladecockpit – über Tailscale oder dein Heimnetz, ohne Cloud dazwischen. Sie ist eine Vorschau. Für Android hängt ab 0.12.7 an jedem [Release](https://github.com/uekala/ladecockpit/releases) eine signierte APK (`ladecockpit-<version>.apk`), die sich als Update über die vorige installieren lässt. Ab 0.12.8 fragt die Android-App beim Start einmal bei GitHub, ob es ein neueres Release gibt, und bietet den Download an – Ladedaten werden dabei nicht übertragen, und die Prüfung lässt sich in den Verbindungseinstellungen abschalten. Für iOS wird sie selbst gebaut. Unverschlüsseltes HTTP nimmt sie nur für private und Tailscale-Adressen an, alles andere braucht HTTPS. Vorher ein Passwort setzen (`APP_PASSWORD` bei Docker, *Mobiles App-Passwort* in der Home-Assistant-App). Einrichtung und Build stehen in [mobile/README.md](mobile/README.md) (englisch).
+
+Die App folgt der Sprache deines Ladecockpits (`APP_LANG`, Deutsch oder Englisch). Ist der Server nicht erreichbar, etwa weil Tailscale aus ist, zeigt sie den letzten Stand, den das Handy gespeichert hat, mit Datum und Uhrzeit.
 
 Auf dem Handy funktioniert auch die Web-App selbst gut: im Browser öffnen und zum Startbildschirm hinzufügen.
 
@@ -184,6 +189,19 @@ text_only: true
 content: >-
   <img src="{{ state_attr('sensor.ladecockpit_car', 'image') }}" width="100%">
 ```
+
+### Datensicherung und Umzug
+
+In der Web-App unter **Verbindungen & API-Kosten** gibt es **Sicherung herunterladen** und **Sicherung einspielen**. Die Datei (`ladecockpit-backup-JJJJ-MM-TT.zip`) enthält die Ladehistorie, die Messwerte von Akku und Kilometerstand, die Einstellungen aus der Web-App und alle bereits geholten Rechnungen.
+
+- Die Tesla-Anmeldung steckt nicht in der Datei. Nach einem Umzug auf ein anderes Gerät meldest du dich dort einmal neu bei Tesla an.
+- Beim Einspielen wird die Ladehistorie der Installation durch die aus der Sicherung ersetzt. Die Datei wird vorher geprüft; eine defekte oder fremde Datei ändert nichts.
+- Bereits an Home Assistant gemeldete Ladungen bleiben als gemeldet markiert und werden nicht doppelt gebucht.
+- Für Skripte: `GET /api/backup.zip` liefert die Datei, `POST /api/restore` spielt sie ein (Inhalt: die ZIP-Datei, `Content-Type: application/zip`).
+
+### Jahresübersicht
+
+Unter **Export** steht je Jahr mit Ladungen eine **Jahresübersicht** als PDF (`/api/year/2026.pdf`): eine Zeile pro Monat mit Ladungen, kWh, netto, MwSt., brutto und Gutschriften, darunter die Summe, der MultiPass-Anteil und das Laden zu Hause. Die Rechnungen selbst hängen an den Monatsberichten.
 
 ### Monatsbericht
 

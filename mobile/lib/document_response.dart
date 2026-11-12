@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'l10n.dart';
+
 class CockpitException implements Exception {
   const CockpitException(this.message);
   final String message;
@@ -16,8 +18,8 @@ Map<String, dynamic> parseDocumentPagesResponse(
   String? notFoundMessage,
 }) {
   if (statusCode == 401 || statusCode == 403) {
-    throw const CockpitException(
-      'Anmeldung fehlgeschlagen. Bitte App-Passwort und Zugriffsrechte prüfen.',
+    throw CockpitException(
+      tr('Anmeldung fehlgeschlagen. Bitte App-Passwort und Zugriffsrechte prüfen.'),
     );
   }
   if (statusCode == 404 && notFoundMessage != null) {
@@ -25,7 +27,7 @@ Map<String, dynamic> parseDocumentPagesResponse(
   }
   if (statusCode != 200) {
     throw CockpitException(
-      '$documentLabel konnte nicht geladen werden (HTTP $statusCode).',
+      trf('{0} konnte nicht geladen werden (HTTP {1}).', [documentLabel, statusCode]),
     );
   }
 
@@ -33,7 +35,7 @@ Map<String, dynamic> parseDocumentPagesResponse(
   if (decoded is! Map<String, dynamic> ||
       decoded['pages'] is! int ||
       (decoded['pages'] as int) < 1) {
-    throw CockpitException('Ungültige Antwort für $documentLabel.');
+    throw CockpitException(trf('Ungültige Antwort für {0}.', [documentLabel]));
   }
   return decoded;
 }
