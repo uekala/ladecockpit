@@ -686,6 +686,7 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
+          key: PageStorageKey<String>('section-$title'),
           initiallyExpanded: false,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -883,6 +884,7 @@ class _DashboardPageState extends State<DashboardPage> {
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ExpansionTile(
+              key: const PageStorageKey<String>('session-filter'),
               initiallyExpanded: false,
               leading: Icon(Icons.tune,
                 color: filtersActive ? Theme.of(context).colorScheme.primary : AppTheme.textSecondary),
@@ -1444,6 +1446,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           Card(
             child: ExpansionTile(
+              key: const PageStorageKey<String>('top-sites'),
               initiallyExpanded: false,
               leading: const Icon(Icons.ev_station, color: AppTheme.accentTeal),
               title: Text('${sites.length} Ladestandorte',
@@ -1892,6 +1895,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         Theme(
                           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                           child: ExpansionTile(
+                            key: PageStorageKey<String>('month-$key'),
                             tilePadding: const EdgeInsets.only(left: 48, right: 4),
                             childrenPadding: const EdgeInsets.only(left: 54, right: 4, bottom: 8),
                             dense: true,
@@ -2535,6 +2539,7 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
+          key: const PageStorageKey<String>('connections'),
           initiallyExpanded: false,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),

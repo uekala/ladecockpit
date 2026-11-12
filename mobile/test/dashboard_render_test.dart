@@ -21,9 +21,11 @@ Future<List<String>> _renderAll(WidgetTester tester, Map<String, dynamic> data) 
   final errors = <String>[];
   final previous = FlutterError.onError;
   FlutterError.onError = (details) {
-    final where = details.context?.toDescription() ?? '';
     final message = details.exceptionAsString().split('\n').first;
-    errors.add('$message ($where)');
+    final text = details.toString();
+    final at = RegExp(r'The relevant error-causing widget was:\s*\n\s*(.+)').firstMatch(text)?.group(1)?.trim() ??
+        details.context?.toDescription() ?? '';
+    errors.add('$message @ $at');
   };
   try {
     tester.view.physicalSize = const Size(1080, 2392);
