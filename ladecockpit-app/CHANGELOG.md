@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.7 – 2026-11-12
+
+- **Android app to download.** Every release now has a signed APK attached (`ladecockpit-<version>.apk` with its SHA-256 checksum). It installs as an update over the previous one, no GitHub account needed.
+- Mobile app: the app ID is now `io.github.uekala.ladecockpit` for Android and iOS. A test build with the old ID `com.example.ladecockpit` has to be uninstalled once.
+- Mobile app: the month overview shows costs and the average price with two decimals.
+- `mobile/tool/setup-android-signing.sh` stopped with a syntax error; fixed and covered by tests.
+- New screenshots in the README.
+- The web app, the Home Assistant app and the Docker image are unchanged.
+
 ## 0.12.6 – 2026-11-11
 
 - **Mobile app in a new look.** Dark cockpit design with the car and battery in focus, larger figures and clearer cards. Functions are unchanged.
