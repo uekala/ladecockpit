@@ -33,8 +33,14 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.47.9
+          flutter-version: 3.50.0
           cache: true
+      - name: Build with Java 21 (the Android tools of Flutter 3.50 need it)
+        run: |
+          test -n "$JAVA_HOME_21_X64"
+          echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME_21_X64/bin" >> "$GITHUB_PATH"
+          flutter config --jdk-dir "$JAVA_HOME_21_X64"
       - run: flutter create --platforms=android,ios --org io.github.uekala --project-name ladecockpit .
       - name: Check the Android application ID
         run: grep -q 'applicationId = "io.github.uekala.ladecockpit"' android/app/build.gradle.kts
@@ -301,7 +307,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.47.9
+          flutter-version: 3.50.0
           cache: true
       - run: flutter create --platforms=android,ios --org io.github.uekala --project-name ladecockpit .
       - name: Check the iOS bundle identifier
