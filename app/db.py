@@ -100,6 +100,65 @@ class DB:
             self._conn.executemany("DELETE FROM kv WHERE key=?", [(k,) for k in keys])
             self._conn.commit()
 
+    # --- backup and restore ---------------------------------------------------
+    # The Tesla sign-in stays with the installation: it is neither written to a backup nor
+    # replaced by one.
+    _LOCAL_KV = "key LIKE 'tesla\\_%' ESCAPE '\\' OR key = 'oauth_state'"
+    _TABLES = ("sessions", "readings", "api_calls")
+
+    def snapshot(self, target: Path) -> dict:
+        """A consistent copy of the database without the Tesla sign-in. Returns row counts."""
+        with self._lock:
+            dest = sqlite3.connect(target)
+            try:
+                self._conn.backup(dest)
+                dest.execute(f"DELETE FROM kv WHERE {self._LOCAL_KV}")
+                dest.commit()
+                dest.execute("PRAGMA journal_mode=DELETE")  # one plain file, no -wal beside it
+                dest.execute("VACUUM")
+                counts = {t: dest.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in self._TABLES}
+            finally:
+                dest.close()
+        return counts
+
+    def restore_from(self, source: Path) -> dict:
+        """Replace sessions, readings, the API counter and the settings with those of a snapshot,
+        in one transaction. Raises sqlite3.Error when the snapshot is not a Ladecockpit database."""
+        src = sqlite3.connect(source)
+        src.row_factory = sqlite3.Row
+        try:
+            if src.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                raise sqlite3.DatabaseError("integrity check failed")
+            tables = {r["name"] for r in src.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            if not {"kv", *self._TABLES} <= tables:
+                raise sqlite3.DatabaseError("not a Ladecockpit database")
+            plan = []
+            for table in self._TABLES:
+                theirs = [r["name"] for r in src.execute(f"PRAGMA table_info({table})")]
+                with self._lock:
+                    ours = {r["name"] for r in self._conn.execute(f"PRAGMA table_info({table})")}
+                cols = [c for c in theirs if c in ours]
+                if table == "sessions" and not {"session_id", "first_seen"} <= set(cols):
+                    raise sqlite3.DatabaseError("not a Ladecockpit database")
+                plan.append((table, cols, src.execute(f"SELECT {', '.join(cols)} FROM {table}").fetchall()))
+            kv = src.execute(f"SELECT key, value FROM kv WHERE NOT ({self._LOCAL_KV})").fetchall()
+        finally:
+            src.close()
+        with self._lock:
+            try:
+                for table, cols, rows in plan:
+                    self._conn.execute(f"DELETE FROM {table}")
+                    self._conn.executemany(
+                        f"INSERT INTO {table}({', '.join(cols)}) VALUES({', '.join('?' * len(cols))})",
+                        [tuple(r) for r in rows])
+                self._conn.execute(f"DELETE FROM kv WHERE NOT ({self._LOCAL_KV})")
+                self._conn.executemany("INSERT INTO kv(key, value) VALUES(?, ?)", [tuple(r) for r in kv])
+                self._conn.commit()
+            except sqlite3.Error:
+                self._conn.rollback()
+                raise
+        return {table: len(rows) for table, _cols, rows in plan}
+
     # --- charging sessions ---------------------------------------------------
     def upsert_session(self, s: dict, push_state: str) -> bool:
         """Insert or update a session. Returns True if it was new."""
