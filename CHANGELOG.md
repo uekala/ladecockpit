@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.0 – 2026-11-12
+
+- **Backup and restore.** In the web app under *Connections & API costs*: download charging history, readings and invoices as one file and restore them, for example on another device. The Tesla sign-in is left out on purpose. A file is checked before anything changes; sessions already reported to Home Assistant are not booked twice. Also as `GET /api/backup.zip` and `POST /api/restore`.
+- **Year overview.** One PDF page per year with a line per month – sessions, kWh, net, VAT, gross and credits – plus the total, the MultiPass share and charging at home. Under *Export* in the web app, in the reports of the mobile app and as `/api/year/2026.pdf`. `years` in `/api/dashboard` lists the years with sessions.
+- **Guided setup.** Without Tesla access, the web app walks through the Tesla developer app in five steps, with the redirect address ready to copy. The demo offers the same guide.
+- **Mobile app in English.** The app follows the language of the server (`APP_LANG`) and, before it has connected, the language of the phone. Numbers and dates follow as well.
+- **Mobile app without a connection.** When the server cannot be reached, the app shows the last figures the phone has kept, with date and time.
+
 ## 0.12.10 – 2026-11-12
 
 - **Mobile app: German number format.** Amounts and figures use a decimal comma and a dot between thousands: `65,10 €`, `0,40 €/kWh`, `1.234,5 kWh`.

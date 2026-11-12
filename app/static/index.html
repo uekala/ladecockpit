@@ -1210,6 +1210,24 @@ try {
       kwhCharged: "kWh charged", avgPerKwh: "avg per kWh", per100: "per 100 {unit}", sessionsWord: "sessions", feeWord: "fees",
       kwh100: "kWh per 100 {unit}", power: "Avg power", thKw: "kW", kwTip: "avg charging power {kw} kW",
       slowSub: "usually {typical}", slowNote: "slow – usually {typical} kW here",
+      pdfYear: "Year {year} (PDF, one line per month)",
+      backupTitle: "Backup", backupDownload: "Download backup", backupRestore: "Restore backup",
+      backupHint: "Charging history, readings and invoices in one file – without the Tesla sign-in. Restoring replaces the charging history of this installation.",
+      backupConfirm: "Replace everything with “{name}”? Tap again", backupRunning: "Restoring …",
+      backupDone: "Backup restored: {n} sessions, {inv} invoices.", backupFailed: "Restore failed: {e}",
+      demoToLive: "This is the demo with sample data. Set up your own Tesla access in five steps",
+      setupGuideTitle: "Set up your Tesla access in five steps",
+      setupGuideText: "Ladecockpit reads your charging history through your own Tesla developer app. You set it up once.",
+      setupStep1: "Sign in at <a href=\"https://developer.tesla.com\" target=\"_blank\" rel=\"noopener\">developer.tesla.com</a> and create an app. Tesla only answers apps whose domain is registered with a public key – the <a href=\"https://www.home-assistant.io/integrations/tesla_fleet/\" target=\"_blank\" rel=\"noopener\">Home Assistant guide for Tesla Fleet</a> walks through that part.",
+      setupStep2: "In the app, add this address under <strong>Allowed Redirect URI(s)</strong>:",
+      setupStep3: "Enable the scope <strong>Vehicle Charging Management</strong>. Tesla bundles the charging history into it; Ladecockpit only reads.",
+      setupStep4Addon: "Copy <strong>Client ID</strong> and <strong>Client Secret</strong> into Settings → Apps → Ladecockpit → Configuration.",
+      setupStep4Docker: "Copy <strong>Client ID</strong> and <strong>Client Secret</strong> into <code>.env</code> as <code>TESLA_CLIENT_ID</code> and <code>TESLA_CLIENT_SECRET</code>.",
+      setupStep5Addon: "Restart the app. This page then offers <strong>Sign in with Tesla</strong>.",
+      setupStep5Docker: "Restart the container. This page then offers <strong>Sign in with Tesla</strong>.",
+      setupCost: "Tesla gives personal developer accounts a monthly credit that usually covers Ladecockpit's 150–200 requests.",
+      copy: "Copy", copied: "Copied", copyFailed: "Please mark and copy the address yourself.",
+      setupProgress1: "Step 1 of 2 · Tesla app", setupProgress2: "Step 2 of 2 · Sign in",
       exportLabel: "Export", csvAll: "CSV – all sessions", zipMonth: "Invoices {month} (ZIP)", pdfMonth: "Report {month} (PDF, with invoices)",
       addonStepsTitle: "Sign in with Tesla in three steps",
       addonStep1: "Click <strong>Sign in with Tesla</strong> – Tesla opens in a new tab.",
@@ -1297,6 +1315,24 @@ try {
       kwhCharged: "kWh geladen", avgPerKwh: "Ø pro kWh", per100: "pro 100 {unit}", sessionsWord: "Ladungen", feeWord: "Gebühr",
       kwh100: "kWh pro 100 {unit}", power: "Ø Leistung", thKw: "kW", kwTip: "Ø Ladeleistung {kw} kW",
       slowSub: "sonst {typical}", slowNote: "langsam – sonst {typical} kW hier",
+      pdfYear: "Jahr {year} (PDF, eine Zeile je Monat)",
+      backupTitle: "Datensicherung", backupDownload: "Sicherung herunterladen", backupRestore: "Sicherung einspielen",
+      backupHint: "Ladehistorie, Messwerte und Rechnungen in einer Datei – ohne die Tesla-Anmeldung. Beim Einspielen wird die Ladehistorie dieser Installation ersetzt.",
+      backupConfirm: "Alles durch „{name}“ ersetzen? Nochmal tippen", backupRunning: "Wird eingespielt …",
+      backupDone: "Sicherung eingespielt: {n} Ladungen, {inv} Rechnungen.", backupFailed: "Einspielen fehlgeschlagen: {e}",
+      demoToLive: "Das ist die Demo mit Beispieldaten. Eigenen Tesla-Zugang in fünf Schritten einrichten",
+      setupGuideTitle: "Tesla-Zugang in fünf Schritten einrichten",
+      setupGuideText: "Ladecockpit liest deine Ladehistorie über deine eigene Tesla-Developer-App. Das richtest du einmal ein.",
+      setupStep1: "Auf <a href=\"https://developer.tesla.com\" target=\"_blank\" rel=\"noopener\">developer.tesla.com</a> anmelden und eine App anlegen. Tesla antwortet nur Apps, deren Domain mit einem Public Key registriert ist – die <a href=\"https://www.home-assistant.io/integrations/tesla_fleet/\" target=\"_blank\" rel=\"noopener\">Anleitung von Home Assistant zu Tesla Fleet</a> führt durch diesen Teil.",
+      setupStep2: "In der App unter <strong>Zulässige Weiterleitungs-URI(s)</strong> diese Adresse eintragen:",
+      setupStep3: "Den Scope <strong>Vehicle Charging Management</strong> (Ladeverwaltung) aktivieren. Tesla bündelt darin die Ladehistorie; Ladecockpit liest nur.",
+      setupStep4Addon: "<strong>Client ID</strong> und <strong>Client Secret</strong> unter Einstellungen → Apps → Ladecockpit → Konfiguration eintragen.",
+      setupStep4Docker: "<strong>Client ID</strong> und <strong>Client Secret</strong> als <code>TESLA_CLIENT_ID</code> und <code>TESLA_CLIENT_SECRET</code> in die <code>.env</code> eintragen.",
+      setupStep5Addon: "Die App neu starten. Danach steht hier <strong>Bei Tesla anmelden</strong>.",
+      setupStep5Docker: "Den Container neu starten. Danach steht hier <strong>Bei Tesla anmelden</strong>.",
+      setupCost: "Tesla gibt privaten Entwicklerkonten ein monatliches Guthaben, das die 150–200 Abfragen von Ladecockpit üblicherweise abdeckt.",
+      copy: "Kopieren", copied: "Kopiert", copyFailed: "Bitte die Adresse selbst markieren und kopieren.",
+      setupProgress1: "Schritt 1 von 2 · Tesla-App", setupProgress2: "Schritt 2 von 2 · Anmelden",
       exportLabel: "Export", csvAll: "CSV – alle Ladungen", zipMonth: "Rechnungen {month} (ZIP)", pdfMonth: "Monatsbericht {month} (PDF mit Rechnungen)",
       addonStepsTitle: "Mit Tesla verbinden in drei Schritten",
       addonStep1: "Auf <strong>Bei Tesla anmelden</strong> klicken – Tesla öffnet sich in einem neuen Tab.",
@@ -1653,12 +1689,37 @@ try {
 
   function setupPanel(d) {
     const st = d.setup || {};
+    const kind = st.addon ? "Addon" : "Docker";
+    const guide = () => `<p class="sub">${T("setupGuideText")}</p>
+        <ol class="steps">
+          <li>${T("setupStep1")}</li>
+          <li>${T("setupStep2")}
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px">
+              <span class="mono" id="redirect-uri" style="user-select:all;overflow-wrap:anywhere">${esc(st.redirect_uri || "")}</span>
+              <button class="btn" id="btn-copy-uri" type="button">${T("copy")}</button>
+            </div></li>
+          <li>${T("setupStep3")}</li>
+          <li>${T("setupStep4" + kind)}</li>
+          <li>${T("setupStep5" + kind)}</li>
+        </ol>
+        <p class="sub">${T("setupCost")}</p>`;
+    // The demo shows sample data: offer the way to the real thing, folded away.
+    if (d.mode === "demo" && !state.preview) {
+      return `<section class="panel"><details id="setup-details" ${state.setupOpen ? "open" : ""}>
+        <summary><strong>${T("demoToLive")}</strong></summary>
+        <div style="display:grid;gap:10px;margin-top:10px">${guide()}</div>
+      </details></section>`;
+    }
     if (offline() || (st.tesla_connected && !st.tesla_auth_error)) return "";
     if (!st.tesla_configured) {
-      return `<section class="panel"><span class="eyebrow">${T("setup")}</span><h2>${T("teslaMissing")}</h2><p class="sub">${T("teslaMissingText")}</p></section>`;
+      return `<section class="panel">
+        <span class="eyebrow">${T("setup")} · ${T("setupProgress1")}</span>
+        <h2>${T("setupGuideTitle")}</h2>
+        ${guide()}
+      </section>`;
     }
     return `<section class="panel">
-      <span class="eyebrow">${T("setup")}</span>
+      <span class="eyebrow">${T("setup")} · ${T("setupProgress2")}</span>
       <h2>${T("connectTitle")}</h2>
       <p class="sub">${T("connectText")}</p>
       ${st.addon ? `<ol class="steps">
@@ -2127,6 +2188,7 @@ try {
     return `<div class="exports">
       <span class="label">${T("exportLabel")}</span>
       <a href="api/export.csv" data-download target="_blank" rel="noopener">${T("csvAll")}</a>
+      ${(d.years || []).map((y) => `<a href="api/year/${y}.pdf" data-view="api/year/${y}" target="_blank" rel="noopener">${esc(T("pdfYear", { year: y }))}</a>`).join("")}
       ${months.map((m) => `<a href="api/report/${m.key}.pdf" data-view="api/report/${m.key}" target="_blank" rel="noopener">${esc(T("pdfMonth", { month: monthName(m.key) }))}</a>`).join("")}
       ${months.map((m) => `<a href="api/invoices/${m.key}.zip" data-download target="_blank" rel="noopener">${esc(T("zipMonth", { month: monthName(m.key) }))}</a>`).join("")}
     </div>`;
@@ -2177,6 +2239,15 @@ try {
         <div class="meter" role="img" aria-label="${a.calls ?? 0} / ${a.budget}"><i style="width:${usedPct}%"></i></div>
         <span class="sub">${esc(T("apiCost", { usd: num(a.cost_usd, 2), credit: num(a.credit_usd, 0) }))}</span>
       </div>
+      ${d.mode === "live" && !offline() && !state.preview ? `<div style="display:grid;gap:6px;border-top:1px solid var(--line);padding-top:12px">
+        <div style="display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;font-size:.88rem">
+          <span>${T("backupTitle")}</span>
+          <a class="link-btn" href="api/backup.zip" data-download target="_blank" rel="noopener">${T("backupDownload")}</a>
+          <button class="link-btn" id="btn-restore" type="button">${T("backupRestore")}</button>
+          <input type="file" id="restore-file" accept=".zip,application/zip" hidden>
+        </div>
+        <span class="sub">${T("backupHint")}</span>
+      </div>` : ""}
       ${connected && !offline() ? `<div><button class="link-btn" id="btn-logout" type="button">${T("disconnect")}</button></div>` : ""}
     </section>`;
   }
@@ -2480,6 +2551,56 @@ try {
         toast(err.message);
       }
     };
+    const setupDetails = $("#setup-details");
+    if (setupDetails) setupDetails.ontoggle = () => { state.setupOpen = setupDetails.open; };
+    const copyBtn = $("#btn-copy-uri");
+    if (copyBtn) copyBtn.onclick = async () => {
+      const text = $("#redirect-uri").textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = T("copied");
+        setTimeout(() => { copyBtn.textContent = T("copy"); }, 2500);
+      } catch {
+        // No clipboard access (e.g. inside the Home Assistant app): mark the address instead.
+        const range = document.createRange();
+        range.selectNodeContents($("#redirect-uri"));
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        toast(T("copyFailed"));
+      }
+    };
+    const restoreBtn = $("#btn-restore");
+    const restoreFile = $("#restore-file");
+    if (restoreBtn && restoreFile) {
+      let chosen = null;
+      let disarm;
+      const reset = () => { chosen = null; restoreFile.value = ""; restoreBtn.disabled = false; restoreBtn.textContent = T("backupRestore"); };
+      restoreFile.onchange = () => {
+        chosen = restoreFile.files[0] || null;
+        if (!chosen) return;
+        restoreBtn.textContent = T("backupConfirm", { name: chosen.name });
+        clearTimeout(disarm);
+        disarm = setTimeout(reset, 10000);
+      };
+      restoreBtn.onclick = async () => {
+        if (!chosen) { restoreFile.click(); return; }
+        clearTimeout(disarm);
+        const file = chosen;
+        restoreBtn.disabled = true;
+        restoreBtn.textContent = T("backupRunning");
+        try {
+          const r = await fetch("api/restore", { method: "POST", headers: { "Content-Type": "application/zip" }, body: file });
+          if (!r.ok) throw new Error(await errorText(r));
+          const res = await r.json();
+          toast(T("backupDone", { n: res.sessions, inv: res.invoices }));
+          await load();
+        } catch (e) {
+          toast(T("backupFailed", { e: e.message }));
+          reset();
+        }
+      };
+    }
     const logout = $("#btn-logout");
     if (logout) logout.onclick = async () => {
       if (logout.dataset.armed !== "1") {

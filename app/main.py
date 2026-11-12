@@ -5,8 +5,10 @@ import asyncio
 import base64
 import io
 import logging
+import os
 import re
 import secrets
+import tempfile
 import time
 import zipfile
 from contextlib import asynccontextmanager
@@ -16,9 +18,10 @@ from urllib.parse import parse_qs, urlparse
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
+from starlette.background import BackgroundTask
 from pydantic import BaseModel
 
-from . import __version__, carimage, demo, invoices, monthpdf, networks, pdfview, stations
+from . import __version__, analytics, backup, carimage, demo, invoices, monthpdf, networks, pdfview, stations, yearpdf
 from .analytics import build_dashboard
 from .export import sessions_csv
 from .config import settings
@@ -217,7 +220,8 @@ def _car(sessions: list[dict] | None = None) -> dict:
 @app.get("/api/dashboard")
 async def dashboard():
     if settings.demo:
-        return {**demo.build_demo(settings), "car": _car(), "look": _look()}
+        years = yearpdf.years(demo.demo_sessions(settings, datetime.now(timezone.utc)), settings.tz)
+        return {**demo.build_demo(settings), "car": _car(), "look": _look(), "years": years}
     now = datetime.now(timezone.utc)
     live = await _live() if ha.configured else {"available": False, "values": {}, "units": {}}
     meta = {
@@ -245,6 +249,7 @@ async def dashboard():
                         settings=settings, meta=meta, now=now)
     d["car"] = _car(sessions)
     d["look"] = _look()
+    d["years"] = yearpdf.years(sessions, settings.tz)
     return d
 
 
@@ -510,6 +515,92 @@ async def _month_report(month: str) -> tuple[bytes, str]:
                     raise HTTPException(502, str(e)) from e
     name = f"ladekosten-{month}.pdf" if settings.lang == "de" else f"charging-{month}.pdf"
     return monthpdf.merge(cover, pdfs), name
+
+
+# --- year overview: one page with a line per month ---------------------------------------------
+def _year_report(year: int) -> tuple[bytes, str]:
+    if not 2000 <= year <= 2100:
+        raise HTTPException(400, "Use a four-digit year.")
+    now = datetime.now(timezone.utc)
+    sessions = demo.demo_sessions(settings, now) if settings.demo else db.sessions()
+    if not any(yearpdf.in_year(s, year, settings.tz) for s in sessions):
+        raise HTTPException(404, "No sessions in this year.")
+    start = datetime(year, 1, 1, tzinfo=settings.tz)
+    end = datetime(year + 1, 1, 1, tzinfo=settings.tz)
+    home = None if settings.demo else analytics._home_sum(_home(start), start, end)
+    currency = next((s["currency"] for s in sessions if s.get("currency")), "EUR")
+    data = yearpdf.cover(year, sessions, lang=settings.lang, tz=settings.tz, currency=currency,
+                         home=home if home and home.get("kwh") else None, now=now)
+    return data, (f"ladekosten-{year}.pdf" if settings.lang == "de" else f"charging-{year}.pdf")
+
+
+@app.get("/api/year/{year}.pdf")
+async def year_report_pdf(year: int):
+    """Charging costs of one year: sessions, kWh, net, VAT, gross and credits per month."""
+    data, name = _year_report(year)
+    return Response(data, media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
+@app.get("/api/year/{year}/pages")
+async def year_report_pages(year: int):
+    data, name = _year_report(year)
+    return {"pages": pdfview.page_count(data), "name": name}
+
+
+@app.get("/api/year/{year}/page/{page}.png")
+async def year_report_page(year: int, page: int):
+    data, _ = _year_report(year)
+    return _page_response(data, page)
+
+
+# --- backup and restore -------------------------------------------------------------------------
+@app.get("/api/backup.zip")
+async def backup_download():
+    """Charging history, readings and cached invoices in one file – without the Tesla sign-in."""
+    if settings.demo:
+        raise HTTPException(404, "The demo has nothing to back up.")
+    handle, path = tempfile.mkstemp(prefix="ladecockpit-backup-", suffix=".zip")
+    target = Path(path)
+    try:
+        os.close(handle)
+        await asyncio.to_thread(backup.create, db, settings.data_dir, __version__, target)
+    except Exception:
+        target.unlink(missing_ok=True)
+        raise
+    name = f"ladecockpit-backup-{datetime.now(settings.tz):%Y-%m-%d}.zip"
+    return FileResponse(target, media_type="application/zip", filename=name,
+                        headers={"Cache-Control": "no-store"},
+                        background=BackgroundTask(target.unlink, missing_ok=True))
+
+
+@app.post("/api/restore")
+async def backup_restore(request: Request):
+    """Replace the charging history with a backup. The body is the ZIP file itself."""
+    if settings.demo:
+        raise HTTPException(400, "The demo cannot restore a backup.")
+    # A plain cross-site form cannot send this content type, so another website cannot post here.
+    if request.headers.get("content-type", "").split(";")[0].strip().lower() != "application/zip":
+        raise HTTPException(415, "Send the backup as application/zip.")
+    handle, path = tempfile.mkstemp(prefix="ladecockpit-restore-", suffix=".zip")
+    source = Path(path)
+    try:
+        size = 0
+        with open(handle, "wb") as out:
+            async for chunk in request.stream():
+                size += len(chunk)
+                if size > backup.MAX_UPLOAD:
+                    raise HTTPException(413, "The backup is too large.")
+                out.write(chunk)
+        try:
+            result = await asyncio.to_thread(backup.restore, db, settings.data_dir, source)
+        except backup.BackupError as e:
+            raise HTTPException(400, str(e)) from e
+    finally:
+        source.unlink(missing_ok=True)
+    sync.last_sync = db.kv_get("last_sync")
+    _report_cache.clear()
+    log.info("Backup restored: %s sessions, %s invoices", result["sessions"], result["invoices"])
+    return {"ok": True, **result}
 
 
 @app.get("/api/export.csv")
