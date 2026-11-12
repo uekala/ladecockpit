@@ -32,7 +32,7 @@ Future<List<String>> _renderAll(WidgetTester tester, Map<String, dynamic> data) 
     if (message.contains('overflowed') && !_printedOverflow) {
       _printedOverflow = true;
       // ignore: avoid_print
-      print('OVERFLOW-DETAILS\n${details.toDiagnosticsNode().toStringDeep()}\nEND-OVERFLOW-DETAILS');
+      print(details.toDiagnosticsNode().toStringDeep().split('\n').take(8).join('\n'));
     }
   };
   try {

@@ -535,19 +535,23 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '$text$suffix',
-                maxLines: 1,
-                style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 23,
-                  height: 1.05,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.7,
+            const SizedBox(height: 6),
+            // Flexible + FittedBox: the value shrinks instead of overflowing
+            // when a long title takes two lines on a narrow phone.
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '$text$suffix',
+                  maxLines: 1,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 23,
+                    height: 1.05,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.7,
+                  ),
                 ),
               ),
             ),
