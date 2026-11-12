@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.10 – 2026-11-12
+
+- **Mobile app: German number format.** Amounts and figures use a decimal comma and a dot between thousands: `65,10 €`, `0,40 €/kWh`, `1.234,5 kWh`.
+- **Mobile app: clearer cards in the cockpit.** *Letzter Ladevorgang* shows site, date and amount under its title instead of an internal ID, *Gesamt* shows sessions, energy and costs, *Ladeprognose* the forecast and *Fahrzeug* model, paint and wheels. Opened, the cards list only what means something: no internal IDs or image addresses, and fees and credits only when there are any. The network reads Supercharger or MultiPass.
+- Mobile app: the forecast text was replaced by a dash when it contained a capital T; fixed.
+- Mobile app: the hints under the server address and the password are no longer cut off.
+- The web app, the Home Assistant app and the Docker image are unchanged.
+
 ## 0.12.9 – 2026-11-12
 
 - **Mobile app: no more grey boxes.** The expandable cards (connections, last session, totals, charging forecast, vehicle, filters, sites, months) showed up as grey boxes and loaded nothing. They read their open/closed state from the same storage slot as the scroll position of the page and broke on it. Each card now has its own slot.

@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 export 'document_response.dart' show CockpitException;
 import 'document_response.dart';
+import 'format.dart';
 import 'theme/app_theme.dart';
 import 'update_check.dart';
 
@@ -404,7 +405,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     prefixIcon: Icon(Icons.link_rounded),
                     labelText: 'Serveradresse',
                     hintText: 'https://ladecockpit.example:8077',
-                    helperText: 'Tailscale-IP oder MagicDNS-Adresse inklusive Port',
+                    helperText: 'Adresse mit Port, z. B. über Tailscale oder im Heimnetz',
+                    helperMaxLines: 2,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -426,6 +428,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     prefixIcon: Icon(Icons.lock_outline_rounded),
                     labelText: 'App-Passwort',
                     helperText: 'Optional – nur wenn dein Server ein Passwort verlangt',
+                    helperMaxLines: 2,
                   ),
                 ),
                 if (showUpdateSwitch) ...[
@@ -484,8 +487,9 @@ class _DashboardPageState extends State<DashboardPage> {
 
   String _value(dynamic value, {int? digits}) {
     if (value == null) return '–';
-    if (value is num && digits != null) return value.toStringAsFixed(digits);
-    if (value is double) return value.toStringAsFixed(1);
+    if (value is num && digits != null) return formatNumber(value, digits);
+    if (value is double) return formatNumber(value, 1);
+    if (value is int) return formatNumber(value, 0);
     if (value is Map || value is List) return '';
     return value.toString();
   }
@@ -619,6 +623,7 @@ class _DashboardPageState extends State<DashboardPage> {
       'plan_saving': 'Mögliche Ersparnis', 'plan_site': 'Empfohlener Standort',
       'plan_date': 'Empfohlenes Datum', 'model': 'Modell', 'trim': 'Ausstattung',
       'paint': 'Farbe', 'wheels': 'Felgen', 'vin': 'Fahrzeug-ID',
+      'generation': 'Baureihe',
       'range_at_100': 'Reichweite bei 100 %', 'change_pct': 'Veränderung',
       'since': 'Seit', 'samples': 'Messwerte', 'dc_share': 'Supercharger-Anteil',
       'per_100': 'Kosten pro 100 km', 'kwh_per_100': 'Verbrauch pro 100 km',
@@ -648,7 +653,7 @@ class _DashboardPageState extends State<DashboardPage> {
               key == 'dist_day' || key == 'kwh_per_100'
               ? 1
               : value is int || value == value.roundToDouble() ? 0 : 1;
-      final number = value.toStringAsFixed(digits);
+      final number = formatNumber(value, digits);
       if (percentKeys.contains(key)) return '$number %';
       if (energyKeys.contains(key)) return '$number kWh';
       if (moneyKeys.contains(key)) return '$number €';
@@ -664,19 +669,55 @@ class _DashboardPageState extends State<DashboardPage> {
       return number;
     }
     if (value is bool) return value ? 'Ja' : 'Nein';
-    if (value is String && value.contains('T')) return _dateTimeLabel(value);
+    if (key == 'network') return value == 'multipass' ? 'MultiPass' : 'Supercharger';
+    if (value is String && RegExp(r'^\d{4}-\d{2}-\d{2}T').hasMatch(value)) {
+      return _dateTimeLabel(value);
+    }
     return value.toString();
   }
 
-  Widget _section(String title, Map<String, dynamic>? values) {
+  /// Joins the non-empty parts of a card's summary line.
+  String? _summaryLine(List<dynamic> parts) {
+    final texts = parts
+        .map((part) => part?.toString().trim() ?? '')
+        .where((part) => part.isNotEmpty)
+        .toList();
+    return texts.isEmpty ? null : texts.join(' · ');
+  }
+
+  String _shortDateLabel(dynamic value) {
+    final date = DateTime.tryParse(value?.toString() ?? '')?.toLocal();
+    if (date == null) return '';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day.$month.';
+  }
+
+  /// [keys] picks and orders the rows; without it the card shows the plain
+  /// values the server sent. [summary] is the line under the title.
+  Widget _section(String title, Map<String, dynamic>? values,
+      {List<String>? keys, String? summary}) {
     if (values == null || values.isEmpty) return const SizedBox.shrink();
-    final entries = values.entries
-        .where((e) => e.value != null && e.value is! Map && e.value is! List)
-        .take(8).toList();
+    // Internal fields mean nothing to the reader.
+    const hidden = {'id', 'url', 'thumb', 'auto', 'push_state', 'currency', 'has_invoice', 'slow'};
+    const hideWhenZero = {'idle', 'credit'};
+    bool shown(String key, dynamic value) =>
+        value != null && value is! Map && value is! List &&
+        !(value is String && value.trim().isEmpty) &&
+        !(hideWhenZero.contains(key) && value is num && value == 0);
+    final entries = keys != null
+        ? [
+            for (final key in keys)
+              if (shown(key, values[key])) MapEntry<String, dynamic>(key, values[key]),
+          ]
+        : values.entries
+            .where((e) => !hidden.contains(e.key) && shown(e.key, e.value))
+            .take(8).toList();
     if (entries.isEmpty) return const SizedBox.shrink();
 
     final first = entries.first;
-    final summary = '${_sectionLabel(first.key)} · ${_sectionValue(first.key, first.value)}';
+    final summaryText = summary ??
+        '${_sectionLabel(first.key)} · ${_sectionValue(first.key, first.value)}';
     final sectionIcon = switch (title) {
       'Letzter Ladevorgang' => Icons.ev_station_rounded,
       'Gesamt' => Icons.insights_rounded,
@@ -705,7 +746,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           title: Text(title,
             style: const TextStyle(fontWeight: FontWeight.w700)),
-          subtitle: Text(summary,
+          subtitle: Text(summaryText,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
@@ -806,7 +847,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     String number(dynamic value, {int digits = 1}) {
       final parsed = value is num ? value : num.tryParse(value?.toString() ?? '');
-      return parsed == null ? '–' : parsed.toStringAsFixed(digits);
+      return parsed == null ? '–' : formatNumber(parsed, digits);
     }
 
     final months = items.map(monthKey).where((v) => v.isNotEmpty).toSet().toList()
@@ -1062,7 +1103,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   String _numberLabel(dynamic value, {int digits = 2, String suffix = ''}) {
     final parsed = value is num ? value : num.tryParse(value?.toString() ?? '');
-    return parsed == null ? '–' : '${parsed.toStringAsFixed(digits)}$suffix';
+    return parsed == null ? '–' : '${formatNumber(parsed, digits)}$suffix';
   }
 
   String _durationLabel(dynamic value) {
@@ -1316,7 +1357,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
           child: Text(
-            value is num ? '${value.toStringAsFixed(3)} €/kWh' : '–',
+            value is num ? '${formatNumber(value, 3)} €/kWh' : '–',
             textAlign: TextAlign.end,
             style: TextStyle(
               color: highlighted ? AppTheme.accentGreen : AppTheme.textPrimary,
@@ -1363,7 +1404,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       const Expanded(child: Text('Günstigstes Zeitfenster',
                         style: TextStyle(fontWeight: FontWeight.w800))),
                       if (cheapestSlot?['avg_price'] is num)
-                        Text('${(cheapestSlot!['avg_price'] as num).toStringAsFixed(3)} €/kWh',
+                        Text('${formatNumber(cheapestSlot!['avg_price'] as num, 3)} €/kWh',
                           style: const TextStyle(color: AppTheme.accentGreen,
                             fontWeight: FontWeight.w800)),
                     ],
@@ -1387,7 +1428,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           maxLines: 2, overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 12))),
                         if (cheapestSite['avg_price'] is num)
-                          Text('${(cheapestSite['avg_price'] as num).toStringAsFixed(3)} €/kWh',
+                          Text('${formatNumber(cheapestSite['avg_price'] as num, 3)} €/kWh',
                             style: const TextStyle(color: AppTheme.accentGreen,
                               fontWeight: FontWeight.w800, fontSize: 12)),
                       ],
@@ -1458,7 +1499,7 @@ class _DashboardPageState extends State<DashboardPage> {
               subtitle: Text(
                 cheapestSite == null
                     ? 'Durchschnittspreise und Ladehäufigkeit'
-                    : 'Niedrigster erfasster Standortpreis: ${(cheapestSite['avg_price'] as num).toStringAsFixed(3)} €/kWh',
+                    : 'Niedrigster erfasster Standortpreis: ${formatNumber(cheapestSite['avg_price'] as num, 3)} €/kWh',
                 maxLines: 1, overflow: TextOverflow.ellipsis,
               ),
               children: sites.map((site) {
@@ -1779,10 +1820,10 @@ class _DashboardPageState extends State<DashboardPage> {
             final compact = constraints.maxWidth < 370;
             return Row(
               children: [
-                summaryMetric('Letzter Monat', '${values.last.toStringAsFixed(2)} €',
+                summaryMetric('Letzter Monat', '${formatNumber(values.last, 2)} €',
                   latestLabel, Icons.calendar_month_outlined, compact: compact),
                 SizedBox(width: compact ? 7 : 10),
-                summaryMetric('Monatsdurchschnitt', '${averageCost.toStringAsFixed(2)} €',
+                summaryMetric('Monatsdurchschnitt', '${formatNumber(averageCost, 2)} €',
                   'über ${months.length} Monate', Icons.show_chart, compact: compact),
               ],
             );
@@ -1807,7 +1848,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   final homeEnergy = amount(month['home_kwh']);
                   final homeCostLabel = !homeEnergyKnown
                       ? 'nicht erfasst'
-                      : homeCostKnown ? '${homeCost.toStringAsFixed(2)} €'
+                      : homeCostKnown ? '${formatNumber(homeCost, 2)} €'
                       : 'Preis nicht hinterlegt';
                   final publicFlex = (publicCost * 1000).round().clamp(0, 100000000);
                   final homeFlex = (homeCost * 1000).round().clamp(0, 100000000);
@@ -1833,7 +1874,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         final difference = total - previousTotal;
                         final percentage = difference / previousTotal * 100;
                         final sign = difference > 0 ? '+' : '';
-                        comparison = '$sign${difference.toStringAsFixed(2)} € ($sign${percentage.toStringAsFixed(1)} %) gegenüber Vormonat';
+                        comparison = '$sign${formatNumber(difference, 2)} € ($sign${formatNumber(percentage, 1)} %) gegenüber Vormonat';
                         comparisonColor = difference > 0 ? AppTheme.warning :
                             difference < 0 ? AppTheme.accentGreen : AppTheme.textSecondary;
                       } else {
@@ -1874,7 +1915,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                     children: [
                                       Expanded(child: Text(label,
                                         style: const TextStyle(color: AppTheme.textSecondary))),
-                                      Text('${total.toStringAsFixed(2)} €',
+                                      Text('${formatNumber(total, 2)} €',
                                         style: const TextStyle(fontWeight: FontWeight.w700)),
                                     ],
                                   ),
@@ -1889,7 +1930,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   style: const TextStyle(color: AppTheme.textSecondary))),
                                 Expanded(child: bar),
                                 const SizedBox(width: 12),
-                                SizedBox(width: 76, child: Text('${total.toStringAsFixed(2)} €',
+                                SizedBox(width: 76, child: Text('${formatNumber(total, 2)} €',
                                   textAlign: TextAlign.end,
                                   style: const TextStyle(fontWeight: FontWeight.w600))),
                               ],
@@ -1905,14 +1946,14 @@ class _DashboardPageState extends State<DashboardPage> {
                             dense: true,
                             visualDensity: VisualDensity.compact,
                             title: Text(
-                              '${(publicEnergy + (homeEnergyKnown ? homeEnergy : 0)).toStringAsFixed(1)} kWh · ${amount(month['sessions']).round()} öffentliche Ladevorgänge',
+                              '${formatNumber(publicEnergy + (homeEnergyKnown ? homeEnergy : 0), 1)} kWh · ${amount(month['sessions']).round()} öffentliche Ladevorgänge',
                               style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
                             children: [
                               Align(
                                 alignment: Alignment.centerLeft,
                                 child: Text(
-                                  'Öffentlich: ${publicCost.toStringAsFixed(2)} € · Zuhause: $homeCostLabel'
-                                  '\nEnergie: öffentlich ${publicEnergy.toStringAsFixed(1)} kWh · zuhause ${homeEnergyKnown ? '${homeEnergy.toStringAsFixed(1)} kWh' : 'nicht erfasst'}',
+                                  'Öffentlich: ${formatNumber(publicCost, 2)} € · Zuhause: $homeCostLabel'
+                                  '\nEnergie: öffentlich ${formatNumber(publicEnergy, 1)} kWh · zuhause ${homeEnergyKnown ? '${formatNumber(homeEnergy, 1)} kWh' : 'nicht erfasst'}',
                                   style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
                               ),
                               if (comparison != null)
@@ -1996,8 +2037,8 @@ class _DashboardPageState extends State<DashboardPage> {
           final label = parts.length == 2 ? '${parts[1]}.${parts[0]}' : key;
           final count = month['sessions'] is num ? (month['sessions'] as num).round() : 0;
           final energy = _numberLabel(month['kwh'], digits: 1, suffix: ' kWh');
-          final monthTotal = (amount(month['cost']) + amount(month['home_cost']))
-              .toStringAsFixed(2);
+          final monthTotal = formatNumber(
+              amount(month['cost']) + amount(month['home_cost']), 2);
           return Card(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
@@ -2423,7 +2464,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       color: Colors.white.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Text('${power.toStringAsFixed(1)} kW',
+                    child: Text('${formatNumber(power, 1)} kW',
                       maxLines: 1,
                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
                   ),
@@ -2478,7 +2519,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
                           if (rate != null) ...[
                             if (finish is String) const SizedBox(height: 3),
-                            Text('Ladegeschwindigkeit · ${rate.toStringAsFixed(1)} % pro Stunde',
+                            Text('Ladegeschwindigkeit · ${formatNumber(rate, 1)} % pro Stunde',
                               style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
                           ],
                         ],
@@ -2757,6 +2798,18 @@ class _DashboardPageState extends State<DashboardPage> {
     final last = _map(_data?['last_charge']);
     final totals = _map(_data?['totals']);
     final forecast = _map(_data?['forecast']);
+    final car = _map(_data?['car']);
+    final carLabels = _map(car?['labels']);
+    final vehicleInfo = <String, dynamic>{
+      'model': car?['name'],
+      'generation': carLabels?['generation'],
+      'trim': carLabels?['trim'],
+      'paint': carLabels?['paint'],
+      'wheels': carLabels?['wheel'],
+    };
+    String? money(dynamic value) => value is num ? '${formatNumber(value, 2)} €' : null;
+    String? count(dynamic value, String unit) =>
+        value is num ? '${formatNumber(value, 0)} $unit' : null;
     final overviewMetrics = <Widget>[
       if (month?['sessions'] != null || month?['count'] != null)
         _metric('Ladevorgänge diesen Monat',
@@ -2902,12 +2955,27 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
               _homeChargingSummary(_map(month?['home'])),
-              _section('Letzter Ladevorgang', last),
-              _section('Gesamt', totals),
-              _section('Ladeprognose', forecast),
-              _section('Fahrzeug', _map(_data?['car'])),
+              _section('Letzter Ladevorgang', last,
+                keys: const ['site', 'network', 'operator', 'start', 'end', 'duration_min',
+                  'kwh', 'price', 'cost', 'idle', 'credit', 'avg_kw'],
+                summary: _summaryLine([
+                  last?['site'], _shortDateLabel(last?['start']), money(last?['cost']),
+                ])),
+              _section('Gesamt', totals,
+                keys: const ['sessions', 'kwh', 'cost', 'charge_cost', 'idle', 'credit',
+                  'avg_price', 'since'],
+                summary: _summaryLine([
+                  count(totals?['sessions'], 'Ladevorgänge'),
+                  totals?['kwh'] is num ? '${formatNumber(totals?['kwh'] as num, 1)} kWh' : null,
+                  money(totals?['cost']),
+                ])),
+              _section('Ladeprognose', forecast,
+                keys: const ['text', 'days_to_floor', 'rate_pct_day', 'dist_day'],
+                summary: _summaryLine([forecast?['text']])),
+              _section('Fahrzeug', vehicleInfo,
+                summary: _summaryLine([car?['name'], carLabels?['paint'], carLabels?['wheel']])),
               const SizedBox(height: 12),
-              Text('Daten werden direkt von deinem Ladecockpit über Tailscale abgerufen.',
+              Text('Die Daten kommen direkt von deinem eigenen Ladecockpit.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.textSecondary)),
             ],
