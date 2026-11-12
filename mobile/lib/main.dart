@@ -991,7 +991,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ],
               ),
               subtitle: Text(filterSummary, maxLines: 1, overflow: TextOverflow.ellipsis),
-              childrenPadding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+              childrenPadding: EdgeInsets.fromLTRB(16, 10, 16, 12),
               children: [
                 LayoutBuilder(
                   builder: (context, constraints) {
@@ -1012,7 +1012,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           for (var i = 0; i < fields.length; i++) ...[
-                            if (i > 0) SizedBox(height: 8),
+                            if (i > 0) SizedBox(height: 14),
                             fields[i],
                           ],
                         ],
