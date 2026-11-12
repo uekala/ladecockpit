@@ -7,9 +7,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 export 'document_response.dart' show CockpitException;
 import 'document_response.dart';
 import 'theme/app_theme.dart';
+import 'update_check.dart';
 
 void main() => runApp(const LadecockpitApp());
 
@@ -242,6 +244,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final _client = CockpitClient();
+  final _updates = UpdateChecker();
   Map<String, dynamic>? _data;
   String? _error;
   bool _loading = false;
@@ -255,6 +258,38 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _load();
+    _checkForUpdate();
+  }
+
+  Future<void> _checkForUpdate() async {
+    final update = await _updates.check();
+    if (update == null || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showMaterialBanner(
+      MaterialBanner(
+        leading: const Icon(Icons.system_update_outlined, color: AppTheme.accentGreen),
+        content: Text('Ladecockpit ${update.version} ist verfügbar (installiert: $appVersion).'),
+        actions: [
+          TextButton(
+            onPressed: messenger.hideCurrentMaterialBanner,
+            child: const Text('Später'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              messenger.hideCurrentMaterialBanner();
+              final opened = await launchUrl(
+                Uri.parse(update.downloadUrl),
+                mode: LaunchMode.externalApplication,
+              );
+              if (!opened && mounted) {
+                messenger.showSnackBar(SnackBar(content: Text('Download-Seite: ${update.pageUrl}')));
+              }
+            },
+            child: const Text('Update laden'),
+          ),
+        ],
+      ),
+    );
   }
 
   String _fetchTimeLabel(DateTime? value) {
@@ -294,10 +329,17 @@ class _DashboardPageState extends State<DashboardPage> {
       return;
     }
     final hasSavedServer = urlController.text.trim().isNotEmpty;
+    final showUpdateSwitch = _updates.supported;
+    var updateCheck = showUpdateSwitch && await _updates.enabled;
+    if (!mounted) {
+      urlController.dispose();
+      passwordController.dispose();
+      return;
+    }
     try {
       final saved = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => StatefulBuilder(builder: (context, setDialogState) => AlertDialog(
           title: const Row(
             children: [
               Icon(Icons.dns_outlined, color: AppTheme.accentGreen, size: 22),
@@ -381,6 +423,19 @@ class _DashboardPageState extends State<DashboardPage> {
                     helperText: 'Optional – nur wenn dein Server ein Passwort verlangt',
                   ),
                 ),
+                if (showUpdateSwitch) ...[
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: updateCheck,
+                    onChanged: (value) => setDialogState(() => updateCheck = value),
+                    title: const Text('Nach Updates suchen'),
+                    subtitle: const Text(
+                      'Fragt beim Start bei GitHub nach der neuesten Version. Es werden keine Ladedaten übertragen.',
+                      style: TextStyle(fontSize: 11, height: 1.35),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,9 +464,10 @@ class _DashboardPageState extends State<DashboardPage> {
               label: const Text('Speichern & verbinden'),
             ),
           ],
-        ),
+        )),
       );
       if (saved == true) {
+        if (showUpdateSwitch) await _updates.setEnabled(updateCheck);
         await _client.saveConnection(urlController.text, passwordController.text);
         await _load();
       }

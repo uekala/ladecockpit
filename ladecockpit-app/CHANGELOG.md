@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.12.8 – 2026-11-12
+
+- **Mobile app tells you about updates.** On Android, the app asks GitHub once per start whether a newer release exists and shows a banner with *Update laden*; Android then offers to install the APK over the installed app. Only the public release information is fetched, no charging data is sent. The check can be switched off in the connection settings (*Nach Updates suchen*). Test builds and iOS never check.
+- The web app, the Home Assistant app and the Docker image are unchanged.
+
 ## 0.12.7 – 2026-11-12
 
 - **Android app to download.** Every release now has a signed APK attached (`ladecockpit-<version>.apk` with its SHA-256 checksum). It installs as an update over the previous one, no GitHub account needed.
