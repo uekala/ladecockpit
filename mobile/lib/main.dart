@@ -237,14 +237,19 @@ return 'Verbindung fehlgeschlagen.\nDiagnose: ${error.runtimeType} · $error';
 }
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  const DashboardPage({super.key, this.client, this.updates});
+
+  /// Injectable for tests; the app uses the default client.
+  final CockpitClient? client;
+  final UpdateChecker? updates;
+
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  final _client = CockpitClient();
-  final _updates = UpdateChecker();
+  late final CockpitClient _client = widget.client ?? CockpitClient();
+  late final UpdateChecker _updates = widget.updates ?? UpdateChecker();
   Map<String, dynamic>? _data;
   String? _error;
   bool _loading = false;
@@ -530,19 +535,23 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '$text$suffix',
-                maxLines: 1,
-                style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 23,
-                  height: 1.05,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.7,
+            const SizedBox(height: 6),
+            // Flexible + FittedBox: the value shrinks instead of overflowing
+            // when a long title takes two lines on a narrow phone.
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '$text$suffix',
+                  maxLines: 1,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 23,
+                    height: 1.05,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.7,
+                  ),
                 ),
               ),
             ),
@@ -681,6 +690,7 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
+          key: PageStorageKey<String>('section-$title'),
           initiallyExpanded: false,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -878,6 +888,7 @@ class _DashboardPageState extends State<DashboardPage> {
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ExpansionTile(
+              key: const PageStorageKey<String>('session-filter'),
               initiallyExpanded: false,
               leading: Icon(Icons.tune,
                 color: filtersActive ? Theme.of(context).colorScheme.primary : AppTheme.textSecondary),
@@ -1439,6 +1450,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           Card(
             child: ExpansionTile(
+              key: const PageStorageKey<String>('top-sites'),
               initiallyExpanded: false,
               leading: const Icon(Icons.ev_station, color: AppTheme.accentTeal),
               title: Text('${sites.length} Ladestandorte',
@@ -1887,6 +1899,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         Theme(
                           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                           child: ExpansionTile(
+                            key: PageStorageKey<String>('month-$key'),
                             tilePadding: const EdgeInsets.only(left: 48, right: 4),
                             childrenPadding: const EdgeInsets.only(left: 54, right: 4, bottom: 8),
                             dense: true,
@@ -2530,6 +2543,7 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
+          key: const PageStorageKey<String>('connections'),
           initiallyExpanded: false,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),

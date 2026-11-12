@@ -1,0 +1,841 @@
+{
+    "mode": "demo",
+    "lang": "de",
+    "locale": "de-DE",
+    "tz": "Europe/Berlin",
+    "currency": "EUR",
+    "distance_unit": "km",
+    "generated_at": "2026-11-12T19:12:47+01:00",
+    "setup": {
+        "tesla_configured": true,
+        "tesla_connected": true,
+        "tesla_auth_error": null,
+        "ha_configured": true,
+        "ha_ok": true,
+        "ha_error": null,
+        "redirect_uri": "http://localhost:8077/auth/callback",
+        "push_since": "2026-11-07T18:12:47+00:00",
+        "entities": [
+            "soc",
+            "range",
+            "odometer",
+            "charging"
+        ],
+        "addon": false
+    },
+    "sync": {
+        "last": "2026-11-12T16:12:47+00:00",
+        "next": "2026-11-12T22:12:47+00:00",
+        "error": null,
+        "burst": false
+    },
+    "status": {
+        "soc": 35,
+        "soc_source": "live",
+        "as_of": "2026-11-12T18:12:47+00:00",
+        "range": 200,
+        "floor": 10,
+        "target": 80,
+        "charging": true,
+        "power": 104.0,
+        "rate": 115.0,
+        "finish": "2026-11-12T18:40:55+00:00"
+    },
+    "forecast": {
+        "rate_pct_day": 14.1,
+        "days_to_floor": 5.0,
+        "calendar_days": 5,
+        "date_floor": "2026-11-17",
+        "date_label": "Di., 17.11.",
+        "basis_days": 13.5,
+        "dist_day": 55.5,
+        "text": "Sp\u00e4testens Di., 17.11. laden \u2013 in etwa 5 Tagen.",
+        "plan": {
+            "date": "2026-11-16",
+            "when": "Mo., 16.11., 20\u201324 Uhr",
+            "slot": "Abends",
+            "range": "20\u201324 Uhr",
+            "site": "Mainz",
+            "price": 0.3499,
+            "average": 0.4805,
+            "kwh": 32,
+            "saving": 4.11,
+            "sessions": 2,
+            "text": "Tipp: Mo., 16.11., 20\u201324 Uhr in Mainz laden \u2013 dort hast du bisher \u00d8 0,35 \u20ac/kWh gezahlt statt 0,48 \u20ac/kWh, rund 4,11 \u20ac weniger bei 32 kWh."
+        }
+    },
+    "last_charge": {
+        "id": "demo-1010",
+        "site": "Weiterstadt",
+        "start": "2026-11-10T18:18:00+01:00",
+        "end": "2026-11-10T18:32:00+01:00",
+        "kwh": 18.0,
+        "cost": 9.54,
+        "charge_cost": 9.54,
+        "idle": 0.0,
+        "price": 0.53,
+        "list_price": 0.53,
+        "credit": 0.0,
+        "net": 8.02,
+        "duration_min": 14,
+        "avg_kw": 77,
+        "typical_kw": null,
+        "slow": false,
+        "start_soc": 31,
+        "has_invoice": true,
+        "push_state": "pushed",
+        "currency": "EUR",
+        "network": "supercharger",
+        "operator": null,
+        "address": null
+    },
+    "month": {
+        "sessions": 5,
+        "kwh": 161.2,
+        "cost": 75.2,
+        "charge_cost": 75.2,
+        "idle": 0.0,
+        "credit": 0.0,
+        "avg_price": 0.4665,
+        "list_price": 0.4665,
+        "key": "2026-11",
+        "label": "November 2026",
+        "distance": 645,
+        "distance_since": "2026-11-01T08:00:00+01:00",
+        "per_100": 12.72,
+        "kwh_per_100": 28.4,
+        "avg_kw": 79,
+        "by_network": {
+            "supercharger": {
+                "sessions": 4,
+                "kwh": 129.7,
+                "cost": 56.62,
+                "charge_cost": 56.62,
+                "idle": 0.0,
+                "credit": 0.0,
+                "avg_price": 0.4365,
+                "list_price": 0.4365
+            },
+            "multipass": {
+                "sessions": 1,
+                "kwh": 31.5,
+                "cost": 18.58,
+                "charge_cost": 18.58,
+                "idle": 0.0,
+                "credit": 0.0,
+                "avg_price": 0.5898,
+                "list_price": 0.5898
+            }
+        },
+        "home": {
+            "kwh": 22.0,
+            "cost": 6.82,
+            "avg_price": 0.31
+        },
+        "total_cost": 82.02,
+        "fuel_equivalent": 83.14,
+        "savings": 1.1,
+        "prev": {
+            "label": "Oktober",
+            "cost": 94.28,
+            "avg_price": 0.4432,
+            "list_price": 0.4915,
+            "sessions": 6
+        }
+    },
+    "monthly": [
+        {
+            "key": "2026-10",
+            "label": "Okt",
+            "cost": 94.28,
+            "kwh": 207.3,
+            "avg_price": 0.4432,
+            "idle": 2.4,
+            "sessions": 6,
+            "distance": 1600,
+            "per_100": 7.6,
+            "kwh_per_100": 18.5,
+            "multipass_cost": 15.56,
+            "multipass_sessions": 1,
+            "home_kwh": 88.0,
+            "home_cost": 27.28,
+            "fuel_equivalent": 206.24,
+            "savings": 84.64
+        },
+        {
+            "key": "2026-11",
+            "label": "Nov",
+            "cost": 75.2,
+            "kwh": 161.2,
+            "avg_price": 0.4665,
+            "idle": 0.0,
+            "sessions": 5,
+            "distance": 645,
+            "per_100": 12.72,
+            "kwh_per_100": 28.4,
+            "multipass_cost": 18.58,
+            "multipass_sessions": 1,
+            "home_kwh": 22.0,
+            "home_cost": 6.82,
+            "fuel_equivalent": 83.14,
+            "savings": 1.1
+        }
+    ],
+    "slots": [
+        {
+            "id": "night",
+            "label": "Nachts",
+            "range": "0\u20136 Uhr",
+            "avg_price": null,
+            "sessions": 0,
+            "kwh": 0
+        },
+        {
+            "id": "morning",
+            "label": "Morgens",
+            "range": "6\u201311 Uhr",
+            "avg_price": 0.4962,
+            "sessions": 2,
+            "kwh": 63.2
+        },
+        {
+            "id": "midday",
+            "label": "Mittags",
+            "range": "11\u201316 Uhr",
+            "avg_price": 0.5391,
+            "sessions": 3,
+            "kwh": 99.4
+        },
+        {
+            "id": "afternoon",
+            "label": "Nachmittags",
+            "range": "16\u201320 Uhr",
+            "avg_price": 0.5242,
+            "sessions": 4,
+            "kwh": 115.2
+        },
+        {
+            "id": "evening",
+            "label": "Abends",
+            "range": "20\u201324 Uhr",
+            "avg_price": 0.3499,
+            "sessions": 2,
+            "kwh": 90.7
+        }
+    ],
+    "sites": [
+        {
+            "site": "Mainz",
+            "sessions": 3,
+            "kwh": 123.7,
+            "cost": 48.57,
+            "credit": 0.0,
+            "avg_price": 0.3926,
+            "avg_kw": 62,
+            "network": "supercharger",
+            "operator": null,
+            "address": null,
+            "label": "Mainz"
+        },
+        {
+            "site": "Weiterstadt",
+            "sessions": 3,
+            "kwh": 82.2,
+            "cost": 35.96,
+            "credit": 10.0,
+            "avg_price": 0.5299,
+            "avg_kw": 80,
+            "network": "supercharger",
+            "operator": null,
+            "address": null,
+            "label": "Weiterstadt"
+        },
+        {
+            "site": "Wiesbaden",
+            "sessions": 1,
+            "kwh": 35.9,
+            "cost": 15.8,
+            "credit": 0.0,
+            "avg_price": 0.4401,
+            "avg_kw": 80,
+            "network": "supercharger",
+            "operator": null,
+            "address": null,
+            "label": "Wiesbaden"
+        },
+        {
+            "site": "Bad Homburg",
+            "sessions": 1,
+            "kwh": 29.7,
+            "cost": 15.15,
+            "credit": 0.0,
+            "avg_price": 0.5101,
+            "avg_kw": 81,
+            "network": "supercharger",
+            "operator": null,
+            "address": null,
+            "label": "Bad Homburg"
+        },
+        {
+            "site": "Frankfurt Flughafen",
+            "sessions": 1,
+            "kwh": 38.2,
+            "cost": 19.86,
+            "credit": 0.0,
+            "avg_price": 0.5199,
+            "avg_kw": 82,
+            "network": "supercharger",
+            "operator": null,
+            "address": null,
+            "label": "Frankfurt Flughafen"
+        },
+        {
+            "site": "EnBW Ladepark Darmstadt",
+            "sessions": 1,
+            "kwh": 27.3,
+            "cost": 15.56,
+            "credit": 0.0,
+            "avg_price": 0.57,
+            "avg_kw": 66,
+            "network": "multipass",
+            "operator": "EnBW",
+            "address": null,
+            "label": "EnBW"
+        },
+        {
+            "site": "IONITY Weiskirchen",
+            "sessions": 1,
+            "kwh": 31.5,
+            "cost": 18.58,
+            "credit": 0.0,
+            "avg_price": 0.5898,
+            "avg_kw": 73,
+            "network": "multipass",
+            "operator": "IONITY",
+            "address": null,
+            "label": "IONITY"
+        }
+    ],
+    "multipass": {
+        "stations": [
+            {
+                "site": "IONITY Weiskirchen",
+                "operator": "IONITY",
+                "address": null,
+                "sessions": 1,
+                "kwh": 31.5,
+                "cost": 18.58,
+                "avg_price": 0.5898,
+                "avg_kw": 73,
+                "first": "2026-11-08",
+                "last": "2026-11-08T13:05:00+01:00",
+                "last_label": "08.11.2026",
+                "map_url": "https://www.google.com/maps/search/?api=1&query=IONITY%20Weiskirchen",
+                "operator_source": "site"
+            },
+            {
+                "site": "EnBW Ladepark Darmstadt",
+                "operator": "EnBW",
+                "address": null,
+                "sessions": 1,
+                "kwh": 27.3,
+                "cost": 15.56,
+                "avg_price": 0.57,
+                "avg_kw": 66,
+                "first": "2026-10-24",
+                "last": "2026-10-24T10:30:00+02:00",
+                "last_label": "24.10.2026",
+                "map_url": "https://www.google.com/maps/search/?api=1&query=EnBW%20Ladepark%20Darmstadt",
+                "operator_source": "site"
+            }
+        ],
+        "operators": [
+            {
+                "name": "EnBW",
+                "stations": 1,
+                "sessions": 1,
+                "last": "2026-10-24T10:30:00+02:00"
+            },
+            {
+                "name": "IONITY",
+                "stations": 1,
+                "sessions": 1,
+                "last": "2026-11-08T13:05:00+01:00"
+            }
+        ],
+        "sessions": 2,
+        "kwh": 58.8,
+        "cost": 34.14,
+        "avg_price": 0.5806,
+        "text": "MultiPass hat bisher an 2 Stationen funktioniert \u2013 Anbieter: EnBW, IONITY."
+    },
+    "insights": [
+        {
+            "kind": "slot",
+            "text": "Abends (20\u201324 Uhr) l\u00e4dst du am g\u00fcnstigsten: \u00d8 0,35 \u20ac/kWh, 0,13 \u20ac/kWh unter deinem Schnitt."
+        },
+        {
+            "kind": "site",
+            "text": "Am g\u00fcnstigsten warst du in Mainz (\u00d8 0,39 \u20ac/kWh), am teuersten in IONITY (\u00d8 0,59 \u20ac/kWh)."
+        },
+        {
+            "kind": "network",
+            "text": "MultiPass-Ladungen (2) kosten dich im Schnitt 0,58 \u20ac/kWh, am Supercharger sind es 0,46 \u20ac/kWh."
+        },
+        {
+            "kind": "credit",
+            "text": "Tesla-Gutschriften haben bisher 10,00 \u20ac \u00fcbernommen. Gezahlt hast du \u00d8 0,45 \u20ac/kWh, der Listenpreis lag bei \u00d8 0,48 \u20ac/kWh \u2013 Preisvergleiche nutzen den Listenpreis."
+        },
+        {
+            "kind": "idle",
+            "text": "Blockiergeb\u00fchren bisher: 2,40 \u20ac bei 1 Ladung \u2013 rechtzeitig abstecken spart Geld."
+        },
+        {
+            "kind": "speed",
+            "text": "Am 19.10. in Mainz hast du nur mit \u00d8 38 kW geladen, sonst bekommst du dort rund 81 kW. H\u00e4ufige Gr\u00fcnde: ein kalter Akku (den Supercharger vorher als Navi-Ziel eingeben, dann heizt das Auto vor) oder eine geteilte oder gedrosselte S\u00e4ule."
+        },
+        {
+            "kind": "reference",
+            "text": "Mit dem Referenzpreis von 0,49 \u20ac/kWh w\u00e4ren es diesen Monat 78,99 \u20ac gewesen \u2013 laut Rechnungen sind es 75,20 \u20ac (\u22123,79 \u20ac)."
+        },
+        {
+            "kind": "fuel",
+            "text": "Die 645 km diesen Monat h\u00e4tten mit dem Verbrenner (7,2 L/100 km, 1,79 \u20ac/L) etwa 83,14 \u20ac gekostet \u2013 gespart: 1,10 \u20ac."
+        },
+        {
+            "kind": "climate",
+            "text": "Bei 0 bis 10 \u00b0C braucht dein Tesla rund 40 % mehr Akku pro 100 km als bei 10 bis 20 \u00b0C."
+        }
+    ],
+    "compare": {
+        "fuel": {
+            "consumption": 7.2,
+            "price": 1.79,
+            "per_100": 12.89,
+            "source": "entity",
+            "paid_days": null,
+            "paid_litres": null
+        },
+        "reference_price": 0.49,
+        "reference_cost": 78.99,
+        "actual_cost": 75.2,
+        "fuel_month": 41.3,
+        "fuel_label": "Sprit diesen Monat"
+    },
+    "projection": {
+        "basis_days": 34,
+        "distance": 24000,
+        "cost": 2160,
+        "per_100": 8.99,
+        "fuel_cost": 3090,
+        "savings": 930
+    },
+    "battery_health": {
+        "range_at_100": 570,
+        "samples": 37,
+        "since": "2026-10-10",
+        "baseline": 575,
+        "change_pct": -0.8,
+        "weeks": [
+            {
+                "week": "2026-10-05",
+                "value": 576
+            },
+            {
+                "week": "2026-10-12",
+                "value": 570
+            },
+            {
+                "week": "2026-10-19",
+                "value": 573
+            },
+            {
+                "week": "2026-10-26",
+                "value": 571
+            },
+            {
+                "week": "2026-11-02",
+                "value": 570
+            },
+            {
+                "week": "2026-11-09",
+                "value": 571
+            }
+        ],
+        "dc_share": 65
+    },
+    "climate": {
+        "bands": [
+            {
+                "from": 0.0,
+                "to": 10.0,
+                "days": 17,
+                "distance": 1023,
+                "pct_per_100": 22.3,
+                "kwh_per_100": 20.1
+            },
+            {
+                "from": 10.0,
+                "to": 20.0,
+                "days": 16,
+                "distance": 1117,
+                "pct_per_100": 15.9,
+                "kwh_per_100": 14.4
+            }
+        ],
+        "kwh_per_percent": 0.904
+    },
+    "reconcile": {
+        "ha_cost": 181.34,
+        "ha_kwh": 342.71,
+        "inv_cost": 169.48,
+        "inv_kwh": 368.5,
+        "inv_sessions": 11,
+        "diff": 11.86
+    },
+    "totals": {
+        "sessions": 11,
+        "kwh": 368.5,
+        "cost": 169.48,
+        "charge_cost": 167.08,
+        "idle": 2.4,
+        "credit": 10.0,
+        "avg_price": 0.4534,
+        "list_price": 0.4805,
+        "by_network": {
+            "supercharger": {
+                "sessions": 9,
+                "kwh": 309.7,
+                "cost": 135.34,
+                "charge_cost": 132.94,
+                "idle": 2.4,
+                "credit": 10.0,
+                "avg_price": 0.4293,
+                "list_price": 0.4615
+            },
+            "multipass": {
+                "sessions": 2,
+                "kwh": 58.8,
+                "cost": 34.14,
+                "charge_cost": 34.14,
+                "idle": 0.0,
+                "credit": 0.0,
+                "avg_price": 0.5806,
+                "list_price": 0.5806
+            }
+        },
+        "since": "2026-10-17T19:40:00+02:00"
+    },
+    "sessions": [
+        {
+            "id": "demo-1010",
+            "site": "Weiterstadt",
+            "start": "2026-11-10T18:18:00+01:00",
+            "end": "2026-11-10T18:32:00+01:00",
+            "kwh": 18.0,
+            "cost": 9.54,
+            "charge_cost": 9.54,
+            "idle": 0.0,
+            "price": 0.53,
+            "list_price": 0.53,
+            "credit": 0.0,
+            "net": 8.02,
+            "duration_min": 14,
+            "avg_kw": 77,
+            "typical_kw": null,
+            "slow": false,
+            "start_soc": 31,
+            "has_invoice": true,
+            "push_state": "pushed",
+            "currency": "EUR",
+            "network": "supercharger",
+            "operator": null,
+            "address": null
+        },
+        {
+            "id": "demo-1009",
+            "site": "IONITY Weiskirchen",
+            "start": "2026-11-08T13:05:00+01:00",
+            "end": "2026-11-08T13:31:00+01:00",
+            "kwh": 31.5,
+            "cost": 18.58,
+            "charge_cost": 18.58,
+            "idle": 0.0,
+            "price": 0.5898,
+            "list_price": 0.59,
+            "credit": 0.0,
+            "net": 15.61,
+            "duration_min": 26,
+            "avg_kw": 73,
+            "typical_kw": null,
+            "slow": false,
+            "start_soc": 67,
+            "has_invoice": true,
+            "push_state": "pushed",
+            "currency": "EUR",
+            "network": "multipass",
+            "operator": "IONITY",
+            "address": null
+        },
+        {
+            "id": "demo-1008",
+            "site": "Mainz",
+            "start": "2026-11-06T22:10:00+01:00",
+            "end": "2026-11-06T22:44:00+01:00",
+            "kwh": 46.1,
+            "cost": 16.13,
+            "charge_cost": 16.13,
+            "idle": 0.0,
+            "price": 0.3499,
+            "list_price": 0.35,
+            "credit": 0.0,
+            "net": 13.55,
+            "duration_min": 34,
+            "avg_kw": 81,
+            "typical_kw": 60,
+            "slow": false,
+            "start_soc": 19,
+            "has_invoice": true,
+            "push_state": "backfill",
+            "currency": "EUR",
+            "network": "supercharger",
+            "operator": null,
+            "address": null
+        },
+        {
+            "id": "demo-1007",
+            "site": "Wiesbaden",
+            "start": "2026-11-03T07:50:00+01:00",
+            "end": "2026-11-03T08:17:00+01:00",
+            "kwh": 35.9,
+            "cost": 15.8,
+            "charge_cost": 15.8,
+            "idle": 0.0,
+            "price": 0.4401,
+            "list_price": 0.44,
+            "credit": 0.0,
+            "net": 13.28,
+            "duration_min": 27,
+            "avg_kw": 80,
+            "typical_kw": null,
+            "slow": false,
+            "start_soc": 46,
+            "has_invoice": true,
+            "push_state": "backfill",
+            "currency": "EUR",
+            "network": "supercharger",
+            "operator": null,
+            "address": null
+        },
+        {
+            "id": "demo-1006",
+            "site": "Bad Homburg",
+            "start": "2026-11-01T14:20:00+01:00",
+            "end": "2026-11-01T14:42:00+01:00",
+            "kwh": 29.7,
+            "cost": 15.15,
+            "charge_cost": 15.15,
+            "idle": 0.0,
+            "price": 0.5101,
+            "list_price": 0.51,
+            "credit": 0.0,
+            "net": 12.73,
+            "duration_min": 22,
+            "avg_kw": 81,
+            "typical_kw": null,
+            "slow": false,
+            "start_soc": 64,
+            "has_invoice": true,
+            "push_state": "backfill",
+            "currency": "EUR",
+            "network": "supercharger",
+            "operator": null,
+            "address": null
+        },
+        {
+            "id": "demo-1005",
+            "site": "Weiterstadt",
+            "start": "2026-10-30T17:30:00+01:00",
+            "end": "2026-10-30T17:47:00+01:00",
+            "kwh": 22.4,
+            "cost": 14.27,
+            "charge_cost": 11.87,
+            "idle": 2.4,
+            "price": 0.5299,
+            "list_price": 0.53,
+            "credit": 0.0,
+            "net": 11.99,
+            "duration_min": 17,
+            "avg_kw": 79,
+            "typical_kw": null,
+            "slow": false,
+            "start_soc": 33,
+            "has_invoice": true,
+            "push_state": "backfill",
+            "currency": "EUR",
+            "network": "supercharger",
+            "operator": null,
+            "address": null
+        },
+        {
+            "id": "demo-1004",
+            "site": "Mainz",
+            "start": "2026-10-27T21:15:00+01:00",
+            "end": "2026-10-27T21:48:00+01:00",
+            "kwh": 44.6,
+            "cost": 15.61,
+            "charge_cost": 15.61,
+            "idle": 0.0,
+            "price": 0.35,
+            "list_price": 0.35,
+            "credit": 0.0,
+            "net": 13.12,
+            "duration_min": 33,
+            "avg_kw": 81,
+            "typical_kw": 60,
+            "slow": false,
+            "start_soc": 21,
+            "has_invoice": true,
+            "push_state": "backfill",
+            "currency": "EUR",
+            "network": "supercharger",
+            "operator": null,
+            "address": null
+        },
+        {
+            "id": "demo-1003",
+            "site": "EnBW Ladepark Darmstadt",
+            "start": "2026-10-24T10:30:00+02:00",
+            "end": "2026-10-24T10:55:00+02:00",
+            "kwh": 27.3,
+            "cost": 15.56,
+            "charge_cost": 15.56,
+            "idle": 0.0,
+            "price": 0.57,
+            "list_price": 0.57,
+            "credit": 0.0,
+            "net": 13.08,
+            "duration_min": 25,
+            "avg_kw": 66,
+            "typical_kw": null,
+            "slow": false,
+            "start_soc": 59,
+            "has_invoice": true,
+            "push_state": "backfill",
+            "currency": "EUR",
+            "network": "multipass",
+            "operator": "EnBW",
+            "address": null
+        },
+        {
+            "id": "demo-1002",
+            "site": "Frankfurt Flughafen",
+            "start": "2026-10-22T12:05:00+02:00",
+            "end": "2026-10-22T12:33:00+02:00",
+            "kwh": 38.2,
+            "cost": 19.86,
+            "charge_cost": 19.86,
+            "idle": 0.0,
+            "price": 0.5199,
+            "list_price": 0.52,
+            "credit": 0.0,
+            "net": 16.69,
+            "duration_min": 28,
+            "avg_kw": 82,
+            "typical_kw": null,
+            "slow": false,
+            "start_soc": 11,
+            "has_invoice": true,
+            "push_state": "backfill",
+            "currency": "EUR",
+            "network": "supercharger",
+            "operator": null,
+            "address": null
+        },
+        {
+            "id": "demo-1001",
+            "site": "Mainz",
+            "start": "2026-10-19T19:05:00+02:00",
+            "end": "2026-10-19T19:57:00+02:00",
+            "kwh": 33.0,
+            "cost": 16.83,
+            "charge_cost": 16.83,
+            "idle": 0.0,
+            "price": 0.51,
+            "list_price": 0.51,
+            "credit": 0.0,
+            "net": 14.14,
+            "duration_min": 52,
+            "avg_kw": 38,
+            "typical_kw": 81,
+            "slow": true,
+            "start_soc": 5,
+            "has_invoice": true,
+            "push_state": "backfill",
+            "currency": "EUR",
+            "network": "supercharger",
+            "operator": null,
+            "address": null
+        },
+        {
+            "id": "demo-1000",
+            "site": "Weiterstadt",
+            "start": "2026-10-17T19:40:00+02:00",
+            "end": "2026-10-17T20:11:00+02:00",
+            "kwh": 41.8,
+            "cost": 12.15,
+            "charge_cost": 12.15,
+            "idle": 0.0,
+            "price": 0.2907,
+            "list_price": 0.53,
+            "credit": 10.0,
+            "net": 10.21,
+            "duration_min": 31,
+            "avg_kw": 81,
+            "typical_kw": null,
+            "slow": false,
+            "start_soc": 23,
+            "has_invoice": true,
+            "push_state": "backfill",
+            "currency": "EUR",
+            "network": "supercharger",
+            "operator": null,
+            "address": null
+        }
+    ],
+    "api": {
+        "calls": 38,
+        "by_category": {
+            "data": 38
+        },
+        "cost_usd": 0.08,
+        "budget": 1500,
+        "credit_usd": 10.0
+    },
+    "car": {
+        "name": "Model 3",
+        "url": "https://static-assets.tesla.com/configurator/compositor?model=m3&view=STUD_3QTR&size=1440&bkba_opt=1&crop=1068,462,429,320&context=design_studio_2&overlay=0&options=$MT385,$PPSW,$W38A,$IPB12",
+        "thumb": "https://static-assets.tesla.com/configurator/compositor?model=m3&view=STUD_3QTR&size=720&bkba_opt=1&crop=1068,462,429,320&context=design_studio_2&overlay=0&options=$MT385,$PPSW,$W38A,$IPB12",
+        "views": {
+            "front": "https://static-assets.tesla.com/configurator/compositor?model=m3&view=STUD_3QTR&size=1440&bkba_opt=1&crop=1068,462,429,320&context=design_studio_2&overlay=0&options=$MT385,$PPSW,$W38A,$IPB12",
+            "side": "https://static-assets.tesla.com/configurator/compositor?model=m3&view=STUD_SIDE&size=1440&bkba_opt=1&crop=1152,408,382,322&context=design_studio_2&overlay=0&options=$MT385,$PPSW,$W38A,$IPB12",
+            "rear": "https://static-assets.tesla.com/configurator/compositor?model=m3&view=STUD_REAR&size=1440&bkba_opt=1&crop=1030,459,442,322&context=design_studio_2&overlay=0&options=$MT385,$PPSW,$W38A,$IPB12"
+        },
+        "choice": {
+            "generation": "m3-2024",
+            "trim": "rwd_lr",
+            "paint": "PPSW",
+            "wheel": "W38A",
+            "view": "front"
+        },
+        "auto": true,
+        "labels": {
+            "generation": "Model 3 (ab 2024)",
+            "trim": "Hinterradantrieb \u00b7 Maximale Reichweite",
+            "paint": "Pearl White Multi-Coat",
+            "wheel": "18\u2033 Photon",
+            "view": "Schr\u00e4g von vorne"
+        }
+    },
+    "look": "classic"
+}
