@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.14.0 – 2026-11-12
+
+- **Mobile app: search the sessions.** A search field above the list finds sessions by place, operator or address, in addition to the three filters. The list now covers up to 400 sessions instead of 40.
+- **Mobile app: optional lock.** *App sperren* in the connection settings asks for fingerprint, face or the phone's PIN when the app opens and after a minute in the background. Off by default; a phone without a screen lock never locks the app.
+- **Shorter place names.** Sessions in your own country are listed by place – *Moers* instead of *Moers, Germany*. Sessions abroad keep the country. `place` in `/api/dashboard` carries the name.
+- **Notification for every new invoice.** A second Home Assistant blueprint (`notify_invoice.yaml`) sends place, kWh, amount and price to the Home Assistant app on your phone, optionally only for sessions that charged much slower than usual. It needs no helpers.
+
 ## 0.13.1 – 2026-11-12
 
 - Mobile app: in the filter of the charging sessions, the label *Zeitraum* was cut off at the top; the fields have more room now.

@@ -601,4 +601,16 @@ const Map<String, String> english = {
       'December',
   'Auswertungen':
       'Reports',
+  'Ort oder Betreiber suchen':
+      'Search place or operator',
+  'App sperren':
+      'Lock the app',
+  'Fragt beim Öffnen nach Fingerabdruck, Gesicht oder der Geräte-PIN.':
+      'Asks for fingerprint, face or the phone\'s PIN when the app opens.',
+  'Ladecockpit entsperren':
+      'Unlock Ladecockpit',
+  'Ladecockpit ist gesperrt':
+      'Ladecockpit is locked',
+  'Entsperren':
+      'Unlock',
 };

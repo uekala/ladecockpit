@@ -75,6 +75,30 @@ DEFAULT_MIN_PRICE = 0.50
 _min_price = DEFAULT_MIN_PRICE
 
 
+def home_country(sessions) -> str | None:
+    """The country most sessions were charged in (ISO code as Tesla reports it), or None."""
+    codes = [str(x.get("country")).upper() for x in sessions if x.get("country")]
+    if not codes:
+        return None
+    best = max(set(codes), key=lambda c: (codes.count(c), c))
+    return best
+
+
+def place(site: str | None, country: str | None, home: str | None) -> str | None:
+    """"Bergstadt, Germany" → "Bergstadt" for a session in the home country. A site abroad
+    keeps its country, and so does a name whose last part is not a country
+    ("Brunnenhausstr. 46, Neustadt")."""
+    site = (site or "").strip()
+    if not site:
+        return None
+    name, comma, tail = site.rpartition(",")
+    if not (comma and name.strip() and "-".join(tail.casefold().split()) in _COUNTRIES):
+        return site
+    if home and country and str(country).upper() != home:
+        return site
+    return name.strip()
+
+
 def configure(min_price: float | None) -> None:
     """Set the price rule (EUR per kWh, 0 or None = off)."""
     global _min_price

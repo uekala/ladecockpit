@@ -75,7 +75,7 @@ Run only one Ladecockpit at a time. Two instances would report every invoice twi
 
 A native app for Android and iOS shows the same dashboard as the web app and talks only to your own Ladecockpit – over Tailscale or your home network, no cloud in between. It is a preview. For Android, every [release](https://github.com/uekala/ladecockpit/releases) from 0.12.7 on has a signed APK (`ladecockpit-<version>.apk`) that installs as an update over the previous one. From 0.12.8 on, the Android app asks GitHub once per start whether a newer release exists and offers the download – no charging data is sent, and the check can be switched off in the connection settings. For iOS, build it yourself. Plain HTTP is only accepted for private and Tailscale addresses; everything else needs HTTPS. Set a password first (`APP_PASSWORD` for Docker, *Mobile app password* in the Home Assistant app). Setup and build steps are in [mobile/README.md](mobile/README.md).
 
-The app follows the language of your Ladecockpit (`APP_LANG`, German or English). When the server cannot be reached, for example because Tailscale is off, it shows the last figures the phone has kept, with date and time.
+The app follows the language of your Ladecockpit (`APP_LANG`, German or English). When the server cannot be reached, for example because Tailscale is off, it shows the last figures the phone has kept, with date and time. The sessions can be searched by place or operator. An optional lock in the connection settings asks for fingerprint, face or the phone's PIN before the app shows anything.
 
 On a phone, the web app itself also works well: open it in the browser and add it to the home screen.
 
@@ -153,6 +153,10 @@ This section is only needed if you use Home Assistant. A standalone installation
 
 3. Create an automation from it and pick your helpers. Under *Additional actions* you can add a notification. The variables `site`, `kwh`, `total`, `price_per_kwh`, `idle_fee`, `currency`, `network`, `avg_power_kw`, `typical_power_kw`, `slow` and `text` are available there.
 4. Set `HA_ENT_COST_TOTAL` and `HA_ENT_KWH_TOTAL` to the two helpers to see the reconciliation in the app.
+
+**Notification on your phone.** A second blueprint sends every new invoice as a notification, for example to the Home Assistant app: place, kWh, amount and price per kWh. It needs no helpers.
+
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fuekala%2Fladecockpit%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fladecockpit%2Fnotify_invoice.yaml)
 
 Optional: [`homeassistant/ladecockpit_package.yaml`](homeassistant/ladecockpit_package.yaml) adds a `rest_command` to trigger the invoice lookup yourself.
 

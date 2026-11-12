@@ -11,6 +11,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 export 'document_response.dart' show CockpitException;
+import 'app_lock.dart';
 import 'dashboard_cache.dart';
 import 'document_response.dart';
 import 'format.dart';
@@ -33,6 +34,7 @@ class LadecockpitApp extends StatelessWidget {
       title: tr('Ladecockpit'),
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
+      builder: (context, child) => AppLockGate(child: child ?? SizedBox.shrink()),
       home: DashboardPage(),
     );
   }
@@ -260,12 +262,13 @@ return trf('Verbindung fehlgeschlagen.\nDiagnose: {0} · {1}', [error.runtimeTyp
 }
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key, this.client, this.updates, this.cache});
+  const DashboardPage({super.key, this.client, this.updates, this.cache, this.lock});
 
   /// Injectable for tests; the app uses the defaults.
   final CockpitClient? client;
   final UpdateChecker? updates;
   final DashboardCache? cache;
+  final AppLock? lock;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -275,6 +278,7 @@ class _DashboardPageState extends State<DashboardPage> {
   late final CockpitClient _client = widget.client ?? CockpitClient();
   late final UpdateChecker _updates = widget.updates ?? UpdateChecker();
   late final DashboardCache _cache = widget.cache ?? DashboardCache();
+  late final AppLock _lock = widget.lock ?? AppLock();
   // True while the figures on screen come from the phone's own copy.
   bool _fromCache = false;
   Map<String, dynamic>? _data;
@@ -285,6 +289,7 @@ class _DashboardPageState extends State<DashboardPage> {
   String _sessionMonthFilter = 'all';
   String _sessionNetworkFilter = 'all';
   String _sessionSiteFilter = 'all';
+  String _sessionSearch = '';
 
   @override
   void initState() {
@@ -381,6 +386,9 @@ class _DashboardPageState extends State<DashboardPage> {
     final previousUrl = urlController.text.trim();
     final showUpdateSwitch = _updates.supported;
     var updateCheck = showUpdateSwitch && await _updates.enabled;
+    final showLockSwitch = await _lock.supported;
+    final lockBefore = showLockSwitch && await _lock.enabled;
+    var appLock = lockBefore;
     if (!mounted) {
       urlController.dispose();
       passwordController.dispose();
@@ -488,6 +496,18 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                 ],
+                if (showLockSwitch)
+                  SwitchListTile(
+                    key: ValueKey('app-lock-switch'),
+                    contentPadding: EdgeInsets.zero,
+                    value: appLock,
+                    onChanged: (value) => setDialogState(() => appLock = value),
+                    title: Text(tr('App sperren')),
+                    subtitle: Text(
+                      tr('Fragt beim Öffnen nach Fingerabdruck, Gesicht oder der Geräte-PIN.'),
+                      style: TextStyle(fontSize: 11, height: 1.35),
+                    ),
+                  ),
                 SizedBox(height: 10),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,6 +540,11 @@ class _DashboardPageState extends State<DashboardPage> {
       );
       if (saved == true) {
         if (showUpdateSwitch) await _updates.setEnabled(updateCheck);
+        if (showLockSwitch && appLock != lockBefore) {
+          // Both directions ask the phone first: the lock is only switched on
+          // when it works, and only its owner can switch it off.
+          if (await _lock.unlock(tr('Ladecockpit entsperren'))) await _lock.setEnabled(appLock);
+        }
         await _client.saveConnection(urlController.text, passwordController.text);
         if (urlController.text.trim() != previousUrl) {
           // Another server: its figures must not mix with the old ones.
@@ -912,6 +937,20 @@ class _DashboardPageState extends State<DashboardPage> {
     final selectedNetwork = networks.contains(_sessionNetworkFilter) ? _sessionNetworkFilter : 'all';
     final selectedSite = sites.contains(_sessionSiteFilter) ? _sessionSiteFilter : 'all';
 
+    // Site names without the home country, as the server names them ("place").
+    final placeOf = <String, String>{
+      for (final s in items)
+        if ((s['site']?.toString() ?? '').isNotEmpty)
+          s['site'].toString(): s['place']?.toString() ?? s['site'].toString(),
+    };
+    final searchWords = _sessionSearch.toLowerCase().split(RegExp(r'\s+'))
+      .where((word) => word.isNotEmpty).toList();
+    bool searchMatches(Map<String, dynamic> session) {
+      if (searchWords.isEmpty) return true;
+      final text = [session['site'], session['operator'], session['address']]
+        .map((value) => value?.toString() ?? '').join(' ').toLowerCase();
+      return searchWords.every(text.contains);
+    }
     final filtered = items.where((session) {
       final monthMatches = selectedMonth == 'all' ||
         monthKey(session) == selectedMonth;
@@ -919,7 +958,7 @@ class _DashboardPageState extends State<DashboardPage> {
         (session['network']?.toString() ?? 'supercharger') == selectedNetwork;
       final siteMatches = selectedSite == 'all' ||
         (session['site']?.toString() ?? '') == selectedSite;
-      return monthMatches && networkMatches && siteMatches;
+      return monthMatches && networkMatches && siteMatches && searchMatches(session);
     }).toList();
 
     Widget filterField(String label, String value, List<DropdownMenuItem<String>> options,
@@ -956,7 +995,7 @@ class _DashboardPageState extends State<DashboardPage> {
     ];
     final siteOptions = <DropdownMenuItem<String>>[
       DropdownMenuItem(value: 'all', child: Text(tr('Alle Standorte'))),
-      ...sites.map((s) => DropdownMenuItem(value: s, child: Text(s,
+      ...sites.map((s) => DropdownMenuItem(value: s, child: Text(placeOf[s] ?? s,
         overflow: TextOverflow.ellipsis))),
     ];
 
@@ -965,6 +1004,20 @@ class _DashboardPageState extends State<DashboardPage> {
       children: [
         _sectionHeading(tr('Ladevorgänge'),
           trailing: '${filtered.length} / ${items.length}'),
+        Padding(
+          padding: EdgeInsets.only(bottom: 8),
+          child: TextField(
+            key: ValueKey('session-search'),
+            onChanged: (value) => setState(() => _sessionSearch = value.trim()),
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: tr('Ort oder Betreiber suchen'),
+              prefixIcon: Icon(Icons.search),
+              isDense: true,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
         Builder(builder: (context) {
           final filtersActive = selectedMonth != 'all' ||
               selectedNetwork != 'all' || selectedSite != 'all';
@@ -973,7 +1026,7 @@ class _DashboardPageState extends State<DashboardPage> {
             selectedNetwork == 'all' ? tr('Alle Netzwerke') :
               (selectedNetwork == 'multipass' ? tr('MultiPass') :
                 selectedNetwork == 'supercharger' ? tr('Supercharger') : selectedNetwork),
-            selectedSite == 'all' ? tr('Alle Standorte') : selectedSite,
+            selectedSite == 'all' ? tr('Alle Standorte') : (placeOf[selectedSite] ?? selectedSite),
           ].join(' · ');
           return Card(
             margin: EdgeInsets.only(bottom: 8),
@@ -1043,8 +1096,9 @@ class _DashboardPageState extends State<DashboardPage> {
             padding: EdgeInsets.all(16),
             child: Text(tr('Keine Ladevorgänge für diese Filter gefunden.')),
           )),
-        ...filtered.take(50).map((session) {
-          final site = session['site']?.toString() ?? tr('Unbekannter Standort');
+        ...filtered.take(100).map((session) {
+          final site = session['place']?.toString() ?? session['site']?.toString() ??
+            tr('Unbekannter Standort');
           final networkValue = session['network']?.toString() ?? 'supercharger';
           final network = networkValue == 'multipass' ? tr('MultiPass') :
             networkValue == 'supercharger' ? tr('Supercharger') : networkValue;
@@ -3036,7 +3090,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 keys: ['site', 'network', 'operator', 'start', 'end', 'duration_min',
                   'kwh', 'price', 'cost', 'idle', 'credit', 'avg_kw'],
                 summary: _summaryLine([
-                  last?['site'], _shortDateLabel(last?['start']), money(last?['cost']),
+                  last?['place'] ?? last?['site'], _shortDateLabel(last?['start']), money(last?['cost']),
                 ])),
               _section('Gesamt', totals,
                 keys: ['sessions', 'kwh', 'cost', 'charge_cost', 'idle', 'credit',

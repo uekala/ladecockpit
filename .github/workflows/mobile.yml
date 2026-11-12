@@ -95,6 +95,50 @@ jobs:
           print("Verified android.permission.INTERNET in the main release manifest")
           print("The app itself allows cleartext HTTP only to private network and Tailscale addresses")
           PY
+      - name: Prepare Android for the app lock (fingerprint, face or PIN)
+        working-directory: .
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import xml.etree.ElementTree as ET
+
+          main = Path("mobile/android/app/src/main")
+          activities = list(main.rglob("MainActivity.kt"))
+          if len(activities) != 1:
+              raise SystemExit(f"expected one MainActivity.kt, found {len(activities)}")
+          code = activities[0].read_text(encoding="utf-8")
+          code, count = re.subn(r"\bFlutterActivity\b", "FlutterFragmentActivity", code)
+          if count != 2:
+              raise SystemExit(f"MainActivity.kt has an unexpected form ({count} replacements)")
+          activities[0].write_text(code, encoding="utf-8")
+
+          android_ns = "http://schemas.android.com/apk/res/android"
+          ET.register_namespace("android", android_ns)
+          manifest = main / "AndroidManifest.xml"
+          tree = ET.parse(manifest)
+          root = tree.getroot()
+          name = "android.permission.USE_BIOMETRIC"
+          if not any(p.get(f"{{{android_ns}}}name") == name for p in root.findall("uses-permission")):
+              permission = ET.Element("uses-permission")
+              permission.set(f"{{{android_ns}}}name", name)
+              root.insert(0, permission)
+          tree.write(manifest, encoding="utf-8", xml_declaration=True)
+
+          # The system dialog needs an AppCompat theme on the activity.
+          styles = list((main / "res").glob("values*/styles.xml"))
+          if not styles:
+              raise SystemExit("no styles.xml found")
+          for path in styles:
+              text = path.read_text(encoding="utf-8")
+              text, count = re.subn(
+                  r'(<style name="(?:LaunchTheme|NormalTheme)" parent=")[^"]+(")',
+                  r"\1Theme.AppCompat.DayNight.NoActionBar\2", text)
+              if count != 2:
+                  raise SystemExit(f"{path} has an unexpected form ({count} themes)")
+              path.write_text(text, encoding="utf-8")
+          print("MainActivity, permission and themes prepared for the app lock")
+          PY
       - name: Use Gradle direct download host
         run: |
           python3 - <<'PY'
@@ -276,6 +320,8 @@ jobs:
               output_height=1024,
           )
           PY
+      - name: Say why the app lock uses Face ID
+        run: /usr/libexec/PlistBuddy -c "Add :NSFaceIDUsageDescription string 'Unlocks Ladecockpit when the app lock is on.'" ios/Runner/Info.plist
       - run: flutter pub get
       - run: dart run flutter_launcher_icons
       - run: flutter analyze

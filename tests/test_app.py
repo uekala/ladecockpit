@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 import yaml
 from fastapi.testclient import TestClient
 
@@ -63,8 +64,10 @@ def _refs(node):
             yield from _refs(v)
 
 
-def test_blueprint_is_consistent():
-    bp = yaml.load((ROOT / "blueprints/automation/ladecockpit/book_invoice.yaml").read_text(), Loader=_Loader)
+@pytest.mark.parametrize("name", ["book_invoice", "notify_invoice"])
+def test_blueprint_is_consistent(name):
+    bp = yaml.load((ROOT / f"blueprints/automation/ladecockpit/{name}.yaml").read_text(), Loader=_Loader)
+    assert bp["blueprint"]["source_url"].endswith(f"/{name}.yaml")
     declared = _inputs(bp["blueprint"]["input"])
     body = {k: v for k, v in bp.items() if k != "blueprint"}
     used = set(_refs(body))

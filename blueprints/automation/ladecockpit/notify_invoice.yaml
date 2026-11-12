@@ -1,0 +1,66 @@
+blueprint:
+  name: Ladecockpit – notify about a new invoice
+  description: >-
+    Sends a notification for every charging invoice that Ladecockpit reports
+    (event `ladecockpit_invoice`), for example to the Home Assistant app on
+    your phone: "18.0 kWh · €6.66 · €0.37/kWh · Oct 21, 18:18".
+    Ladecockpit sends each invoice exactly once.
+  domain: automation
+  author: Ladecockpit contributors
+  source_url: https://github.com/uekala/ladecockpit/blob/main/blueprints/automation/ladecockpit/notify_invoice.yaml
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    recipients:
+      name: Recipients
+      icon: mdi:bell
+      input:
+        notify_target:
+          name: Notify
+          description: Who gets the notification, for example the entity of your phone.
+          selector:
+            target:
+              entity:
+                domain: notify
+    options:
+      name: Options
+      icon: mdi:cog
+      collapsed: true
+      input:
+        title:
+          name: Title
+          default: Ladecockpit
+          selector:
+            text: {}
+        only_slow:
+          name: Only when charging was much slower than usual
+          description: Notify only about sessions that were much slower than usual at that site.
+          default: false
+          selector:
+            boolean: {}
+
+mode: queued
+max: 10
+
+variables:
+  title: !input title
+  only_slow: !input only_slow
+  site: "{{ trigger.event.data.site | default('Supercharger') }}"
+  kwh: "{{ trigger.event.data.kwh | float(0) | round(2) }}"
+  text: "{{ (trigger.event.data.text | default(''))[:255] }}"
+  slow: "{{ trigger.event.data.slow | default(false) }}"
+
+triggers:
+  - trigger: event
+    event_type: ladecockpit_invoice
+
+conditions:
+  - "{{ kwh > 0 }}"
+  - "{{ not only_slow or slow }}"
+
+actions:
+  - action: notify.send_message
+    target: !input notify_target
+    data:
+      title: "{{ title }}"
+      message: "{{ site }}: {{ text }}"
