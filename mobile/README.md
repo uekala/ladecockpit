@@ -68,7 +68,7 @@ How it works now:
 - `tool/configure-android-signing.py` signs release builds with a persistent upload key from GitHub Actions secrets. Passwords stay in environment variables; nothing is written to the repository. The keystore is deleted from the runner after the build.
 - The build number is the workflow run number + 1, so it rises with every build.
 - `tool/verify-apk-signature.sh` fails the build if a signed APK carries a debug key or, when the repository variable `ANDROID_SIGNING_CERT_SHA256` is set, any other certificate.
-- Without the secrets (for example in pull requests from Dependabot) the build still runs, carries the debug key and is marked as a test build that cannot be installed as an update. A manual run with **release** enabled fails instead.
+- Without the secrets (for example in pull requests from a fork) the build still runs, carries the debug key and is marked as a test build that cannot be installed as an update. A manual run with **release** enabled fails instead.
 
 One-time setup and verification (by the repository owner; never commit the key or paste it into a chat):
 
