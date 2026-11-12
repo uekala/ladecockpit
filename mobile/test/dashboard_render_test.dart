@@ -24,7 +24,8 @@ Map<String, dynamic> _demoEnglish() => jsonDecode(
     ) as Map<String, dynamic>;
 
 Future<List<String>> _renderAll(WidgetTester tester, Map<String, dynamic> data,
-    {List<String> tabs = const ['Cockpit', 'Ladevorgänge', 'Auswertung'], Set<String>? seen}) async {
+    {List<String> tabs = const ['Cockpit', 'Ladevorgänge', 'Auswertung'], Set<String>? seen,
+    double height = 2392}) async {
   final errors = <String>[];
   final previous = FlutterError.onError;
   FlutterError.onError = (details) {
@@ -37,7 +38,7 @@ Future<List<String>> _renderAll(WidgetTester tester, Map<String, dynamic> data,
 
   };
   try {
-    tester.view.physicalSize = const Size(1080, 2392);
+    tester.view.physicalSize = Size(1080, height);
     tester.view.devicePixelRatio = 2.75;
     final client = CockpitClient(
       httpClient: MockClient((request) async => http.Response(
@@ -205,11 +206,13 @@ void main() {
     addTearDown(() => appLanguage = 'de');
     final seen = <String>{};
     final errors = await _renderAll(tester, _demoEnglish(),
-        tabs: const ['Cockpit', 'Sessions', 'Reports'], seen: seen);
+        tabs: const ['Cockpit', 'Sessions', 'Reports'], seen: seen, height: 30000);
     expect(errors, isEmpty, reason: errors.join('\n'));
     expect(appLanguage, 'en');
-    expect(seen, containsAll(['MONTH OVERVIEW', 'Last session', 'Price radar', 'Reports & export',
-      'Year overview 2026', 'Connections']));
+    for (final text in ['MONTH OVERVIEW', 'Last session', 'Price radar', 'Year overview 2026',
+      'Connections', 'Your sessions', 'Cost development']) {
+      expect(seen, contains(text), reason: 'missing "$text" in:\n${seen.join('\n')}');
+    }
     // No German may be left on any tab or in any opened card.
     final german = RegExp(r'[äöüÄÖÜß]|\b(und|oder|nicht|keine|Ladevorg|Verbind|Rechnung|Kosten|Monat|Standort|Zeitraum|Preis|Uhr)');
     final leftovers = seen.where(german.hasMatch).toList();
