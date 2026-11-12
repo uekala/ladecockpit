@@ -17,6 +17,8 @@ Map<String, dynamic> _demo() => jsonDecode(
       File('test/fixtures/dashboard_demo.json').readAsStringSync(),
     ) as Map<String, dynamic>;
 
+var _printedOverflow = false;
+
 Future<List<String>> _renderAll(WidgetTester tester, Map<String, dynamic> data) async {
   final errors = <String>[];
   final previous = FlutterError.onError;
@@ -27,6 +29,11 @@ Future<List<String>> _renderAll(WidgetTester tester, Map<String, dynamic> data) 
         details.context?.toDescription() ?? '';
     final creator = RegExp(r'creator: ([^\n]{0,400})').firstMatch(text)?.group(1) ?? '';
     errors.add('$message @ $at ${creator.isEmpty ? '' : '[$creator]'}');
+    if (message.contains('overflowed') && !_printedOverflow) {
+      _printedOverflow = true;
+      // ignore: avoid_print
+      print('OVERFLOW-DETAILS\n${details.toDiagnosticsNode().toStringDeep()}\nEND-OVERFLOW-DETAILS');
+    }
   };
   try {
     tester.view.physicalSize = const Size(1080, 2392);
