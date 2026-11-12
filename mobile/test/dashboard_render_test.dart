@@ -25,7 +25,8 @@ Future<List<String>> _renderAll(WidgetTester tester, Map<String, dynamic> data) 
     final text = details.toString();
     final at = RegExp(r'The relevant error-causing widget was:\s*\n\s*(.+)').firstMatch(text)?.group(1)?.trim() ??
         details.context?.toDescription() ?? '';
-    errors.add('$message @ $at');
+    final creator = RegExp(r'creator: ([^\n]{0,400})').firstMatch(text)?.group(1) ?? '';
+    errors.add('$message @ $at ${creator.isEmpty ? '' : '[$creator]'}');
   };
   try {
     tester.view.physicalSize = const Size(1080, 2392);
