@@ -17,8 +17,6 @@ Map<String, dynamic> _demo() => jsonDecode(
       File('test/fixtures/dashboard_demo.json').readAsStringSync(),
     ) as Map<String, dynamic>;
 
-var _printedOverflow = false;
-
 Future<List<String>> _renderAll(WidgetTester tester, Map<String, dynamic> data) async {
   final errors = <String>[];
   final previous = FlutterError.onError;
@@ -29,11 +27,7 @@ Future<List<String>> _renderAll(WidgetTester tester, Map<String, dynamic> data) 
         details.context?.toDescription() ?? '';
     final creator = RegExp(r'creator: ([^\n]{0,400})').firstMatch(text)?.group(1) ?? '';
     errors.add('$message @ $at ${creator.isEmpty ? '' : '[$creator]'}');
-    if (message.contains('overflowed') && !_printedOverflow) {
-      _printedOverflow = true;
-      // ignore: avoid_print
-      print(details.toDiagnosticsNode().toStringDeep().split('\n').take(8).join('\n'));
-    }
+
   };
   try {
     tester.view.physicalSize = const Size(1080, 2392);
@@ -80,7 +74,9 @@ Future<void> _expandAll(WidgetTester tester) async {
   for (var i = 0; i < count; i++) {
     final tile = find.byType(ExpansionTile, skipOffstage: false);
     if (i >= tile.evaluate().length) break;
-    final header = find.descendant(of: tile.at(i), matching: find.byType(ListTile)).first;
+    final headers = find.descendant(of: tile.at(i), matching: find.byType(ListTile));
+    if (headers.evaluate().isEmpty) continue;
+    final header = headers.first;
     await tester.ensureVisible(header);
     await tester.pump();
     await tester.tap(header, warnIfMissed: false);
