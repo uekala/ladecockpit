@@ -4,7 +4,7 @@
 
 [Deutsch](README.de.md)
 
-![Ladecockpit with demo data while the car charges: on the desktop in the dynamic look with the glowing battery ring, power, finish time and countdown, next charging stop and last invoice; on a phone the price radar of the dynamic look with the time slot of right now; on a second phone the classic look in light mode](docs/screenshot.png)
+![Ladecockpit with demo data while the car charges: on the desktop in the dynamic look with the picture of the car, the glowing battery ring, power, finish time and countdown, next charging stop and last invoice; on a phone the price radar of the dynamic look with the time slot of right now; on a second phone the classic look in light mode](docs/screenshot.png)
 
 Ladecockpit fetches your actual charging invoices from the Tesla Fleet API (billed kWh, price per kWh, idle fees, site and PDF) and stores them locally. Use the web app on its own, or optionally connect Home Assistant for live vehicle data, sensors and automations.
 

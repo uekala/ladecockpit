@@ -4,7 +4,7 @@
 
 [English](README.md)
 
-![Ladecockpit mit Demo-Daten, während das Auto lädt: am Desktop im dynamischen Design mit leuchtendem Akku-Ring, Leistung, Uhrzeit und Countdown bis zum Ladelimit, nächstem Ladestopp und letzter Rechnung; auf einem Handy das Preis-Radar des dynamischen Designs mit dem aktuellen Zeitfenster; auf einem zweiten Handy das klassische Design hell](docs/screenshot-de.png)
+![Ladecockpit mit Demo-Daten, während das Auto lädt: am Desktop im dynamischen Design mit Bild des Autos, leuchtendem Akku-Ring, Leistung, Uhrzeit und Countdown bis zum Ladelimit, nächstem Ladestopp und letzter Rechnung; auf einem Handy das Preis-Radar des dynamischen Designs mit dem aktuellen Zeitfenster; auf einem zweiten Handy das klassische Design hell](docs/screenshot-de.png)
 
 Ladecockpit holt deine echten Laderechnungen direkt über die Tesla Fleet API (abgerechnete kWh, Preis pro kWh, Blockiergebühr, Standort und PDF) und speichert sie lokal. Du kannst die Web-App allein nutzen oder optional Home Assistant für Live-Fahrzeugdaten, Sensoren und Automationen anbinden.
 
