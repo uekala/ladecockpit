@@ -163,7 +163,7 @@ jobs:
           # Bei einem Release trägt die App die Version des Releases (v0.12.7 -> 0.12.7).
           BUILD_NAME_ARG=()
           if [ -n "$RELEASE_TAG" ]; then
-            BUILD_NAME_ARG=(--build-name="${RELEASE_TAG#v}")
+            BUILD_NAME_ARG=(--build-name="${RELEASE_TAG#v}" --dart-define=LADECOCKPIT_VERSION="${RELEASE_TAG#v}")
             echo "Versionsname: ${RELEASE_TAG#v}"
           fi
           for attempt in 1 2 3 4 5; do
