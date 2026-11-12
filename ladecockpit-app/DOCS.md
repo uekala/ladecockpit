@@ -30,7 +30,7 @@ The first sync starts right away. Invoices from before are only imported and **n
 
 ## Booking invoices
 
-Import the blueprint `blueprints/automation/ladecockpit/book_invoice.yaml` from the repository. It adds every invoice to your helpers and can send a notification.
+Import the blueprint `blueprints/automation/ladecockpit/book_invoice.yaml` from the repository. It adds every invoice to your helpers and can send a notification. If you only want the notification, import `blueprints/automation/ladecockpit/notify_invoice.yaml` instead or in addition; it needs no helpers.
 
 ## Comparison with a combustion car
 

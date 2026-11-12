@@ -5,7 +5,7 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 
-from . import i18n, stations, vehicle
+from . import i18n, networks, stations, vehicle
 from .config import Settings
 from .networks import MULTIPASS, SUPERCHARGER
 
@@ -228,12 +228,13 @@ def _plan(lang: str, forecast: dict, priced: list[dict], overall_price: float | 
     }
 
 
-def _session_view(x: dict, tz, lang: str) -> dict:
+def _session_view(x: dict, tz, lang: str, home: str | None = None) -> dict:
     start = datetime.fromisoformat(x["start_ts"]).astimezone(tz) if x.get("start_ts") else None
     stop = datetime.fromisoformat(x["stop_ts"]).astimezone(tz) if x.get("stop_ts") else None
     return {
         "id": x["session_id"],
         "site": x.get("site") or i18n.t(lang, "unknown_site"),
+        "place": networks.place(x.get("site"), x.get("country"), home) or i18n.t(lang, "unknown_site"),
         "start": _iso(start),
         "end": _iso(stop),
         "kwh": x.get("kwh"),
@@ -348,6 +349,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     values = live.get("values", {})
     units = live.get("units", {})
 
+    home_country = networks.home_country(sessions)
     priced = [x for x in sessions if x.get("kwh") and x.get("total") is not None and x.get("start_ts")]
     for x in priced:
         x["_local"] = datetime.fromisoformat(x["start_ts"]).astimezone(tz)
@@ -612,7 +614,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         "sync": meta.get("sync", {}),
         "status": status,
         "forecast": forecast,
-        "last_charge": _session_view(priced[0], tz, lang) if priced else None,
+        "last_charge": _session_view(priced[0], tz, lang, home_country) if priced else None,
         "month": month,
         "monthly": monthly,
         "slots": slots,
@@ -625,6 +627,6 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         "climate": climate,
         "reconcile": reconcile,
         "totals": totals,
-        "sessions": [_session_view(x, tz, lang) for x in sessions[:40]],
+        "sessions": [_session_view(x, tz, lang, home_country) for x in sessions[:400]],
         "api": api,
     }

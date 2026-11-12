@@ -75,7 +75,7 @@ Immer nur ein Ladecockpit gleichzeitig betreiben. Zwei Instanzen würden jede Re
 
 Eine eigene App für Android und iOS zeigt dasselbe Dashboard wie die Web-App und spricht nur mit deinem eigenen Ladecockpit – über Tailscale oder dein Heimnetz, ohne Cloud dazwischen. Sie ist eine Vorschau. Für Android hängt ab 0.12.7 an jedem [Release](https://github.com/uekala/ladecockpit/releases) eine signierte APK (`ladecockpit-<version>.apk`), die sich als Update über die vorige installieren lässt. Ab 0.12.8 fragt die Android-App beim Start einmal bei GitHub, ob es ein neueres Release gibt, und bietet den Download an – Ladedaten werden dabei nicht übertragen, und die Prüfung lässt sich in den Verbindungseinstellungen abschalten. Für iOS wird sie selbst gebaut. Unverschlüsseltes HTTP nimmt sie nur für private und Tailscale-Adressen an, alles andere braucht HTTPS. Vorher ein Passwort setzen (`APP_PASSWORD` bei Docker, *Mobiles App-Passwort* in der Home-Assistant-App). Einrichtung und Build stehen in [mobile/README.md](mobile/README.md) (englisch).
 
-Die App folgt der Sprache deines Ladecockpits (`APP_LANG`, Deutsch oder Englisch). Ist der Server nicht erreichbar, etwa weil Tailscale aus ist, zeigt sie den letzten Stand, den das Handy gespeichert hat, mit Datum und Uhrzeit.
+Die App folgt der Sprache deines Ladecockpits (`APP_LANG`, Deutsch oder Englisch). Ist der Server nicht erreichbar, etwa weil Tailscale aus ist, zeigt sie den letzten Stand, den das Handy gespeichert hat, mit Datum und Uhrzeit. Die Ladevorgänge lassen sich nach Ort oder Betreiber durchsuchen. Eine optionale Sperre in den Verbindungseinstellungen fragt nach Fingerabdruck, Gesicht oder der Geräte-PIN, bevor die App etwas zeigt.
 
 Auf dem Handy funktioniert auch die Web-App selbst gut: im Browser öffnen und zum Startbildschirm hinzufügen.
 
@@ -155,6 +155,10 @@ Dieser Abschnitt ist nur nötig, wenn du Home Assistant verwendest. Eine eigenst
 
 3. Daraus eine Automation erstellen und die Helfer auswählen. Unter *Additional actions* kannst du z. B. eine Benachrichtigung ergänzen. Dort stehen die Variablen `site`, `kwh`, `total`, `price_per_kwh`, `idle_fee`, `currency`, `network`, `avg_power_kw`, `typical_power_kw`, `slow` und `text` zur Verfügung. `slow` ist `true`, wenn die Ladung weniger als 60 % der Leistung bekam, die du an dieser Station sonst bekommst.
 4. `HA_ENT_COST_TOTAL` und `HA_ENT_KWH_TOTAL` auf die beiden Helfer setzen, dann zeigt die App den Abgleich.
+
+**Benachrichtigung aufs Handy.** Ein zweiter Blueprint schickt jede neue Rechnung als Benachrichtigung, zum Beispiel an die Home-Assistant-App: Ort, kWh, Betrag und Preis pro kWh. Er braucht keine Helfer.
+
+[![Home Assistant öffnen und den Blueprint-Import mit diesem Blueprint starten.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fuekala%2Fladecockpit%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fladecockpit%2Fnotify_invoice.yaml)
 
 Optional: [`homeassistant/ladecockpit_package.yaml`](homeassistant/ladecockpit_package.yaml) bringt einen `rest_command`, um die Rechnungssuche selbst anzustoßen.
 
