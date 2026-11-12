@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.13.1 – 2026-11-12
+
+- Mobile app: in the filter of the charging sessions, the label *Zeitraum* was cut off at the top; the fields have more room now.
+- The web app, the Home Assistant app and the Docker image are unchanged.
+
 ## 0.13.0 – 2026-11-12
 
 - **Backup and restore.** In the web app under *Connections & API costs*: download charging history, readings and invoices as one file and restore them, for example on another device. The Tesla sign-in is left out on purpose. A file is checked before anything changes; sessions already reported to Home Assistant are not booked twice. Also as `GET /api/backup.zip` and `POST /api/restore`.
