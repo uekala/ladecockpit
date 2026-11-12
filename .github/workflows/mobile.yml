@@ -10,6 +10,8 @@ on:
     paths:
       - "mobile/**"
       - ".github/workflows/mobile.yml"
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       release:
@@ -141,7 +143,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          REQUIRED: ${{ github.event_name == 'workflow_dispatch' && inputs.release && '--required' || '' }}
+          REQUIRED: ${{ (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.release)) && '--required' || '' }}
         run: python3 tool/configure-android-signing.py $REQUIRED
       - run: flutter pub get
       - run: dart run flutter_launcher_icons
@@ -153,13 +155,20 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          RELEASE_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || '' }}
         run: |
           # versionCode muss bei jedem Update steigen; die Laufnummer dieses Workflows tut das.
           BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 1))
           echo "Build-Nummer: $BUILD_NUMBER"
+          # Bei einem Release trägt die App die Version des Releases (v0.12.7 -> 0.12.7).
+          BUILD_NAME_ARG=()
+          if [ -n "$RELEASE_TAG" ]; then
+            BUILD_NAME_ARG=(--build-name="${RELEASE_TAG#v}")
+            echo "Versionsname: ${RELEASE_TAG#v}"
+          fi
           for attempt in 1 2 3 4 5; do
             set +e
-            flutter build apk --release --build-number="$BUILD_NUMBER" 2>&1 | tee /tmp/ladecockpit-android-build.log
+            flutter build apk --release --build-number="$BUILD_NUMBER" "${BUILD_NAME_ARG[@]}" 2>&1 | tee /tmp/ladecockpit-android-build.log
             status=${PIPESTATUS[0]}
             set -e
 
@@ -214,6 +223,29 @@ jobs:
         with:
           name: ladecockpit-android-apk
           path: mobile/build/app/outputs/flutter-apk/app-release.apk
+
+  attach-apk:
+    # Hängt die signierte APK an das veröffentlichte Release, damit man sie ohne GitHub-Konto laden kann.
+    if: github.event_name == 'release'
+    needs: android
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: ladecockpit-android-apk
+      - name: Upload APK to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          FILE="ladecockpit-${TAG#v}.apk"
+          mv app-release.apk "$FILE"
+          sha256sum "$FILE" | tee "$FILE.sha256"
+          gh release upload "$TAG" "$FILE" "$FILE.sha256" --clobber --repo "$GITHUB_REPOSITORY"
+          echo "APK an Release $TAG angehängt: $FILE" >> "$GITHUB_STEP_SUMMARY"
 
   ios:
     runs-on: macos-latest

@@ -70,7 +70,7 @@ Run only one Ladecockpit at a time. Two instances would report every invoice twi
 
 ## Mobile app (preview)
 
-A native app for Android and iOS shows the same dashboard as the web app and talks only to your own Ladecockpit – over Tailscale or your home network, no cloud in between. It is a preview: build it yourself for now. Plain HTTP is only accepted for private and Tailscale addresses; everything else needs HTTPS. Set a password first (`APP_PASSWORD` for Docker, *Mobile app password* in the Home Assistant app). Setup and build steps are in [mobile/README.md](mobile/README.md).
+A native app for Android and iOS shows the same dashboard as the web app and talks only to your own Ladecockpit – over Tailscale or your home network, no cloud in between. It is a preview. For Android, every [release](https://github.com/uekala/ladecockpit/releases) from 0.12.7 on has a signed APK (`ladecockpit-<version>.apk`) that installs as an update over the previous one; for iOS, build it yourself. Plain HTTP is only accepted for private and Tailscale addresses; everything else needs HTTPS. Set a password first (`APP_PASSWORD` for Docker, *Mobile app password* in the Home Assistant app). Setup and build steps are in [mobile/README.md](mobile/README.md).
 
 On a phone, the web app itself also works well: open it in the browser and add it to the home screen.
 
