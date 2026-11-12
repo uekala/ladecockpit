@@ -237,14 +237,19 @@ return 'Verbindung fehlgeschlagen.\nDiagnose: ${error.runtimeType} · $error';
 }
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  const DashboardPage({super.key, this.client, this.updates});
+
+  /// Injectable for tests; the app uses the default client.
+  final CockpitClient? client;
+  final UpdateChecker? updates;
+
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  final _client = CockpitClient();
-  final _updates = UpdateChecker();
+  late final CockpitClient _client = widget.client ?? CockpitClient();
+  late final UpdateChecker _updates = widget.updates ?? UpdateChecker();
   Map<String, dynamic>? _data;
   String? _error;
   bool _loading = false;
