@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:ladecockpit_mobile/dashboard_cache.dart';
+import 'package:ladecockpit_mobile/l10n.dart';
 import 'package:ladecockpit_mobile/main.dart';
 import 'package:ladecockpit_mobile/theme/app_theme.dart';
 import 'package:ladecockpit_mobile/update_check.dart';
@@ -18,7 +19,12 @@ Map<String, dynamic> _demo() => jsonDecode(
       File('test/fixtures/dashboard_demo.json').readAsStringSync(),
     ) as Map<String, dynamic>;
 
-Future<List<String>> _renderAll(WidgetTester tester, Map<String, dynamic> data) async {
+Map<String, dynamic> _demoEnglish() => jsonDecode(
+      File('test/fixtures/dashboard_demo_en.json').readAsStringSync(),
+    ) as Map<String, dynamic>;
+
+Future<List<String>> _renderAll(WidgetTester tester, Map<String, dynamic> data,
+    {List<String> tabs = const ['Cockpit', 'Ladevorgänge', 'Auswertung'], Set<String>? seen}) async {
   final errors = <String>[];
   final previous = FlutterError.onError;
   FlutterError.onError = (details) {
@@ -47,13 +53,16 @@ Future<List<String>> _renderAll(WidgetTester tester, Map<String, dynamic> data) 
       home: DashboardPage(client: client, updates: UpdateChecker(isAndroid: false)),
     ));
     await _settle(tester);
-    for (final tab in ['Cockpit', 'Ladevorgänge', 'Auswertung']) {
+    for (final tab in tabs) {
       final destination = find.widgetWithText(NavigationDestination, tab);
       if (destination.evaluate().isNotEmpty) {
         await tester.tap(destination.first);
         await _settle(tester);
       }
       await _expandAll(tester);
+      seen?.addAll(tester
+          .widgetList<Text>(find.byType(Text, skipOffstage: false))
+          .map((text) => text.data ?? text.textSpan?.toPlainText() ?? ''));
     }
   } finally {
     FlutterError.onError = previous;
@@ -190,6 +199,21 @@ void main() {
     await tester.tap(find.widgetWithText(NavigationDestination, 'Auswertung').first);
     await _settle(tester);
     expect(find.text('Jahresübersicht 2026'), findsOneWidget);
+  });
+
+  testWidgets('an English server gives an English app', (tester) async {
+    addTearDown(() => appLanguage = 'de');
+    final seen = <String>{};
+    final errors = await _renderAll(tester, _demoEnglish(),
+        tabs: const ['Cockpit', 'Sessions', 'Reports'], seen: seen);
+    expect(errors, isEmpty, reason: errors.join('\n'));
+    expect(appLanguage, 'en');
+    expect(seen, containsAll(['MONTH OVERVIEW', 'Last session', 'Price radar', 'Reports & export',
+      'Year overview 2026', 'Connections']));
+    // No German may be left on any tab or in any opened card.
+    final german = RegExp(r'[äöüÄÖÜß]|\b(und|oder|nicht|keine|Ladevorg|Verbind|Rechnung|Kosten|Monat|Standort|Zeitraum|Preis|Uhr)');
+    final leftovers = seen.where(german.hasMatch).toList();
+    expect(leftovers, isEmpty, reason: leftovers.join('\n'));
   });
 
   test('fixture is valid', () {
