@@ -33,7 +33,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.47.9
+          flutter-version: 3.50.0
           cache: true
       - run: flutter create --platforms=android,ios --org io.github.uekala --project-name ladecockpit .
       - name: Check the Android application ID
@@ -301,7 +301,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.47.9
+          flutter-version: 3.50.0
           cache: true
       - run: flutter create --platforms=android,ios --org io.github.uekala --project-name ladecockpit .
       - name: Check the iOS bundle identifier

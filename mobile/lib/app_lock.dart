@@ -1,6 +1,6 @@
 // The texts are looked up at run time (tr), so widgets holding them cannot be const.
 // ignore_for_file: prefer_const_constructors
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.14.1 – 2026-11-12
+
+- Mobile app: built with Flutter 3.50 and the standalone `material_ui` package, which replaces the Material library that Flutter 3.50 deprecates. Nothing changes in use.
+- The web app, the Home Assistant app and the Docker image are unchanged.
+
 ## 0.14.0 – 2026-11-12
 
 - **Mobile app: search the sessions.** A search field above the list finds sessions by place, operator or address, in addition to the three filters. The list now covers up to 400 sessions instead of 40.
