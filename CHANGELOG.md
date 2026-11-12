@@ -1,12 +1,16 @@
 # Changelog
 
-## 0.12.10 – 2026-11-12
+## 0.13.0 – 2026-11-12
 
+- **Backup and restore.** In the web app under *Connections & API costs*: download charging history, readings and invoices as one file and restore them, for example on another device. The Tesla sign-in is left out on purpose. A file is checked before anything changes; sessions already reported to Home Assistant are not booked twice. Also as `GET /api/backup.zip` and `POST /api/restore`.
+- **Year overview.** One PDF page per year with a line per month – sessions, kWh, net, VAT, gross and credits – plus the total, the MultiPass share and charging at home. Under *Export* in the web app, in the reports of the mobile app and as `/api/year/2026.pdf`. `years` in `/api/dashboard` lists the years with sessions.
+- **Guided setup.** Without Tesla access, the web app walks through the Tesla developer app in five steps, with the redirect address ready to copy. The demo offers the same guide.
+- **Mobile app in English.** The app follows the language of the server (`APP_LANG`) and, before it has connected, the language of the phone. Numbers and dates follow as well.
+- **Mobile app without a connection.** When the server cannot be reached, the app shows the last figures the phone has kept, with date and time.
 - **Mobile app: German number format.** Amounts and figures use a decimal comma and a dot between thousands: `65,10 €`, `0,40 €/kWh`, `1.234,5 kWh`.
 - **Mobile app: clearer cards in the cockpit.** *Letzter Ladevorgang* shows site, date and amount under its title instead of an internal ID, *Gesamt* shows sessions, energy and costs, *Ladeprognose* the forecast and *Fahrzeug* model, paint and wheels. Opened, the cards list only what means something: no internal IDs or image addresses, and fees and credits only when there are any. The network reads Supercharger or MultiPass.
 - Mobile app: the forecast text was replaced by a dash when it contained a capital T; fixed.
 - Mobile app: the hints under the server address and the password are no longer cut off.
-- The web app, the Home Assistant app and the Docker image are unchanged.
 
 ## 0.12.9 – 2026-11-12
 

@@ -41,6 +41,12 @@ Enter the consumption (L/100 km) and fuel price of a comparison car, either as f
 - **Charging at home**: the energy meter of your wallbox (kWh, only increasing) and your electricity price, fixed or from an entity such as a dynamic tariff. The price at the time of charging is used.
 - **Outside temperature**: a sensor or a weather entity, for the consumption by temperature.
 
+## Backup and year overview
+
+In the web app, **Connections & API costs** has **Download backup** and **Restore backup**: charging history, readings and invoices in one file, without the Tesla sign-in. Restoring replaces the charging history; sessions already reported to Home Assistant are not booked twice. After moving to another Home Assistant, sign in with Tesla once.
+
+Under **Export** you find a **year overview** as PDF for every year with sessions: one line per month with sessions, kWh, net, VAT, gross and credits.
+
 ## Sensors
 
 Ladecockpit creates its own entities: `sensor.ladecockpit_next_charge`, `sensor.ladecockpit_battery`, `sensor.ladecockpit_month_cost`, `sensor.ladecockpit_last_charge`, `sensor.ladecockpit_price_tip`, `sensor.ladecockpit_range_at_100`, `sensor.ladecockpit_consumption`, `sensor.ladecockpit_car` (a picture of your car, chosen in the web app with **Customise**), `sensor.ladecockpit_multipass` (third-party stations where MultiPass has worked for you, with map links) and `binary_sensor.ladecockpit_problem`. Use them in dashboards and automations. A ready-made dashboard section is in `homeassistant/dashboard_card.yaml` in the repository. Turn this off with **Create sensors in Home Assistant**.
