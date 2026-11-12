@@ -7,10 +7,14 @@
 - **Guided setup.** Without Tesla access, the web app walks through the Tesla developer app in five steps, with the redirect address ready to copy. The demo offers the same guide.
 - **Mobile app in English.** The app follows the language of the server (`APP_LANG`) and, before it has connected, the language of the phone. Numbers and dates follow as well.
 - **Mobile app without a connection.** When the server cannot be reached, the app shows the last figures the phone has kept, with date and time.
+
+## 0.12.10 – 2026-11-12
+
 - **Mobile app: German number format.** Amounts and figures use a decimal comma and a dot between thousands: `65,10 €`, `0,40 €/kWh`, `1.234,5 kWh`.
 - **Mobile app: clearer cards in the cockpit.** *Letzter Ladevorgang* shows site, date and amount under its title instead of an internal ID, *Gesamt* shows sessions, energy and costs, *Ladeprognose* the forecast and *Fahrzeug* model, paint and wheels. Opened, the cards list only what means something: no internal IDs or image addresses, and fees and credits only when there are any. The network reads Supercharger or MultiPass.
 - Mobile app: the forecast text was replaced by a dash when it contained a capital T; fixed.
 - Mobile app: the hints under the server address and the password are no longer cut off.
+- The web app, the Home Assistant app and the Docker image are unchanged.
 
 ## 0.12.9 – 2026-11-12
 
