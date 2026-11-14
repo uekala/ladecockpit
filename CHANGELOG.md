@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.4 – 2026-11-14
+
+- **Price radar: the lowest price is the cheapest again.** 0.14.2 skipped time windows and sites with only a session or two, so a more expensive one could be labelled "cheapest" right next to a lower price. Now the lowest price always gets the label, and when little stands behind it, the app says so: "cheapest · only 1 session". Applies to the mobile app, the web app and the tip under the radar.
+
 ## 0.14.3 – 2026-11-14
 
 - Same content as 0.14.2, published again: the Docker image and the APK of 0.14.2 were not built from the right state. If you installed the APK 0.14.2, install 0.14.3.

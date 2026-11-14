@@ -96,7 +96,7 @@ def test_forecast_from_readings(settings):
     assert d["forecast"]["calendar_days"] == 4   # Oct 20 14:00 + 3.5 d = Oct 24 04:00 local
 
 
-def test_one_session_does_not_make_a_slot_the_best(settings):
+def test_the_cheapest_slot_says_when_it_rests_on_one_session(settings):
     from zoneinfo import ZoneInfo
     settings = dataclasses.replace(settings, lang="de", tz=ZoneInfo("Europe/Berlin"))
     now = datetime(2026, 11, 1, 12, tzinfo=timezone.utc)
@@ -114,4 +114,4 @@ def test_one_session_does_not_make_a_slot_the_best(settings):
     assert slots["morning"]["sessions"] == 1 and slots["morning"]["solid"] is False
     assert slots["midday"]["sessions"] == 4 and slots["midday"]["solid"] is True
     slot_text = next(i["text"] for i in d["insights"] if i["kind"] == "slot")
-    assert "Morgens" not in slot_text
+    assert slot_text.startswith("Morgens") and "erst 1× geladen" in slot_text

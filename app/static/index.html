@@ -1235,7 +1235,7 @@ try {
       addonStep3: "Copy the full address from the browser bar of that tab and paste it here.",
       atReference: "At reference price {p}", perInvoices: "Per invoices (without fees)",
       radar: "Price radar", radarTitle: "What a kWh costs you by time of day", radarSub: "Average list price from your invoices", yourAvg: "dashed: your average {p}",
-      cheapest: "cheapest", noSession: "no session", oneSession: "1 session", nSessions: "{n} sessions",
+      cheapest: "cheapest", cheapestFew: "cheapest · only {n}", noSession: "no session", oneSession: "1 session", nSessions: "{n} sessions",
       tipSlot: "{label} ({range}): avg {p}/kWh from {n}, {kwh} kWh", tipEmpty: "{label}: no session in this time window yet",
       sites: "Sites", sitesTitle: "Where you charge", noSessions: "No sessions yet.",
       thSite: "Supercharger", thSessions: "Sessions", thKwh: "kWh", thAvg: "avg /kWh",
@@ -1340,7 +1340,7 @@ try {
       addonStep3: "Die komplette Adresse aus der Browserzeile dieses Tabs kopieren und hier einfügen.",
       atReference: "Mit Referenzpreis {p}", perInvoices: "Laut Rechnungen (ohne Gebühren)",
       radar: "Preis-Radar", radarTitle: "Was dich eine kWh je nach Uhrzeit kostet", radarSub: "Ø Listenpreis aus deinen Rechnungen", yourAvg: "gestrichelt: dein Schnitt {p}",
-      cheapest: "am günstigsten", noSession: "keine Ladung", oneSession: "1 Ladung", nSessions: "{n} Ladungen",
+      cheapest: "am günstigsten", cheapestFew: "am günstigsten · nur {n}", noSession: "keine Ladung", oneSession: "1 Ladung", nSessions: "{n} Ladungen",
       tipSlot: "{label} ({range}): Ø {p}/kWh aus {n}, {kwh} kWh", tipEmpty: "{label}: noch keine Ladung in diesem Zeitfenster",
       sites: "Standorte", sitesTitle: "Wo du lädst", noSessions: "Noch keine Ladungen.",
       thSite: "Supercharger", thSessions: "Ladungen", thKwh: "kWh", thAvg: "Ø /kWh",
@@ -1993,9 +1993,9 @@ try {
     const step = maxP > 1.2 ? 0.5 : 0.2;
     const top = Math.ceil(maxP / step) * step;
     const pct = (v) => (v / top) * 100;
-    // One session says nothing about a time of day: only slots with a few sessions can be the cheapest.
-    const solid = priced.filter((s) => s.solid);
-    const best = priced.length >= 2 && solid.length ? solid.reduce((a, b) => (b.avg_price < a.avg_price ? b : a)) : null;
+    // The lowest price wins; a slot with only a session or two says so next to the label.
+    const best = priced.length >= 2 ? priced.reduce((a, b) => (b.avg_price < a.avg_price ? b : a)) : null;
+    const bestText = (s) => (s.solid === false ? T("cheapestFew", { n: sessionsText(s.sessions) }) : T("cheapest"));
     const ticks = [];
     for (let t = 0; t <= top + 1e-9; t += step) ticks.push(t);
     const rows = slots.map((s) => {
@@ -2016,7 +2016,7 @@ try {
           ${has ? `<div class="radar-bar" style="width:${pct(s.avg_price)}%"></div>` : '<div class="radar-empty"></div>'}
           ${avg ? `<div class="radar-avg" style="left:${pct(avg)}%"></div>` : ""}
         </div>
-        <div class="radar-val">${has ? money(s.avg_price) : '<span class="muted">–</span>'}<small>${has ? (isBest ? T("cheapest") : sessionsText(s.sessions)) : T("noSession")}</small></div>
+        <div class="radar-val">${has ? money(s.avg_price) : '<span class="muted">–</span>'}<small>${has ? (isBest ? bestText(s) : sessionsText(s.sessions)) : T("noSession")}</small></div>
         <div class="radar-more">${esc(more)}</div>
       </div>`;
       }
@@ -2026,7 +2026,7 @@ try {
           ${has ? `<div class="radar-bar" style="width:${pct(s.avg_price)}%"></div>` : '<div class="radar-empty"></div>'}
           ${avg ? `<div class="radar-avg" style="left:${pct(avg)}%"></div>` : ""}
         </div>
-        <div class="radar-val">${has ? money(s.avg_price) : '<span class="muted">–</span>'}<small>${has ? (isBest ? T("cheapest") : sessionsText(s.sessions)) : T("noSession")}</small></div>
+        <div class="radar-val">${has ? money(s.avg_price) : '<span class="muted">–</span>'}<small>${has ? (isBest ? bestText(s) : sessionsText(s.sessions)) : T("noSession")}</small></div>
       </div>`;
     }).join("");
     const insights = (d.insights || []).filter((i) => !["slot", "fuel", "climate"].includes(i.kind));

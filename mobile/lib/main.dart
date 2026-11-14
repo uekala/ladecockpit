@@ -1434,22 +1434,26 @@ class _DashboardPageState extends State<DashboardPage> {
         ? rawSites.whereType<Map<String, dynamic>>().take(8).toList()
         : <Map<String, dynamic>>[];
     if (slots.isEmpty && sites.isEmpty) return SizedBox.shrink();
-    // One session says nothing about a time of day or a site: only entries with
-    // enough sessions are named the cheapest.
+    // The lowest price wins. An entry with only a session or two behind it is
+    // still named, with a note that it rests on little.
     int sessionsOf(Map<String, dynamic> row) =>
         row['sessions'] is num ? (row['sessions'] as num).round() : 0;
-    Map<String, dynamic>? cheapestOf(Iterable<Map<String, dynamic>> rows, int minSessions) {
+    Map<String, dynamic>? cheapestOf(Iterable<Map<String, dynamic>> rows) {
       Map<String, dynamic>? best;
       for (final row in rows) {
-        if (row['avg_price'] is! num || sessionsOf(row) < minSessions) continue;
+        if (row['avg_price'] is! num || sessionsOf(row) < 1) continue;
         if (best == null || (row['avg_price'] as num) < (best['avg_price'] as num)) best = row;
       }
       return best;
     }
-    final cheapestSlot = cheapestOf(slots, _radarMinSlotSessions);
-    final cheapestSite = cheapestOf(sites, _radarMinSiteSessions);
+    final cheapestSlot = cheapestOf(slots);
+    final cheapestSite = cheapestOf(sites);
     String sessionsLabel(int count) =>
         count == 1 ? tr('1 Ladevorgang') : trf('{0} Ladevorgänge', [count]);
+    // "nur 1 Ladevorgang" behind a cheapest entry that rests on little.
+    String fewNote(Map<String, dynamic> row, int minSessions) => sessionsOf(row) >= minSessions
+        ? ''
+        : trf(' (nur {0})', [sessionsLabel(sessionsOf(row))]);
 
     Widget priceValue(dynamic value, {bool highlighted = false}) =>
         Container(
@@ -1515,10 +1519,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 _radarBest(
                   icon: Icons.schedule,
                   label: cheapestSlot == null
-                      ? tr('Ladezeit · noch zu wenige Ladevorgänge')
+                      ? tr('Ladezeit · noch keine Ladevorgänge')
                       : trf('Ladezeit · {0}', [[cheapestSlot['label'], cheapestSlot['range']]
                           .where((part) => part != null && part.toString().isNotEmpty)
-                          .join(', ')]),
+                          .join(', ')]) + fewNote(cheapestSlot, _radarMinSlotSessions),
                   price: cheapestSlot?['avg_price'],
                 ),
                 SizedBox(height: 8),
@@ -1527,8 +1531,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 _radarBest(
                   icon: Icons.location_on_outlined,
                   label: cheapestSite == null
-                      ? tr('Standort · noch zu wenige Ladevorgänge')
-                      : trf('Standort · {0}', [cheapestSite['label'] ?? cheapestSite['site'] ?? '–']),
+                      ? tr('Standort · noch keine Ladevorgänge')
+                      : trf('Standort · {0}', [cheapestSite['label'] ?? cheapestSite['site'] ?? '–']) +
+                          fewNote(cheapestSite, _radarMinSiteSessions),
                   price: cheapestSite?['avg_price'],
                 ),
               ],
