@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.14.5 – 2026-11-14
+
+- Mobile app: invoices, monthly reports and the year overview can be enlarged with two fingers. Before, the pages could only be read at the width of the screen.
+- The web app, the Home Assistant app and the Docker image are unchanged.
+
 ## 0.14.4 – 2026-11-14
 
 - **Price radar: the lowest price is the cheapest again.** 0.14.2 skipped time windows and sites with only a session or two, so a more expensive one could be labelled "cheapest" right next to a lower price. Now the lowest price always gets the label, and when little stands behind it, the app says so: "cheapest · only 1 session". Applies to the mobile app, the web app and the tip under the radar.
