@@ -228,6 +228,7 @@ async def dashboard():
         "mode": "live",
         "setup": {
             "tesla_configured": settings.tesla_configured,
+            "tesla_open_source": settings.tesla_open_source,
             "tesla_connected": tesla.connected,
             "tesla_auth_error": tesla.auth_error,
             "ha_configured": ha.configured,
@@ -648,10 +649,17 @@ async def icon(size: int):
 @app.get("/auth/login", include_in_schema=False)
 async def auth_login():
     if not settings.tesla_configured:
-        raise HTTPException(400, "TESLA_CLIENT_ID and TESLA_CLIENT_SECRET are missing.")
+        raise HTTPException(400, "TESLA_CLIENT_ID is missing.")
     state = secrets.token_urlsafe(16)
     db.kv_set("oauth_state", state)
-    return RedirectResponse(tesla.authorize_url(state))
+    verifier = None
+    if settings.tesla_open_source:
+        # No client secret: the sign-in is tied to this verifier instead (PKCE).
+        verifier = secrets.token_urlsafe(64)
+        db.kv_set("oauth_verifier", verifier)
+    else:
+        db.kv_del("oauth_verifier")
+    return RedirectResponse(tesla.authorize_url(state, verifier))
 
 
 @app.get("/auth/callback", include_in_schema=False)
@@ -683,11 +691,14 @@ async def auth_code(body: CodeIn):
 
 
 async def _finish_login(code: str) -> None:
+    verifier = db.kv_get("oauth_verifier") if settings.tesla_open_source else None
+    if settings.tesla_open_source and not verifier:
+        raise HTTPException(400, "This sign-in was not started here. Please connect to Tesla again.")
     try:
-        await tesla.exchange_code(code)
+        await tesla.exchange_code(code, verifier)
     except TeslaError as e:
         raise HTTPException(400, str(e)) from e
-    db.kv_del("oauth_state")
+    db.kv_del("oauth_state", "oauth_verifier")
     sync.wake()
 
 
