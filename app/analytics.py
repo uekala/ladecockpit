@@ -491,15 +491,15 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
 
     insights: list[dict] = []
     used = [s for s in slots if s["sessions"]]
-    # One session says nothing about a time of day: only slots with a few sessions can be the best.
-    solid = [s for s in used if s["sessions"] >= MIN_SLOT_SESSIONS]
-    if len(priced) >= 4 and len(used) >= 2 and solid and overall["list_price"]:
-        best = min(solid, key=lambda s: s["avg_price"])
+    if len(priced) >= 4 and len(used) >= 2 and overall["list_price"]:
+        # The lowest price wins; with only a session or two behind it, the tip says so.
+        best = min(used, key=lambda s: s["avg_price"])
         diff = overall["list_price"] - best["avg_price"]
         if diff >= MIN_PRICE_GAP:
             insights.append({"kind": "slot", "text": i18n.t(
-                lang, "in_slot_best", label=best["label"], range=best["range"],
-                price=money(best["avg_price"]), diff=money(diff))})
+                lang, "in_slot_best" if best["solid"] else "in_slot_best_few",
+                label=best["label"], range=best["range"],
+                price=money(best["avg_price"]), diff=money(diff), n=best["sessions"])})
         else:
             insights.append({"kind": "slot", "text": i18n.t(lang, "in_slot_flat")})
     else:

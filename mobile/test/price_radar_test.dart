@@ -48,7 +48,7 @@ Future<void> _open(WidgetTester tester, List slots, List sites) async {
 }
 
 void main() {
-  testWidgets('a single cheap session is not named the cheapest time or site', (tester) async {
+  testWidgets('the lowest price is named the cheapest, with a note when it rests on one session', (tester) async {
     await _open(tester, [
       _slot('morning', 'Morgens', '6–11 Uhr', 0.30, 1),
       _slot('midday', 'Mittags', '11–16 Uhr', 0.376, 5),
@@ -60,28 +60,29 @@ void main() {
     ]);
 
     expect(find.text('Hier lädst du am günstigsten'), findsOneWidget);
-    expect(find.text('Ladezeit · Mittags, 11–16 Uhr'), findsOneWidget);
-    expect(find.text('Standort · Gelsenkirchen'), findsOneWidget);
-    expect(find.text('Mittags · Günstigste Zeit'), findsOneWidget);
-    expect(find.text('Morgens · Günstigste Zeit'), findsNothing);
-    expect(find.text('Morgens'), findsOneWidget);
+    expect(find.text('Ladezeit · Morgens, 6–11 Uhr (nur 1 Ladevorgang)'), findsOneWidget);
+    expect(find.text('Standort · Venlo (nur 1 Ladevorgang)'), findsOneWidget);
+    expect(find.text('Morgens · Günstigste Zeit'), findsOneWidget);
+    expect(find.text('Mittags · Günstigste Zeit'), findsNothing);
     expect(find.text('6–11 Uhr · 1 Ladevorgang · noch wenig aussagekräftig'), findsOneWidget);
     expect(find.text('11–16 Uhr · 5 Ladevorgänge'), findsOneWidget);
     // Two decimals, like every other price in the app.
+    expect(find.text('0,30 €/kWh'), findsWidgets);
     expect(find.text('0,38 €/kWh'), findsWidgets);
     expect(find.text('0,376 €/kWh'), findsNothing);
   });
 
-  testWidgets('says so when there are too few sessions to name a cheapest time', (tester) async {
+  testWidgets('no note when enough sessions stand behind the cheapest', (tester) async {
     await _open(tester, [
-      _slot('morning', 'Morgens', '6–11 Uhr', 0.30, 1),
+      _slot('midday', 'Mittags', '11–16 Uhr', 0.376, 5),
       _slot('evening', 'Abends', '20–24 Uhr', 0.44, 2),
     ], [
-      _site('Moers', 0.41, 1),
+      _site('Moers', 0.41, 9),
+      _site('Gelsenkirchen', 0.36, 2),
     ]);
 
-    expect(find.text('Ladezeit · noch zu wenige Ladevorgänge'), findsOneWidget);
-    expect(find.text('Standort · noch zu wenige Ladevorgänge'), findsOneWidget);
-    expect(find.textContaining('Günstigste Zeit'), findsNothing);
+    expect(find.text('Ladezeit · Mittags, 11–16 Uhr'), findsOneWidget);
+    expect(find.text('Standort · Gelsenkirchen'), findsOneWidget);
+    expect(find.text('Mittags · Günstigste Zeit'), findsOneWidget);
   });
 }

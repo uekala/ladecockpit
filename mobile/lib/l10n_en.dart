@@ -605,12 +605,12 @@ const Map<String, String> english = {
       'Unlock',
   'Hier lädst du am günstigsten':
       'Where you charge cheapest',
-  'Ladezeit · noch zu wenige Ladevorgänge':
-      'Time of day · not enough sessions yet',
+  'Ladezeit · noch keine Ladevorgänge':
+      'Time of day · no sessions yet',
   'Ladezeit · {0}':
       'Time of day · {0}',
-  'Standort · noch zu wenige Ladevorgänge':
-      'Site · not enough sessions yet',
+  'Standort · noch keine Ladevorgänge':
+      'Site · no sessions yet',
   '1 Ladevorgang':
       '1 session',
   '{0} Ladevorgänge':
@@ -621,4 +621,6 @@ const Map<String, String> english = {
       'Cheapest site: {0} €/kWh',
   '{0} · {1} · {2}{3}':
       '{0} · {1} · {2}{3}',
+  ' (nur {0})':
+      ' (only {0})',
 };
