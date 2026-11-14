@@ -14,6 +14,8 @@ FLEET_BASE = {
 }
 AUTH_AUTHORIZE_URL = "https://auth.tesla.com/oauth2/v3/authorize"
 AUTH_TOKEN_URL = "https://fleet-auth.prd.vn.cloud.tesla.com/oauth2/v3/token"
+# Tesla "Open Source Apps" have no client secret and sign in with PKCE at this endpoint.
+AUTH_TOKEN_URL_OPEN_SOURCE = "https://auth.tesla.com/oauth2/v3/token"
 
 # Only what we need: sign-in, refresh token, and the charging history incl. invoices.
 # Tesla bundles charging history and charging commands into the same scope.
@@ -200,11 +202,18 @@ class Settings:
 
     @property
     def token_url(self) -> str:
-        return self.token_url_override or AUTH_TOKEN_URL
+        if self.token_url_override:
+            return self.token_url_override
+        return AUTH_TOKEN_URL_OPEN_SOURCE if self.tesla_open_source else AUTH_TOKEN_URL
 
     @property
     def tesla_configured(self) -> bool:
-        return bool(self.tesla_client_id and self.tesla_client_secret)
+        return bool(self.tesla_client_id)
+
+    @property
+    def tesla_open_source(self) -> bool:
+        """A client ID without a secret: a Tesla "Open Source App", signed in with PKCE."""
+        return bool(self.tesla_client_id and not self.tesla_client_secret)
 
     @property
     def ha_configured(self) -> bool:

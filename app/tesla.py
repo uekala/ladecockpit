@@ -6,6 +6,8 @@ vehicle commands or wakes the car.
 from __future__ import annotations
 
 import asyncio
+import base64
+import hashlib
 import json
 import logging
 import time
@@ -40,6 +42,12 @@ class BudgetExceeded(TeslaError):
     pass
 
 
+def pkce_challenge(verifier: str) -> str:
+    """The S256 code challenge that belongs to a PKCE code verifier."""
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
+
 class TeslaClient:
     def __init__(self, settings: Settings, db: DB, transport: httpx.AsyncBaseTransport | None = None):
         self.s = settings
@@ -61,7 +69,9 @@ class TeslaClient:
         return sum(self.db.calls_this_month().values())
 
     # --- OAuth -----------------------------------------------------------------
-    def authorize_url(self, state: str) -> str:
+    def authorize_url(self, state: str, code_verifier: str | None = None) -> str:
+        """Where the user signs in. With a code verifier the request is PKCE-protected, which is
+        how an app without a client secret proves that it started the sign-in."""
         params = {
             "response_type": "code",
             "client_id": self.s.tesla_client_id,
@@ -71,17 +81,25 @@ class TeslaClient:
             "locale": self.s.locale,
             "prompt": "login",
         }
+        if code_verifier:
+            params["code_challenge"] = pkce_challenge(code_verifier)
+            params["code_challenge_method"] = "S256"
         return f"{AUTH_AUTHORIZE_URL}?{urlencode(params, quote_via=quote)}"
 
-    async def exchange_code(self, code: str) -> None:
-        r = await self._http.post(self.s.token_url, data={
+    async def exchange_code(self, code: str, code_verifier: str | None = None) -> None:
+        data = {
             "grant_type": "authorization_code",
             "client_id": self.s.tesla_client_id,
-            "client_secret": self.s.tesla_client_secret,
             "code": code,
             "audience": self.s.fleet_base,
             "redirect_uri": self.s.tesla_redirect_uri,
-        })
+        }
+        # Developer apps prove themselves with their secret, open-source apps with the verifier.
+        if self.s.tesla_client_secret:
+            data["client_secret"] = self.s.tesla_client_secret
+        if code_verifier:
+            data["code_verifier"] = code_verifier
+        r = await self._http.post(self.s.token_url, data=data)
         if r.status_code != 200:
             raise TeslaError(f"Tesla sign-in failed (HTTP {r.status_code}): {r.text[:300]}")
         self._store_tokens(r.json())

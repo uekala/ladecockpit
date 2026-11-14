@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Tesla open-source apps (experimental).** With a client ID and no client secret, Ladecockpit signs in with PKCE, the way Tesla intends for "Open Source Apps". Tesla limits such apps to its discovery tier; whether charging history and invoices are available there has to show in use. Installations with a client secret work as before.
+
 ## 0.14.4 – 2026-11-14
 
 - **Price radar: the lowest price is the cheapest again.** 0.14.2 skipped time windows and sites with only a session or two, so a more expensive one could be labelled "cheapest" right next to a lower price. Now the lowest price always gets the label, and when little stands behind it, the app says so: "cheapest · only 1 session". Applies to the mobile app, the web app and the tip under the radar.

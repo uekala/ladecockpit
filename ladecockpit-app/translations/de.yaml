@@ -13,7 +13,7 @@ configuration:
     description: Aus deiner App auf developer.tesla.com.
   tesla_client_secret:
     name: Tesla Client Secret
-    description: Aus deiner App auf developer.tesla.com.
+    description: Aus deiner App auf developer.tesla.com. Bei einer Open-Source-App leer lassen.
   tesla_region:
     name: Tesla-Region
     description: eu für Europa, Naher Osten und Afrika – na für Nordamerika und Asien-Pazifik.
