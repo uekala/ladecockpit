@@ -99,10 +99,40 @@ def place(site: str | None, country: str | None, home: str | None) -> str | None
     return name.strip()
 
 
-def configure(min_price: float | None) -> None:
-    """Set the price rule (EUR per kWh, 0 or None = off)."""
-    global _min_price
+def configure(min_price: float | None, site_operators: str | None = None) -> None:
+    """Set the price rule (EUR per kWh, 0 or None = off) and the operators the user assigned
+    to sites ("Hafenstadt=Fastned; Parkhaus Mitte=Stadtwerke")."""
+    global _min_price, _site_operators
     _min_price = float(min_price) if min_price and min_price > 0 else 0.0
+    _site_operators = parse_site_operators(site_operators)
+
+
+# Operators the user assigned by hand: (text in the site name or address, operator), see configure.
+_site_operators: tuple[tuple[str, str], ...] = ()
+
+
+def parse_site_operators(text: str | None) -> tuple[tuple[str, str], ...]:
+    """"Hafenstadt=Fastned; Parkhaus Mitte = Stadtwerke" → (("hafenstadt", "Fastned"), …).
+    Entries are separated by semicolons or line breaks; one without "=" or with an empty side is skipped."""
+    pairs = []
+    for entry in re.split(r"[;\n]+", text or ""):
+        needle, eq, name = entry.partition("=")
+        needle, name = " ".join(needle.split()).casefold(), " ".join(name.split())
+        if eq and needle and name:
+            pairs.append((needle, name))
+    return tuple(pairs)
+
+
+def assigned_operator(*texts: str | None) -> str | None:
+    """The operator the user assigned to a site: the first entry whose text occurs in one of
+    `texts` (site name, station name, address), upper and lower case alike."""
+    if not _site_operators:
+        return None
+    haystack = [" ".join(t.split()).casefold() for t in texts if t]
+    for needle, name in _site_operators:
+        if any(needle in t for t in haystack):
+            return name
+    return None
 
 
 def looks_like_supercharger(site: str | None) -> bool:
@@ -237,6 +267,9 @@ def classify(raw: dict | None) -> tuple[str, str | None]:
         network = _SERIES.get(invoice_series(name) or "")
         if network:
             return network, f"invoice {name}"
+    # A site the user assigned an operator to is a third-party station.
+    if assigned_operator(raw.get("siteLocationName")):
+        return MULTIPASS, "operator assigned in the settings"
     for record in _records(raw):
         for key, value in record.items():
             if _HINT_KEY.search(key):

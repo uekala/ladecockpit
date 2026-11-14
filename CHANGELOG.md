@@ -3,7 +3,7 @@
 ## 0.14.5 – 2026-11-14
 
 - Mobile app: invoices, monthly reports and the year overview can be enlarged with two fingers. Before, the pages could only be read at the width of the screen.
-- The web app, the Home Assistant app and the Docker image are unchanged.
+- **Assign operators yourself.** Outside Germany Ladecockpit often cannot tell who runs a MultiPass station. New option *Assign operators yourself* (`SITE_OPERATORS`): a text from the site name or address, an equals sign and the operator, several separated by semicolons – `Hafenstadt=Fastned; Parkhaus Mitte=Stadtwerke`. What you set there has the last word, and the station counts as MultiPass.
 
 ## 0.14.4 – 2026-11-14
 
