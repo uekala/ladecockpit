@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.3 – 2026-11-14
+
+- Same content as 0.14.2, published again: the Docker image and the APK of 0.14.2 were not built from the right state. If you installed the APK 0.14.2, install 0.14.3.
+
 ## 0.14.2 – 2026-11-14
 
 - **Price radar: one session no longer makes a time of day or a site the cheapest.** A time window needs three sessions and a site two before it is named the cheapest; until then it is shown as "too few to tell". Applies to the mobile app, the web app and the tip under the radar.
