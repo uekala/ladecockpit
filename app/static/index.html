@@ -1993,7 +1993,9 @@ try {
     const step = maxP > 1.2 ? 0.5 : 0.2;
     const top = Math.ceil(maxP / step) * step;
     const pct = (v) => (v / top) * 100;
-    const best = priced.length >= 2 ? priced.reduce((a, b) => (b.avg_price < a.avg_price ? b : a)) : null;
+    // One session says nothing about a time of day: only slots with a few sessions can be the cheapest.
+    const solid = priced.filter((s) => s.solid);
+    const best = priced.length >= 2 && solid.length ? solid.reduce((a, b) => (b.avg_price < a.avg_price ? b : a)) : null;
     const ticks = [];
     for (let t = 0; t <= top + 1e-9; t += step) ticks.push(t);
     const rows = slots.map((s) => {

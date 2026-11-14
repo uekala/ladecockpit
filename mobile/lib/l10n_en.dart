@@ -213,12 +213,8 @@ const Map<String, String> english = {
       'Historic averages from your recorded sessions – no live tariffs.',
   'Preisradar':
       'Price radar',
-  'Günstigstes Zeitfenster':
-      'Cheapest time slot',
   'Günstigste Ladezeit':
       'Cheapest time to charge',
-  'Zeitfenster · {0}':
-      'Time slot · {0}',
   'Günstigster Standort':
       'Cheapest site',
   'Standort · {0}':
@@ -229,20 +225,14 @@ const Map<String, String> english = {
       'Time slot',
   ' · Günstigste Zeit':
       ' · cheapest time',
-  '{0} · {1} Ladevorgänge · €/kWh':
-      '{0} · {1} sessions · €/kWh',
   'Deine häufigsten Ladestandorte':
       'Your most frequent charging sites',
   '{0} Ladestandorte':
       '{0} charging sites',
   'Durchschnittspreise und Ladehäufigkeit':
       'Average prices and how often you charge there',
-  'Niedrigster erfasster Standortpreis: {0} €/kWh':
-      'Lowest recorded site price: {0} €/kWh',
   ' · Günstigster':
       ' · cheapest',
-  '{0} · {1} Ladevorgänge · {2}{3}':
-      '{0} · {1} sessions · {2}{3}',
   'Preiswerte basieren auf den erfassten Rechnungsdaten und sind keine Live-Tarife.':
       'Prices are based on the recorded invoice data and are no live tariffs.',
   'Ladecockpit – Rechnungen {0}':
@@ -613,4 +603,22 @@ const Map<String, String> english = {
       'Ladecockpit is locked',
   'Entsperren':
       'Unlock',
+  'Hier lädst du am günstigsten':
+      'Where you charge cheapest',
+  'Ladezeit · noch zu wenige Ladevorgänge':
+      'Time of day · not enough sessions yet',
+  'Ladezeit · {0}':
+      'Time of day · {0}',
+  'Standort · noch zu wenige Ladevorgänge':
+      'Site · not enough sessions yet',
+  '1 Ladevorgang':
+      '1 session',
+  '{0} Ladevorgänge':
+      '{0} sessions',
+  'noch wenig aussagekräftig':
+      'too few to tell',
+  'Günstigster Standort: {0} €/kWh':
+      'Cheapest site: {0} €/kWh',
+  '{0} · {1} · {2}{3}':
+      '{0} · {1} · {2}{3}',
 };

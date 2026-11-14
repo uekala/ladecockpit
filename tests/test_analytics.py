@@ -94,3 +94,24 @@ def test_forecast_from_readings(settings):
     assert d["forecast"]["rate_pct_day"] == 8.0
     assert d["forecast"]["days_to_floor"] == 3.5
     assert d["forecast"]["calendar_days"] == 4   # Oct 20 14:00 + 3.5 d = Oct 24 04:00 local
+
+
+def test_one_session_does_not_make_a_slot_the_best(settings):
+    from zoneinfo import ZoneInfo
+    settings = dataclasses.replace(settings, lang="de", tz=ZoneInfo("Europe/Berlin"))
+    now = datetime(2026, 11, 1, 12, tzinfo=timezone.utc)
+
+    def session(day, hour_utc, price):
+        return _session(f"s{day}-{hour_utc}", datetime(2026, 10, day, hour_utc, tzinfo=timezone.utc), 40, 40 * price)
+
+    # 6 UTC = 8:00 in Berlin in October (one cheap morning session), 11 UTC = 13:00, 16 UTC = 18:00.
+    sessions = ([session(1, 6, 0.30)] + [session(d, 11, 0.38) for d in range(2, 6)]
+                + [session(d, 16, 0.41) for d in range(6, 12)])
+    d = build_dashboard(sessions=sessions, live={"values": {}, "units": {}},
+                        readings={"soc": [], "soc_last": None, "range_last": None, "odometer": []},
+                        settings=settings, meta={}, now=now)
+    slots = {s["id"]: s for s in d["slots"]}
+    assert slots["morning"]["sessions"] == 1 and slots["morning"]["solid"] is False
+    assert slots["midday"]["sessions"] == 4 and slots["midday"]["solid"] is True
+    slot_text = next(i["text"] for i in d["insights"] if i["kind"] == "slot")
+    assert "Morgens" not in slot_text

@@ -9,6 +9,7 @@ from . import i18n, networks, stations, vehicle
 from .config import Settings
 from .networks import MULTIPASS, SUPERCHARGER
 
+MIN_SLOT_SESSIONS = 3
 SLOT_HOURS = [("night", 0, 6), ("morning", 6, 11), ("midday", 11, 16), ("afternoon", 16, 20), ("evening", 20, 24)]
 USD_PER_DATA_CALL = 0.002
 MONTHLY_CREDIT_USD = 10.0
@@ -471,7 +472,8 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     for (sid, a, b), (label, rng) in zip(SLOT_HOURS, i18n.SLOTS.get(lang, i18n.SLOTS["en"])):
         st = _stats([x for x in priced if a <= x["_local"].hour < b])
         slots.append({"id": sid, "label": label, "range": rng,
-                      "avg_price": st["list_price"], "sessions": st["sessions"], "kwh": st["kwh"]})
+                      "avg_price": st["list_price"], "sessions": st["sessions"], "kwh": st["kwh"],
+                      "solid": st["sessions"] >= MIN_SLOT_SESSIONS})
 
     groups: dict[tuple[str, str], list[dict]] = {}
     for x in priced:
@@ -489,8 +491,10 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
 
     insights: list[dict] = []
     used = [s for s in slots if s["sessions"]]
-    if len(priced) >= 4 and len(used) >= 2 and overall["list_price"]:
-        best = min(used, key=lambda s: s["avg_price"])
+    # One session says nothing about a time of day: only slots with a few sessions can be the best.
+    solid = [s for s in used if s["sessions"] >= MIN_SLOT_SESSIONS]
+    if len(priced) >= 4 and len(used) >= 2 and solid and overall["list_price"]:
+        best = min(solid, key=lambda s: s["avg_price"])
         diff = overall["list_price"] - best["avg_price"]
         if diff >= MIN_PRICE_GAP:
             insights.append({"kind": "slot", "text": i18n.t(

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.14.2 – 2026-11-14
+
+- **Price radar: one session no longer makes a time of day or a site the cheapest.** A time window needs three sessions and a site two before it is named the cheapest; until then it is shown as "too few to tell". Applies to the mobile app, the web app and the tip under the radar.
+- Mobile app: the summary card of the price radar now says what each price belongs to – cheapest time of day and cheapest site, each with its own price – instead of mixing both under one heading.
+- Mobile app: prices in the price radar have two decimals like everywhere else, "1 Ladevorgang" is no longer written as a plural, and the lines under the time windows lost their stray "€/kWh".
+- `solid` in `slots` of `/api/dashboard` tells whether a time window has enough sessions.
+
 ## 0.14.1 – 2026-11-12
 
 - Mobile app: built with Flutter 3.50 and the standalone `material_ui` package, which replaces the Material library that Flutter 3.50 deprecates. Nothing changes in use.

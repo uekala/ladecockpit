@@ -1408,6 +1408,22 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  static const _radarMinSlotSessions = 3;
+  static const _radarMinSiteSessions = 2;
+
+  Widget _radarBest({required IconData icon, required String label, dynamic price}) => Row(
+        children: [
+          Icon(icon, color: AppTheme.accentTeal, size: 17),
+          SizedBox(width: 7),
+          Expanded(child: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 12,
+              color: price is num ? AppTheme.textPrimary : AppTheme.textSecondary))),
+          if (price is num)
+            Text(trf('{0} €/kWh', [formatNumber(price, 2)]),
+              style: TextStyle(color: AppTheme.accentGreen, fontWeight: FontWeight.w800, fontSize: 13)),
+        ],
+      );
+
   Widget _priceRadar(dynamic rawSlots, dynamic rawSites) {
     final slots = rawSlots is List
         ? rawSlots.whereType<Map<String, dynamic>>()
@@ -1417,35 +1433,23 @@ class _DashboardPageState extends State<DashboardPage> {
     final sites = rawSites is List
         ? rawSites.whereType<Map<String, dynamic>>().take(8).toList()
         : <Map<String, dynamic>>[];
-    num? lowestSlotPrice;
-    for (final slot in slots) {
-      final price = slot['avg_price'];
-      if (price is num && (lowestSlotPrice == null || price < lowestSlotPrice)) {
-        lowestSlotPrice = price;
-      }
-    }
-    num? lowestSitePrice;
-    for (final site in sites) {
-      final price = site['avg_price'];
-      if (price is num && (lowestSitePrice == null || price < lowestSitePrice)) {
-        lowestSitePrice = price;
-      }
-    }
     if (slots.isEmpty && sites.isEmpty) return SizedBox.shrink();
-    Map<String, dynamic>? cheapestSlot;
-    Map<String, dynamic>? cheapestSite;
-    for (final slot in slots) {
-      if (slot['avg_price'] is num &&
-          (cheapestSlot == null || (slot['avg_price'] as num) < (cheapestSlot['avg_price'] as num))) {
-        cheapestSlot = slot;
+    // One session says nothing about a time of day or a site: only entries with
+    // enough sessions are named the cheapest.
+    int sessionsOf(Map<String, dynamic> row) =>
+        row['sessions'] is num ? (row['sessions'] as num).round() : 0;
+    Map<String, dynamic>? cheapestOf(Iterable<Map<String, dynamic>> rows, int minSessions) {
+      Map<String, dynamic>? best;
+      for (final row in rows) {
+        if (row['avg_price'] is! num || sessionsOf(row) < minSessions) continue;
+        if (best == null || (row['avg_price'] as num) < (best['avg_price'] as num)) best = row;
       }
+      return best;
     }
-    for (final site in sites) {
-      if (site['avg_price'] is num &&
-          (cheapestSite == null || (site['avg_price'] as num) < (cheapestSite['avg_price'] as num))) {
-        cheapestSite = site;
-      }
-    }
+    final cheapestSlot = cheapestOf(slots, _radarMinSlotSessions);
+    final cheapestSite = cheapestOf(sites, _radarMinSiteSessions);
+    String sessionsLabel(int count) =>
+        count == 1 ? tr('1 Ladevorgang') : trf('{0} Ladevorgänge', [count]);
 
     Widget priceValue(dynamic value, {bool highlighted = false}) =>
         Container(
@@ -1460,7 +1464,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
           child: Text(
-            value is num ? trf('{0} €/kWh', [formatNumber(value, 3)]) : '–',
+            value is num ? trf('{0} €/kWh', [formatNumber(value, 2)]) : '–',
             textAlign: TextAlign.end,
             style: TextStyle(
               color: highlighted ? AppTheme.accentGreen : AppTheme.textPrimary,
@@ -1479,68 +1483,58 @@ class _DashboardPageState extends State<DashboardPage> {
             style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
         ),
         _sectionHeading(tr('Preisradar')),
-        if (cheapestSlot != null || cheapestSite != null)
-          Card(
-            margin: EdgeInsets.only(bottom: 12),
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppTheme.accentGreen.withValues(alpha: 0.11),
-                    AppTheme.surface,
-                  ],
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.savings_outlined,
-                        color: AppTheme.accentGreen, size: 18),
-                      SizedBox(width: 8),
-                      Expanded(child: Text(tr('Günstigstes Zeitfenster'),
-                        style: TextStyle(fontWeight: FontWeight.w800))),
-                      if (cheapestSlot?['avg_price'] is num)
-                        Text(trf('{0} €/kWh', [formatNumber(cheapestSlot!['avg_price'] as num, 3)]),
-                          style: TextStyle(color: AppTheme.accentGreen,
-                            fontWeight: FontWeight.w800)),
-                    ],
-                  ),
-                  if (cheapestSlot != null) ...[
-                    SizedBox(height: 5),
-                    Text(trf('Zeitfenster · {0}', [cheapestSlot['label'] ?? cheapestSlot['range'] ?? tr('Günstigste Ladezeit')]),
-                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-                  ],
-                  if (cheapestSite != null) ...[
-                    SizedBox(height: 8),
-                    Container(height: 1, color: AppTheme.border),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.location_on_outlined,
-                          color: AppTheme.accentTeal, size: 17),
-                        SizedBox(width: 7),
-                        Expanded(child: Text(
-                          trf('Standort · {0}', [cheapestSite['label'] ?? cheapestSite['site'] ?? tr('Günstigster Standort')]),
-                          maxLines: 2, overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 12))),
-                        if (cheapestSite['avg_price'] is num)
-                          Text(trf('{0} €/kWh', [formatNumber(cheapestSite['avg_price'] as num, 3)]),
-                            style: TextStyle(color: AppTheme.accentGreen,
-                              fontWeight: FontWeight.w800, fontSize: 12)),
-                      ],
-                    ),
-                  ],
+        Card(
+          key: ValueKey('radar-summary'),
+          margin: EdgeInsets.only(bottom: 12),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.accentGreen.withValues(alpha: 0.11),
+                  AppTheme.surface,
                 ],
               ),
             ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.savings_outlined, color: AppTheme.accentGreen, size: 18),
+                    SizedBox(width: 8),
+                    Expanded(child: Text(tr('Hier lädst du am günstigsten'),
+                      style: TextStyle(fontWeight: FontWeight.w800))),
+                  ],
+                ),
+                SizedBox(height: 10),
+                _radarBest(
+                  icon: Icons.schedule,
+                  label: cheapestSlot == null
+                      ? tr('Ladezeit · noch zu wenige Ladevorgänge')
+                      : trf('Ladezeit · {0}', [[cheapestSlot['label'], cheapestSlot['range']]
+                          .where((part) => part != null && part.toString().isNotEmpty)
+                          .join(', ')]),
+                  price: cheapestSlot?['avg_price'],
+                ),
+                SizedBox(height: 8),
+                Container(height: 1, color: AppTheme.border),
+                SizedBox(height: 8),
+                _radarBest(
+                  icon: Icons.location_on_outlined,
+                  label: cheapestSite == null
+                      ? tr('Standort · noch zu wenige Ladevorgänge')
+                      : trf('Standort · {0}', [cheapestSite['label'] ?? cheapestSite['site'] ?? '–']),
+                  price: cheapestSite?['avg_price'],
+                ),
+              ],
+            ),
           ),
+        ),
         if (slots.isNotEmpty) ...[
           Padding(
             padding: EdgeInsets.fromLTRB(4, 4, 4, 6),
@@ -1549,9 +1543,9 @@ class _DashboardPageState extends State<DashboardPage> {
           ...slots.map((slot) {
             final label = slot['label']?.toString() ?? tr('Zeitfenster');
             final range = slot['range']?.toString() ?? '';
-            final count = slot['sessions'] is num ? (slot['sessions'] as num).round() : 0;
-            final isCheapest = slot['avg_price'] is num &&
-                lowestSlotPrice != null && slot['avg_price'] == lowestSlotPrice;
+            final count = sessionsOf(slot);
+            final isCheapest = identical(slot, cheapestSlot);
+            final fewSessions = count < _radarMinSlotSessions;
             return Card(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -1575,7 +1569,12 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     Padding(
                       padding: EdgeInsets.only(left: 28, top: 4),
-                      child: Text(trf('{0} · {1} Ladevorgänge · €/kWh', [range.isEmpty ? tr('Zeitfenster') : range, count]),
+                      child: Text(
+                        [
+                          range.isEmpty ? tr('Zeitfenster') : range,
+                          sessionsLabel(count),
+                          if (fewSessions) tr('noch wenig aussagekräftig'),
+                        ].join(' · '),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppTheme.textSecondary)),
                     ),
@@ -1602,18 +1601,17 @@ class _DashboardPageState extends State<DashboardPage> {
               subtitle: Text(
                 cheapestSite == null
                     ? tr('Durchschnittspreise und Ladehäufigkeit')
-                    : trf('Niedrigster erfasster Standortpreis: {0} €/kWh', [formatNumber(cheapestSite['avg_price'] as num, 3)]),
+                    : trf('Günstigster Standort: {0} €/kWh', [formatNumber(cheapestSite['avg_price'] as num, 2)]),
                 maxLines: 1, overflow: TextOverflow.ellipsis,
               ),
               children: sites.map((site) {
                 final label = site['label']?.toString() ??
                     site['site']?.toString() ?? tr('Unbekannter Standort');
                 final network = site['network'] == 'multipass' ? tr('MultiPass') : tr('Supercharger');
-                final count = site['sessions'] is num ? (site['sessions'] as num).round() : 0;
+                final count = sessionsOf(site);
                 final kwh = _numberLabel(site['kwh'], digits: 1, suffix: tr(' kWh'));
                 final address = site['address']?.toString();
-                final isCheapest = site['avg_price'] is num &&
-                    lowestSitePrice != null && site['avg_price'] == lowestSitePrice;
+                final isCheapest = identical(site, cheapestSite);
                 return Padding(
                   padding: EdgeInsets.fromLTRB(16, 9, 16, 10),
                   child: Column(
@@ -1636,7 +1634,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                       Padding(
                         padding: EdgeInsets.only(left: 28, top: 4),
-                        child: Text(trf('{0} · {1} Ladevorgänge · {2}{3}', [network, count, kwh, address != null && address.isNotEmpty ? '\n$address' : '']),
+                        child: Text(trf('{0} · {1} · {2}{3}', [network, sessionsLabel(count), kwh, address != null && address.isNotEmpty ? '\n$address' : '']),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppTheme.textSecondary)),
                       ),
