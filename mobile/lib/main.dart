@@ -140,6 +140,49 @@ class CockpitClient {
   Future<Uri> invoicePageUri(String sessionId, int page) =>
       _endpoint('/api/invoice/${Uri.encodeComponent(sessionId)}/page/$page.png');
 
+  /// The invoice of a session as PDF, for sharing or saving.
+  Future<List<int>> invoicePdf(String sessionId) async {
+    final uri = await _endpoint('/api/invoice/${Uri.encodeComponent(sessionId)}');
+    final response = await _http.get(uri, headers: await _headers())
+        .timeout(Duration(seconds: 60));
+    if (response.statusCode == 401) {
+      throw CockpitException(tr('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.'));
+    }
+    if (response.statusCode != 200) {
+      throw CockpitException(trf('Die Rechnung konnte nicht geladen werden (HTTP {0}).', [response.statusCode]));
+    }
+    return response.bodyBytes;
+  }
+
+  /// Operator names the server knows, to choose from.
+  Future<List<String>> knownOperators() async {
+    final uri = await _endpoint('/api/operators');
+    final response = await _http.get(uri, headers: await _headers(json: true))
+        .timeout(Duration(seconds: 30));
+    if (response.statusCode != 200) return [];
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes, allowMalformed: true));
+    final known = decoded is Map ? decoded['known'] : null;
+    return known is List ? known.map((name) => name.toString()).toList() : [];
+  }
+
+  /// Assigns an operator to a site; an empty name removes the assignment.
+  Future<void> assignOperator(String site, String operator) async {
+    final uri = await _endpoint('/api/operator');
+    final response = await _http.put(uri,
+        headers: {...await _headers(json: true), 'Content-Type': 'application/json'},
+        body: jsonEncode({'site': site, 'operator': operator}))
+        .timeout(Duration(seconds: 30));
+    if (response.statusCode == 401) {
+      throw CockpitException(tr('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.'));
+    }
+    if (response.statusCode == 404) {
+      throw CockpitException(tr('Der Server kann noch keine Betreiber zuordnen. Bitte Ladecockpit aktualisieren.'));
+    }
+    if (response.statusCode != 200) {
+      throw CockpitException(trf('Betreiber konnte nicht gespeichert werden (HTTP {0}).', [response.statusCode]));
+    }
+  }
+
   Future<String> csvExport() async {
     final uri = await _endpoint('/api/export.csv');
     final response = await _http.get(uri, headers: await _headers())
@@ -853,7 +896,36 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _map(dynamic value) =>
       value is Map<String, dynamic> ? value : null;
 
-  Widget _sessionMetric(String label, String value, IconData icon) {
+  // A session counts as cheap or dear when it is this far (per kWh) from your average.
+  static const _priceToneGap = 0.03;
+
+  /// A list of options to pick one from, as a sheet from the bottom. `current` gets a check mark.
+  Future<String?> _pickOption(String title, Map<String, String> options, String? current) {
+    return showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            ),
+            for (final entry in options.entries)
+              ListTile(
+                key: ValueKey('option-${entry.key}'),
+                title: Text(entry.value, maxLines: 1, overflow: TextOverflow.ellipsis),
+                trailing: entry.key == current ? Icon(Icons.check, color: AppTheme.accentGreen) : null,
+                onTap: () => Navigator.pop(sheetContext, entry.key),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sessionMetric(String label, String value, IconData icon, {Color? dot}) {
     final highlighted = label == tr('Kosten');
     final accent = highlighted ? AppTheme.accentGreen : AppTheme.textSecondary;
     return Container(
@@ -878,9 +950,16 @@ class _DashboardPageState extends State<DashboardPage> {
                 Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: AppTheme.textSecondary)),
                 SizedBox(height: 3),
-                Text(value, maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.w800,
-                    color: highlighted ? AppTheme.accentGreen : AppTheme.textPrimary)),
+                Row(children: [
+                  if (dot != null) ...[
+                    Container(width: 8, height: 8,
+                      decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),
+                    SizedBox(width: 5),
+                  ],
+                  Flexible(child: Text(value, maxLines: 2, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontWeight: FontWeight.w800,
+                      color: highlighted ? AppTheme.accentGreen : AppTheme.textPrimary))),
+                ]),
               ],
             ),
           ),
@@ -890,8 +969,8 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _sessions(dynamic raw) {
-    if (raw is! List || raw.isEmpty) return SizedBox.shrink();
-    final items = raw.whereType<Map<String, dynamic>>().toList();
+    final items = raw is List ? raw.whereType<Map<String, dynamic>>().toList() : <Map<String, dynamic>>[];
+    // The page shows its own "no sessions yet" panel below an empty list.
     if (items.isEmpty) return SizedBox.shrink();
 
     String monthKey(Map<String, dynamic> item) {
@@ -962,43 +1041,21 @@ class _DashboardPageState extends State<DashboardPage> {
       return monthMatches && networkMatches && siteMatches && searchMatches(session);
     }).toList();
 
-    Widget filterField(String label, String value, List<DropdownMenuItem<String>> options,
-        ValueChanged<String?> onChanged, {double width = 150}) {
-      return SizedBox(
-        width: width,
-        child: DropdownButtonFormField<String>(
-          key: ValueKey('$label-$value'),
-          initialValue: value,
-          isExpanded: true,
-          decoration: InputDecoration(
-            labelText: label,
-            isDense: true,
-            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          items: options,
-          onChanged: onChanged,
-        ),
-      );
+    // Your own average price per kWh, to tell a dear session from a cheap one at a glance.
+    double pricedKwh = 0, pricedCost = 0;
+    for (final session in items) {
+      final price = session['list_price'] ?? session['price'];
+      if (price is num && session['kwh'] is num) {
+        pricedKwh += (session['kwh'] as num).toDouble();
+        pricedCost += price.toDouble() * (session['kwh'] as num).toDouble();
+      }
     }
-
-    final monthOptions = <DropdownMenuItem<String>>[
-      DropdownMenuItem(value: 'all', child: Text(tr('Alle Monate'))),
-      ...months.map((m) => DropdownMenuItem(value: m, child: Text(monthLabel(m)))),
-    ];
-    final networkOptions = <DropdownMenuItem<String>>[
-      DropdownMenuItem(value: 'all', child: Text(tr('Alle Netzwerke'))),
-      ...networks.map((n) => DropdownMenuItem(
-        value: n,
-        child: Text(n == 'multipass' ? tr('MultiPass') :
-          n == 'supercharger' ? tr('Supercharger') : n),
-      )),
-    ];
-    final siteOptions = <DropdownMenuItem<String>>[
-      DropdownMenuItem(value: 'all', child: Text(tr('Alle Standorte'))),
-      ...sites.map((s) => DropdownMenuItem(value: s, child: Text(placeOf[s] ?? s,
-        overflow: TextOverflow.ellipsis))),
-    ];
+    final averagePrice = pricedKwh > 0 ? pricedCost / pricedKwh : null;
+    Color priceTone(num price) {
+      final average = averagePrice;
+      if (average == null || (price - average).abs() < _priceToneGap) return AppTheme.textSecondary;
+      return price < average ? AppTheme.accentGreen : AppTheme.warning;
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1022,81 +1079,91 @@ class _DashboardPageState extends State<DashboardPage> {
         Builder(builder: (context) {
           final filtersActive = selectedMonth != 'all' ||
               selectedNetwork != 'all' || selectedSite != 'all';
-          final filterSummary = [
-            selectedMonth == 'all' ? tr('Alle Zeiträume') : monthLabel(selectedMonth),
-            selectedNetwork == 'all' ? tr('Alle Netzwerke') :
-              (selectedNetwork == 'multipass' ? tr('MultiPass') :
-                selectedNetwork == 'supercharger' ? tr('Supercharger') : selectedNetwork),
-            selectedSite == 'all' ? tr('Alle Standorte') : (placeOf[selectedSite] ?? selectedSite),
-          ].join(' · ');
-          return Card(
-            margin: EdgeInsets.only(bottom: 8),
-            child: ExpansionTile(
-              key: PageStorageKey<String>('session-filter'),
-              initiallyExpanded: false,
-              leading: Icon(Icons.tune,
-                color: filtersActive ? Theme.of(context).colorScheme.primary : AppTheme.textSecondary),
-              title: Row(
+          String networkLabel(String value) => value == 'multipass' ? tr('MultiPass') :
+              value == 'supercharger' ? tr('Supercharger') : value;
+          Widget chip(String keyName, String label, String current,
+              Map<String, String> options, ValueChanged<String> onPicked) {
+            final active = current != 'all';
+            final value = options[current] ?? current;
+            return Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: InputChip(
+                key: ValueKey('filter-$keyName'),
+                label: Text(active ? value : label),
+                avatar: active ? null : Icon(Icons.arrow_drop_down, size: 18),
+                selected: active,
+                showCheckmark: false,
+                onPressed: () async {
+                  final picked = await _pickOption(label, options, current);
+                  if (picked != null) onPicked(picked);
+                },
+                onDeleted: active ? () => onPicked('all') : null,
+                deleteButtonTooltipMessage: tr('Filter entfernen'),
+              ),
+            );
+          }
+          double sum(String field) => filtered.fold<double>(0,
+              (total, session) => total + (session[field] is num ? (session[field] as num).toDouble() : 0));
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Wrap, not a sideways scroller: on a narrow phone the third chip would sit off-screen.
+              Wrap(
+                key: ValueKey('session-filter'),
+                runSpacing: 2,
                 children: [
-                  Expanded(child: Text(tr('Filter'), style: TextStyle(fontWeight: FontWeight.w600))),
-                  if (filtersActive)
-                    Text(tr('Aktiv'), style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
+                  chip('month', tr('Zeitraum'), selectedMonth,
+                    {'all': tr('Alle Monate'), for (final m in months) m: monthLabel(m)},
+                    (value) => setState(() => _sessionMonthFilter = value)),
+                  chip('network', tr('Netzwerk'), selectedNetwork,
+                    {'all': tr('Alle Netzwerke'), for (final n in networks) n: networkLabel(n)},
+                    (value) => setState(() => _sessionNetworkFilter = value)),
+                  chip('site', tr('Standort'), selectedSite,
+                    {'all': tr('Alle Standorte'), for (final site in sites) site: placeOf[site] ?? site},
+                    (value) => setState(() => _sessionSiteFilter = value)),
                 ],
               ),
-              subtitle: Text(filterSummary, maxLines: 1, overflow: TextOverflow.ellipsis),
-              childrenPadding: EdgeInsets.fromLTRB(16, 10, 16, 12),
-              children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final compact = constraints.maxWidth < 520;
-                    final fields = [
-                      filterField(tr('Zeitraum'), selectedMonth, monthOptions,
-                        (value) => setState(() => _sessionMonthFilter = value ?? 'all'),
-                        width: compact ? double.infinity : 165),
-                      filterField(tr('Netzwerk'), selectedNetwork, networkOptions,
-                        (value) => setState(() => _sessionNetworkFilter = value ?? 'all'),
-                        width: compact ? double.infinity : 165),
-                      filterField(tr('Standort'), selectedSite, siteOptions,
-                        (value) => setState(() => _sessionSiteFilter = value ?? 'all'),
-                        width: compact ? double.infinity : 210),
-                    ];
-                    if (compact) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          for (var i = 0; i < fields.length; i++) ...[
-                            if (i > 0) SizedBox(height: 14),
-                            fields[i],
-                          ],
-                        ],
-                      );
-                    }
-                    return Wrap(spacing: 8, runSpacing: 8, children: fields);
-                  },
+              Padding(
+                padding: EdgeInsets.fromLTRB(4, 6, 4, 8),
+                child: Text(
+                  key: ValueKey('session-summary'),
+                  [
+                    filtered.length == 1 ? tr('1 Ladevorgang') : trf('{0} Ladevorgänge', [filtered.length]),
+                    trf('{0} kWh', [formatNumber(sum('kwh'), 1)]),
+                    '${formatNumber(sum('cost'), 2)} €',
+                  ].join(' · '),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
                 ),
-                if (filtersActive)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: () => setState(() {
-                        _sessionMonthFilter = 'all';
-                        _sessionNetworkFilter = 'all';
-                        _sessionSiteFilter = 'all';
-                      }),
-                      icon: Icon(Icons.filter_alt_off, size: 17),
-                      label: Text(tr('Filter zurücksetzen')),
-                    ),
+              ),
+              if (filtered.isEmpty)
+                Card(child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(searchWords.isNotEmpty
+                          ? trf('Keine Ladevorgänge für „{0}“ gefunden.', [_sessionSearch])
+                          : tr('Keine Ladevorgänge für diese Filter gefunden.')),
+                      if (filtersActive)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            key: ValueKey('filter-reset'),
+                            onPressed: () => setState(() {
+                              _sessionMonthFilter = 'all';
+                              _sessionNetworkFilter = 'all';
+                              _sessionSiteFilter = 'all';
+                            }),
+                            icon: Icon(Icons.filter_alt_off, size: 17),
+                            label: Text(tr('Filter zurücksetzen')),
+                          ),
+                        ),
+                    ],
                   ),
-              ],
-            ),
+                )),
+            ],
           );
         }),
-        if (filtered.isEmpty)
-          Card(child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(tr('Keine Ladevorgänge für diese Filter gefunden.')),
-          )),
         ...filtered.take(100).map((session) {
           final site = session['place']?.toString() ?? session['site']?.toString() ??
             tr('Unbekannter Standort');
@@ -1110,12 +1177,15 @@ class _DashboardPageState extends State<DashboardPage> {
           final currency = session['currency']?.toString() ?? 'EUR';
           final currencyLabel = currency == 'EUR' ? '€' : currency;
           final invoice = session['has_invoice'] == true;
+          final price = session['list_price'] ?? session['price'];
           final metrics = <Widget>[
             if (kwh != null)
               _sessionMetric(tr('Energie'), trf('{0} kWh', [kwh]), Icons.bolt),
             if (cost != null)
               _sessionMetric(tr('Kosten'), '$cost $currencyLabel', Icons.euro),
-            // Keep the list glanceable; effective price and duration remain in the detail view.
+            if (price is num)
+              _sessionMetric(trf('{0}/kWh', [currencyLabel]), formatNumber(price, 2), Icons.sell_outlined,
+                dot: priceTone(price)),
           ];
           return Card(
             clipBehavior: Clip.antiAlias,
@@ -1249,6 +1319,102 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  /// Lets the user say who runs a station. Returns true when something was saved.
+  Future<bool> _assignOperator(String site, String? current) async {
+    List<String> known = [];
+    try {
+      known = await _client.knownOperators();
+    } catch (_) {
+      // The list is a convenience; typing a name works without it.
+    }
+    if (!mounted) return false;
+    final controller = TextEditingController(text: current ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final typed = controller.text.trim().toLowerCase();
+          final suggestions = known
+              .where((name) => typed.isEmpty || name.toLowerCase().contains(typed))
+              .where((name) => name.toLowerCase() != typed)
+              .take(8)
+              .toList();
+          return AlertDialog(
+            title: Text(tr('Wer betreibt diese Station?')),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(trf('{0} · gilt für alle Ladungen an dieser Station, auch die bisherigen.', [site]),
+                    style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                  SizedBox(height: 12),
+                  TextField(
+                    key: ValueKey('operator-name'),
+                    controller: controller,
+                    autofocus: true,
+                    maxLength: 60,
+                    textCapitalization: TextCapitalization.words,
+                    onChanged: (_) => setDialogState(() {}),
+                    decoration: InputDecoration(
+                      labelText: tr('Betreiber'),
+                      hintText: tr('z. B. Fastned'),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  if (suggestions.isNotEmpty)
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 2,
+                      children: [
+                        for (final name in suggestions)
+                          ActionChip(
+                            label: Text(name),
+                            onPressed: () => setDialogState(() => controller.text = name),
+                          ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              if ((current ?? '').isNotEmpty)
+                TextButton(
+                  key: ValueKey('operator-remove'),
+                  onPressed: () => Navigator.pop(dialogContext, ''),
+                  child: Text(tr('Zuordnung entfernen')),
+                ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(tr('Abbrechen')),
+              ),
+              FilledButton(
+                key: ValueKey('operator-save'),
+                onPressed: controller.text.trim().isEmpty
+                    ? null
+                    : () => Navigator.pop(dialogContext, controller.text.trim()),
+                child: Text(tr('Speichern')),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (result == null || !mounted) return false;
+    try {
+      await _client.assignOperator(site, result);
+      if (!mounted) return true;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(result.isEmpty ? tr('Zuordnung entfernt') : trf('Betreiber gespeichert: {0}', [result]))));
+      await _load();
+      return true;
+    } catch (error) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+      return false;
+    }
+  }
+
   Future<void> _showSessionDetails(Map<String, dynamic> session) async {
     final site = session['site']?.toString() ?? tr('Unbekannter Standort');
     final currency = session['currency']?.toString() ?? 'EUR';
@@ -1291,7 +1457,7 @@ class _DashboardPageState extends State<DashboardPage> {
       if (session['idle'] != null)
         _detailRow(tr('Standgebühren'), _numberLabel(session['idle'], suffix: ' $currencySymbol')),
       if (session['credit'] != null)
-        _detailRow(tr('Gutschrift'), _numberLabel(session['credit'], suffix: ' $currencySymbol')),
+        _detailRow(tr('Gutschrift von Tesla'), _numberLabel(session['credit'], suffix: ' $currencySymbol')),
       if (session['price'] != null)
         _detailRow(tr('Preis pro kWh'), _numberLabel(session['price'], digits: 3, suffix: trf(' {0}/kWh', [currencySymbol]))),
       if (session['price'] == null && effectivePrice != null)
@@ -1380,9 +1546,31 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                 ],
               ),
+              if (networkValue == 'multipass')
+                Padding(
+                  padding: EdgeInsets.only(top: 6),
+                  child: Text(tr('MultiPass: Laden bei einem anderen Anbieter, abgerechnet über Tesla.'),
+                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                ),
               _detailGroup(tr('ZEITRAUM'), timingRows),
               _detailGroup(tr('ENERGIE UND KOSTEN'), costRows),
               _detailGroup(tr('STANDORT'), locationRows),
+              // Third-party stations only: Tesla does not say who runs them, so the user can.
+              if (networkValue == 'multipass' && !_fromCache && session['site'] != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    key: ValueKey('assign-operator'),
+                    onPressed: () async {
+                      final saved = await _assignOperator(session['site'].toString(), textValue('operator'));
+                      if (saved && dialogContext.mounted) Navigator.pop(dialogContext);
+                    },
+                    icon: Icon(Icons.edit_outlined, size: 17),
+                    label: Text(textValue('operator') == null
+                        ? tr('Betreiber zuordnen')
+                        : tr('Betreiber korrigieren')),
+                  ),
+                ),
               if (!invoice)
                 Padding(
                   padding: EdgeInsets.only(top: 18),
@@ -1657,6 +1845,26 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _shareInvoicePdf(String sessionId, String site) async {
+    try {
+      final bytes = await _client.invoicePdf(sessionId);
+      final directory = await getTemporaryDirectory();
+      final name = sessionId.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_');
+      final file = File('${directory.path}/ladecockpit-rechnung-$name.pdf');
+      await file.writeAsBytes(bytes, flush: true);
+      if (!mounted) return;
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'application/pdf')],
+        subject: trf('Rechnung · {0}', [site]),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
   }
 
   Future<void> _shareInvoiceZip(String month) async {
@@ -2255,6 +2463,14 @@ class _DashboardPageState extends State<DashboardPage> {
                 icon: Icon(Icons.close),
                 onPressed: () => Navigator.pop(dialogContext),
               ),
+              actions: [
+                IconButton(
+                  key: ValueKey('invoice-share'),
+                  icon: Icon(Icons.ios_share),
+                  tooltip: tr('Als PDF teilen oder speichern'),
+                  onPressed: () => _shareInvoicePdf(sessionId, site),
+                ),
+              ],
             ),
             body: Column(
               children: [

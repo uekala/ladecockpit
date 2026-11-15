@@ -623,4 +623,40 @@ const Map<String, String> english = {
       '{0} · {1} · {2}{3}',
   ' (nur {0})':
       ' (only {0})',
+  'Als PDF teilen oder speichern':
+      'Share or save as PDF',
+  'Betreiber gespeichert: {0}':
+      'Operator saved: {0}',
+  'Betreiber konnte nicht gespeichert werden (HTTP {0}).':
+      'Could not save the operator (HTTP {0}).',
+  'Betreiber korrigieren':
+      'Correct operator',
+  'Betreiber zuordnen':
+      'Assign operator',
+  'Der Server kann noch keine Betreiber zuordnen. Bitte Ladecockpit aktualisieren.':
+      'The server cannot assign operators yet. Please update Ladecockpit.',
+  'Die Rechnung konnte nicht geladen werden (HTTP {0}).':
+      'Could not load the invoice (HTTP {0}).',
+  'Filter entfernen':
+      'Remove filter',
+  'Gutschrift von Tesla':
+      'Credit from Tesla',
+  'Keine Ladevorgänge für „{0}“ gefunden.':
+      'No sessions found for "{0}".',
+  'MultiPass: Laden bei einem anderen Anbieter, abgerechnet über Tesla.':
+      'MultiPass: charged at another operator, billed through Tesla.',
+  'Speichern':
+      'Save',
+  'Wer betreibt diese Station?':
+      'Who runs this station?',
+  'Zuordnung entfernen':
+      'Remove assignment',
+  'Zuordnung entfernt':
+      'Assignment removed',
+  'z. B. Fastned':
+      'e.g. Fastned',
+  '{0} · gilt für alle Ladungen an dieser Station, auch die bisherigen.':
+      '{0} · applies to every session at this station, past and future.',
+  '{0}/kWh':
+      '{0}/kWh',
 };
