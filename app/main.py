@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import io
+import json
 import logging
 import os
 import re
@@ -277,6 +278,51 @@ async def look_save(body: LookIn):
         raise HTTPException(400, f"Use one of: {', '.join(LOOKS)}.")
     db.kv_set("ui_look", look)
     return {"look": look}
+
+
+# --- operators assigned by hand ------------------------------------------------------------------
+_ASSIGNED_KEY = "site_operators"
+
+
+def _load_assigned_sites() -> dict[str, str]:
+    try:
+        saved = json.loads(db.kv_get(_ASSIGNED_KEY) or "{}")
+    except ValueError:
+        saved = {}
+    return {str(k): str(v) for k, v in saved.items()} if isinstance(saved, dict) else {}
+
+
+if not settings.demo:
+    networks.set_assigned_sites(_load_assigned_sites())
+
+
+class OperatorIn(BaseModel):
+    site: str
+    operator: str | None = None
+
+
+@app.get("/api/operators")
+async def operators_get():
+    """Operators assigned to single sites, and the names that are offered for choosing."""
+    return {"assigned": {} if settings.demo else _load_assigned_sites(), "known": networks.known_operators()}
+
+
+@app.put("/api/operator")
+async def operator_save(body: OperatorIn):
+    """Assign an operator to a site (all its sessions, past and future); an empty operator removes it."""
+    if settings.demo:
+        raise HTTPException(404, "The demo has no stations of your own to assign.")
+    site = " ".join(body.site.split())
+    name = " ".join((body.operator or "").split())
+    if not site or len(site) > 200 or len(name) > 60:
+        raise HTTPException(400, "Name the site and an operator of at most 60 characters.")
+    assigned = {k: v for k, v in _load_assigned_sites().items() if k.casefold() != site.casefold()}
+    if name:
+        assigned[site] = name
+    db.kv_set(_ASSIGNED_KEY, json.dumps(assigned, ensure_ascii=False))
+    networks.set_assigned_sites(assigned)
+    _report_cache.clear()
+    return {"site": site, "operator": name or None, "assigned": assigned}
 
 
 # --- picture of the car --------------------------------------------------------------------------
@@ -599,6 +645,7 @@ async def backup_restore(request: Request):
     finally:
         source.unlink(missing_ok=True)
     sync.last_sync = db.kv_get("last_sync")
+    networks.set_assigned_sites(_load_assigned_sites())
     _report_cache.clear()
     log.info("Backup restored: %s sessions, %s invoices", result["sessions"], result["invoices"])
     return {"ok": True, **result}

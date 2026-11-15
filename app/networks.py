@@ -109,6 +109,24 @@ def configure(min_price: float | None, site_operators: str | None = None) -> Non
 
 # Operators the user assigned by hand: (text in the site name or address, operator), see configure.
 _site_operators: tuple[tuple[str, str], ...] = ()
+# Operators assigned to one site in the app: {site name, lower case: operator}. They come before
+# the option above, which is kept for whole groups of sites ("every site with Hafenstadt in it").
+_assigned_sites: dict[str, str] = {}
+
+
+def _site_key(site: str | None) -> str:
+    return " ".join((site or "").split()).casefold()
+
+
+def set_assigned_sites(assigned: dict[str, str] | None) -> None:
+    """Replace the operators assigned to single sites ({site name: operator})."""
+    global _assigned_sites
+    _assigned_sites = {_site_key(site): " ".join(name.split())
+                       for site, name in (assigned or {}).items() if _site_key(site) and name and name.strip()}
+
+
+def assigned_sites() -> dict[str, str]:
+    return dict(_assigned_sites)
 
 
 def parse_site_operators(text: str | None) -> tuple[tuple[str, str], ...]:
@@ -126,6 +144,9 @@ def parse_site_operators(text: str | None) -> tuple[tuple[str, str], ...]:
 def assigned_operator(*texts: str | None) -> str | None:
     """The operator the user assigned to a site: the first entry whose text occurs in one of
     `texts` (site name, station name, address), upper and lower case alike."""
+    exact = _assigned_sites.get(_site_key(texts[0] if texts else None))
+    if exact:
+        return exact
     if not _site_operators:
         return None
     haystack = [" ".join(t.split()).casefold() for t in texts if t]
@@ -191,6 +212,11 @@ _OPERATOR_NAMES = {
     "stadtwerke": "Stadtwerke", "mobility+": "Mobility+", "be charge": "Be Charge", "ladenetz": "ladenetz.de",
     "innogy": "innogy", "easycharger": "EasyCharger",
 }
+
+
+def known_operators() -> list[str]:
+    """The operators Ladecockpit knows by name, for choosing from a list."""
+    return sorted(set(_OPERATOR_NAMES.values()) - {"Stadtwerke", "Lidl", "Kaufland", "Aldi"}, key=str.casefold)
 
 
 def operator(site: str | None) -> str | None:

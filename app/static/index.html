@@ -370,6 +370,11 @@ td .when-sub { display: block; color: var(--mute); font-size: .78rem; }
 .map-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .map-link svg { width: 16px; height: 16px; flex: none; }
 @media (max-width: 560px) { .mp-list li { gap: 10px; } .map-link span { display: none; } }
+.op-dialog { border: 1px solid var(--line); border-radius: 16px; background: var(--panel, var(--sunk)); color: var(--ink); padding: 20px; width: min(420px, calc(100vw - 32px)); }
+.op-dialog::backdrop { background: rgba(0, 0, 0, .55); }
+.op-dialog h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.op-dialog input { width: 100%; box-sizing: border-box; margin: 12px 0; padding: 10px 12px; font: inherit; background: var(--sunk); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); }
+.op-dialog .op-actions { display: flex; align-items: center; gap: 10px; }
 .link-btn { font: inherit; font-size: .86rem; font-weight: 500; color: var(--accent); background: none; border: none; padding: 0; cursor: pointer; }
 .link-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
 .muted { color: var(--mute); }
@@ -1211,6 +1216,9 @@ try {
       kwh100: "kWh per 100 {unit}", power: "Avg power", thKw: "kW", kwTip: "avg charging power {kw} kW",
       slowSub: "usually {typical}", slowNote: "slow – usually {typical} kW here",
       pdfYear: "Year {year} (PDF, one line per month)",
+      opAssign: "Assign operator", opCorrect: "Correct operator", opChange: "Change operator", opTitle: "Who runs this station?",
+      opHint: "{site} · {n}. Applies to every session at this station, past and future.", opPlaceholder: "e.g. Fastned",
+      opSave: "Save", opCancel: "Cancel", opRemove: "Remove assignment", opSaved: "Operator saved: {name}", opRemoved: "Assignment removed", opFailed: "Could not save: {e}",
       backupTitle: "Backup", backupDownload: "Download backup", backupRestore: "Restore backup",
       backupHint: "Charging history, readings and invoices in one file – without the Tesla sign-in. Restoring replaces the charging history of this installation.",
       backupConfirm: "Replace everything with “{name}”? Tap again", backupRunning: "Restoring …",
@@ -1316,6 +1324,9 @@ try {
       kwh100: "kWh pro 100 {unit}", power: "Ø Leistung", thKw: "kW", kwTip: "Ø Ladeleistung {kw} kW",
       slowSub: "sonst {typical}", slowNote: "langsam – sonst {typical} kW hier",
       pdfYear: "Jahr {year} (PDF, eine Zeile je Monat)",
+      opAssign: "Betreiber zuordnen", opCorrect: "Betreiber korrigieren", opChange: "Betreiber ändern", opTitle: "Wer betreibt diese Station?",
+      opHint: "{site} · {n}. Gilt für alle Ladungen an dieser Station, auch die bisherigen.", opPlaceholder: "z. B. Fastned",
+      opSave: "Speichern", opCancel: "Abbrechen", opRemove: "Zuordnung entfernen", opSaved: "Betreiber gespeichert: {name}", opRemoved: "Zuordnung entfernt", opFailed: "Speichern fehlgeschlagen: {e}",
       backupTitle: "Datensicherung", backupDownload: "Sicherung herunterladen", backupRestore: "Sicherung einspielen",
       backupHint: "Ladehistorie, Messwerte und Rechnungen in einer Datei – ohne die Tesla-Anmeldung. Beim Einspielen wird die Ladehistorie dieser Installation ersetzt.",
       backupConfirm: "Alles durch „{name}“ ersetzen? Nochmal tippen", backupRunning: "Wird eingespielt …",
@@ -1644,6 +1655,8 @@ try {
   }
 
   document.addEventListener("click", (e) => {
+    const opBtn = e.target.closest("[data-op-site]");
+    if (opBtn) { openOperatorDialog(opBtn); return; }
     if (pdfView) {
       const act = e.target.closest("[data-pdf]")?.dataset.pdf;
       if (act === "close") closePdfView();
@@ -2090,6 +2103,52 @@ try {
     </section>`;
   }
 
+  // Assign the operator of a station by hand: for third-party stations, in live mode only.
+  const opButton = (d, s) => (d.mode === "live" && !state.preview && s.site_name && (isMp(s) || s.operator_assigned)
+    ? `<span class="when-sub"><button class="link-btn" type="button" data-op-site="${esc(s.site_name)}" data-op-now="${esc(s.operator_assigned ? s.operator : "")}" data-op-n="${s.sessions}">${T(s.operator_assigned ? "opChange" : (s.operator ? "opCorrect" : "opAssign"))}</button></span>` : "");
+
+  async function openOperatorDialog(btn) {
+    let dlg = document.getElementById("op-dialog");
+    if (!dlg) {
+      dlg = document.createElement("dialog");
+      dlg.id = "op-dialog";
+      dlg.className = "op-dialog";
+      document.body.appendChild(dlg);
+    }
+    const site = btn.dataset.opSite, now = btn.dataset.opNow, n = Number(btn.dataset.opN) || 0;
+    let known = [];
+    try { known = (await (await fetch("api/operators", { cache: "no-store" })).json()).known || []; } catch (err) { /* the list is a convenience */ }
+    dlg.innerHTML = `<form method="dialog">
+      <h3>${T("opTitle")}</h3>
+      <p class="sub">${esc(T("opHint", { site, n: sessionsText(n) }))}</p>
+      <input id="op-name" list="op-known" maxlength="60" autocomplete="off" placeholder="${esc(T("opPlaceholder"))}" value="${esc(now)}">
+      <datalist id="op-known">${known.map((k) => `<option value="${esc(k)}"></option>`).join("")}</datalist>
+      <div class="op-actions">
+        ${now ? `<button class="link-btn" value="remove">${T("opRemove")}</button>` : ""}
+        <span style="flex:1"></span>
+        <button class="btn" value="cancel">${T("opCancel")}</button>
+        <button class="btn primary" value="save">${T("opSave")}</button>
+      </div></form>`;
+    dlg.onclose = async () => {
+      const action = dlg.returnValue;
+      const name = action === "remove" ? "" : dlg.querySelector("#op-name").value.trim();
+      if (action !== "save" && action !== "remove") return;
+      if (action === "save" && !name) return;
+      try {
+        const r = await fetch("api/operator", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ site, operator: name }) });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        toast(name ? T("opSaved", { name }) : T("opRemoved"));
+        await load();
+        render();
+      } catch (err) {
+        toast(T("opFailed", { e: err.message }));
+      }
+    };
+    dlg.returnValue = "";
+    dlg.showModal();
+    dlg.querySelector("#op-name").focus();
+  }
+
   function sitesPanel(d) {
     const sites = d.sites || [];
     if (!sites.length) return `<section class="panel"><span class="eyebrow">${T("sites")}</span><p class="sub">${T("noSessions")}</p></section>`;
@@ -2099,7 +2158,7 @@ try {
       <div class="scroll"><table>
         <thead><tr><th>${siteHead(d)}</th><th class="n">${T("thSessions")}</th><th class="n">${T("thKwh")}</th><th class="n">${T("thAvg")}</th><th class="n">Ø ${T("thKw")}</th></tr></thead>
         <tbody>${sites.map((s) => `<tr>
-          <td class="site">${esc(siteName(s))}${mpChip(s)}${whereSub(s)}</td>
+          <td class="site">${esc(siteName(s))}${mpChip(s)}${whereSub(s)}${opButton(d, s)}</td>
           <td class="n">${s.sessions}</td>
           <td class="n">${num(s.kwh, 1)}</td>
           <td class="n"><span class="minibar" aria-hidden="true"><i data-tone="${tone(s.avg_price, avgPrice(d))}" style="width:${((s.avg_price || 0) / maxP) * 100}%"></i></span>${s.avg_price == null ? "–" : money(s.avg_price)}</td>
