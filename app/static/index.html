@@ -1188,7 +1188,7 @@ try {
       reachesTomorrow: "The battery reaches {floor} % tomorrow.", reachesIn: "In about {days} days the battery is at {floor} %.",
       perDay: "used per day", distPerDay: "driven per day", basis: "history used", days: "{n} days",
       lastCharge: "Last session · from invoice", noCharge: "No invoice fetched yet. After the first sync the latest Supercharger session with its real price shows up here.",
-      supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", ofWhichMp: "of which MultiPass ({n})", thSiteAny: "Site", energy: "Energy",
+      supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", mpChipTip: "MultiPass: charged at another operator, billed through Tesla.", ofWhichMp: "of which MultiPass ({n})", thSiteAny: "Site", energy: "Energy",
       fuelCompare: "Combustion car ({c} L/100 km · {p}/L)", fuelComparePaid: "Combustion car ({c} L/100 km · {p}/L paid)", saved: "Saved",
       fuelPaidTip: "Price per litre you paid: {litres} L {span}", fuelPaidDays: "in the last {n} days", fuelPaidAll: "in total",
       fuelHead: "Compared with a combustion car · {dist} {unit}", fuelSince: " since {d}", teslaSame: "Tesla ({p} per 100 {unit})",
@@ -1296,7 +1296,7 @@ try {
       reachesTomorrow: "Der Akku erreicht morgen {floor} %.", reachesIn: "In etwa {days} Tagen ist der Akku bei {floor} %.",
       perDay: "Verbrauch pro Tag", distPerDay: "gefahren pro Tag", basis: "Verlauf als Basis", days: "{n} Tage",
       lastCharge: "Letzte Ladung · laut Rechnung", noCharge: "Noch keine Rechnung abgerufen. Nach dem ersten Abgleich steht hier die letzte Supercharger-Ladung mit echtem Preis.",
-      supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", ofWhichMp: "davon MultiPass ({n})", thSiteAny: "Standort", energy: "Energie",
+      supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", mpChipTip: "MultiPass: Laden bei einem anderen Anbieter, abgerechnet über Tesla.", ofWhichMp: "davon MultiPass ({n})", thSiteAny: "Standort", energy: "Energie",
       fuelCompare: "Verbrenner ({c} L/100 km · {p}/L)", fuelComparePaid: "Verbrenner ({c} L/100 km · {p}/L bezahlt)", saved: "Gespart",
       fuelPaidTip: "Literpreis, den du bezahlt hast: {litres} L {span}", fuelPaidDays: "in den letzten {n} Tagen", fuelPaidAll: "insgesamt",
       fuelHead: "Vergleich mit Verbrenner · {dist} {unit}", fuelSince: " seit {d}", teslaSame: "Tesla ({p} pro 100 {unit})",
@@ -1436,7 +1436,7 @@ try {
   };
   const insightIcon = { slot: ico.clock, site: ico.pin, idle: ico.plug, reference: ico.tag, network: ico.bolt, speed: ico.bolt };
   const isMp = (x) => x && x.network === "multipass";
-  const mpChip = (x) => (isMp(x) ? ` <span class="chip info">${T("mpChip")}</span>` : "");
+  const mpChip = (x) => (isMp(x) ? ` <span class="chip info" tabindex="0" data-tip="${esc(T("mpChipTip"))}">${T("mpChip")}</span>` : "");
   // A MultiPass station by its operator (from the register or the site name), with the address
   // underneath; Superchargers keep their site name.
   const siteName = (x) => (isMp(x) && x.operator ? x.operator : x.site);

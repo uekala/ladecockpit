@@ -48,4 +48,34 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getRect(page).width, greaterThan(before * 1.5));
   });
+
+  testWidgets('a double tap zooms in and a second one back out', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Zoomable(
+          child: ListView(children: const [
+            SizedBox(key: ValueKey('page'), height: 400),
+          ]),
+        ),
+      ),
+    ));
+    final page = find.byKey(const ValueKey('page'));
+    final before = tester.getRect(page);
+    final spot = before.center;
+
+    await tester.tapAt(spot);
+    await tester.pump(const Duration(milliseconds: 60));
+    await tester.tapAt(spot);
+    await tester.pumpAndSettle();
+    final zoomed = tester.getRect(page);
+    expect(zoomed.width, closeTo(before.width * 2.5, 1));
+    // The tapped spot stays under the finger.
+    expect(zoomed.center.dx, closeTo(spot.dx, 1));
+
+    await tester.tapAt(spot);
+    await tester.pump(const Duration(milliseconds: 60));
+    await tester.tapAt(spot);
+    await tester.pumpAndSettle();
+    expect(tester.getRect(page).width, closeTo(before.width, 1));
+  });
 }

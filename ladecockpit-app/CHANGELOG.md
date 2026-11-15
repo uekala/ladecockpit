@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.0 – 2026-11-15
+
+- **Assign the operator of a station in the app.** For third-party (MultiPass) stations whose operator Ladecockpit does not know: *Assign operator* under *Sites* in the web app, or in the details of a session in the mobile app. Choose from the known operators or type a name. It applies to every session at that station at once – past and future – without a restart, and is part of the backup. The option `SITE_OPERATORS` stays for whole groups of stations. API: `GET /api/operators`, `PUT /api/operator`.
+- **Mobile app: filters as chips.** *Zeitraum*, *Netzwerk* and *Standort* sit as chips under the search field instead of in a folded card; an active filter shows its value and is removed with a tap on its ✕. A line underneath sums up what is shown: "12 Ladevorgänge · 384,0 kWh · 142,10 €".
+- **Mobile app: price per kWh in every session.** With a dot that tells a cheap session (green) from a dear one (orange), compared with your own average.
+- Mobile app: invoices can be shared or saved as PDF, and a double tap zooms in on the tapped spot and back out.
+- Mobile app: an empty result says why ("Keine Ladevorgänge für „…“ gefunden") and offers to reset the filters.
+- MultiPass is explained where it appears: "charged at another operator, billed through Tesla". The credit line reads *Gutschrift von Tesla*.
+
 ## 0.14.6 – 2026-11-15
 
 - **Tesla open-source apps (experimental).** With a client ID and no client secret, Ladecockpit signs in with PKCE, the way Tesla intends for "Open Source Apps". Tesla limits such apps to its discovery tier; whether charging history and invoices are available there has to show in use. Installations with a client secret work as before.
