@@ -1613,7 +1613,82 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       );
 
-  Widget _priceRadar(dynamic rawSlots, dynamic rawSites) {
+  /// Off-peak and peak price per site, from the user's own invoices. Nothing from an older server.
+  Widget _tariffs(dynamic raw) {
+    if (raw is! Map) return SizedBox.shrink();
+    final sites = raw['sites'] is List
+        ? (raw['sites'] as List).whereType<Map<String, dynamic>>().toList()
+        : <Map<String, dynamic>>[];
+    final muted = Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary, height: 1.35);
+    Widget price(String label, dynamic value, Color color) => Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(label, style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+            Text(value is num ? '${formatNumber(value, 2)} €' : '–',
+              style: TextStyle(fontWeight: FontWeight.w800, color: color)),
+          ],
+        );
+    return Column(
+      key: ValueKey('tariffs'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(4, 14, 4, 4),
+          child: Text(tr('Nacht- und Tagpreis je Standort'),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: AppTheme.textSecondary, fontWeight: FontWeight.w700)),
+        ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
+          child: Text(tr('Viele Supercharger sind nachts und früh morgens günstiger (Nebenzeit) als tagsüber (Hauptzeit). Die Preise stammen aus deinen Rechnungen; die genauen Uhrzeiten zeigt die Tesla-App.'),
+            style: muted),
+        ),
+        if (sites.isEmpty)
+          Card(child: Padding(
+            padding: EdgeInsets.all(14),
+            child: Text(tr('Sobald du an einem Standort einmal nachts und einmal tagsüber geladen hast, stehen hier seine beiden Preise.'),
+              style: muted),
+          )),
+        for (final site in sites)
+          Card(
+            child: Padding(
+              padding: EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(site['site']?.toString() ?? '–', maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontWeight: FontWeight.w700)),
+                        if (site['off_times'] is List && (site['off_times'] as List).isNotEmpty)
+                          Text(trf('Nebenzeit erlebt um {0} Uhr', [(site['off_times'] as List).join(', ')]),
+                            style: muted),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  price(tr('Nebenzeit'), site['offpeak'], AppTheme.accentGreen),
+                  SizedBox(width: 14),
+                  price(tr('Hauptzeit'), site['peak'], AppTheme.textPrimary),
+                ],
+              ),
+            ),
+          ),
+        if (raw['saving'] is num && (raw['saving'] as num) > 0)
+          Padding(
+            padding: EdgeInsets.fromLTRB(4, 6, 4, 0),
+            child: Text(
+              trf('Deine {0} kWh aus der Hauptzeit an diesen Standorten hätten in der Nebenzeit {1} € weniger gekostet.',
+                [formatNumber(raw['peak_kwh'] is num ? raw['peak_kwh'] as num : 0, 0),
+                 formatNumber(raw['saving'] as num, 2)]),
+              style: Theme.of(context).textTheme.bodySmall),
+          ),
+      ],
+    );
+  }
+
+  Widget _priceRadar(dynamic rawSlots, dynamic rawSites, [dynamic rawTariffs]) {
     final slots = rawSlots is List
         ? rawSlots.whereType<Map<String, dynamic>>()
             .where((slot) => slot['sessions'] is num && (slot['sessions'] as num) > 0)
@@ -1778,6 +1853,7 @@ class _DashboardPageState extends State<DashboardPage> {
             );
           }),
         ],
+        _tariffs(rawTariffs),
         if (sites.isNotEmpty) ...[
           Padding(
             padding: EdgeInsets.fromLTRB(4, 14, 4, 6),
@@ -3353,7 +3429,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 tr('Behalte Ladepreise, Kostenentwicklung und deine Monatsberichte im Blick.'),
                 Icons.insights_rounded,
               ),
-              _priceRadar(_data?['slots'], _data?['sites']),
+              _priceRadar(_data?['slots'], _data?['sites'], _data?['tariffs']),
               _costDevelopment(_data?['monthly']),
               _exports(_data?['monthly'], _data?['years']),
             ],

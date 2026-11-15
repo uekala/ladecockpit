@@ -659,4 +659,18 @@ const Map<String, String> english = {
       '{0} · applies to every session at this station, past and future.',
   '{0}/kWh':
       '{0}/kWh',
+  'Nacht- und Tagpreis je Standort':
+      'Off-peak and peak price per site',
+  'Viele Supercharger sind nachts und früh morgens günstiger (Nebenzeit) als tagsüber (Hauptzeit). Die Preise stammen aus deinen Rechnungen; die genauen Uhrzeiten zeigt die Tesla-App.':
+      'Many Superchargers cost less at night and early in the morning (off-peak) than during the day (peak). The prices come from your invoices; Tesla\'s app shows the exact hours.',
+  'Sobald du an einem Standort einmal nachts und einmal tagsüber geladen hast, stehen hier seine beiden Preise.':
+      'Once you have charged at a site both at night and during the day, its two prices show up here.',
+  'Nebenzeit erlebt um {0} Uhr':
+      'Off-peak seen at {0}',
+  'Nebenzeit':
+      'Off-peak',
+  'Hauptzeit':
+      'Peak',
+  'Deine {0} kWh aus der Hauptzeit an diesen Standorten hätten in der Nebenzeit {1} € weniger gekostet.':
+      'Your {0} kWh at peak time at these sites would have cost €{1} less off-peak.',
 };

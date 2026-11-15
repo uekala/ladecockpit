@@ -115,3 +115,47 @@ def test_the_cheapest_slot_says_when_it_rests_on_one_session(settings):
     assert slots["midday"]["sessions"] == 4 and slots["midday"]["solid"] is True
     slot_text = next(i["text"] for i in d["insights"] if i["kind"] == "slot")
     assert slot_text.startswith("Morgens") and "erst 1× geladen" in slot_text
+
+
+def _tariff_dashboard(settings, rows, lang="de"):
+    """rows: (site, day, hour UTC, kWh, price per kWh)"""
+    from zoneinfo import ZoneInfo
+    sessions = []
+    for n, (site, day, hour, kwh, price) in enumerate(rows):
+        s = _session(f"t{n}", datetime(2026, 10, day, hour, tzinfo=timezone.utc), kwh, round(kwh * price, 2))
+        s["site"] = site
+        sessions.append(s)
+    return build_dashboard(sessions=sessions, live={"values": {}, "units": {}},
+                           readings={"soc": [], "soc_last": None, "range_last": None, "odometer": []},
+                           settings=dataclasses.replace(settings, lang=lang, tz=ZoneInfo("Europe/Berlin")),
+                           meta={}, now=datetime(2026, 11, 1, 12, tzinfo=timezone.utc))
+
+
+def test_tariffs_per_site(settings):
+    # Moers: cheap early in the morning and late at night, dear during the day (times in UTC, Berlin = +2 h).
+    d = _tariff_dashboard(settings, [
+        ("Moers, Germany", 1, 4, 30, 0.28), ("Moers, Germany", 2, 21, 20, 0.28),
+        ("Moers, Germany", 3, 11, 40, 0.46), ("Moers, Germany", 4, 15, 10, 0.46),
+        # Willich: one price only – no tariff.
+        ("Willich, Germany", 5, 12, 30, 0.40), ("Willich, Germany", 6, 16, 30, 0.40),
+        # Seestadt: the price went up, the cheap session was during the day – a price change, no tariff.
+        ("Seestadt, Germany", 7, 10, 30, 0.42), ("Seestadt, Germany", 20, 12, 30, 0.52),
+        # Bergstadt: only a few cents apart – no tariff.
+        ("Bergstadt, Germany", 8, 4, 30, 0.44), ("Bergstadt, Germany", 9, 12, 30, 0.47),
+    ])
+    t = d["tariffs"]
+    assert [s["site_name"] for s in t["sites"]] == ["Moers, Germany"]
+    moers = t["sites"][0]
+    assert (moers["offpeak"], moers["peak"]) == (0.28, 0.46)
+    assert (moers["off_sessions"], moers["peak_sessions"]) == (2, 2)
+    assert moers["off_times"] == ["06:00", "23:00"]
+    assert moers["saving"] == round(50 * 0.18, 2) and t["saving"] == 9.0
+    assert t["off_share"] == 0.5 and t["peak_kwh"] == 50.0
+    tip = next(i["text"] for i in d["insights"] if i["kind"] == "tariff")
+    assert "Moers" in tip and "0,28 €" in tip and "0,46 €" in tip and "9,00 €" in tip
+
+
+def test_no_tariffs_without_both_prices(settings):
+    d = _tariff_dashboard(settings, [("Moers, Germany", 1, 11, 30, 0.46), ("Moers, Germany", 2, 12, 30, 0.47)])
+    assert d["tariffs"] == {"sites": []}
+    assert not [i for i in d["insights"] if i["kind"] == "tariff"]

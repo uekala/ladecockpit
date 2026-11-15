@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.17.0 – 2026-11-15
+
+- **Off-peak and peak price per site.** Many Superchargers cost less at night and early in the morning than during the day. Ladecockpit now finds both prices in your own invoices and shows them under the price radar, in the web app and the mobile app: "Moers · off-peak 0,28 € · peak 0,46 €", with the times you charged off-peak and what your peak-time kWh at those sites would have cost less. A site only gets two prices when they are at least 0,06 €/kWh apart, every cheaper session started before 10 or from 20 o'clock and a dearer one during the day – otherwise a price change could pass for a tariff. Until you have charged at a site both ways, the section says how it fills. New tip in the insights; `tariffs` in `/api/dashboard`.
+
 ## 0.16.1 – 2026-11-15
 
 - The log says what the lookup on OpenStreetMap found for each station and why it left one without an operator: "OpenStreetMap, station in Hafenstadt: several operators nearby (Fastned 30 m, Allego 45 m)", "the address was not found on the map", "no charging station within 400 m on the map". Only the town is named. Stations that got no operator so far are asked once more, so the reason shows up after the update.
