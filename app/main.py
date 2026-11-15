@@ -33,7 +33,7 @@ from .sync import SyncService
 from .tesla import TeslaClient, TeslaError
 from .watcher import Watcher
 
-networks.configure(settings.multipass_min_price)
+networks.configure(settings.multipass_min_price, settings.site_operators)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 # httpx logs every request at INFO – with the Home Assistant watcher that is about a dozen

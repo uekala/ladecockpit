@@ -58,6 +58,7 @@ ADDON_OPTION_MAP = {
     "month_report": "MONTH_REPORT",
     "multipass_min_price": "MULTIPASS_MIN_PRICE",
     "operator_lookup": "OPERATOR_LOOKUP",
+    "site_operators": "SITE_OPERATORS",
     "entity_outside_temp": "HA_ENT_OUTSIDE_TEMP",
     "entity_home_energy": "HA_ENT_HOME_ENERGY",
     "home_price": "HOME_PRICE",
@@ -192,6 +193,8 @@ class Settings:
     multipass_min_price: float = 0.50
     # Look up the operators of German MultiPass stations in the register of the Bundesnetzagentur
     operator_lookup: bool = True
+    # Operators assigned by hand: "text in site name or address=Operator; …", see networks.configure
+    site_operators: str = ""
     # Development only: point the app at a mock server
     api_base_override: str = ""
     token_url_override: str = ""
@@ -286,6 +289,7 @@ def load() -> Settings:
         month_report=_bool("MONTH_REPORT", True),
         multipass_min_price=max(0.0, _float("MULTIPASS_MIN_PRICE", 0.50) or 0.0),
         operator_lookup=_bool("OPERATOR_LOOKUP", True),
+        site_operators=_env("SITE_OPERATORS"),
         api_base_override=_env("TESLA_API_BASE_OVERRIDE").rstrip("/"),
         token_url_override=_env("TESLA_TOKEN_URL_OVERRIDE"),
     )

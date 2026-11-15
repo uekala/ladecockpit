@@ -4,6 +4,11 @@
 
 - **Tesla open-source apps (experimental).** With a client ID and no client secret, Ladecockpit signs in with PKCE, the way Tesla intends for "Open Source Apps". Tesla limits such apps to its discovery tier; whether charging history and invoices are available there has to show in use. Installations with a client secret work as before.
 
+## 0.14.5 – 2026-11-14
+
+- Mobile app: invoices, monthly reports and the year overview can be enlarged with two fingers. Before, the pages could only be read at the width of the screen.
+- **Assign operators yourself.** Outside Germany Ladecockpit often cannot tell who runs a MultiPass station. New option *Assign operators yourself* (`SITE_OPERATORS`): a text from the site name or address, an equals sign and the operator, several separated by semicolons – `Hafenstadt=Fastned; Parkhaus Mitte=Stadtwerke`. What you set there has the last word, and the station counts as MultiPass.
+
 ## 0.14.4 – 2026-11-14
 
 - **Price radar: the lowest price is the cheapest again.** 0.14.2 skipped time windows and sites with only a session or two, so a more expensive one could be labelled "cheapest" right next to a lower price. Now the lowest price always gets the label, and when little stands behind it, the app says so: "cheapest · only 1 session". Applies to the mobile app, the web app and the tip under the radar.

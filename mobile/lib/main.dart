@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 export 'document_response.dart' show CockpitException;
 import 'app_lock.dart';
+import 'zoomable.dart';
 import 'dashboard_cache.dart';
 import 'document_response.dart';
 import 'format.dart';
@@ -1743,7 +1744,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
                 Expanded(
-                  child: ListView.builder(
+                  child: Zoomable(child: ListView.builder(
                     padding: EdgeInsets.fromLTRB(8, 8, 8, 24),
                     itemCount: pages,
                     itemBuilder: (context, index) => Padding(
@@ -1780,7 +1781,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         },
                       ),
                     ),
-                  ),
+                  )),
                 ),
               ],
             ),
@@ -2301,7 +2302,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
                 Expanded(
-                  child: ListView.builder(
+                  child: Zoomable(child: ListView.builder(
                     padding: EdgeInsets.fromLTRB(8, 8, 8, 24),
                     itemCount: pages,
                     itemBuilder: (context, index) => Padding(
@@ -2339,7 +2340,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         },
                       ),
                     ),
-                  ),
+                  )),
                 ),
               ],
             ),
