@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Tesla open-source apps (experimental).** With a client ID and no client secret, Ladecockpit signs in with PKCE, the way Tesla intends for "Open Source Apps". Tesla limits such apps to its discovery tier; whether charging history and invoices are available there has to show in use. Installations with a client secret work as before.
+
 ## 0.14.5 – 2026-11-14
 
 - Mobile app: invoices, monthly reports and the year overview can be enlarged with two fingers. Before, the pages could only be read at the width of the screen.

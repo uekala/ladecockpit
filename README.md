@@ -103,6 +103,8 @@ If you already use the Tesla Fleet integration in Home Assistant (or another Fle
 
 Starting from scratch? The Fleet API only answers apps whose domain is registered with a public key. The [Home Assistant Tesla Fleet documentation](https://www.home-assistant.io/integrations/tesla_fleet/) walks through creating the app and registering the key. Tesla's own steps are in the [Fleet API docs](https://developer.tesla.com/docs/fleet-api).
 
+**Experimental: open-source app without a secret.** For open-source projects Tesla offers [Open Source Apps](https://developer.tesla.com/docs/fleet-api/authentication/open-source-tokens), which work without a client secret. Enter only the client ID and leave the secret empty, and Ladecockpit signs in this way (PKCE). Tesla limits such apps to its discovery tier; whether charging history and invoices are available there is not confirmed yet.
+
 ### 2. Configure
 
 ```bash
