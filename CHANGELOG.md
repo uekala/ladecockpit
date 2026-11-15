@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.14.6 – 2026-11-15
 
 - **Tesla open-source apps (experimental).** With a client ID and no client secret, Ladecockpit signs in with PKCE, the way Tesla intends for "Open Source Apps". Tesla limits such apps to its discovery tier; whether charging history and invoices are available there has to show in use. Installations with a client secret work as before.
+- Updated packages: FastAPI 0.163.0, pypdf 7.1.0.
 
 ## 0.14.5 – 2026-11-14
 
