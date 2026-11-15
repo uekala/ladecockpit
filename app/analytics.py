@@ -149,6 +149,48 @@ def _forecast(lang, history, soc, floor, now_utc, tz, odometer_14d) -> dict:
 
 
 MIN_PRICE_GAP = 0.03       # €/kWh: smaller differences are not worth a tip
+TARIFF_GAP = 0.06          # €/kWh: two prices at one site this far apart are two tariffs
+OFF_PEAK_HOURS = (10, 20)  # a session starting in [10, 20) local time is never off-peak at Tesla in Europe
+
+
+def _rate(x: dict) -> float | None:
+    """The listed price per kWh of one session (before credits)."""
+    if not x.get("kwh"):
+        return None
+    listed = x["list_cost"] if x.get("list_cost") is not None else x.get("charge_cost")
+    return listed / x["kwh"] if listed else None
+
+
+def _tariff(items: list[dict]) -> dict | None:
+    """Off-peak and peak price of one site, from the sessions there – or None.
+
+    Tesla charges less at night and early in the morning at many Superchargers. A site gets two
+    tariffs when its prices fall into two groups at least TARIFF_GAP apart, every cheap session
+    started outside the day (before 10 or from 20 o'clock) and at least one dear one during the
+    day. Otherwise the difference is more likely a price change than a tariff, and None is returned.
+    """
+    rated = sorted(((r, x) for x in items if x.get("kwh", 0) >= 3 and (r := _rate(x))), key=lambda p: p[0])
+    if len(rated) < 2:
+        return None
+    gap, cut = max((rated[i + 1][0] - rated[i][0], i) for i in range(len(rated) - 1))
+    if gap < TARIFF_GAP:
+        return None
+    low, high = [x for _, x in rated[:cut + 1]], [x for _, x in rated[cut + 1:]]
+    day = range(*OFF_PEAK_HOURS)
+    if any(x["_local"].hour in day for x in low) or not any(x["_local"].hour in day for x in high):
+        return None
+
+    def price(group: list[dict]) -> float:
+        kwh = sum(x["kwh"] for x in group)
+        return round(sum(_rate(x) * x["kwh"] for x in group) / kwh, 4)
+
+    off, peak = price(low), price(high)
+    peak_kwh = sum(x["kwh"] for x in high)
+    return {"offpeak": off, "peak": peak, "off_sessions": len(low), "peak_sessions": len(high),
+            "off_kwh": round(sum(x["kwh"] for x in low), 1), "peak_kwh": round(peak_kwh, 1),
+            # When the cheap price was seen, as a hint for the user (Tesla's app shows the exact hours).
+            "off_times": sorted({f"{x['_local']:%H:%M}" for x in low})[:3],
+            "saving": round(peak_kwh * (peak - off), 2)}
 PROJECTION_DAYS = 90       # look-back for the yearly projection
 PROJECTION_MIN_DAYS = 7
 PROJECTION_MIN_DIST = 200
@@ -491,6 +533,22 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
 
     sites = sorted((_site_row(k, v) for k, v in groups.items()), key=lambda r: (-r["sessions"], r["avg_price"] or 9))
 
+    # Off-peak and peak price per site, where both were seen (see _tariff).
+    tariff_sites = []
+    for k, v in groups.items():
+        t = _tariff(v)
+        if t:
+            row = _site_row(k, v)
+            tariff_sites.append({"site": row["label"], "site_name": row["site_name"], **t})
+    tariff_sites.sort(key=lambda t: -t["saving"])
+    tariffs = {"sites": tariff_sites}
+    if tariff_sites:
+        off_kwh = sum(t["off_kwh"] for t in tariff_sites)
+        peak_kwh = sum(t["peak_kwh"] for t in tariff_sites)
+        tariffs.update(saving=round(sum(t["saving"] for t in tariff_sites), 2),
+                       off_share=round(off_kwh / (off_kwh + peak_kwh), 3) if off_kwh + peak_kwh else None,
+                       peak_kwh=round(peak_kwh, 1))
+
     insights: list[dict] = []
     used = [s for s in slots if s["sessions"]]
     if len(priced) >= 4 and len(used) >= 2 and overall["list_price"]:
@@ -506,6 +564,12 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
             insights.append({"kind": "slot", "text": i18n.t(lang, "in_slot_flat")})
     else:
         insights.append({"kind": "slot", "text": i18n.t(lang, "in_slot_wait")})
+
+    if tariff_sites:
+        t = tariff_sites[0]
+        insights.append({"kind": "tariff", "text": i18n.t(
+            lang, "in_tariff", site=t["site"], off=money(t["offpeak"]), peak=money(t["peak"]),
+            saving=money(tariffs["saving"]), kwh=f"{tariffs['peak_kwh']:.0f}")})
 
     priced_sites = [r for r in sites if r["avg_price"]]
     if len(priced_sites) >= 2 and len(priced) >= 4:
@@ -624,6 +688,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         "month": month,
         "monthly": monthly,
         "slots": slots,
+        "tariffs": tariffs,
         "sites": sites,
         "multipass": _multipass(sessions, tz, lang),
         "insights": insights,

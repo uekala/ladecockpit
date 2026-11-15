@@ -370,6 +370,16 @@ td .when-sub { display: block; color: var(--mute); font-size: .78rem; }
 .map-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .map-link svg { width: 16px; height: 16px; flex: none; }
 @media (max-width: 560px) { .mp-list li { gap: 10px; } .map-link span { display: none; } }
+.tariffs { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.tariffs h3 { margin: 0 0 4px; font-size: .98rem; }
+.tariffs ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.tariffs li { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; }
+.tariff-site { display: flex; flex-direction: column; min-width: 0; }
+.tariff-site b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tariff-price { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tariff-price small { display: block; font-weight: 400; font-size: .72rem; color: var(--muted, inherit); opacity: .8; }
+.tariff-price.off { color: var(--good, var(--accent)); }
+.tariff-sum { margin: 10px 0 0; font-size: .88rem; }
 .op-dialog { border: 1px solid var(--line); border-radius: 16px; background: var(--panel, var(--sunk)); color: var(--ink); padding: 20px; width: min(420px, calc(100vw - 32px)); }
 .op-dialog::backdrop { background: rgba(0, 0, 0, .55); }
 .op-dialog h3 { margin: 0 0 6px; font-size: 1.05rem; }
@@ -1242,7 +1252,7 @@ try {
       addonStep2: "After signing in, Tesla redirects to <span class=\"mono\">{uri}</span>. That page does not load – that is expected.",
       addonStep3: "Copy the full address from the browser bar of that tab and paste it here.",
       atReference: "At reference price {p}", perInvoices: "Per invoices (without fees)",
-      radar: "Price radar", radarTitle: "What a kWh costs you by time of day", radarSub: "Average list price from your invoices", yourAvg: "dashed: your average {p}",
+      radar: "Price radar", radarTitle: "What a kWh costs you by time of day", radarSub: "Average list price from your invoices", tariffTitle: "Off-peak and peak price per site", tariffSub: "Many Superchargers cost less at night and early in the morning. The prices come from your invoices; Tesla's app shows the exact hours.", offPeak: "off-peak", peak: "peak", tariffSeen: "off-peak seen at {times}", tariffNone: "Once you have charged at a site both at night and during the day, its two prices show up here.", tariffSaving: "Your {kwh} kWh at peak time at these sites would have cost {s} less off-peak.", yourAvg: "dashed: your average {p}",
       cheapest: "cheapest", cheapestFew: "cheapest · only {n}", noSession: "no session", oneSession: "1 session", nSessions: "{n} sessions",
       tipSlot: "{label} ({range}): avg {p}/kWh from {n}, {kwh} kWh", tipEmpty: "{label}: no session in this time window yet",
       sites: "Sites", sitesTitle: "Where you charge", noSessions: "No sessions yet.",
@@ -1350,7 +1360,7 @@ try {
       addonStep2: "Nach der Anmeldung leitet Tesla zu <span class=\"mono\">{uri}</span> weiter. Die Seite lädt nicht – das ist so gewollt.",
       addonStep3: "Die komplette Adresse aus der Browserzeile dieses Tabs kopieren und hier einfügen.",
       atReference: "Mit Referenzpreis {p}", perInvoices: "Laut Rechnungen (ohne Gebühren)",
-      radar: "Preis-Radar", radarTitle: "Was dich eine kWh je nach Uhrzeit kostet", radarSub: "Ø Listenpreis aus deinen Rechnungen", yourAvg: "gestrichelt: dein Schnitt {p}",
+      radar: "Preis-Radar", radarTitle: "Was dich eine kWh je nach Uhrzeit kostet", radarSub: "Ø Listenpreis aus deinen Rechnungen", tariffTitle: "Nacht- und Tagpreis je Standort", tariffSub: "Viele Supercharger sind nachts und früh morgens günstiger (Nebenzeit) als tagsüber (Hauptzeit). Die Preise stammen aus deinen Rechnungen; die genauen Uhrzeiten zeigt die Tesla-App.", offPeak: "Nebenzeit", peak: "Hauptzeit", tariffSeen: "Nebenzeit erlebt um {times} Uhr", tariffNone: "Sobald du an einem Standort einmal nachts und einmal tagsüber geladen hast, stehen hier seine beiden Preise.", tariffSaving: "Deine {kwh} kWh aus der Hauptzeit an diesen Standorten hätten in der Nebenzeit {s} weniger gekostet.", yourAvg: "gestrichelt: dein Schnitt {p}",
       cheapest: "am günstigsten", cheapestFew: "am günstigsten · nur {n}", noSession: "keine Ladung", oneSession: "1 Ladung", nSessions: "{n} Ladungen",
       tipSlot: "{label} ({range}): Ø {p}/kWh aus {n}, {kwh} kWh", tipEmpty: "{label}: noch keine Ladung in diesem Zeitfenster",
       sites: "Standorte", sitesTitle: "Wo du lädst", noSessions: "Noch keine Ladungen.",
@@ -1998,6 +2008,24 @@ try {
     </section>`;
   }
 
+  // Off-peak and peak price per site, from the user's own invoices (see _tariff on the server).
+  function tariffBlock(d) {
+    const t = d.tariffs;
+    if (!t) return "";
+    const sites = t.sites || [];
+    const rows = sites.map((x) => `<li>
+        <div class="tariff-site"><b>${esc(x.site)}</b><span class="sub">${esc(T("tariffSeen", { times: (x.off_times || []).join(", ") }))}</span></div>
+        <div class="tariff-price off"><small>${T("offPeak")}</small>${money(x.offpeak)}</div>
+        <div class="tariff-price"><small>${T("peak")}</small>${money(x.peak)}</div>
+      </li>`).join("");
+    return `<div class="tariffs">
+      <h3>${T("tariffTitle")}</h3>
+      <p class="sub">${T("tariffSub")}</p>
+      ${sites.length ? `<ul>${rows}</ul>` : `<p class="sub">${T("tariffNone")}</p>`}
+      ${t.saving > 0 ? `<p class="tariff-sum">${esc(T("tariffSaving", { kwh: num(t.peak_kwh, 0), s: money(t.saving) }))}</p>` : ""}
+    </div>`;
+  }
+
   function radarPanel(d) {
     const slots = d.slots || [];
     const avg = d.totals?.list_price ?? d.totals?.avg_price;
@@ -2042,7 +2070,8 @@ try {
         <div class="radar-val">${has ? money(s.avg_price) : '<span class="muted">–</span>'}<small>${has ? (isBest ? bestText(s) : sessionsText(s.sessions)) : T("noSession")}</small></div>
       </div>`;
     }).join("");
-    const insights = (d.insights || []).filter((i) => !["slot", "fuel", "climate"].includes(i.kind));
+    // The tariff block below says the same as the tariff tip, per site.
+    const insights = (d.insights || []).filter((i) => !["slot", "fuel", "climate", "tariff"].includes(i.kind));
     return `<section class="panel" aria-labelledby="h-radar">
       <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline">
         <div><span class="eyebrow">${T("radar")}</span><h2 id="h-radar">${T("radarTitle")}</h2></div>
@@ -2053,6 +2082,7 @@ try {
         <div class="radar-axis" aria-hidden="true"><span></span><div class="ticks">${ticks.map((t) => `<span style="left:${pct(t)}%">${num(t, 1)}</span>`).join("")}</div><span class="sub" style="font-size:.72rem;text-align:right">/kWh</span></div>
       </div>
       ${avg ? `<div class="tone-legend"><span>${T("toneCheap")}</span><span class="scale" aria-hidden="true"></span><span>${T("toneDear")}</span></div>` : ""}
+      ${tariffBlock(d)}
       ${insights.length ? `<ul class="insights">${insights.map((i) => `<li class="${esc(i.kind)}">${insightIcon[i.kind] || ico.bolt}<span>${esc(i.text)}</span></li>`).join("")}</ul>` : ""}
     </section>`;
   }

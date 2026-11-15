@@ -23,11 +23,12 @@ Map<String, dynamic> _site(String name, double price, int sessions) => {
       'kwh': 30.0 * sessions, 'network': 'supercharger',
     };
 
-Future<void> _open(WidgetTester tester, List slots, List sites) async {
+Future<void> _open(WidgetTester tester, List slots, List sites, [Map<String, dynamic>? tariffs]) async {
   final data = jsonDecode(File('test/fixtures/dashboard_demo.json').readAsStringSync())
       as Map<String, dynamic>;
   data['slots'] = slots;
   data['sites'] = sites;
+  if (tariffs != null) data['tariffs'] = tariffs;
   tester.view.physicalSize = const Size(1080, 30000);
   tester.view.devicePixelRatio = 2.75;
   addTearDown(tester.view.resetPhysicalSize);
@@ -84,5 +85,28 @@ void main() {
     expect(find.text('Ladezeit · Mittags, 11–16 Uhr'), findsOneWidget);
     expect(find.text('Standort · Gelsenkirchen'), findsOneWidget);
     expect(find.text('Mittags · Günstigste Zeit'), findsOneWidget);
+  });
+
+  testWidgets('off-peak and peak price per site', (tester) async {
+    await _open(tester, [_slot('midday', 'Mittags', '11–16 Uhr', 0.40, 5)], [_site('Moers', 0.41, 9)], {
+      'sites': [
+        {'site': 'Moers', 'site_name': 'Moers, Germany', 'offpeak': 0.28, 'peak': 0.46,
+         'off_times': ['06:00', '23:00'], 'saving': 9.0},
+      ],
+      'saving': 9.0, 'peak_kwh': 50.0,
+    });
+    expect(find.text('Nacht- und Tagpreis je Standort'), findsOneWidget);
+    expect(find.text('Nebenzeit erlebt um 06:00, 23:00 Uhr'), findsOneWidget);
+    expect(find.text('0,28 €'), findsOneWidget);
+    expect(find.text('0,46 €'), findsOneWidget);
+    expect(find.text('Deine 50 kWh aus der Hauptzeit an diesen Standorten hätten in der Nebenzeit 9,00 € weniger gekostet.'),
+        findsOneWidget);
+  });
+
+  testWidgets('says how the tariffs will show up when none are known yet', (tester) async {
+    await _open(tester, [_slot('midday', 'Mittags', '11–16 Uhr', 0.40, 5)], [_site('Moers', 0.41, 9)],
+        {'sites': []});
+    expect(find.text('Sobald du an einem Standort einmal nachts und einmal tagsüber geladen hast, stehen hier seine beiden Preise.'),
+        findsOneWidget);
   });
 }
