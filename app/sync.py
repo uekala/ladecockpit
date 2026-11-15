@@ -273,6 +273,10 @@ class SyncService:
                 result = {"map_checked": now.isoformat(timespec="seconds"), "map_v": osm.VERSION}
                 if hit:
                     result.update(operator=hit["operator"], operator_src="osm")
+                # Say which station and why, so a miss can be understood (town only, no street).
+                town = sessions[0]["station"].get("city") or sessions[0]["station"].get("postcode") or "?"
+                log.info("OpenStreetMap, station in %s: %s", town,
+                         getattr(self.map, "why", "") or ("operator found" if hit else "no operator"))
             for s in sessions:
                 self.db.set_station(s["session_id"], {**s["station"], **result})
                 found += 1 if result.get("operator") else 0
