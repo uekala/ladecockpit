@@ -162,6 +162,9 @@ def operator_label(station: dict | None, site: str | None, places: frozenset[str
     """Who runs a MultiPass station: from the register when it has the address, otherwise from the
     site name. A brand in the site name that shares its first word with the registered operator
     is more specific ("Aral pulse" rather than "Aral") and wins."""
+    assigned = networks.assigned_operator(site, (station or {}).get("name"), full_address(station))
+    if assigned:
+        return assigned  # what the user set by hand has the last word
     from_site = networks.operator_from_site(site, places)
     registered = registered_name((station or {}).get("operator"), (station or {}).get("operator_shown"))
     brand = networks.operator(site)
