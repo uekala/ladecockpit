@@ -1107,10 +1107,11 @@ class _DashboardPageState extends State<DashboardPage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SingleChildScrollView(
+              // Wrap, not a sideways scroller: on a narrow phone the third chip would sit off-screen.
+              Wrap(
                 key: ValueKey('session-filter'),
-                scrollDirection: Axis.horizontal,
-                child: Row(children: [
+                runSpacing: 2,
+                children: [
                   chip('month', tr('Zeitraum'), selectedMonth,
                     {'all': tr('Alle Monate'), for (final m in months) m: monthLabel(m)},
                     (value) => setState(() => _sessionMonthFilter = value)),
@@ -1120,7 +1121,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   chip('site', tr('Standort'), selectedSite,
                     {'all': tr('Alle Standorte'), for (final site in sites) site: placeOf[site] ?? site},
                     (value) => setState(() => _sessionSiteFilter = value)),
-                ]),
+                ],
               ),
               Padding(
                 padding: EdgeInsets.fromLTRB(4, 6, 4, 8),
