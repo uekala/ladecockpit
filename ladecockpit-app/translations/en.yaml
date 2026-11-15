@@ -111,6 +111,9 @@ configuration:
   operator_lookup:
     name: Look up operators in the charging station register
     description: For MultiPass stations in Germany, Ladecockpit looks the address from the invoice up in the public charging station register of the Bundesnetzagentur and shows the operator instead of an address. It downloads the register (about 50 MB) when a new station comes up. Nothing about you is sent.
+  map_lookup:
+    name: Look up operators on OpenStreetMap
+    description: For MultiPass stations the charging station register does not have – all stations outside Germany – Ladecockpit asks OpenStreetMap who runs a charging station at the address from the invoice. The address of the station goes to nominatim.openstreetmap.org and its coordinate to overpass-api.de, each address once. Nothing about you, your car or the invoice is sent.
   site_operators:
     name: Assign operators yourself
     description: 'For stations whose operator Ladecockpit does not know (mostly abroad). Write a text from the site name or address, an equals sign and the operator; separate several with semicolons, e.g. "Hafenstadt=Fastned; Parkhaus Mitte=Stadtwerke". Upper and lower case do not matter. A station assigned this way counts as MultiPass.'

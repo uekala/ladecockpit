@@ -485,7 +485,9 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         return {"site": site, **{f: _stats(v)[f] for f in ("sessions", "kwh", "cost", "credit")},
                 "avg_price": _stats(v)["list_price"], "avg_kw": _avg_kw(v),
                 "network": Counter(x.get("network") or SUPERCHARGER for x in v).most_common(1)[0][0],
-                "operator": operator, "address": addr, "label": _label(site, operator, addr)}
+                "operator": operator, "address": addr, "label": _label(site, operator, addr),
+                # The name to assign an operator to, and whether one was assigned in the app.
+                "site_name": k[0] or None, "operator_assigned": bool(k[0]) and networks.assigned_operator(k[0]) is not None}
 
     sites = sorted((_site_row(k, v) for k, v in groups.items()), key=lambda r: (-r["sessions"], r["avg_price"] or 9))
 
