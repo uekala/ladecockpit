@@ -111,6 +111,9 @@ configuration:
   operator_lookup:
     name: Betreiber im Ladesäulenregister nachschlagen
     description: Für MultiPass-Ladesäulen in Deutschland sucht Ladecockpit die Adresse aus der Rechnung im öffentlichen Ladesäulenregister der Bundesnetzagentur und zeigt den Betreiber statt einer Adresse. Dafür lädt es das Register (etwa 50 MB) herunter, wenn eine neue Station dazukommt. Über dich wird nichts gesendet.
+  map_lookup:
+    name: Betreiber über OpenStreetMap suchen
+    description: Für MultiPass-Ladesäulen, die das Ladesäulenregister nicht kennt – also alle außerhalb Deutschlands –, fragt Ladecockpit OpenStreetMap, wer an der Adresse aus der Rechnung eine Ladestation betreibt. Dafür geht die Adresse der Ladestation an nominatim.openstreetmap.org und ihre Koordinate an overpass-api.de, jede Adresse einmal. Über dich, dein Auto oder die Rechnung wird nichts gesendet.
   site_operators:
     name: Betreiber selbst zuordnen
     description: 'Für Stationen, bei denen Ladecockpit den Betreiber nicht kennt (vor allem im Ausland). Schreibweise: Text aus Standortname oder Adresse, Gleichheitszeichen, Betreiber – mehrere mit Semikolon getrennt, z. B. „Hafenstadt=Fastned; Parkhaus Mitte=Stadtwerke“. Groß- und Kleinschreibung ist egal. Eine so zugeordnete Station zählt als MultiPass.'

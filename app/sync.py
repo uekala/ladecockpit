@@ -14,7 +14,7 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 
-from . import i18n, invoices, networks, stations, vehicle
+from . import i18n, invoices, networks, osm, stations, vehicle
 from .config import Settings
 from .db import DB, utcnow_iso
 from .homeassistant import HAClient
@@ -44,6 +44,7 @@ class SyncService:
         self.next_sync: str | None = None
         self.failures = 0
         self.register = stations.Register(settings.data_dir)
+        self.map = osm.Lookup()
 
     # --- control -------------------------------------------------------------
     def trigger_burst(self) -> None:
@@ -189,6 +190,7 @@ class SyncService:
             read += 1
             self.db.set_station(s["session_id"], stations.station_from_text(text) or {})
         await self.lookup_operators(now)
+        await self.lookup_on_map(now)
         return read
 
     async def _invoice_text(self, s: dict) -> str | None:
@@ -221,8 +223,8 @@ class SyncService:
             hit = stations.match_operator(station, rows)
             station["checked"] = now.isoformat(timespec="seconds")
             station["match_v"] = stations.MATCH_VERSION
-            station.pop("operator", None)
-            station.pop("operator_shown", None)
+            for k in ("operator", "operator_shown", "operator_src", "map_checked", "map_v"):
+                station.pop(k, None)
             if hit:
                 station["operator"] = hit["operator"]
                 if hit.get("shown"):
@@ -230,6 +232,52 @@ class SyncService:
                 found += 1
             self.db.set_station(s["session_id"], station)
         log.info("Operators found in the register for %d of %d MultiPass sessions", found, len(due))
+        return found
+
+    async def lookup_on_map(self, now: datetime | None = None) -> int:
+        """Operators of MultiPass stations the register does not have (all stations outside
+        Germany), from OpenStreetMap. Every address is asked once and the answer is used for all
+        its sessions. Returns the number of sessions that got an operator."""
+        if not self.s.map_lookup:
+            return 0
+        now = now or datetime.now(timezone.utc)
+        answered: dict[tuple, dict] = {}
+        waiting: dict[tuple, list[dict]] = {}
+        for s in self.db.sessions_with_station():
+            station = s["station"]
+            if osm.due(station, now, register_first=self.s.operator_lookup):
+                waiting.setdefault(osm.key(station), []).append(s)
+            elif station.get("map_v") == osm.VERSION and station.get("map_checked"):
+                answered[osm.key(station)] = station
+        if not waiting:
+            return 0
+        found = asked = 0
+        for address, sessions in waiting.items():
+            known = answered.get(address)
+            if known:
+                result = {k: known[k] for k in ("operator", "operator_src", "map_checked", "map_v") if k in known}
+            else:
+                if asked >= osm.PER_SYNC:
+                    continue
+                if asked:
+                    await asyncio.sleep(self.map.pause_s)
+                asked += 1
+                try:
+                    hit = await self.map.operator(sessions[0]["station"])
+                except osm.Unavailable as e:
+                    log.warning("OpenStreetMap lookup not available now (%s); trying again with the next sync", e)
+                    break
+                except Exception:  # noqa: BLE001 – the operator is a nice-to-have, never stop a sync for it
+                    log.exception("OpenStreetMap lookup failed")
+                    break
+                result = {"map_checked": now.isoformat(timespec="seconds"), "map_v": osm.VERSION}
+                if hit:
+                    result.update(operator=hit["operator"], operator_src="osm")
+            for s in sessions:
+                self.db.set_station(s["session_id"], {**s["station"], **result})
+                found += 1 if result.get("operator") else 0
+        if asked:
+            log.info("OpenStreetMap asked about %d stations, operator found for %d sessions", asked, found)
         return found
 
     @staticmethod

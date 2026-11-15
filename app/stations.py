@@ -14,8 +14,9 @@ register (open data, updated monthly) lists the operator ("Betreiber") with the 
 German address Ladecockpit looks the station up there: same postcode, same street, and the same or
 the nearest house number. The register is about 50 MB; it is downloaded only when a station is not
 known yet (at most every REGISTER_MIN_GAP), read line by line, and only the rows of the needed
-postcodes are kept. Outside Germany, or when the register has no match, the operator comes from
-the site name as before (a known brand, or the part before the dash).
+postcodes are kept. Outside Germany, or when the register has no match, OpenStreetMap is asked
+(see osm.py); when that does not tell either, the operator comes from the site name (a known
+brand, or the part before the dash).
 """
 from __future__ import annotations
 
@@ -30,7 +31,7 @@ from pathlib import Path
 
 import httpx
 
-from . import networks
+from . import networks, operators
 
 log = logging.getLogger("ladecockpit.stations")
 
@@ -127,7 +128,8 @@ _GENERIC_BRANDS = {"Stadtwerke", "Mobility+"}
 
 def clean_operator(name: str | None) -> str | None:
     """The operator as people call it: "SWN ENERGIE GmbH" → "SWN ENERGIE",
-    "EnBW mobility+ AG und Co.KG" → "EnBW", "Allego GmbH" → "Allego"."""
+    "EnBW mobility+ AG und Co.KG" → "EnBW", "Allego GmbH" → "Allego",
+    "Enel X Way Italia S.r.l." → "Enel X Way" (see operators.ALIASES)."""
     name = " ".join((name or "").split())
     if not name:
         return None
@@ -142,6 +144,9 @@ def clean_operator(name: str | None) -> str | None:
         short = cut
     short = re.sub(r"\s+(?:&|und)$", "", short).strip(" ,.-")
     short = _PUBLIC_BODY.split(short)[0].strip(" ,.-") or short
+    known = operators.brand(short)
+    if known:
+        return known
     if len(short) > MAX_NAME:
         short = short[:MAX_NAME].rsplit(" ", 1)[0].strip(" ,.-&")
     return short or name

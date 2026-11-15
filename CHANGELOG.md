@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.0 – 2026-11-15
+
+- **Operators all over Europe.** Until now Ladecockpit only knew who runs a MultiPass station in Germany (from the register of the Bundesnetzagentur); abroad it showed the site name or an address. Now it asks OpenStreetMap for every station the register does not have: the address from the invoice becomes a coordinate, and the charging stations around it tell the operator. It is only taken when the map leaves no doubt – all stations within 400 m belong to one operator, or one is within 50 m and the next operator at least 50 m farther; otherwise the station stays as it was rather than getting a wrong name. Each address is asked once, at most 8 per sync; only the station's address is sent (to nominatim.openstreetmap.org and overpass-api.de). New option *Look up operators on OpenStreetMap* (`MAP_LOOKUP`, on by default). Map data © OpenStreetMap contributors.
+- Company names from the register and the map are shown as the brand people know: "Enel X Way Italia S.r.l." → "Enel X Way", "The New Motion B.V." → "Shell Recharge", "Aral AG" → "Aral pulse". The table (`app/operators.py`) starts with about 50 names of European networks and will grow.
+- What you set under *Assign operators yourself* still has the last word.
+
 ## 0.14.6 – 2026-11-15
 
 - **Tesla open-source apps (experimental).** With a client ID and no client secret, Ladecockpit signs in with PKCE, the way Tesla intends for "Open Source Apps". Tesla limits such apps to its discovery tier; whether charging history and invoices are available there has to show in use. Installations with a client secret work as before.
