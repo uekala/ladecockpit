@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.16.1 – 2026-11-15
+
+- The log says what the lookup on OpenStreetMap found for each station and why it left one without an operator: "OpenStreetMap, station in Hafenstadt: several operators nearby (Fastned 30 m, Allego 45 m)", "the address was not found on the map", "no charging station within 400 m on the map". Only the town is named. Stations that got no operator so far are asked once more, so the reason shows up after the update.
+- The mobile app is unchanged.
+
 ## 0.16.0 – 2026-11-15
 
 - **Operators all over Europe.** Until now Ladecockpit only knew who runs a MultiPass station in Germany (from the register of the Bundesnetzagentur); abroad it showed the site name or an address. Now it asks OpenStreetMap for every station the register does not have: the address from the invoice becomes a coordinate, and the charging stations around it tell the operator. It is only taken when the map leaves no doubt – all stations within 400 m belong to one operator, or one is within 50 m and the next operator at least 50 m farther; otherwise the station stays as it was rather than getting a wrong name. Each address is asked once, at most 8 per sync; only the station's address is sent (to nominatim.openstreetmap.org and overpass-api.de). New option *Look up operators on OpenStreetMap* (`MAP_LOOKUP`, on by default). Map data © OpenStreetMap contributors.

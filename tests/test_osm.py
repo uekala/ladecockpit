@@ -181,3 +181,18 @@ def test_sync_asks_a_few_addresses_per_sync(settings, db):
     sync = service(settings, db, {st["street"]: None for _, st in many}, many)
     asyncio.run(sync.lookup_on_map(NOW))
     assert len(sync.map.asked) == osm.PER_SYNC
+
+
+def test_judge_says_why():
+    def station(lat, lon, **tags):
+        return {"lat": lat, "lon": lon, "tags": {"amenity": "charging_station", **tags}}
+
+    assert osm.judge([], 52.0, 5.0, True) == (None, "no charging station within 400 m on the map")
+    hit, why = osm.judge([station(52.0001, 5.0, operator="Fastned")], 52.0, 5.0, True)
+    assert hit["operator"] == "Fastned" and why.startswith("Fastned, ")
+    hit, why = osm.judge([station(52.0001, 5.0)], 52.0, 5.0, True)
+    assert hit is None and "has no operator on the map" in why
+    two = [station(52.0001, 5.0, operator="Fastned"), station(52.0002, 5.0, operator="Allego")]
+    hit, why = osm.judge(two, 52.0, 5.0, True)
+    assert hit is None and why.startswith("several operators nearby (Fastned 11 m, Allego 22 m)")
+    assert osm.judge(two, 52.0, 5.0, False)[1].endswith("address found to the street only")

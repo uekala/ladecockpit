@@ -33,7 +33,7 @@ USER_AGENT = f"Ladecockpit/{__version__} (+https://github.com/uekala/ladecockpit
 PAUSE_S = 1.1                  # between two requests (Nominatim allows one per second)
 PER_SYNC = 8                   # addresses looked up in one sync
 RETRY = timedelta(days=30)     # a station the map did not know: look again after this
-VERSION = 1                    # stations looked up by an older rule are looked up again
+VERSION = 2                    # stations looked up by an older rule are looked up again
 WIDE_M = 400                   # how far around the address stations are looked at
 CLEAR_M = 50                   # the nearest station must be this close, and the next this much farther
 HOUSE_RANK = 28                # Nominatim: place_rank from here on is a house or a place on a street
@@ -91,8 +91,9 @@ def _position(element: dict) -> tuple[float, float] | None:
         return None
 
 
-def pick(elements: list[dict], lat: float, lon: float, exact: bool) -> dict | None:
-    """The operator of the station at a coordinate, or None when the map leaves a doubt.
+def judge(elements: list[dict], lat: float, lon: float, exact: bool) -> tuple[dict | None, str]:
+    """The operator of the station at a coordinate, or None when the map leaves a doubt – and in
+    both cases a few words why, for the log.
 
     A station without an operator on the map counts as one of its own: when it is the nearest, the
     answer is "not known". Tesla's own stations are left out; a MultiPass session was not there.
@@ -118,13 +119,22 @@ def pick(elements: list[dict], lat: float, lon: float, exact: bool) -> dict | No
             nearest[k] = (d, name)
     ranked = sorted(nearest.values(), key=lambda x: x[0])
     if not ranked:
-        return None
+        return None, f"no charging station within {WIDE_M} m on the map"
     best_d, best = ranked[0]
     if len(ranked) > 1:
         clear = exact and best_d <= CLEAR_M and ranked[1][0] - best_d >= CLEAR_M
         if not clear:
-            return None
-    return {"operator": best, "distance": round(best_d)} if best else None
+            near = ", ".join(f"{name or 'no operator'} {round(d)} m" for d, name in ranked[:4])
+            how = "" if exact else ", address found to the street only"
+            return None, f"several operators nearby ({near}){how}"
+    if not best:
+        return None, f"the station {round(best_d)} m away has no operator on the map"
+    return {"operator": best, "distance": round(best_d)}, f"{best}, {round(best_d)} m away"
+
+
+def pick(elements: list[dict], lat: float, lon: float, exact: bool) -> dict | None:
+    """The operator of the station at a coordinate, or None when the map leaves a doubt (see judge)."""
+    return judge(elements, lat, lon, exact)[0]
 
 
 class Lookup:
@@ -133,6 +143,7 @@ class Lookup:
     def __init__(self, transport: httpx.AsyncBaseTransport | None = None, pause_s: float = PAUSE_S):
         self.transport = transport
         self.pause_s = pause_s
+        self.why = ""  # a few words about the last answer, for the log
 
     async def operator(self, station: dict) -> dict | None:
         """{"operator", "distance"} for a station, None when the map does not tell.
@@ -142,12 +153,14 @@ class Lookup:
             try:
                 spot = await self._locate(client, station)
                 if not spot:
+                    self.why = "the address was not found on the map"
                     return None
                 await asyncio.sleep(self.pause_s)
                 elements = await self._chargers(client, spot["lat"], spot["lon"])
             except (httpx.HTTPError, ValueError) as e:
                 raise Unavailable(str(e) or type(e).__name__) from e
-        return pick(elements, spot["lat"], spot["lon"], spot["exact"])
+        hit, self.why = judge(elements, spot["lat"], spot["lon"], spot["exact"])
+        return hit
 
     async def _locate(self, client: httpx.AsyncClient, station: dict) -> dict | None:
         street = " ".join(filter(None, (station.get("number"), station.get("street"))))
