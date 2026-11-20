@@ -36,6 +36,8 @@ Import the blueprint `blueprints/automation/ladecockpit/book_invoice.yaml` from 
 
 Enter the consumption (L/100 km) and fuel price of a comparison car, either as fixed values or as entities (e.g. the average consumption of your other car and a fuel price sensor). Ladecockpit then shows what the same distance would have cost and what you saved, per month and projected for a year.
 
+With *Fuel price as a daily average* (`FUEL_PRICE_DAILY`) every day's distance is priced at that day's average of the fuel price entity, e.g. the cheapest E10 price near you, which changes many times a day. The comparison then shows the average over the month, weighted by the distance of each day.
+
 ## More options
 
 - **Charging at home**: the energy meter of your wallbox (kWh, only increasing) and your electricity price, fixed or from an entity such as a dynamic tariff. The price at the time of charging is used.

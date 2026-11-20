@@ -79,6 +79,9 @@ configuration:
   entity_fuel_litres_total:
     name: Getankte Liter gesamt
     description: Entität mit allen bisher getankten Litern, die bei jedem Tanken steigt.
+  fuel_price_daily:
+    name: Spritpreis als Tagesdurchschnitt
+    description: Rechnet die Strecke jedes Tages mit dem Durchschnittspreis dieses Tages aus „Spritpreis aus Entität“ – statt mit dem bezahlten Literpreis. Ladecockpit merkt sich die Preise dafür selbst und übernimmt beim ersten Start die letzten 10 Tage aus Home Assistant.
   entity_home_energy:
     name: Wallbox-Zähler (kWh)
     description: Energiezähler deiner Wallbox in kWh, der nur steigt (z. B. vom Tesla Wall Connector oder einem Zwischenzähler). Damit rechnet Ladecockpit das Laden zu Hause mit ein.

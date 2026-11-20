@@ -6,7 +6,7 @@ if configured, the outside temperature), so they need no extra Tesla requests.
 from __future__ import annotations
 
 from bisect import bisect_left
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from statistics import median
 
 PAIR_WINDOW = timedelta(minutes=15)   # battery level and range must be this close together
@@ -216,6 +216,67 @@ def paid_fuel_price(cost: list[tuple[datetime, float]], litres: list[tuple[datet
     if not PAID_PRICE_RANGE[0] <= price <= PAID_PRICE_RANGE[1]:
         return None
     return {"price": round(price, 3), "litres": round(used, 1), "days": days}
+
+
+# --- fuel price as a daily average ---------------------------------------------------------------
+PRICE_MAX_HOLD = timedelta(hours=36)   # a price older than this without a new reading no longer counts
+DAILY_NEAREST = 7                      # days: a day without a price takes the nearest one this close
+
+
+def daily_fuel_prices(points: list[tuple[datetime, float]], tz, now: datetime) -> dict[date, float]:
+    """Average of the fuel price entity per local day, weighted by how long each price was shown.
+
+    A price holds until the next reading (at most PRICE_MAX_HOLD); the current day counts up to now."""
+    pts = sorted(p for p in points if PAID_PRICE_RANGE[0] <= p[1] <= PAID_PRICE_RANGE[1])
+    acc: dict[date, list[float]] = {}
+    for i, (t, v) in enumerate(pts):
+        end = min(pts[i + 1][0] if i + 1 < len(pts) else now, t + PRICE_MAX_HOLD, now)
+        cur = t
+        while cur < end:
+            local = cur.astimezone(tz)
+            midnight = (local.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1))
+            seg_end = min(end, midnight.astimezone(timezone.utc))
+            secs = (seg_end - cur).total_seconds()
+            if secs <= 0:
+                break
+            a = acc.setdefault(local.date(), [0.0, 0.0])
+            a[0] += v * secs
+            a[1] += secs
+            cur = seg_end
+    return {d: round(s / w, 4) for d, (s, w) in acc.items() if w > 0}
+
+
+def distance_fuel_price(odo: list[tuple[datetime, float]], daily: dict[date, float], tz) -> dict | None:
+    """Price per litre for a stretch of odometer readings when every day's kilometres are priced at
+    that day's average: the mean of the daily prices weighted by the distance driven each day.
+
+    A day without a price takes the nearest day with one (up to DAILY_NEAREST days away); kilometres
+    farther from any price are left out. Returns {"price", "days"} (days with their own price) or None."""
+    if not daily or len(odo) < 2:
+        return None
+    known = sorted(daily)
+    km = cost = 0.0
+    own: set[date] = set()
+    for (t0, v0), (t1, v1) in zip(odo, odo[1:]):
+        step = v1 - v0
+        if step <= 0:
+            continue
+        day = (t0 + (t1 - t0) / 2).astimezone(tz).date()
+        if day in daily:
+            price = daily[day]
+            own.add(day)
+        else:
+            i = bisect_left(known, day)
+            near = [known[j] for j in (i - 1, i) if 0 <= j < len(known)]
+            near = [d for d in near if abs((d - day).days) <= DAILY_NEAREST]
+            if not near:
+                continue
+            price = daily[min(near, key=lambda d: abs((d - day).days))]
+        km += step
+        cost += step * price
+    if km <= 0:
+        return None
+    return {"price": round(cost / km, 3), "days": len(own)}
 
 
 # --- While the car charges ------------------------------------------------------------------------

@@ -20,9 +20,10 @@ from .sync import SyncService
 log = logging.getLogger("ladecockpit.watcher")
 
 # Store a new reading when the value moved at least this much, or an hour passed.
-MIN_DELTA = {"soc": 1.0, "range": 2.0, "odometer": 0.5, "temp": 0.5, "fuel_cost": 0.01, "fuel_litres": 0.01}
+MIN_DELTA = {"soc": 1.0, "range": 2.0, "odometer": 0.5, "temp": 0.5, "fuel_cost": 0.01, "fuel_litres": 0.01,
+             "fuel_price": 0.001}
 ROLE = {"soc": "soc", "range": "range", "odometer": "odometer", "temp": "outside_temp",
-        "fuel_cost": "fuel_cost_total", "fuel_litres": "fuel_litres_total"}
+        "fuel_cost": "fuel_cost_total", "fuel_litres": "fuel_litres_total", "fuel_price": "fuel_price"}
 MAX_AGE = timedelta(hours=1)
 # The fuel totals only move when you fill up: one reading a day is plenty.
 MAX_AGE_FOR = {"fuel_cost": timedelta(days=1), "fuel_litres": timedelta(days=1)}
@@ -66,7 +67,7 @@ class Watcher:
         self.latest = live
         values = live.get("values", {})
 
-        for key in ("soc", "range", "odometer", "temp", "fuel_cost", "fuel_litres"):
+        for key in ("soc", "range", "odometer", "temp", "fuel_cost", "fuel_litres", "fuel_price"):
             value = values.get(ROLE[key])
             if value is None:
                 continue
@@ -89,7 +90,7 @@ class Watcher:
         now = now or datetime.now(timezone.utc)
         roles = self.ha.entities()
         added = 0
-        for key in ("soc", "range", "odometer", "temp"):
+        for key in ("soc", "range", "odometer", "temp", "fuel_price"):
             entity = roles.get(ROLE[key])
             if not entity or entity.startswith("weather.") or self.db.last_reading(key) is not None:
                 continue

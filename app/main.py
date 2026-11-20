@@ -200,6 +200,7 @@ async def _readings(now: datetime) -> dict:
         "home": _home(min(odo_since, now - timedelta(days=365))),
         "fuel_cost": db.readings_since("fuel_cost", now - timedelta(days=120)),
         "fuel_litres": db.readings_since("fuel_litres", now - timedelta(days=120)),
+        "fuel_price": db.readings_since("fuel_price", min(odo_since, now - timedelta(days=200))),
     }
     if len(soc) < 3 and settings.ent_soc:
         # Fresh install: fall back to Home Assistant's own history for the forecast.

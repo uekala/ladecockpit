@@ -124,6 +124,7 @@ cp .env.example .env
 | `HA_ENT_CHARGE_POWER`, `HA_ENT_TIME_TO_FULL` | `sensor.my_tesla_charger_power`, `sensor.my_tesla_time_to_full_charge` | kW und Uhrzeit, wann das Ladelimit erreicht ist, beim Laden |
 | `HA_ENT_FUEL_CONSUMPTION` / `FUEL_CONSUMPTION`, `HA_ENT_FUEL_PRICE` / `FUEL_PRICE` | `7.5`, `sensor.spritpreis` | Ersparnis ggü. Verbrenner |
 | `HA_ENT_FUEL_COST_TOTAL`, `HA_ENT_FUEL_LITRES_TOTAL` | `input_number.tankkosten_gesamt`, `input_number.tankliter_gesamt` | der wirklich bezahlte Literpreis (Ø der letzten 90 Tage) statt des Spritpreises; beide Summen steigen bei jedem Tanken |
+| `FUEL_PRICE_DAILY` | `1` | die Strecke jedes Tages mit dem Tagesdurchschnitt von `HA_ENT_FUEL_PRICE` statt mit dem bezahlten Preis |
 | `HA_ENT_HOME_ENERGY`, `HA_ENT_HOME_PRICE` / `HOME_PRICE` | `sensor.wall_connector_energy`, `0.32` | Laden zu Hause |
 | `HA_ENT_OUTSIDE_TEMP` | `weather.home` | Verbrauch nach Temperatur |
 

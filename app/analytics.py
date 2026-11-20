@@ -441,17 +441,42 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         fuel_price, source = values["fuel_price"], "entity"
     else:
         fuel_price, source = settings.fuel_price, "fixed"
-    fuel = None
-    if consumption and fuel_price:
-        fuel = {"consumption": round(consumption, 1), "price": round(fuel_price, 3),
-                "per_100": round(consumption * fuel_price, 2), "source": source,
-                "paid_days": paid["days"] if paid else None, "paid_litres": paid["litres"] if paid else None}
+    # Optionally every day's kilometres at that day's average of the fuel price entity.
+    daily = {}
+    if settings.fuel_price_daily and settings.ent_fuel_price:
+        daily = vehicle.daily_fuel_prices(readings.get("fuel_price") or [], tz, now_utc)
 
-    def with_fuel(entry: dict) -> dict:
+    def daily_price(start: datetime, end: datetime) -> dict | None:
+        return vehicle.distance_fuel_price([p for p in odo_all if start <= p[0] < end], daily, tz) if daily else None
+
+    fuel = None
+    base_per_100 = consumption * fuel_price if consumption and fuel_price else None   # without a daily price
+    if consumption and (fuel_price or daily):
+        fuel = {"consumption": round(consumption, 1), "price": round(fuel_price, 3) if fuel_price else None,
+                "per_100": round(consumption * fuel_price, 2) if fuel_price else None, "source": source,
+                "paid_days": paid["days"] if paid else None, "paid_litres": paid["litres"] if paid else None}
+        if daily:
+            # The price shown: this month's, else the last 30 days'.
+            month_start = now_local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            d = daily_price(month_start, now_utc + timedelta(seconds=1)) \
+                or daily_price(now_utc - timedelta(days=30), now_utc + timedelta(seconds=1))
+            if d:
+                fuel.update(price=d["price"], per_100=round(consumption * d["price"], 2), source="daily",
+                            daily_days=d["days"])
+        if fuel["per_100"] is None:
+            fuel = None
+
+    def with_fuel(entry: dict, key: str | None = None) -> dict:
         entry["fuel_equivalent"] = entry["savings"] = None
-        if fuel and entry.get("distance") and entry.get("per_100") is not None:
-            entry["fuel_equivalent"] = round(fuel["per_100"] * entry["distance"] / 100, 2)
-            entry["savings"] = round((fuel["per_100"] - entry["per_100"]) * entry["distance"] / 100, 2)
+        per_100 = (base_per_100 if daily and key else fuel["per_100"]) if fuel else None
+        if fuel and daily and key:
+            d = daily_price(*_month_bounds(key, tz))
+            if d:
+                per_100 = consumption * d["price"]
+                entry["fuel_price"] = d["price"]
+        if per_100 is not None and entry.get("distance") and entry.get("per_100") is not None:
+            entry["fuel_equivalent"] = round(per_100 * entry["distance"] / 100, 2)
+            entry["savings"] = round((per_100 - entry["per_100"]) * entry["distance"] / 100, 2)
         return entry
 
     # --- this month ------------------------------------------------------------------
@@ -482,7 +507,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     month["by_network"] = _by_network(by_month.get(cur_key, []))
     month["home"] = month_home(cur_key)
     month["total_cost"] = round(month["cost"] + ((month["home"] or {}).get("cost") or 0.0), 2)
-    with_fuel(month)
+    with_fuel(month, cur_key)
     prev = _stats(by_month.get(prev_key, []))
     month["prev"] = {"label": i18n.month_label(lang, prev_key, with_year=False),
                      "cost": prev["cost"], "avg_price": prev["avg_price"], "list_price": prev["list_price"],
@@ -502,7 +527,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
             "per_100": md["per_100"], "kwh_per_100": md["kwh_per_100"],
             "multipass_cost": nets.get(MULTIPASS, {}).get("cost"),
             "multipass_sessions": nets.get(MULTIPASS, {}).get("sessions"),
-            "home_kwh": (month_home(key) or {}).get("kwh"), "home_cost": (month_home(key) or {}).get("cost")}))
+            "home_kwh": (month_home(key) or {}).get("kwh"), "home_cost": (month_home(key) or {}).get("cost")}, key))
         cursor = (cursor - timedelta(days=1)).replace(day=1)
     monthly.reverse()
     first = next((i for i, m in enumerate(monthly) if m["sessions"] or m.get("home_kwh")), len(monthly) - 1)
@@ -623,9 +648,10 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
 
     if month.get("savings") is not None and month["savings"] >= 1:
         insights.append({"kind": "fuel", "text": i18n.t(
-            lang, "in_fuel", dist=i18n.num(lang, month["distance"], 0), fuel=money(month["fuel_equivalent"]),
+            lang, "in_fuel_daily" if month.get("fuel_price") else "in_fuel", dist=i18n.num(lang, month["distance"], 0), fuel=money(month["fuel_equivalent"]),
             saved=money(month["savings"]),
-            consumption=i18n.num(lang, fuel["consumption"], 1), price=money(fuel["price"]), unit=unit)})
+            consumption=i18n.num(lang, fuel["consumption"], 1), price=money(month.get("fuel_price") or fuel["price"]),
+            unit=unit)})
 
     health = vehicle.battery_health(readings.get("soc_long") or [], readings.get("range_long") or [], tz)
     kwh_pct = vehicle.kwh_per_percent(priced, readings.get("soc_long") or [])
