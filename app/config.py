@@ -55,6 +55,7 @@ ADDON_OPTION_MAP = {
     "entity_fuel_price": "HA_ENT_FUEL_PRICE",
     "entity_fuel_cost_total": "HA_ENT_FUEL_COST_TOTAL",
     "entity_fuel_litres_total": "HA_ENT_FUEL_LITRES_TOTAL",
+    "fuel_price_daily": "FUEL_PRICE_DAILY",
     "month_report": "MONTH_REPORT",
     "multipass_min_price": "MULTIPASS_MIN_PRICE",
     "operator_lookup": "OPERATOR_LOOKUP",
@@ -170,6 +171,9 @@ class Settings:
     # the fuel price above.
     ent_fuel_cost_total: str
     ent_fuel_litres_total: str
+    # Price every day's distance at that day's average of the fuel price entity (instead of the
+    # price paid).
+    fuel_price_daily: bool
     ent_outside_temp: str
     # Charging at home: an energy meter of the wallbox (kWh, increasing) and the electricity price
     ent_home_energy: str
@@ -270,6 +274,7 @@ def load() -> Settings:
         ent_fuel_price=_env("HA_ENT_FUEL_PRICE"),
         ent_fuel_cost_total=_env("HA_ENT_FUEL_COST_TOTAL"),
         ent_fuel_litres_total=_env("HA_ENT_FUEL_LITRES_TOTAL"),
+        fuel_price_daily=_bool("FUEL_PRICE_DAILY", False),
         ent_outside_temp=_env("HA_ENT_OUTSIDE_TEMP"),
         ent_home_energy=_env("HA_ENT_HOME_ENERGY"),
         home_price=_float("HOME_PRICE", None),

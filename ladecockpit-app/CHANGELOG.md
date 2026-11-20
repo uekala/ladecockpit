@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.18.0 – 2026-11-21
+
+- **Fuel price as a daily average.** New option *Fuel price as a daily average* (`FUEL_PRICE_DAILY`, off by default): the comparison with a combustion car prices every day's distance at that day's average of *Fuel price from an entity* – e.g. the cheapest E10 price near you, which changes many times a day – instead of the price per litre you paid. Each price counts for as long as it was shown. The web app shows the average over the month, weighted by the kilometres of each day ("Verbrenner (8,3 L/100 km · Ø 1,92 €/L je Tag)"); the monthly history, the monthly report and the projection follow. A day without a price takes the nearest day with one (up to 7 days away). Ladecockpit now keeps the readings of the fuel price entity itself and takes the last 10 days from Home Assistant on the first start; months before that keep the price you paid.
+- The mobile app is unchanged.
+
 ## 0.17.0 – 2026-11-15
 
 - **Off-peak and peak price per site.** Many Superchargers cost less at night and early in the morning than during the day. Ladecockpit now finds both prices in your own invoices and shows them under the price radar, in the web app and the mobile app: "Moers · off-peak 0,28 € · peak 0,46 €", with the times you charged off-peak and what your peak-time kWh at those sites would have cost less. A site only gets two prices when they are at least 0,06 €/kWh apart, every cheaper session started before 10 or from 20 o'clock and a dearer one during the day – otherwise a price change could pass for a tariff. Until you have charged at a site both ways, the section says how it fills. New tip in the insights; `tariffs` in `/api/dashboard`.
