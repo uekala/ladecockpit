@@ -85,3 +85,10 @@ def test_values_that_only_exist_while_charging_are_no_problem():
     assert rows["time_to_full"]["ok"] and rows["time_to_full"]["note"] == "nur beim Laden"
     assert rows["charge_power"]["ok"]
     assert rows["soc"]["ok"] is False
+
+
+def test_the_tesla_line_adds_up_to_the_invoices(settings):
+    d = _dash(settings)
+    m = d["month"]
+    assert m["distance_cost"] is not None
+    assert round(m["fuel_equivalent"] - m["savings"], 2) == m["distance_cost"]
