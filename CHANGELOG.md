@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.3 – 2026-11-21
+
+- Web app on the phone: the map pin next to a MultiPass station is now a 44 × 44 px button instead of a 16 px wide icon, so it is easy to tap – in both looks, also in the Home Assistant app.
+- The mobile app is unchanged.
+
 ## 0.23.2 – 2026-11-21
 
 - More tests for the connection to Tesla: an expired access token, the time filter, paging through many sessions and the monthly request budget. Nothing changes in use.
