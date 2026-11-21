@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.2 – 2026-11-21
+
+- More tests for the connection to Tesla: an expired access token, the time filter, paging through many sessions and the monthly request budget. Nothing changes in use.
+- The mobile app is unchanged.
+
 ## 0.23.1 – 2026-11-21
 
 - **Fewer Tesla requests when Tesla asks to slow down.** If the Fleet API answers *Too many requests* (HTTP 429), Ladecockpit now waits as long as Tesla says (`Retry-After`, otherwise 5 minutes) before it asks again – also during the quick syncs after charging – instead of repeating the request and using up the monthly request budget. The log shows one line instead of an error with traceback; after three failed syncs in a row the problem notification appears as before.
