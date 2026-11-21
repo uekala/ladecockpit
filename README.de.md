@@ -14,7 +14,7 @@ Ladecockpit holt deine echten Laderechnungen direkt über die Tesla Fleet API (a
 - **Preis-Radar.** Zeigt aus deinen eigenen Rechnungen, zu welcher Uhrzeit und an welchem Supercharger du am günstigsten lädst.
 - **MultiPass.** Fremde Ladesäulen, die über Tesla MultiPass bezahlt werden, erkennt Ladecockpit in den Tesla-Rechnungen und weist sie getrennt aus, mit eigenem Ø-Preis. Eine Liste zeigt jede Drittanbieter-Station, an der MultiPass bei dir schon funktioniert hat – Anbieter, Ladungen, Ø-Preis, letzte Nutzung und Kartenlink –, damit du weißt, wo die Tesla-App angenommen wird.
 - **Nächster Ladestopp.** Sagt anhand deines Verbrauchs voraus, wann der Akku die Untergrenze erreicht (Standard: 10 %), und wann und wo du vorher am günstigsten lädst: die beste Kombination aus Supercharger und Uhrzeit aus deinen eigenen Rechnungen.
-- **Monatsübersicht.** Kosten, kWh, Ø-Preis, Kosten pro 100 km/mi, optional Vergleich mit einem Referenzpreis oder den Spritkosten eines zweiten Autos.
+- **Monatsübersicht.** Kosten, kWh, Ø-Preis, Kosten pro 100 km/mi und was das Laden in der Nebenzeit gegenüber dem Tagespreis deiner Ladeorte gespart hat (aus deinen eigenen Rechnungen) – oder ein Vergleich mit einem eigenen Referenzpreis oder den Spritkosten eines zweiten Autos.
 - **Ersparnis ggü. Verbrenner.** Was dieselbe Strecke mit Benzin oder Diesel gekostet hätte (feste Werte oder live aus Home Assistant, z. B. ein Spritpreis-Sensor), pro Monat und aufs Jahr hochgerechnet.
 - **Monatsbericht.** Am Monatsersten eine Zusammenfassung des Vormonats als Event und Benachrichtigung in Home Assistant.
 - **Tesla-Gutschriften richtig verbucht.** Ladungen, die teilweise mit Tesla-Gutschriften bezahlt wurden (z. B. Gratis-Supercharging zum Neuwagen), zeigen Gezahltes, Listenpreis und Gutschrift. Preisvergleiche nutzen den Listenpreis, eine Gutschrift lässt also keinen Supercharger billig aussehen.
@@ -126,6 +126,7 @@ cp .env.example .env
 | `HA_ENT_FUEL_COST_TOTAL`, `HA_ENT_FUEL_LITRES_TOTAL` | `input_number.tankkosten_gesamt`, `input_number.tankliter_gesamt` | der wirklich bezahlte Literpreis (Ø der letzten 90 Tage) statt des Spritpreises; beide Summen steigen bei jedem Tanken |
 | `NTFY_URL`, `NTFY_TOKEN` | `https://ntfy.sh/ladecockpit-7f3k9q` | neue Rechnungen, Probleme und der Monatsbericht als Benachrichtigung aufs Handy (ntfy-App), ohne Home Assistant |
 | `FUEL_PRICE_DAILY` | `1` | die Strecke jedes Tages mit dem Tagesdurchschnitt von `HA_ENT_FUEL_PRICE` statt mit dem bezahlten Preis |
+| `HA_ENT_REFERENCE_PRICE` / `REFERENCE_PRICE` | `input_number.supercharger_preis`, `0.49` | der Monat im Vergleich mit einem eigenen Preis statt mit dem Tagespreis deiner Ladeorte aus den Rechnungen; `0` schaltet den Vergleich ab |
 | `HA_ENT_HOME_ENERGY`, `HA_ENT_HOME_PRICE` / `HOME_PRICE` | `sensor.wall_connector_energy`, `0.32` | Laden zu Hause |
 | `HA_ENT_OUTSIDE_TEMP` | `weather.home` | Verbrauch nach Temperatur |
 

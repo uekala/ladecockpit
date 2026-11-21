@@ -168,7 +168,6 @@ def build_demo(settings: Settings) -> dict:
             "charge_power": 104.0,
             "cost_total": round(inv_total * 1.07, 2),     # e.g. estimated prices booked by hand
             "kwh_total": round(inv_kwh * 0.93, 2),        # car-reported kWh < billed kWh
-            "reference_price": 0.49,
             "fuel_month": 41.30,
             "fuel_consumption": 7.2,                       # comparison car, L/100 km
             "fuel_price": 1.79,                            # per litre

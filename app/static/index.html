@@ -1307,6 +1307,8 @@ try {
       addonStep2: "After signing in, Tesla redirects to <span class=\"mono\">{uri}</span>. That page does not load – that is expected.",
       addonStep3: "Copy the full address from the browser bar of that tab and paste it here.",
       atReference: "At reference price {p}", perInvoices: "Per invoices (without fees)",
+      atDayPrice: "At the day price of your sites (avg {p})", perInvoicesListed: "Per invoices (list price)", offPeakSaved: "Saved off-peak ({kwh} kWh)",
+      atDayPriceTip: "Ladecockpit takes this from your invoices: sessions at night or early in the morning at a site with a cheaper off-peak price count at that site's day price, all others at their own price.",
       radar: "Price radar", radarTitle: "What a kWh costs you by time of day", radarSub: "Average list price from your invoices", tariffTitle: "Off-peak and peak price per site", tariffSub: "Many Superchargers cost less at night and early in the morning. The prices come from your invoices; Tesla's app shows the exact hours.", offPeak: "off-peak", peak: "peak", tariffSeen: "off-peak seen at {times}", tariffNone: "Once you have charged at a site both at night and during the day, its two prices show up here.", tariffSaving: "Your {kwh} kWh at peak time at these sites would have cost {s} less off-peak.", yourAvg: "dashed: your average {p}",
       cheapest: "cheapest", cheapestFew: "cheapest · only {n}", noSession: "no session", oneSession: "1 session", nSessions: "{n} sessions",
       tipSlot: "{label} ({range}): avg {p}/kWh from {n}, {kwh} kWh", tipEmpty: "{label}: no session in this time window yet",
@@ -1422,6 +1424,8 @@ try {
       addonStep2: "Nach der Anmeldung leitet Tesla zu <span class=\"mono\">{uri}</span> weiter. Die Seite lädt nicht – das ist so gewollt.",
       addonStep3: "Die komplette Adresse aus der Browserzeile dieses Tabs kopieren und hier einfügen.",
       atReference: "Mit Referenzpreis {p}", perInvoices: "Laut Rechnungen (ohne Gebühren)",
+      atDayPrice: "Zum Tagespreis deiner Ladeorte (Ø {p})", perInvoicesListed: "Laut Rechnungen (Listenpreis)", offPeakSaved: "In der Nebenzeit gespart ({kwh} kWh)",
+      atDayPriceTip: "Ladecockpit nimmt den Preis aus deinen Rechnungen: Ladungen nachts oder früh an Standorten mit günstigerem Nebenzeit-Preis zählen mit dem Tagespreis des Standorts, alle anderen mit ihrem eigenen Preis.",
       radar: "Preis-Radar", radarTitle: "Was dich eine kWh je nach Uhrzeit kostet", radarSub: "Ø Listenpreis aus deinen Rechnungen", tariffTitle: "Nacht- und Tagpreis je Standort", tariffSub: "Viele Supercharger sind nachts und früh morgens günstiger (Nebenzeit) als tagsüber (Hauptzeit). Die Preise stammen aus deinen Rechnungen; die genauen Uhrzeiten zeigt die Tesla-App.", offPeak: "Nebenzeit", peak: "Hauptzeit", tariffSeen: "Nebenzeit erlebt um {times} Uhr", tariffNone: "Sobald du an einem Standort einmal nachts und einmal tagsüber geladen hast, stehen hier seine beiden Preise.", tariffSaving: "Deine {kwh} kWh aus der Hauptzeit an diesen Standorten hätten in der Nebenzeit {s} weniger gekostet.", yourAvg: "gestrichelt: dein Schnitt {p}",
       cheapest: "am günstigsten", cheapestFew: "am günstigsten · nur {n}", noSession: "keine Ladung", oneSession: "1 Ladung", nSessions: "{n} Ladungen",
       tipSlot: "{label} ({range}): Ø {p}/kWh aus {n}, {kwh} kWh", tipEmpty: "{label}: noch keine Ladung in diesem Zeitfenster",
@@ -2091,7 +2095,16 @@ try {
         `<div class="line"><span class="lbl">${T("saved")}</span><span class="dots"></span><span class="val" style="color:var(${m.savings >= 0 ? "--good" : "--bad"})">${money(m.savings)}</span></div>`,
       ]);
     }
-    if (c.reference_cost != null) {
+    if (c.reference_source === "invoices") {
+      // The day price of the sites, from the invoices: only shown when charging off-peak saved something.
+      if (c.reference_cost != null && c.reference_saving >= 0.5) {
+        groups.push([
+          line(`<span tabindex="0" data-tip="${esc(T("atDayPriceTip"))}">${esc(T("atDayPrice", { p: ppk(c.reference_price) }))}</span>`, money(c.reference_cost)),
+          line(T("perInvoicesListed"), money(c.actual_cost)),
+          `<div class="line"><span class="lbl">${esc(T("offPeakSaved", { kwh: num(c.reference_off_kwh, 0) }))}</span><span class="dots"></span><span class="val" style="color:var(--good)">${money(c.reference_saving)}</span></div>`,
+        ]);
+      }
+    } else if (c.reference_cost != null) {
       const ref = [line(esc(T("atReference", { p: ppk(c.reference_price) })), money(c.reference_cost))];
       if (c.actual_cost != null) ref.push(line(T("perInvoices"), money(c.actual_cost)));
       groups.push(ref);
