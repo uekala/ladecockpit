@@ -173,7 +173,8 @@ Ladecockpit creates these entities in Home Assistant itself (switch off with the
 |---|---|---|
 | `sensor.ladecockpit_next_charge` | date of the next charging stop | `text`, `days`, `plan` (when and where to charge), `plan_saving` |
 | `sensor.ladecockpit_battery` | battery level in %, the last known value while the car is offline | `range`, `last_known`, `as_of` |
-| `sensor.ladecockpit_month_cost` | charging cost this month | `energy_kwh`, `price_per_kwh`, `cost_per_100`, `kwh_per_100`, `multipass_cost`, `savings`, `projected_year_cost`, `previous_cost` |
+| `sensor.ladecockpit_month_cost` | charging cost this month (long-term statistics, new sum each month) | `energy_kwh`, `price_per_kwh`, `cost_per_100`, `kwh_per_100`, `multipass_cost`, `savings`, `projected_year_cost`, `previous_cost` |
+| `sensor.ladecockpit_month_energy` | kWh charged this month, invoices plus charging at home (long-term statistics, new sum each month; can go into the energy dashboard) | `invoice_kwh`, `home_kwh`, `sessions` |
 | `sensor.ladecockpit_last_charge` | cost of the last session | `network`, `site`, `energy_kwh`, `price_per_kwh`, `avg_power_kw`, `typical_power_kw`, `slow`, `start_soc`, `text` |
 | `sensor.ladecockpit_price_tip` | your cheapest time of day, as a sentence | `best_time`, `best_site`, `insights` |
 | `sensor.ladecockpit_range_at_100` | range at 100 % (long-term statistics) | `change_pct`, `since`, `supercharger_share` |
@@ -182,7 +183,16 @@ Ladecockpit creates these entities in Home Assistant itself (switch off with the
 | `sensor.ladecockpit_multipass` | number of third-party stations where MultiPass has worked | `text`, `stations` (site, operator, sessions, avg price, last use, `map_url`), `operators`, `sessions`, `price_per_kwh` |
 | `binary_sensor.ladecockpit_problem` | `on` when the Tesla sign-in expired, syncing fails or an entity is missing | `kind`, `message`, `last_sync` |
 
-They are written through the REST API and have no unique ID, so they cannot be renamed in the UI. After a Home Assistant restart they are back within a few minutes. A ready-made dashboard section is in [`homeassistant/dashboard_card.yaml`](homeassistant/dashboard_card.yaml).
+Without the integration below they are written through the REST API and have no unique ID, so they cannot be renamed in the UI, and after a Home Assistant restart they are missing for a few minutes. A ready-made dashboard section is in [`homeassistant/dashboard_card.yaml`](homeassistant/dashboard_card.yaml).
+
+### Home Assistant integration
+
+The optional integration in [`custom_components/ladecockpit`](custom_components/ladecockpit) turns these entities into real ones: with a unique ID and a device *Ladecockpit*, renamable, assignable to an area, and restored right after a restart. The entity IDs stay the same, so dashboards and automations keep working.
+
+1. In HACS: ⋮ → *Custom repositories* → `https://github.com/uekala/ladecockpit`, type *Integration*. Download *Ladecockpit* and restart Home Assistant. (Without HACS: copy `custom_components/ladecockpit` into your `config/custom_components`.)
+2. *Settings → Devices & services → Add integration → Ladecockpit*. There is nothing to enter.
+
+Within five minutes the app finds the integration and sends every value to it as a `ladecockpit_state` event instead of writing states. The app and the integration need no shared settings; this works for the Home Assistant app and the Docker container. After removing the integration, restart Home Assistant so the app goes back to writing states.
 
 ### Picture of your car
 

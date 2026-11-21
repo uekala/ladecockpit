@@ -61,9 +61,11 @@ Under **Export** you find a **year overview** as PDF for every year with session
 
 ## Sensors
 
-Ladecockpit creates its own entities: `sensor.ladecockpit_next_charge`, `sensor.ladecockpit_battery`, `sensor.ladecockpit_month_cost`, `sensor.ladecockpit_last_charge`, `sensor.ladecockpit_price_tip`, `sensor.ladecockpit_range_at_100`, `sensor.ladecockpit_consumption`, `sensor.ladecockpit_car` (a picture of your car, chosen in the web app with **Customise**), `sensor.ladecockpit_multipass` (third-party stations where MultiPass has worked for you, with map links) and `binary_sensor.ladecockpit_problem`. Use them in dashboards and automations. A ready-made dashboard section is in `homeassistant/dashboard_card.yaml` in the repository. Turn this off with **Create sensors in Home Assistant**.
+Ladecockpit creates its own entities: `sensor.ladecockpit_next_charge`, `sensor.ladecockpit_battery`, `sensor.ladecockpit_month_cost`, `sensor.ladecockpit_month_energy` (kWh this month, for the energy dashboard), `sensor.ladecockpit_last_charge`, `sensor.ladecockpit_price_tip`, `sensor.ladecockpit_range_at_100`, `sensor.ladecockpit_consumption`, `sensor.ladecockpit_car` (a picture of your car, chosen in the web app with **Customise**), `sensor.ladecockpit_multipass` (third-party stations where MultiPass has worked for you, with map links) and `binary_sensor.ladecockpit_problem`. Use them in dashboards and automations. A ready-made dashboard section is in `homeassistant/dashboard_card.yaml` in the repository. Turn this off with **Create sensors in Home Assistant**.
 
-These entities have no unique ID, so they cannot be renamed in the UI. After a Home Assistant restart they are back within a few minutes.
+Month cost and month energy keep long-term statistics, with a new sum each month.
+
+These entities have no unique ID, so they cannot be renamed in the UI, and after a Home Assistant restart they are missing for a few minutes. The optional **Ladecockpit integration** turns them into real entities with the same IDs, a device and restore after a restart: add `https://github.com/uekala/ladecockpit` in HACS as a custom repository of type *Integration*, download *Ladecockpit*, restart Home Assistant and add the integration under *Settings → Devices & services*. The app finds it within five minutes; there is nothing to set.
 
 ## Problems
 

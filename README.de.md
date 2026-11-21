@@ -175,7 +175,8 @@ Ladecockpit legt diese Entitäten in Home Assistant selbst an (abschaltbar mit d
 |---|---|---|
 | `sensor.ladecockpit_next_charge` | Datum des nächsten Ladestopps | `text`, `days`, `plan` (wann und wo laden), `plan_saving` |
 | `sensor.ladecockpit_battery` | Akkustand in %, bei Funkstille der letzte bekannte Wert | `range`, `last_known`, `as_of` |
-| `sensor.ladecockpit_month_cost` | Ladekosten im laufenden Monat | `energy_kwh`, `price_per_kwh`, `cost_per_100`, `kwh_per_100`, `multipass_cost`, `savings`, `projected_year_cost`, `previous_cost` |
+| `sensor.ladecockpit_month_cost` | Ladekosten im laufenden Monat (Langzeitstatistik, jeden Monat eine neue Summe) | `energy_kwh`, `price_per_kwh`, `cost_per_100`, `kwh_per_100`, `multipass_cost`, `savings`, `projected_year_cost`, `previous_cost` |
+| `sensor.ladecockpit_month_energy` | geladene kWh im laufenden Monat, Rechnungen plus Laden zu Hause (Langzeitstatistik, jeden Monat eine neue Summe; passt ins Energie-Dashboard) | `invoice_kwh`, `home_kwh`, `sessions` |
 | `sensor.ladecockpit_last_charge` | Kosten der letzten Ladung | `network`, `site`, `energy_kwh`, `price_per_kwh`, `avg_power_kw`, `typical_power_kw`, `slow`, `start_soc`, `text` |
 | `sensor.ladecockpit_price_tip` | deine günstigste Uhrzeit als Satz | `best_time`, `best_site`, `insights` |
 | `sensor.ladecockpit_range_at_100` | Reichweite bei 100 % (Langzeitstatistik) | `change_pct`, `since`, `supercharger_share` |
@@ -184,7 +185,16 @@ Ladecockpit legt diese Entitäten in Home Assistant selbst an (abschaltbar mit d
 | `sensor.ladecockpit_multipass` | Anzahl der Drittanbieter-Stationen, an denen MultiPass funktioniert hat | `text`, `stations` (Standort, Anbieter, Ladungen, Ø-Preis, letzte Nutzung, `map_url`), `operators`, `sessions`, `price_per_kwh` |
 | `binary_sensor.ladecockpit_problem` | `on`, wenn die Tesla-Anmeldung abgelaufen ist, der Abgleich fehlschlägt oder eine Entität fehlt | `kind`, `message`, `last_sync` |
 
-Sie werden über die REST-API geschrieben und haben keine eindeutige ID, lassen sich also nicht in der Oberfläche umbenennen. Nach einem Neustart von Home Assistant sind sie nach wenigen Minuten wieder da. Eine fertige Dashboard-Sektion steht in [`homeassistant/dashboard_card.yaml`](homeassistant/dashboard_card.yaml).
+Ohne die Integration unten werden sie über die REST-API geschrieben und haben keine eindeutige ID. Sie lassen sich dann nicht in der Oberfläche umbenennen und fehlen nach einem Neustart von Home Assistant ein paar Minuten. Eine fertige Dashboard-Sektion steht in [`homeassistant/dashboard_card.yaml`](homeassistant/dashboard_card.yaml).
+
+### Home-Assistant-Integration
+
+Die optionale Integration in [`custom_components/ladecockpit`](custom_components/ladecockpit) macht daraus echte Entitäten: mit eindeutiger ID und einem Gerät *Ladecockpit*, umbenennbar, einem Bereich zuordenbar und nach einem Neustart sofort wieder da. Die Entitäts-IDs bleiben gleich, Dashboards und Automationen laufen also weiter.
+
+1. In HACS: ⋮ → *Benutzerdefinierte Repositories* → `https://github.com/uekala/ladecockpit`, Typ *Integration*. *Ladecockpit* herunterladen und Home Assistant neu starten. (Ohne HACS: `custom_components/ladecockpit` nach `config/custom_components` kopieren.)
+2. *Einstellungen → Geräte & Dienste → Integration hinzufügen → Ladecockpit*. Einzugeben gibt es nichts.
+
+Innerhalb von fünf Minuten findet die App die Integration und schickt ihr jeden Wert als Event `ladecockpit_state`, statt Zustände zu schreiben. App und Integration brauchen keine gemeinsamen Einstellungen; das klappt mit der Home-Assistant-App und mit dem Docker-Container. Nach dem Entfernen der Integration Home Assistant neu starten, dann schreibt die App wieder Zustände.
 
 ### Bild deines Autos
 

@@ -1,0 +1,53 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Ladecockpit",
+        "description": "Echte Entitäten für die Ladecockpit-App: mit eindeutiger ID und Gerät, umbenennbar, nach einem Neustart sofort wieder da. Nichts einzugeben – die App findet die Integration innerhalb weniger Minuten und schickt ihre Werte hierher. Die Entitäts-IDs bleiben gleich."
+      }
+    },
+    "abort": {
+      "already_configured": "Ladecockpit ist bereits eingerichtet.",
+      "single_instance_allowed": "Ladecockpit ist bereits eingerichtet."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_charge": {
+        "name": "Nächste Ladung"
+      },
+      "battery": {
+        "name": "Akku"
+      },
+      "month_cost": {
+        "name": "Ladekosten Monat"
+      },
+      "month_energy": {
+        "name": "Lademenge Monat"
+      },
+      "last_charge": {
+        "name": "Letzte Ladung"
+      },
+      "price_tip": {
+        "name": "Preistipp"
+      },
+      "range_at_100": {
+        "name": "Reichweite bei 100 %"
+      },
+      "consumption": {
+        "name": "Verbrauch"
+      },
+      "car": {
+        "name": "Fahrzeug"
+      },
+      "multipass": {
+        "name": "MultiPass-Stationen"
+      }
+    },
+    "binary_sensor": {
+      "problem": {
+        "name": "Problem"
+      }
+    }
+  }
+}

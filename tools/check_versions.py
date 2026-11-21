@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Check that the application version and both changelogs stay in sync."""
+"""Check that the application version, both changelogs and the integration stay in sync."""
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from pathlib import Path
@@ -34,6 +35,12 @@ for relative in ("CHANGELOG.md", "ladecockpit-app/CHANGELOG.md"):
         fail(f"{relative} has no version heading")
     if headings[0] != version:
         fail(f"{relative} starts at {headings[0]}, but app/__init__.py says {version}")
+
+manifest = ROOT / "custom_components" / "ladecockpit" / "manifest.json"
+if manifest.is_file():
+    integration = json.loads(manifest.read_text(encoding="utf-8")).get("version")
+    if integration != version:
+        fail(f"custom_components/ladecockpit/manifest.json says {integration}, but app/__init__.py says {version}")
 
 ref = os.environ.get("GITHUB_REF", "")
 if ref.startswith("refs/tags/"):

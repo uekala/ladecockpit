@@ -236,6 +236,57 @@ def _day_price_reference(month_items: list[dict], site_items: dict[tuple[str, st
             "reference_off_kwh": round(off_kwh, 1)}
 
 
+PRICE_LEVEL_TOL = 0.015   # €/kWh: prices of one site this close are the same price
+PRICE_CHANGE_MIN = 0.02    # €/kWh: two prices this far apart are a change
+PRICE_CHANGE_RECENT = timedelta(days=60)  # older changes no longer get a tip
+
+
+def _price_change(items: list[dict]) -> dict | None:
+    """The latest change of a site's listed price, from the sessions there – or None.
+
+    The sessions, in order, end in a run at one price ("now") that follows a run at another
+    price ("before"), at least PRICE_CHANGE_MIN apart, with three sessions or more between them.
+    At least one session of each run started in the same time window of the day (SLOT_HOURS),
+    so a price by time of day never passes for a change; a site with two tariffs (see
+    _tariff_groups) gets none.
+    """
+    if _tariff_groups(items):
+        return None
+    rated = sorted(((x, r) for x in items if x.get("kwh", 0) >= 1 and (r := _rate(x))), key=lambda p: p[0]["_local"])
+
+    def run_before(end: int) -> int:
+        """Start index of the run at one price that ends right before `end`."""
+        start = end - 1
+        while start > 0:
+            prices = [r for _, r in rated[start - 1:end]]
+            if max(prices) - min(prices) > PRICE_LEVEL_TOL:
+                break
+            start -= 1
+        return start
+
+    if len(rated) < 3:
+        return None
+    now_start = run_before(len(rated))
+    if now_start == 0:
+        return None
+    before_start = run_before(now_start)
+    before, now = rated[before_start:now_start], rated[now_start:]
+    if len(before) + len(now) < 3:
+        return None
+    price_before = _group_price([x for x, _ in before])
+    price_now = _group_price([x for x, _ in now])
+    if abs(price_now - price_before) < PRICE_CHANGE_MIN:
+        return None
+
+    def slot(x: dict) -> int:
+        return next(i for i, (_, a, b) in enumerate(SLOT_HOURS) if a <= x["_local"].hour < b)
+    if not {slot(x) for x, _ in before} & {slot(x) for x, _ in now}:
+        return None
+    since = now[0][0]["_local"]
+    return {"before": price_before, "now": price_now, "since": _iso(since),
+            "sessions_before": len(before), "sessions_now": len(now), "_since": since}
+
+
 PROJECTION_DAYS = 90       # look-back for the yearly projection
 PROJECTION_MIN_DAYS = 7
 PROJECTION_MIN_DIST = 200
@@ -595,6 +646,8 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     groups: dict[tuple[str, str], list[dict]] = {}
     for x in priced:
         groups.setdefault(_site_group_key(x), []).append(x)
+    changes = {k: c for k, v in groups.items() if (c := _price_change(v))}   # see _price_change
+
     def _site_row(k: tuple[str, str], v: list[dict]) -> dict:
         site = k[0] or i18n.t(lang, "unknown_site")
         operator = next((x["_operator"] for x in v if x.get("_operator")), None)
@@ -604,7 +657,10 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
                 "network": Counter(x.get("network") or SUPERCHARGER for x in v).most_common(1)[0][0],
                 "operator": operator, "address": addr, "label": _label(site, operator, addr),
                 # The name to assign an operator to, and whether one was assigned in the app.
-                "site_name": k[0] or None, "operator_assigned": bool(k[0]) and networks.assigned_operator(k[0]) is not None}
+                "site_name": k[0] or None, "operator_assigned": bool(k[0]) and networks.assigned_operator(k[0]) is not None,
+                # The price since the last change, when the site's price changed.
+                "price_now": changes[k]["now"] if k in changes else None,
+                "price_since": changes[k]["since"] if k in changes else None}
 
     sites = sorted((_site_row(k, v) for k, v in groups.items()), key=lambda r: (-r["sessions"], r["avg_price"] or 9))
 
@@ -634,6 +690,13 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
             tariff_sites.append({"site": row["label"], "site_name": row["site_name"], **t})
     tariff_sites.sort(key=lambda t: -t["saving"])
     tariffs = {"sites": tariff_sites}
+
+    price_changes = []
+    for k, c in changes.items():
+        row = _site_row(k, groups[k])
+        price_changes.append({"site": row["label"], "site_name": row["site_name"],
+                              **{f: v for f, v in c.items() if not f.startswith("_")}, "_since": c["_since"]})
+    price_changes.sort(key=lambda c: c["_since"], reverse=True)
     if tariff_sites:
         off_kwh = sum(t["off_kwh"] for t in tariff_sites)
         peak_kwh = sum(t["peak_kwh"] for t in tariff_sites)
@@ -673,6 +736,17 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
                 lang, "in_site", lo=lo["label"], lo_price=money(lo["avg_price"]),
                 hi=hi["label"], hi_price=money(hi["avg_price"])),
                 "action": {"go": "radar", "site": lo["site_name"]}})
+
+    for c in [c for c in price_changes if c["_since"] >= now_local - PRICE_CHANGE_RECENT][:2]:
+        diff = c["now"] - c["before"]
+        since = c["_since"]
+        insights.append({"kind": "price", "text": i18n.t(
+            lang, "in_price_change", site=c["site"], now=money(c["now"]), before=money(c["before"]),
+            since=f"{since:%d.%m.}" if lang == "de" else f"{since:%b} {since.day}",
+            sign="+" if diff > 0 else "−", diff=money(abs(diff))),
+            "action": {"go": "radar", "site": c["site_name"]}})
+    for c in price_changes:
+        del c["_since"]
 
     nets = _by_network(priced)
     mp, sc = nets.get(MULTIPASS), nets.get(SUPERCHARGER)
@@ -806,6 +880,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         "monthly": monthly,
         "slots": slots,
         "tariffs": tariffs,
+        "price_changes": price_changes,
         "sites": sites,
         "site_radar": site_radar,
         "multipass": _multipass(sessions, tz, lang),

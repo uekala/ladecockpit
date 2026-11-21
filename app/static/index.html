@@ -1307,7 +1307,7 @@ try {
       addonStep2: "After signing in, Tesla redirects to <span class=\"mono\">{uri}</span>. That page does not load – that is expected.",
       addonStep3: "Copy the full address from the browser bar of that tab and paste it here.",
       atReference: "At reference price {p}", perInvoices: "Per invoices (without fees)",
-      atDayPrice: "At the day price of your sites (avg {p})", perInvoicesListed: "Per invoices (list price)", offPeakSaved: "Saved off-peak ({kwh} kWh)",
+      atDayPrice: "At the day price of your sites (avg {p})", priceNow: "now {p} (since {d})", priceNowTip: "The price at this site changed. The average still includes the older sessions at the old price.", perInvoicesListed: "Per invoices (list price)", offPeakSaved: "Saved off-peak ({kwh} kWh)",
       atDayPriceTip: "Ladecockpit takes this from your invoices: sessions at night or early in the morning at a site with a cheaper off-peak price count at that site's day price, all others at their own price.",
       radar: "Price radar", radarTitle: "What a kWh costs you by time of day", radarSub: "Average list price from your invoices", tariffTitle: "Off-peak and peak price per site", tariffSub: "Many Superchargers cost less at night and early in the morning. The prices come from your invoices; Tesla's app shows the exact hours.", offPeak: "off-peak", peak: "peak", tariffSeen: "off-peak seen at {times}", tariffNone: "Once you have charged at a site both at night and during the day, its two prices show up here.", tariffSaving: "Your {kwh} kWh at peak time at these sites would have cost {s} less off-peak.", yourAvg: "dashed: your average {p}",
       cheapest: "cheapest", cheapestFew: "cheapest · only {n}", noSession: "no session", oneSession: "1 session", nSessions: "{n} sessions",
@@ -1424,7 +1424,7 @@ try {
       addonStep2: "Nach der Anmeldung leitet Tesla zu <span class=\"mono\">{uri}</span> weiter. Die Seite lädt nicht – das ist so gewollt.",
       addonStep3: "Die komplette Adresse aus der Browserzeile dieses Tabs kopieren und hier einfügen.",
       atReference: "Mit Referenzpreis {p}", perInvoices: "Laut Rechnungen (ohne Gebühren)",
-      atDayPrice: "Zum Tagespreis deiner Ladeorte (Ø {p})", perInvoicesListed: "Laut Rechnungen (Listenpreis)", offPeakSaved: "In der Nebenzeit gespart ({kwh} kWh)",
+      atDayPrice: "Zum Tagespreis deiner Ladeorte (Ø {p})", priceNow: "jetzt {p} (seit {d})", priceNowTip: "Der Preis an diesem Standort hat sich geändert. Im Ø stecken noch die älteren Ladungen zum alten Preis.", perInvoicesListed: "Laut Rechnungen (Listenpreis)", offPeakSaved: "In der Nebenzeit gespart ({kwh} kWh)",
       atDayPriceTip: "Ladecockpit nimmt den Preis aus deinen Rechnungen: Ladungen nachts oder früh an Standorten mit günstigerem Nebenzeit-Preis zählen mit dem Tagespreis des Standorts, alle anderen mit ihrem eigenen Preis.",
       radar: "Preis-Radar", radarTitle: "Was dich eine kWh je nach Uhrzeit kostet", radarSub: "Ø Listenpreis aus deinen Rechnungen", tariffTitle: "Nacht- und Tagpreis je Standort", tariffSub: "Viele Supercharger sind nachts und früh morgens günstiger (Nebenzeit) als tagsüber (Hauptzeit). Die Preise stammen aus deinen Rechnungen; die genauen Uhrzeiten zeigt die Tesla-App.", offPeak: "Nebenzeit", peak: "Hauptzeit", tariffSeen: "Nebenzeit erlebt um {times} Uhr", tariffNone: "Sobald du an einem Standort einmal nachts und einmal tagsüber geladen hast, stehen hier seine beiden Preise.", tariffSaving: "Deine {kwh} kWh aus der Hauptzeit an diesen Standorten hätten in der Nebenzeit {s} weniger gekostet.", yourAvg: "gestrichelt: dein Schnitt {p}",
       cheapest: "am günstigsten", cheapestFew: "am günstigsten · nur {n}", noSession: "keine Ladung", oneSession: "1 Ladung", nSessions: "{n} Ladungen",
@@ -1510,7 +1510,7 @@ try {
     tag: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>',
     bolt: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>',
   };
-  const insightIcon = { slot: ico.clock, site: ico.pin, idle: ico.plug, reference: ico.tag, network: ico.bolt, speed: ico.bolt };
+  const insightIcon = { slot: ico.clock, site: ico.pin, idle: ico.plug, reference: ico.tag, price: ico.tag, network: ico.bolt, speed: ico.bolt };
   const isMp = (x) => x && x.network === "multipass";
   const mpChip = (x) => (isMp(x) ? ` <span class="chip info" tabindex="0" data-tip="${esc(T("mpChipTip"))}">${T("mpChip")}</span>` : "");
   // A MultiPass station by its operator (from the register or the site name), with the address
@@ -2418,7 +2418,7 @@ try {
           <td class="site">${esc(siteName(s))}${mpChip(s)}${whereSub(s)}${opButton(d, s)}</td>
           <td class="n">${s.sessions}</td>
           <td class="n">${num(s.kwh, 1)}</td>
-          <td class="n"><span class="minibar" aria-hidden="true"><i data-tone="${tone(s.avg_price, avgPrice(d))}" style="width:${((s.avg_price || 0) / maxP) * 100}%"></i></span>${s.avg_price == null ? "–" : money(s.avg_price)}</td>
+          <td class="n"><span class="minibar" aria-hidden="true"><i data-tone="${tone(s.avg_price, avgPrice(d))}" style="width:${((s.avg_price || 0) / maxP) * 100}%"></i></span>${s.avg_price == null ? "–" : money(s.avg_price)}${s.price_now != null ? `<div class="sub" tabindex="0" data-tip="${esc(T("priceNowTip"))}">${esc(T("priceNow", { p: money(s.price_now), d: fmtDate(s.price_since, { day: "2-digit", month: "2-digit" }) }))}</div>` : ""}</td>
           <td class="n">${s.avg_kw == null ? "–" : num(s.avg_kw, 0)}</td>
         </tr>`).join("")}</tbody>
       </table></div>

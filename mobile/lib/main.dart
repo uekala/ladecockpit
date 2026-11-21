@@ -1812,6 +1812,7 @@ class _DashboardPageState extends State<DashboardPage> {
           'speed' => Icons.speed,
           'credit' => Icons.redeem_outlined,
           'reference' => Icons.sell_outlined,
+          'price' => Icons.price_change_outlined,
           'climate' => Icons.thermostat_outlined,
           _ => Icons.bolt,
         };
