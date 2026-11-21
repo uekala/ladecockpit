@@ -28,6 +28,8 @@ UNITS = {
 }
 # Roles whose state is text or a time, not a number
 TEXT_ROLES = ("charging", "time_to_full")
+# Roles that only have a value while the car charges: unavailable or unknown is normal otherwise
+WHILE_CHARGING = ("time_to_full", "charge_power")
 
 # Option names as the app configuration in Home Assistant shows them
 OPTION = {
@@ -96,6 +98,7 @@ TEXTS = {
         "hidden": "Nicht sichtbar in der Konfiguration? Dort „Nicht verwendete optionale Konfigurationsoptionen anzeigen“ einschalten.",
         "missing": "Entität nicht gefunden",
         "unavailable": "gerade nicht verfügbar",
+        "charging_only": "nur beim Laden",
         "not_numeric": "liefert keine Zahl",
         "unit": "unerwartete Einheit {unit}",
     },
@@ -111,6 +114,7 @@ TEXTS = {
         "hidden": "Not shown in the configuration? Turn on \"Show unused optional configuration options\" there.",
         "missing": "entity not found",
         "unavailable": "unavailable right now",
+        "charging_only": "only while charging",
         "not_numeric": "does not deliver a number",
         "unit": "unexpected unit {unit}",
     },
@@ -166,13 +170,16 @@ def entity_report(roles: dict[str, str], live: dict, lang: str) -> list[dict]:
     order = list(ROLE_NAMES["en"])
     for role, eid in sorted(roles.items(), key=lambda kv: order.index(kv[0]) if kv[0] in order else 99):
         row = {"role": role, "label": (ROLE_NAMES.get(lang) or ROLE_NAMES["en"]).get(role, role), "entity": eid, "state": raw.get(role), "unit": units.get(role), "ok": True,
-               "problem": None}
+               "problem": None, "note": None}
         if not reachable:
             row["ok"] = None                       # Home Assistant itself is down: nothing to judge
         elif eid in missing:
             row.update(ok=False, problem=_t(lang, "missing"))
         elif str(raw.get(role, "")).strip().lower() in INVALID_STATES:
-            row.update(ok=False, problem=_t(lang, "unavailable"))
+            if role in WHILE_CHARGING:
+                row["note"] = _t(lang, "charging_only")      # fine: the car is not charging
+            else:
+                row.update(ok=False, problem=_t(lang, "unavailable"))
         elif role not in TEXT_ROLES and values.get(role) is None:
             row.update(ok=False, problem=_t(lang, "not_numeric"))
         else:

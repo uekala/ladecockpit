@@ -3,6 +3,7 @@
 ## 0.20.0 – 2026-11-21
 
 - **Setup step by step.** Until Ladecockpit runs, the web app shows the setup as a checked list instead of a static guide: Tesla developer app → sign in with Tesla → first sync, then (optional) Home Assistant, its entities and further options. Every step says what Ladecockpit sees right now ("Client ID is set.", "12 sessions fetched, last 21.11. 09:14", "1 of 5 entities does not deliver a fitting value", an expired Tesla sign-in with Tesla's message); the next step to do is marked and opens its instructions – the Tesla guide, the sign-in, or *Sync now*. *Check again* reads everything anew. Once all required steps are done, the list moves into the folded *Setup check*. `setup.checks.steps` in `/api/dashboard`, also without Home Assistant.
+- The setup check no longer warns about *Time to full* or *Charging power* being unavailable while the car is not charging – those entities only have a value while charging ("only while charging").
 - Mobile app: the setup card names the next step ("Next step: Sign in with Tesla") and lists the steps that are open or have a problem.
 
 ## 0.19.0 – 2026-11-21

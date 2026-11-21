@@ -2271,7 +2271,7 @@ try {
   function entityList(ents) {
     return `<div class="check-list">${ents.map((e) => {
       const mark = e.ok == null ? '<span class="na" aria-hidden="true">–</span>' : e.ok ? '<span class="ok" aria-hidden="true">✓</span>' : '<span class="bad" aria-hidden="true">!</span>';
-      const value = e.state == null || e.state === "" ? "–" : e.state + (e.unit ? " " + e.unit : "");
+      const value = e.note ? e.note : e.state == null || e.state === "" ? "–" : e.state + (e.unit ? " " + e.unit : "");
       return `<div>${mark}<span>${esc(e.label || e.role)}<small class="mono">${esc(e.entity)}</small>${e.problem ? `<small style="color:var(--warn)">${esc(e.problem)}</small>` : ""}</span><span class="mono">${esc(value)}</span></div>`;
     }).join("")}</div>`;
   }

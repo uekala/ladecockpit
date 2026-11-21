@@ -75,3 +75,13 @@ def test_setup_steps_name_the_next_thing_to_do(settings):
     assert done["extras"]["text"] == "1 Option würde noch etwas bringen."
     expired = {x["id"]: x for x in checks.steps(s, {"tesla_auth_error": "Token abgelaufen"}, [], [], "de")}
     assert expired["tesla_login"] == {**expired["tesla_login"], "status": "problem", "text": "Token abgelaufen"}
+
+
+def test_values_that_only_exist_while_charging_are_no_problem():
+    roles = {"time_to_full": "sensor.zeit", "charge_power": "sensor.leistung", "soc": "sensor.soc"}
+    live = {"available": True, "raw": {"time_to_full": "unavailable", "charge_power": "unknown", "soc": "unavailable"},
+            "values": {}, "units": {}}
+    rows = {r["role"]: r for r in checks.entity_report(roles, live, "de")}
+    assert rows["time_to_full"]["ok"] and rows["time_to_full"]["note"] == "nur beim Laden"
+    assert rows["charge_power"]["ok"]
+    assert rows["soc"]["ok"] is False
