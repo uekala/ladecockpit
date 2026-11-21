@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.21.1 – 2026-11-21
+
+- Dependencies updated: FastAPI 0.165.0, pypdf 7.1.1.
+- Blueprint *Book invoice*: the session text is cut to the maximum length of the *Last session text* entity (100 characters by default), so a long MultiPass operator name no longer makes Home Assistant reject it and skip the extra actions.
+- More tests for the connection to Home Assistant (states, history, events, errors).
+- The mobile app is unchanged.
+
 ## 0.21.0 – 2026-11-21
 
 - **Notifications on the phone without Home Assistant.** New options *Push to the phone (ntfy topic)* (`NTFY_URL`) and *ntfy access token* (`NTFY_TOKEN`): Ladecockpit sends every new invoice ("⚡ New invoice · Moers" – kWh, amount, price per kWh), problems with the Tesla sign-in or the sync (and when they are solved) and the monthly report to an ntfy topic – ntfy.sh or your own server. Subscribe to the same topic in the ntfy app (Android, iOS) and the messages arrive even when the phone is not in your home network and without the Home Assistant blueprint. Only sessions that start after the option was set are sent, each once. *Send test message* under *Operation* in the web app checks the setup (`POST /api/push/test`). The monthly report now also runs for installations without Home Assistant. On ntfy.sh the topic name is the secret: make it long and random.
