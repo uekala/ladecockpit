@@ -57,6 +57,32 @@ ROLE_NAMES = {
            "outside_temp": "Outside temperature", "home_energy": "Wallbox meter", "home_price": "Electricity price at home"},
 }
 
+# The setup, step by step: title and what each state says
+STEPS = {
+    "de": {
+        "tesla_app": ("Tesla-Developer-App", "Client ID ist eingetragen.", "Noch keine Client ID – lege die App bei Tesla an und trage Client ID und Secret ein."),
+        "tesla_login": ("Mit Tesla anmelden", "Angemeldet.", "Noch nicht angemeldet."),
+        "sync": ("Erster Abgleich", "{n} Ladungen geholt, zuletzt {when}.", "Noch kein Abgleich – startet nach der Anmeldung von selbst."),
+        "ha": ("Home Assistant", "Verbunden.", "Nicht eingerichtet. Akku, Strecke und Ladestopp-Prognose kommen von dort."),
+        "entities": ("Entitäten", "Alle {n} liefern Werte.", "Noch keine Entität eingetragen (Akkustand, Kilometerstand, Ladestatus)."),
+        "extras": ("Weitere Auswertungen", "Alles eingerichtet.", "{n} Optionen würden noch etwas bringen."),
+        "extras_one": "1 Option würde noch etwas bringen.",
+        "problem_entities": "{n} von {m} liefern keinen passenden Wert.",
+        "optional": "optional",
+    },
+    "en": {
+        "tesla_app": ("Tesla developer app", "Client ID is set.", "No client ID yet – create the app at Tesla and enter client ID and secret."),
+        "tesla_login": ("Sign in with Tesla", "Signed in.", "Not signed in yet."),
+        "sync": ("First sync", "{n} sessions fetched, last {when}.", "No sync yet – it starts by itself after signing in."),
+        "ha": ("Home Assistant", "Connected.", "Not set up. Battery, distance and the charging forecast come from there."),
+        "entities": ("Entities", "All {n} deliver values.", "No entity entered yet (battery level, odometer, charging state)."),
+        "extras": ("More insights", "Everything is set up.", "{n} options would still add something."),
+        "extras_one": "1 option would still add something.",
+        "problem_entities": "{n} of {m} do not deliver a fitting value.",
+        "optional": "optional",
+    },
+}
+
 TEXTS = {
     "de": {
         "fuel_daily": "Du hast einen Spritpreis-Sensor. Mit „{option}“ rechnet der Verbrenner-Vergleich jeden Tag mit dessen Tagesdurchschnitt.",
@@ -158,8 +184,61 @@ def entity_report(roles: dict[str, str], live: dict, lang: str) -> list[dict]:
     return out
 
 
-def report(settings: Settings, roles: dict[str, str], live: dict) -> dict:
+def steps(settings: Settings, state: dict, entities: list[dict], hint_list: list[dict], lang: str) -> list[dict]:
+    """The setup in order. Each: {id, status, title, text, required}; status is "done", "todo" (the
+    next thing to do), "problem" (set up, but not working) or "optional" (not set up, not needed).
+    state: tesla_connected, tesla_auth_error, last_sync, sync_error, sessions, ha_ok, ha_error, when."""
+    t = STEPS.get(lang) or STEPS["en"]
+    out: list[dict] = []
+
+    def add(sid: str, status: str, text: str, required: bool = True) -> None:
+        out.append({"id": sid, "status": status, "title": t[sid][0], "text": text, "required": required})
+
+    s = settings
+    add("tesla_app", "done" if s.tesla_configured else "todo", t["tesla_app"][1 if s.tesla_configured else 2])
+    if state.get("tesla_auth_error"):
+        add("tesla_login", "problem", str(state["tesla_auth_error"]))
+    else:
+        connected = bool(state.get("tesla_connected"))
+        add("tesla_login", "done" if connected else "todo", t["tesla_login"][1 if connected else 2])
+    if state.get("sync_error"):
+        add("sync", "problem", str(state["sync_error"]))
+    elif state.get("last_sync"):
+        add("sync", "done", t["sync"][1].format(n=state.get("sessions", 0), when=state.get("when") or ""))
+    else:
+        add("sync", "todo", t["sync"][2])
+    if not s.ha_configured:
+        add("ha", "optional", t["ha"][2], required=False)
+    elif state.get("ha_ok"):
+        add("ha", "done", t["ha"][1], required=False)
+    else:
+        add("ha", "problem", str(state.get("ha_error") or ""), required=False)
+    if s.ha_configured:
+        bad = [e for e in entities if e["ok"] is False]
+        if not entities:
+            add("entities", "todo", t["entities"][2], required=False)
+        elif bad:
+            add("entities", "problem", t["problem_entities"].format(n=len(bad), m=len(entities)), required=False)
+        elif all(e["ok"] is None for e in entities):
+            add("entities", "problem", str(state.get("ha_error") or ""), required=False)
+        else:
+            add("entities", "done", t["entities"][1].format(n=len(entities)), required=False)
+        add("extras", "optional" if hint_list else "done",
+            (t["extras_one"] if len(hint_list) == 1 else t["extras"][2].format(n=len(hint_list)))
+            if hint_list else t["extras"][1], required=False)
+    # Only the first open required step is "todo"; the ones after it wait.
+    seen_todo = False
+    for step in out:
+        if step["status"] == "todo":
+            if seen_todo:
+                step["status"] = "waiting"
+            seen_todo = True
+    return out
+
+
+def report(settings: Settings, roles: dict[str, str], live: dict, state: dict | None = None) -> dict:
     lang = settings.lang
     h = hints(settings, lang)
+    ents = entity_report(roles, live, lang) if settings.ha_configured else []
     return {"hints": h, "hidden_note": _t(lang, "hidden") if settings.addon and h else None,
-            "entities": entity_report(roles, live, lang)}
+            "entities": ents, "steps": steps(settings, state or {}, ents, h, lang)}

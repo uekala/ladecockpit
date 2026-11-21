@@ -50,6 +50,50 @@
                     "ok": false,
                     "problem": "unavailable right now"
                 }
+            ],
+            "steps": [
+                {
+                    "id": "tesla_app",
+                    "status": "done",
+                    "title": "Tesla developer app",
+                    "text": "Client ID is set.",
+                    "required": true
+                },
+                {
+                    "id": "tesla_login",
+                    "status": "done",
+                    "title": "Sign in with Tesla",
+                    "text": "Signed in.",
+                    "required": true
+                },
+                {
+                    "id": "sync",
+                    "status": "done",
+                    "title": "First sync",
+                    "text": "12 sessions fetched.",
+                    "required": true
+                },
+                {
+                    "id": "ha",
+                    "status": "done",
+                    "title": "Home Assistant",
+                    "text": "Connected.",
+                    "required": false
+                },
+                {
+                    "id": "entities",
+                    "status": "problem",
+                    "title": "Entities",
+                    "text": "1 of 2 do not deliver a fitting value.",
+                    "required": false
+                },
+                {
+                    "id": "extras",
+                    "status": "optional",
+                    "title": "More insights",
+                    "text": "1 option would still add something.",
+                    "required": false
+                }
             ]
         }
     },

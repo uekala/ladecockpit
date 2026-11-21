@@ -54,3 +54,24 @@ def test_radar_per_site_and_tips_with_a_target(settings):
     assert all("action" in i and i["action"]["go"] for i in d["insights"])
     m = next(m for m in d["monthly"] if m.get("fuel_per_100") is not None)
     assert m["fuel_per_100"] == 16.0
+
+
+def test_setup_steps_name_the_next_thing_to_do(settings):
+    s = dataclasses.replace(settings, lang="de", tesla_client_id="abc", ha_url="", ha_token="")
+    steps = {x["id"]: x for x in checks.steps(s, {}, [], [], "de")}
+    assert [x for x in steps] == ["tesla_app", "tesla_login", "sync", "ha"]
+    assert steps["tesla_app"]["status"] == "done"
+    assert steps["tesla_login"]["status"] == "todo" and steps["sync"]["status"] == "waiting"
+    assert steps["ha"]["status"] == "optional" and not steps["ha"]["required"]
+    # signed in, synced, Home Assistant with one broken entity and a tip
+    s2 = dataclasses.replace(s, ha_url="http://ha", ha_token="t")
+    ents = [{"ok": True}, {"ok": False}]
+    done = {x["id"]: x for x in checks.steps(
+        s2, {"tesla_connected": True, "last_sync": "2026-11-21T08:00:00+00:00", "sessions": 12, "ha_ok": True,
+             "when": "21.11. 09:00"}, ents, [{"id": "no_home"}], "de")}
+    assert all(done[k]["status"] == "done" for k in ("tesla_app", "tesla_login", "sync", "ha"))
+    assert done["sync"]["text"] == "12 Ladungen geholt, zuletzt 21.11. 09:00."
+    assert done["entities"]["status"] == "problem" and done["entities"]["text"].startswith("1 von 2")
+    assert done["extras"]["text"] == "1 Option würde noch etwas bringen."
+    expired = {x["id"]: x for x in checks.steps(s, {"tesla_auth_error": "Token abgelaufen"}, [], [], "de")}
+    assert expired["tesla_login"] == {**expired["tesla_login"], "status": "problem", "text": "Token abgelaufen"}

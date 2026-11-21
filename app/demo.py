@@ -184,22 +184,7 @@ def build_demo(settings: Settings) -> dict:
             "push_since": (now - timedelta(days=5)).isoformat(timespec="seconds"),
             "entities": ["soc", "range", "odometer", "charging"],
             "addon": False,
-            # The setup check with a sample tip and the entities of the sample car
-            "checks": {
-                "hints": [{"id": "no_home", "level": "tip",
-                           "text": checks.TEXTS[settings.lang if settings.lang in checks.TEXTS else "en"]["no_home"].format(
-                               option=checks.OPTION[settings.lang if settings.lang in checks.OPTION else "en"]["entity_home_energy"])}],
-                "hidden_note": None,
-                "entities": checks.entity_report(
-                    {"soc": "sensor.my_tesla_battery_level", "range": "sensor.my_tesla_battery_range",
-                     "charging": "sensor.my_tesla_charging", "charge_power": "sensor.my_tesla_charger_power",
-                     "fuel_price": "sensor.fuel_price_e10"},
-                    {"available": True, "raw": {"soc": str(soc_now), "range": str(round(soc_now * 5.7)),
-                                                "charging": "charging", "charge_power": "104", "fuel_price": "1.79"},
-                     "values": {"soc": soc_now, "range": round(soc_now * 5.7), "charge_power": 104.0, "fuel_price": 1.79},
-                     "units": {"soc": "%", "range": "km", "charge_power": "kW", "fuel_price": "€"}},
-                    settings.lang),
-            },
+            "checks": _demo_checks(settings, soc_now, now),
         },
         "sync": {
             "last": (now - timedelta(hours=2)).isoformat(timespec="seconds"),
@@ -212,3 +197,25 @@ def build_demo(settings: Settings) -> dict:
                         settings=demo_settings, meta=meta, now=now)
     d["car"] = carimage.describe(carimage.normalize(None), settings.lang, auto=True)
     return d
+
+
+def _demo_checks(settings: Settings, soc_now: float, now: datetime) -> dict:
+    """The setup check of the demo: every step done, one tip, the entities of the sample car."""
+    lang = settings.lang if settings.lang in checks.TEXTS else "en"
+    ents = checks.entity_report(
+        {"soc": "sensor.my_tesla_battery_level", "range": "sensor.my_tesla_battery_range",
+         "charging": "sensor.my_tesla_charging", "charge_power": "sensor.my_tesla_charger_power",
+         "fuel_price": "sensor.fuel_price_e10"},
+        {"available": True, "raw": {"soc": str(soc_now), "range": str(round(soc_now * 5.7)),
+                                    "charging": "charging", "charge_power": "104", "fuel_price": "1.79"},
+         "values": {"soc": soc_now, "range": round(soc_now * 5.7), "charge_power": 104.0, "fuel_price": 1.79},
+         "units": {"soc": "%", "range": "km", "charge_power": "kW", "fuel_price": "€"}},
+        lang)
+    hint_list = [{"id": "no_home", "level": "tip",
+                  "text": checks.TEXTS[lang]["no_home"].format(option=checks.OPTION[lang]["entity_home_energy"])}]
+    live_like = dataclasses.replace(settings, tesla_client_id="demo", ha_url="http://homeassistant", ha_token="demo")
+    when = (now - timedelta(hours=2)).astimezone(settings.tz)
+    state = {"tesla_connected": True, "last_sync": when.isoformat(), "sessions": 12, "ha_ok": True,
+             "when": f"{when:%d.%m. %H:%M}" if lang == "de" else f"{when:%b} {when.day}, {when:%H:%M}"}
+    return {"hints": hint_list, "hidden_note": None, "entities": ents,
+            "steps": checks.steps(live_like, state, ents, hint_list, lang)}

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.20.0 – 2026-11-21
+
+- **Setup step by step.** Until Ladecockpit runs, the web app shows the setup as a checked list instead of a static guide: Tesla developer app → sign in with Tesla → first sync, then (optional) Home Assistant, its entities and further options. Every step says what Ladecockpit sees right now ("Client ID is set.", "12 sessions fetched, last 21.11. 09:14", "1 of 5 entities does not deliver a fitting value", an expired Tesla sign-in with Tesla's message); the next step to do is marked and opens its instructions – the Tesla guide, the sign-in, or *Sync now*. *Check again* reads everything anew. Once all required steps are done, the list moves into the folded *Setup check*. `setup.checks.steps` in `/api/dashboard`, also without Home Assistant.
+- Mobile app: the setup card names the next step ("Next step: Sign in with Tesla") and lists the steps that are open or have a problem.
+
 ## 0.19.0 – 2026-11-21
 
 - **Tips as cards.** What Ladecockpit notices – the cheapest time and site, off-peak prices, MultiPass, idle fees, slow sessions, credits – now stands as cards near the top of the web app and in *Auswertung* of the mobile app, each with a way to what it is about: "Radar for Mainz", "To the sessions" (the mobile app fills the search with the site), "To this month".

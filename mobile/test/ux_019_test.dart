@@ -15,9 +15,10 @@ Future<void> _settle(WidgetTester tester) async {
   }
 }
 
-Future<void> _open(WidgetTester tester) async {
+Future<void> _open(WidgetTester tester, [void Function(Map<String, dynamic> data)? change]) async {
   final data = jsonDecode(File('test/fixtures/dashboard_demo.json').readAsStringSync())
       as Map<String, dynamic>;
+  change?.call(data);
   tester.view.physicalSize = const Size(1080, 30000);
   tester.view.devicePixelRatio = 2.75;
   addTearDown(tester.view.resetPhysicalSize);
@@ -56,5 +57,16 @@ void main() {
     await tester.tap(find.text('Zu den Ladevorgängen').first);
     await _settle(tester);
     expect(find.byKey(const ValueKey('session-search')), findsOneWidget);
+  });
+
+  testWidgets('an open setup step is named as the next step', (tester) async {
+    await _open(tester, (data) {
+      final steps = (data['setup']['checks']['steps'] as List).cast<Map<String, dynamic>>();
+      steps[1]['status'] = 'todo';
+      steps[1]['text'] = 'Noch nicht angemeldet.';
+      steps[2]['status'] = 'waiting';
+    });
+    expect(find.text('Nächster Schritt: Mit Tesla anmelden'), findsOneWidget);
+    expect(find.textContaining('Mit Tesla anmelden: Noch nicht angemeldet.'), findsOneWidget);
   });
 }
