@@ -152,6 +152,7 @@ def _forecast(lang, history, soc, floor, now_utc, tz, odometer_14d) -> dict:
 
 
 MIN_PRICE_GAP = 0.03       # €/kWh: smaller differences are not worth a tip
+MIN_REFERENCE_SAVING = 0.5  # €: what charging off-peak must have saved in a month to be shown
 TARIFF_GAP = 0.06          # €/kWh: two prices at one site this far apart are two tariffs
 OFF_PEAK_HOURS = (10, 20)  # a session starting in [10, 20) local time is never off-peak at Tesla in Europe
 
@@ -164,8 +165,8 @@ def _rate(x: dict) -> float | None:
     return listed / x["kwh"] if listed else None
 
 
-def _tariff(items: list[dict]) -> dict | None:
-    """Off-peak and peak price of one site, from the sessions there – or None.
+def _tariff_groups(items: list[dict]) -> tuple[list[dict], list[dict]] | None:
+    """The off-peak and the peak sessions of one site – or None.
 
     Tesla charges less at night and early in the morning at many Superchargers. A site gets two
     tariffs when its prices fall into two groups at least TARIFF_GAP apart, every cheap session
@@ -182,18 +183,59 @@ def _tariff(items: list[dict]) -> dict | None:
     day = range(*OFF_PEAK_HOURS)
     if any(x["_local"].hour in day for x in low) or not any(x["_local"].hour in day for x in high):
         return None
+    return low, high
 
-    def price(group: list[dict]) -> float:
-        kwh = sum(x["kwh"] for x in group)
-        return round(sum(_rate(x) * x["kwh"] for x in group) / kwh, 4)
 
-    off, peak = price(low), price(high)
+def _group_price(group: list[dict]) -> float:
+    """The listed price per kWh of a group of sessions, weighted by kWh."""
+    kwh = sum(x["kwh"] for x in group)
+    return round(sum(_rate(x) * x["kwh"] for x in group) / kwh, 4)
+
+
+def _tariff(items: list[dict]) -> dict | None:
+    """Off-peak and peak price of one site, from the sessions there – or None (see _tariff_groups)."""
+    groups = _tariff_groups(items)
+    if not groups:
+        return None
+    low, high = groups
+    off, peak = _group_price(low), _group_price(high)
     peak_kwh = sum(x["kwh"] for x in high)
     return {"offpeak": off, "peak": peak, "off_sessions": len(low), "peak_sessions": len(high),
             "off_kwh": round(sum(x["kwh"] for x in low), 1), "peak_kwh": round(peak_kwh, 1),
             # When the cheap price was seen, as a hint for the user (Tesla's app shows the exact hours).
             "off_times": sorted({f"{x['_local']:%H:%M}" for x in low})[:3],
             "saving": round(peak_kwh * (peak - off), 2)}
+
+
+def _day_price_reference(month_items: list[dict], site_items: dict[tuple[str, str], list[dict]]) -> dict | None:
+    """The reference price from the invoices themselves: the day price of the sites you charged at.
+
+    A session in the off-peak group of a site with two tariffs (see _tariff_groups) counts at that
+    site's peak price; every other session at its own listed price. So the difference to the
+    invoices is exactly what charging off-peak saved – a price change or a dear site on its own
+    never shows up as a saving. Listed prices are used on both sides, so credits stay out of it.
+    """
+    kwh = sum(x["kwh"] for x in month_items)
+    if not kwh:
+        return None
+    listed = sum(x["list_cost"] if x.get("list_cost") is not None else (x.get("charge_cost") or 0.0)
+                 for x in month_items)
+    peak_of: dict[str, float] = {}   # session id → peak price of its site, for off-peak sessions
+    for items in site_items.values():
+        groups = _tariff_groups(items)
+        if groups:
+            low, high = groups
+            peak = _group_price(high)
+            peak_of.update((x["session_id"], peak) for x in low)
+    saving = sum(x["kwh"] * (peak_of[x["session_id"]] - _rate(x))
+                 for x in month_items if x["session_id"] in peak_of)
+    off_kwh = sum(x["kwh"] for x in month_items if x["session_id"] in peak_of)
+    cost = listed + saving
+    return {"reference_price": round(cost / kwh, 4), "reference_cost": round(cost, 2),
+            "actual_cost": round(listed, 2), "reference_saving": round(saving, 2),
+            "reference_off_kwh": round(off_kwh, 1)}
+
+
 PROJECTION_DAYS = 90       # look-back for the yearly projection
 PROJECTION_MIN_DAYS = 7
 PROJECTION_MIN_DIST = 200
@@ -659,20 +701,35 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
             "action": {"go": "sessions", "query": _place(x.get("site") or "")}})
 
     # --- comparisons -------------------------------------------------------------------------
+    # A reference price of your own (entity or fixed number; 0 turns the comparison off) –
+    # otherwise the day price of your sites, from the invoices.
+    own_reference = bool(settings.ent_reference_price) or settings.reference_price is not None
     reference = values.get("reference_price")
     if reference is None:
         reference = settings.reference_price
     compare = {"fuel": fuel, "reference_price": reference, "reference_cost": None,
+               "reference_source": ("entity" if settings.ent_reference_price else "fixed") if own_reference else None,
                "actual_cost": month["charge_cost"] if month["sessions"] else None,
                "fuel_month": values.get("fuel_month"),
                "fuel_label": settings.fuel_label or i18n.t(lang, "fuel_default")}
-    if reference and month["kwh"]:
-        compare["reference_cost"] = round(month["kwh"] * reference, 2)
-        delta = compare["reference_cost"] - month["charge_cost"]
-        if abs(delta) >= 0.5:
-            insights.append({"kind": "reference", "text": i18n.t(
-                lang, "in_reference", ref=money(reference), ref_cost=money(compare["reference_cost"]),
-                actual=money(month["charge_cost"]), sign="+" if delta < 0 else "−", delta=money(abs(delta)))})
+    if own_reference:
+        if reference and month["kwh"]:
+            compare["reference_cost"] = round(month["kwh"] * reference, 2)
+            delta = compare["reference_cost"] - month["charge_cost"]
+            if abs(delta) >= 0.5:
+                insights.append({"kind": "reference", "text": i18n.t(
+                    lang, "in_reference", ref=money(reference), ref_cost=money(compare["reference_cost"]),
+                    actual=money(month["charge_cost"]), sign="+" if delta < 0 else "−", delta=money(abs(delta)))})
+    else:
+        derived = _day_price_reference(by_month.get(cur_key, []), groups)
+        if derived:
+            compare.update(derived, reference_source="invoices")
+            if derived["reference_saving"] >= MIN_REFERENCE_SAVING:
+                insights.append({"kind": "reference", "text": i18n.t(
+                    lang, "in_reference_day", saving=money(derived["reference_saving"]),
+                    kwh=i18n.num(lang, derived["reference_off_kwh"], 0),
+                    ref=money(derived["reference_price"]), ref_cost=money(derived["reference_cost"]),
+                    actual=money(derived["actual_cost"]))})
 
     if month.get("savings") is not None and month["savings"] >= 1:
         insights.append({"kind": "fuel", "text": i18n.t(

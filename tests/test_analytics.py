@@ -117,18 +117,18 @@ def test_the_cheapest_slot_says_when_it_rests_on_one_session(settings):
     assert slot_text.startswith("Morgens") and "erst 1× geladen" in slot_text
 
 
-def _tariff_dashboard(settings, rows, lang="de"):
-    """rows: (site, day, hour UTC, kWh, price per kWh)"""
+def _tariff_dashboard(settings, rows, lang="de", now=None, values=None, **options):
+    """rows: (site, day, hour UTC, kWh, price per kWh), all in October 2026"""
     from zoneinfo import ZoneInfo
     sessions = []
     for n, (site, day, hour, kwh, price) in enumerate(rows):
         s = _session(f"t{n}", datetime(2026, 10, day, hour, tzinfo=timezone.utc), kwh, round(kwh * price, 2))
         s["site"] = site
         sessions.append(s)
-    return build_dashboard(sessions=sessions, live={"values": {}, "units": {}},
+    return build_dashboard(sessions=sessions, live={"values": values or {}, "units": {}},
                            readings={"soc": [], "soc_last": None, "range_last": None, "odometer": []},
-                           settings=dataclasses.replace(settings, lang=lang, tz=ZoneInfo("Europe/Berlin")),
-                           meta={}, now=datetime(2026, 11, 1, 12, tzinfo=timezone.utc))
+                           settings=dataclasses.replace(settings, lang=lang, tz=ZoneInfo("Europe/Berlin"), **options),
+                           meta={}, now=now or datetime(2026, 11, 1, 12, tzinfo=timezone.utc))
 
 
 def test_tariffs_per_site(settings):
@@ -159,3 +159,68 @@ def test_no_tariffs_without_both_prices(settings):
     d = _tariff_dashboard(settings, [("Moers, Germany", 1, 11, 30, 0.46), ("Moers, Germany", 2, 12, 30, 0.47)])
     assert d["tariffs"] == {"sites": []}
     assert not [i for i in d["insights"] if i["kind"] == "tariff"]
+
+
+# Moers has an off-peak and a peak price, Willich one price only (times in UTC, Berlin = +2 h).
+_DAY_PRICE_ROWS = [
+    ("Moers, Germany", 1, 4, 30, 0.28), ("Moers, Germany", 2, 21, 20, 0.28),
+    ("Moers, Germany", 3, 11, 40, 0.46), ("Moers, Germany", 4, 15, 10, 0.46),
+    ("Willich, Germany", 5, 2, 30, 0.40), ("Willich, Germany", 6, 16, 30, 0.40),
+]
+_OCTOBER = datetime(2026, 10, 30, 12, tzinfo=timezone.utc)
+
+
+def test_reference_price_from_the_invoices_is_the_day_price_of_the_sites(settings):
+    d = _tariff_dashboard(settings, _DAY_PRICE_ROWS, now=_OCTOBER)
+    c = d["compare"]
+    assert c["reference_source"] == "invoices"
+    # The 50 off-peak kWh in Moers count at its day price; everything else at its own price –
+    # also Willich at night, which has no cheaper night price.
+    listed = 30 * 0.28 + 20 * 0.28 + 40 * 0.46 + 10 * 0.46 + 30 * 0.40 + 30 * 0.40
+    assert c["actual_cost"] == round(listed, 2)
+    assert c["reference_saving"] == 9.0 and c["reference_off_kwh"] == 50.0
+    assert c["reference_cost"] == round(listed + 9.0, 2)
+    assert c["reference_price"] == round((listed + 9.0) / 160, 4)
+    tip = next(i for i in d["insights"] if i["kind"] == "reference")
+    assert tip["action"] == {"go": "month"}
+    assert tip["text"].startswith("Nachts und früh zu laden hat dir diesen Monat 9,00 € gespart")
+    assert "(Ø 0,44 €/kWh) wären es 70,00 € gewesen statt 61,00 €" in tip["text"] and "50 kWh" in tip["text"]
+
+
+def test_reference_price_from_the_invoices_counts_only_this_month(settings):
+    # In November the October sessions only tell the day price; there is no session to compare yet.
+    d = _tariff_dashboard(settings, _DAY_PRICE_ROWS)
+    assert d["compare"]["reference_source"] is None and d["compare"]["reference_cost"] is None
+    assert not [i for i in d["insights"] if i["kind"] == "reference"]
+
+
+def test_no_saving_from_the_invoices_without_an_off_peak_price(settings):
+    # A price change (dear later, cheap during the day) is no saving, nor is a site with one price.
+    d = _tariff_dashboard(settings, [
+        ("Seestadt, Germany", 7, 10, 30, 0.42), ("Seestadt, Germany", 20, 12, 30, 0.52),
+        ("Willich, Germany", 5, 2, 30, 0.40), ("Willich, Germany", 6, 16, 30, 0.40),
+    ], lang="en", now=_OCTOBER)
+    c = d["compare"]
+    assert c["reference_source"] == "invoices"
+    assert c["reference_saving"] == 0.0 and c["reference_cost"] == c["actual_cost"]
+    assert not [i for i in d["insights"] if i["kind"] == "reference"]
+
+
+def test_own_reference_price_comes_first(settings):
+    d = _tariff_dashboard(settings, _DAY_PRICE_ROWS, now=_OCTOBER, reference_price=0.49)
+    c = d["compare"]
+    assert (c["reference_source"], c["reference_price"]) == ("fixed", 0.49)
+    assert c["reference_cost"] == round(160 * 0.49, 2) and "reference_saving" not in c
+    tip = next(i["text"] for i in d["insights"] if i["kind"] == "reference")
+    assert tip.startswith("Mit dem Referenzpreis von 0,49 €/kWh")
+
+    d = _tariff_dashboard(settings, _DAY_PRICE_ROWS, now=_OCTOBER, values={"reference_price": 0.45},
+                          ent_reference_price="input_number.supercharger_preis")
+    assert (d["compare"]["reference_source"], d["compare"]["reference_price"]) == ("entity", 0.45)
+
+
+def test_reference_price_zero_or_an_unavailable_entity_turns_the_comparison_off(settings):
+    for options in ({"reference_price": 0.0}, {"ent_reference_price": "input_number.supercharger_preis"}):
+        d = _tariff_dashboard(settings, _DAY_PRICE_ROWS, now=_OCTOBER, **options)
+        assert d["compare"]["reference_cost"] is None and "reference_saving" not in d["compare"]
+        assert not [i for i in d["insights"] if i["kind"] == "reference"]

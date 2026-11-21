@@ -52,10 +52,10 @@ configuration:
     description: input_number, in den der Blueprint bucht – für den Abgleich „HA vs. Rechnungen“.
   entity_reference_price:
     name: Entität Referenzpreis
-    description: Rechnungen mit einem Preis vergleichen, mit dem du bisher geschätzt hast.
+    description: Den Monat mit einem Preis vergleichen, mit dem du bisher geschätzt hast. Leer – Ladecockpit nimmt den Tagespreis deiner Ladeorte aus den Rechnungen und zeigt, was das Laden in der Nebenzeit gespart hat.
   reference_price:
     name: Referenzpreis pro kWh
-    description: Feste Zahl statt einer Entität.
+    description: Feste Zahl statt einer Entität. 0 schaltet den Vergleich ab.
   entity_fuel_month:
     name: Spritkosten diesen Monat
     description: Spritkosten eines anderen Autos, neben den Ladekosten angezeigt.

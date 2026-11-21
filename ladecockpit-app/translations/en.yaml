@@ -52,10 +52,10 @@ configuration:
     description: input_number the blueprint books into – for the "HA vs. invoices" check.
   entity_reference_price:
     name: Reference price entity
-    description: Compare the invoices with a price you used to estimate costs.
+    description: Compare the month with a price you used to estimate costs. Empty – Ladecockpit takes the day price of your sites from the invoices and shows what charging off-peak saved.
   reference_price:
     name: Reference price per kWh
-    description: Fixed number instead of an entity.
+    description: Fixed number instead of an entity. 0 turns the comparison off.
   entity_fuel_month:
     name: Fuel cost this month
     description: Fuel cost of another car, shown next to the charging cost.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.22.0 – 2026-11-21
+
+- **Reference price from your invoices.** Without a reference price of your own, Ladecockpit now takes the day price of your sites from the invoices: sessions at night or early in the morning at a site with a cheaper off-peak price count at that site's day price, all others at their own price. The month card shows "At the day price of your sites", the invoices and what charging off-peak saved, and a tip says it ("Charging at night and early in the morning saved you €9.00 this month …"). Only listed prices are compared, so a price change, a dear site or a Tesla credit never counts as a saving; the comparison shows once the saving is at least 0.50. A *Reference price entity* or *Reference price per kWh* still has the last word, and `0` turns the comparison off. New fields `reference_source`, `reference_saving` and `reference_off_kwh` in `compare` of `/api/dashboard`.
+- The demo shows the new comparison instead of a fixed reference price.
+- The mobile app is unchanged; it shows the new tip with the others.
+
 ## 0.21.1 – 2026-11-21
 
 - Dependencies updated: FastAPI 0.165.0, pypdf 7.1.1.

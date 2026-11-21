@@ -14,7 +14,7 @@ Ladecockpit fetches your actual charging invoices from the Tesla Fleet API (bill
 - **Price radar.** Shows, from your own invoices, which time of day and which Supercharger is cheapest for you.
 - **MultiPass.** Third-party chargers paid through Tesla MultiPass are recognised in the Tesla invoices and shown separately, with their own average price. A list shows every third-party station where MultiPass has already worked for you – operator, sessions, average price, last use and a map link – so you know where the Tesla app is accepted.
 - **Next charging stop.** Forecasts when the battery reaches your floor (default 10 %) based on your recent consumption, and tells you when and where to charge before that: the cheapest combination of Supercharger and time of day from your own invoices.
-- **Monthly view.** Cost, kWh, average price, cost per 100 km/mi, optional comparison with a reference price or the fuel cost of another car.
+- **Monthly view.** Cost, kWh, average price, cost per 100 km/mi, and what charging off-peak saved against the day price of your sites (from your own invoices) – or a comparison with a reference price of your own or the fuel cost of another car.
 - **Savings vs. a combustion car.** What the same distance would have cost with petrol or diesel (fixed values or live from Home Assistant, e.g. a fuel price sensor), per month and projected for a year.
 - **Monthly report.** On the first of the month a summary of the previous month as an event and a notification in Home Assistant.
 - **Tesla credits handled correctly.** Sessions partly paid with Tesla credits (e.g. free Supercharging with a new car) show what you paid, the list price and the credit. Price comparisons use the list price, so a credit never makes a Supercharger look cheap.
@@ -126,6 +126,7 @@ cp .env.example .env
 | `HA_ENT_FUEL_COST_TOTAL`, `HA_ENT_FUEL_LITRES_TOTAL` | `input_number.fuel_cost_total`, `input_number.fuel_litres_total` | the price per litre you actually paid (average of the last 90 days) instead of the fuel price; both totals grow with each fill-up |
 | `NTFY_URL`, `NTFY_TOKEN` | `https://ntfy.sh/ladecockpit-7f3k9q` | new invoices, problems and the monthly report as notifications on the phone (ntfy app), without Home Assistant |
 | `FUEL_PRICE_DAILY` | `1` | every day's distance at that day's average of `HA_ENT_FUEL_PRICE`, instead of the price paid |
+| `HA_ENT_REFERENCE_PRICE` / `REFERENCE_PRICE` | `input_number.supercharger_price`, `0.49` | the month compared with a price of your own instead of the day price of your sites from the invoices; `0` turns the comparison off |
 | `HA_ENT_HOME_ENERGY`, `HA_ENT_HOME_PRICE` / `HOME_PRICE` | `sensor.wall_connector_energy`, `0.32` | charging at home |
 | `HA_ENT_OUTSIDE_TEMP` | `weather.home` | consumption by temperature |
 
