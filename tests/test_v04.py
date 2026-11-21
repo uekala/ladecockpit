@@ -46,7 +46,7 @@ def test_fuel_comparison_and_projection(settings):
     assert d["compare"]["fuel"] == {"consumption": 8.0, "price": 2.0, "per_100": 16.0, "source": "fixed",
                                     "paid_days": None, "paid_litres": None}
     assert m["fuel_equivalent"] == round(16.0 * m["distance"] / 100, 2)
-    assert m["savings"] == round((16.0 - m["per_100"]) * m["distance"] / 100, 2) and m["savings"] > 0
+    assert m["savings"] == round(m["fuel_equivalent"] - m["distance_cost"], 2) and m["savings"] > 0
     assert any(i["kind"] == "fuel" for i in d["insights"])
     p = d["projection"]
     assert p["basis_days"] == 25 and p["distance"] == 18200          # 50 km/day

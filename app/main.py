@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Resp
 from starlette.background import BackgroundTask
 from pydantic import BaseModel
 
-from . import __version__, analytics, backup, carimage, checks, demo, invoices, monthpdf, networks, pdfview, stations, yearpdf
+from . import __version__, analytics, backup, carimage, checks, demo, i18n, invoices, monthpdf, networks, pdfview, stations, yearpdf
 from .analytics import build_dashboard
 from .export import sessions_csv
 from .config import settings
@@ -30,6 +30,7 @@ from .db import DB
 from .entities import EntityPublisher
 from .homeassistant import HAClient
 from .reports import MonthReporter
+from .push import Ntfy
 from .sync import SyncService
 from .tesla import TeslaClient, TeslaError
 from .watcher import Watcher
@@ -57,7 +58,8 @@ STATIC = Path(__file__).parent / "static"
 db = DB(settings.data_dir / "ladecockpit.db")
 tesla = TeslaClient(settings, db)
 ha = HAClient(settings)
-sync = SyncService(settings, db, tesla, ha)
+push = Ntfy(settings)
+sync = SyncService(settings, db, tesla, ha, push)
 watcher = Watcher(settings, db, ha, sync)
 
 _live_cache: dict = {"at": 0.0, "data": None}
@@ -78,8 +80,8 @@ async def lifespan(_app: FastAPI):
             tasks.append(asyncio.create_task(watcher.run_forever()))
         if ha.configured and settings.publish_entities:
             tasks.append(asyncio.create_task(EntityPublisher(settings, ha, dashboard).run_forever()))
-        if ha.configured:
-            tasks.append(asyncio.create_task(MonthReporter(settings, db, ha, dashboard).run_forever()))
+        if ha.configured or push.configured:
+            tasks.append(asyncio.create_task(MonthReporter(settings, db, ha, dashboard, push).run_forever()))
     log.info("Ladecockpit %s started (%s, language %s)", __version__,
              "demo mode" if settings.demo else "live", settings.lang)
     yield
@@ -252,6 +254,7 @@ async def dashboard():
             "push_since": db.kv_get("push_since"),
             "entities": sorted(ha.entities()),
             "addon": settings.addon,
+            "push": {"configured": push.configured, "host": push.topic_host, "error": push.last_error},
             "checks": None,
         },
         "sync": {"last": sync.last_sync, "next": sync.next_sync,
@@ -414,6 +417,17 @@ async def sync_after_charge():
         return {"ok": True, "demo": True}
     sync.trigger_burst()
     return {"ok": True, "mode": "looking for invoice", "minutes": settings.burst_duration_min}
+
+
+@app.post("/api/push/test")
+async def push_test():
+    """Send a test message through ntfy, so the setup can be checked from the web app."""
+    if not push.configured:
+        raise HTTPException(400, "NTFY_URL is not set")
+    ok = await push.send(i18n.t(settings.lang, "push_test_title"), i18n.t(settings.lang, "push_test"), tags=["bell"])
+    if not ok:
+        raise HTTPException(502, push.last_error or "ntfy did not accept the message")
+    return {"ok": True}
 
 
 @app.post("/api/sync/now")

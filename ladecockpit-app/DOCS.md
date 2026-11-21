@@ -38,6 +38,10 @@ Enter the consumption (L/100 km) and fuel price of a comparison car, either as f
 
 With *Fuel price as a daily average* (`FUEL_PRICE_DAILY`) every day's distance is priced at that day's average of the fuel price entity, e.g. the cheapest E10 price near you, which changes many times a day. The comparison then shows the average over the month, weighted by the distance of each day.
 
+## Notifications on the phone without Home Assistant
+
+Install the ntfy app (F-Droid, Google Play, App Store) and subscribe to a topic with a long, random name, e.g. `ladecockpit-7f3k9q`. Enter its full address under *Push to the phone (ntfy topic)*, e.g. `https://ntfy.sh/ladecockpit-7f3k9q`, or the address of your own ntfy server (with an access token if it needs one). Ladecockpit then sends every new invoice, problems with the Tesla sign-in or the sync, and the monthly report. *Send test message* under *Operation* in the web app checks the setup. On ntfy.sh anyone who knows the topic name can read the messages – they contain the place, kWh and amount of a charge, nothing else.
+
 ## More options
 
 - **Charging at home**: the energy meter of your wallbox (kWh, only increasing) and your electricity price, fixed or from an entity such as a dynamic tariff. The price at the time of charging is used.

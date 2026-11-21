@@ -18,6 +18,7 @@ from . import i18n, invoices, networks, osm, stations, vehicle
 from .config import Settings
 from .db import DB, utcnow_iso
 from .homeassistant import HAClient
+from .push import Ntfy, mark_sent, pending
 from .tesla import BudgetExceeded, NotConnected, TeslaClient, parse_session
 
 log = logging.getLogger("ladecockpit.sync")
@@ -31,11 +32,12 @@ CHECK_DAYS = 120
 
 
 class SyncService:
-    def __init__(self, settings: Settings, db: DB, tesla: TeslaClient, ha: HAClient):
+    def __init__(self, settings: Settings, db: DB, tesla: TeslaClient, ha: HAClient, push: Ntfy | None = None):
         self.s = settings
         self.db = db
         self.tesla = tesla
         self.ha = ha
+        self.push = push
         self._wake = asyncio.Event()
         self._busy = asyncio.Lock()
         self.burst_until = 0.0
@@ -108,15 +110,21 @@ class SyncService:
         if kind == current:
             return
         enabled = self.ha.configured and self.s.notify_problems
+        to_phone = self.push is not None and self.push.configured and self.s.notify_problems
         if kind is None:
             self.db.kv_del("problem_kind")
             if enabled:
                 await self.ha.call_service("persistent_notification", "dismiss", {"notification_id": PROBLEM_ID})
+            if to_phone:
+                await self.push.send(i18n.t(self.s.lang, "problem_title"), i18n.t(self.s.lang, "problem_solved"),
+                                     tags=["white_check_mark"])
             return
         self.db.kv_set("problem_kind", kind)
+        message = i18n.t(self.s.lang, f"problem_{kind}", detail=detail[:200])
+        if to_phone:
+            await self.push.send(i18n.t(self.s.lang, "problem_title"), message, tags=["warning"], priority=4)
         if not enabled:
             return
-        message = i18n.t(self.s.lang, f"problem_{kind}", detail=detail[:200])
         await self.ha.call_service("persistent_notification", "create", {
             "notification_id": PROBLEM_ID, "title": i18n.t(self.s.lang, "problem_title"), "message": message,
         })
@@ -148,6 +156,7 @@ class SyncService:
 
             await self.check_invoices()
             await self.push_pending()
+            await self.push_phone()
             self.last_sync = utcnow_iso()
             self.db.kv_set("last_sync", self.last_sync)
             self.last_error = None
@@ -312,6 +321,23 @@ class SyncService:
                 self.db.set_push_state(s["session_id"], "pushed")
                 pushed += 1
         return pushed
+
+    async def push_phone(self) -> int:
+        """New invoices to the phone through ntfy (independent of Home Assistant)."""
+        if not (self.push and self.push.configured):
+            return 0
+        sent = 0
+        now = datetime.now(timezone.utc)
+        for s in pending(self.db, self.db.sessions(), now, timedelta(hours=self.s.push_max_age_h)):
+            p = self.event_payload(s)
+            title = i18n.t(self.s.lang, "push_invoice_title", site=p["site"])
+            tags = ["zap", "turtle"] if p["slow"] else ["zap"]
+            if await self.push.send(title, p["text"], tags=tags):
+                mark_sent(self.db, s["session_id"])
+                sent += 1
+            else:
+                break  # ntfy not reachable: the rest waits for the next sync
+        return sent
 
     def event_payload(self, s: dict) -> dict:
         tz, lang = self.s.tz, self.s.lang

@@ -16,6 +16,7 @@ from . import i18n
 from .config import Settings
 from .db import DB
 from .homeassistant import HAClient
+from .push import Ntfy
 
 log = logging.getLogger("ladecockpit.reports")
 
@@ -67,11 +68,13 @@ def build_report(d: dict, month_key: str, lang: str) -> dict | None:
 
 
 class MonthReporter:
-    def __init__(self, settings: Settings, db: DB, ha: HAClient, build: Callable[[], Awaitable[dict]]):
+    def __init__(self, settings: Settings, db: DB, ha: HAClient, build: Callable[[], Awaitable[dict]],
+                 push: Ntfy | None = None):
         self.s = settings
         self.db = db
         self.ha = ha
         self.build = build
+        self.push = push
 
     async def run_forever(self) -> None:
         await asyncio.sleep(60)
@@ -93,13 +96,16 @@ class MonthReporter:
             return None
         previous = _key(now_local.replace(day=1) - timedelta(days=1))
         d = await self.build()
-        if not (d.get("setup") or {}).get("ha_ok", True):
+        use_ha = getattr(self.ha, "configured", True)
+        if use_ha and not (d.get("setup") or {}).get("ha_ok", True):
             return None  # try again when Home Assistant is back
         report = build_report(d, previous, self.s.lang)
         if report:
-            if not await self.ha.fire_event(EVENT, report):
+            if use_ha and not await self.ha.fire_event(EVENT, report):
                 return None
-            if self.s.month_report:
+            if self.push and self.push.configured and self.s.month_report:
+                await self.push.send(report["title"], report["text"], tags=["calendar"])
+            if use_ha and self.s.month_report:
                 await self.ha.call_service("persistent_notification", "create", {
                     "notification_id": f"ladecockpit_report_{previous}",
                     "title": report["title"], "message": report["text"],

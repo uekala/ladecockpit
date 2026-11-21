@@ -124,6 +124,7 @@ cp .env.example .env
 | `HA_ENT_CHARGE_POWER`, `HA_ENT_TIME_TO_FULL` | `sensor.my_tesla_charger_power`, `sensor.my_tesla_time_to_full_charge` | kW and the time the charge limit is reached, while charging |
 | `HA_ENT_FUEL_CONSUMPTION` / `FUEL_CONSUMPTION`, `HA_ENT_FUEL_PRICE` / `FUEL_PRICE` | `7.5`, `sensor.fuel_price` | savings vs. a combustion car |
 | `HA_ENT_FUEL_COST_TOTAL`, `HA_ENT_FUEL_LITRES_TOTAL` | `input_number.fuel_cost_total`, `input_number.fuel_litres_total` | the price per litre you actually paid (average of the last 90 days) instead of the fuel price; both totals grow with each fill-up |
+| `NTFY_URL`, `NTFY_TOKEN` | `https://ntfy.sh/ladecockpit-7f3k9q` | new invoices, problems and the monthly report as notifications on the phone (ntfy app), without Home Assistant |
 | `FUEL_PRICE_DAILY` | `1` | every day's distance at that day's average of `HA_ENT_FUEL_PRICE`, instead of the price paid |
 | `HA_ENT_HOME_ENERGY`, `HA_ENT_HOME_PRICE` / `HOME_PRICE` | `sensor.wall_connector_energy`, `0.32` | charging at home |
 | `HA_ENT_OUTSIDE_TEMP` | `weather.home` | consumption by temperature |

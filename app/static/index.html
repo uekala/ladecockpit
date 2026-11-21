@@ -1249,6 +1249,7 @@ try {
       supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", mpChipTip: "MultiPass: charged at another operator, billed through Tesla.", ofWhichMp: "of which MultiPass ({n})", thSiteAny: "Site", energy: "Energy",
       fuelCompare: "Combustion car ({c} L/100 km · {p}/L)", fuelComparePaid: "Combustion car ({c} L/100 km · {p}/L paid)", saved: "Saved",
       fuelPaidTip: "Price per litre you paid: {litres} L {span}", fuelPaidDays: "in the last {n} days", fuelPaidAll: "in total", fuelCompareDaily: "Combustion car ({c} L/100 km · Ø {p}/L per day)", fuelDailyTip: "Every day's distance at that day's average fuel price",
+      pushPhone: "Push to the phone (ntfy)", pushTest: "Send test message", pushSent: "Test message sent – check the ntfy app", pushFailed: "Test message failed: {e}",
       stepOf: "step {n} of {m}", stepsTitle: "Set up Ladecockpit", recheck: "Check again", optionalLower: "optional", rechecked: "Checked again",
       radarAll: "All sites", radarFor: "Price radar for", radarSiteAvg: "average at {site}: {p}",
       tipsEyebrow: "Tips", tipsTitle: "What stands out", goRadar: "To the price radar", goSite: "Radar for {site}", goSessions: "To the sessions", goMonth: "To this month", goClimate: "To consumption by temperature",
@@ -1363,6 +1364,7 @@ try {
       supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", mpChipTip: "MultiPass: Laden bei einem anderen Anbieter, abgerechnet über Tesla.", ofWhichMp: "davon MultiPass ({n})", thSiteAny: "Standort", energy: "Energie",
       fuelCompare: "Verbrenner ({c} L/100 km · {p}/L)", fuelComparePaid: "Verbrenner ({c} L/100 km · {p}/L bezahlt)", saved: "Gespart",
       fuelPaidTip: "Literpreis, den du bezahlt hast: {litres} L {span}", fuelPaidDays: "in den letzten {n} Tagen", fuelPaidAll: "insgesamt", fuelCompareDaily: "Verbrenner ({c} L/100 km · Ø {p}/L je Tag)", fuelDailyTip: "Die Strecke jedes Tages mit dem Durchschnittspreis dieses Tages gerechnet",
+      pushPhone: "Push aufs Handy (ntfy)", pushTest: "Testnachricht senden", pushSent: "Testnachricht gesendet – schau in die ntfy-App", pushFailed: "Testnachricht fehlgeschlagen: {e}",
       stepOf: "Schritt {n} von {m}", stepsTitle: "Ladecockpit einrichten", recheck: "Erneut prüfen", optionalLower: "optional", rechecked: "Neu geprüft",
       radarAll: "Alle Standorte", radarFor: "Preis-Radar für", radarSiteAvg: "Schnitt in {site}: {p}",
       tipsEyebrow: "Tipps", tipsTitle: "Was auffällt", goRadar: "Zum Preis-Radar", goSite: "Radar für {site}", goSessions: "Zu den Ladungen", goMonth: "Zum Monat", goClimate: "Zum Verbrauch nach Temperatur",
@@ -2536,6 +2538,9 @@ try {
         <div><span>${T("tesla")}</span>${connected ? `<span class="chip good">${T("connected")}</span>` : `<span class="chip bad">${T("notConnected")}</span>`}</div>
         <div><span>${st.ha_configured ? T("ha") : T("haOptional")}</span>${st.ha_configured ? haChip : `<span class="chip plain">${T("optional")}</span>`}</div>
         ${ents ? `<div><span>${T("entities")}</span><span class="mono">${esc(ents)}</span></div>` : ""}
+        <div><span>${T("pushPhone")}</span>${st.push?.configured
+          ? `<span style="display:inline-flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="chip ${st.push.error ? "bad" : "good"}" title="${esc(st.push.error || "")}">${esc(st.push.host || "ntfy")}</span>${offline() ? "" : `<button class="link-btn" id="btn-push-test" type="button">${T("pushTest")}</button>`}</span>`
+          : `<span class="chip plain">${T("optional")}</span>`}</div>
         <div><span>${T("lastSync")}</span><span>${esc(relTime(s.last))}</span></div>
         <div><span>${T("nextSync")}</span><span>${s.next ? esc(relTime(s.next)) : "–"}</span></div>
       </div>
@@ -2846,6 +2851,12 @@ try {
       } catch (err) {
         toast(err.message);
       }
+    };
+    const pushTest = $("#btn-push-test");
+    if (pushTest) pushTest.onclick = async () => {
+      pushTest.disabled = true;
+      try { await post("api/push/test"); toast(T("pushSent")); } catch (e) { toast(T("pushFailed", { e: e.message })); }
+      pushTest.disabled = false;
     };
     const recheck = $("#btn-recheck");
     if (recheck) recheck.onclick = async () => {

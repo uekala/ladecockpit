@@ -76,7 +76,7 @@ def _home_sum(home: list, start: datetime | None = None, end: datetime | None = 
 def _distance(odo: list[tuple[datetime, float]], items: list[dict], home: list | None = None) -> dict:
     """Distance from odometer readings and the cost/energy of all charging in the same window
     (invoices plus charging at home)."""
-    out = {"distance": None, "distance_since": None, "per_100": None, "kwh_per_100": None}
+    out = {"distance": None, "distance_since": None, "per_100": None, "kwh_per_100": None, "distance_cost": None}
     if len(odo) < 2:
         return out
     dist = odo[-1][1] - odo[0][1]
@@ -89,6 +89,7 @@ def _distance(odo: list[tuple[datetime, float]], items: list[dict], home: list |
         cost = sum(x["total"] for x in covered) + (at_home["cost"] or 0.0)
         kwh = sum(x["kwh"] for x in covered) + at_home["kwh"]
         out["per_100"] = round(cost / dist * 100, 2)
+        out["distance_cost"] = round(cost, 2)    # what the distance cost, unrounded per 100 km
         out["kwh_per_100"] = round(kwh / dist * 100, 1)
     return out
 
@@ -479,7 +480,11 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         if per_100 is not None and entry.get("distance") and entry.get("per_100") is not None:
             entry["fuel_per_100"] = round(per_100, 2)
             entry["fuel_equivalent"] = round(per_100 * entry["distance"] / 100, 2)
-            entry["savings"] = round((per_100 - entry["per_100"]) * entry["distance"] / 100, 2)
+            # Against what the distance really cost, so "Tesla" adds up to the invoices to the cent.
+            cost = entry.get("distance_cost")
+            if cost is None:
+                cost = entry["per_100"] * entry["distance"] / 100
+            entry["savings"] = round(entry["fuel_equivalent"] - cost, 2)
         return entry
 
     # --- this month ------------------------------------------------------------------
@@ -527,7 +532,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
             "key": key, "label": i18n.month_label(lang, key, with_year=False)[:3],
             "cost": st["cost"], "kwh": st["kwh"], "avg_price": st["avg_price"], "idle": st["idle"],
             "sessions": st["sessions"], "distance": md["distance"],
-            "per_100": md["per_100"], "kwh_per_100": md["kwh_per_100"],
+            "per_100": md["per_100"], "kwh_per_100": md["kwh_per_100"], "distance_cost": md["distance_cost"],
             "multipass_cost": nets.get(MULTIPASS, {}).get("cost"),
             "multipass_sessions": nets.get(MULTIPASS, {}).get("sessions"),
             "home_kwh": (month_home(key) or {}).get("kwh"), "home_cost": (month_home(key) or {}).get("cost")}, key))

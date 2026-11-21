@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.0 – 2026-11-21
+
+- **Notifications on the phone without Home Assistant.** New options *Push to the phone (ntfy topic)* (`NTFY_URL`) and *ntfy access token* (`NTFY_TOKEN`): Ladecockpit sends every new invoice ("⚡ New invoice · Moers" – kWh, amount, price per kWh), problems with the Tesla sign-in or the sync (and when they are solved) and the monthly report to an ntfy topic – ntfy.sh or your own server. Subscribe to the same topic in the ntfy app (Android, iOS) and the messages arrive even when the phone is not in your home network and without the Home Assistant blueprint. Only sessions that start after the option was set are sent, each once. *Send test message* under *Operation* in the web app checks the setup (`POST /api/push/test`). The monthly report now also runs for installations without Home Assistant. On ntfy.sh the topic name is the secret: make it long and random.
+- The comparison with a combustion car takes what the distance really cost: the *Tesla* line now matches the invoices to the cent (it was worked back from the rounded cost per 100 km and could be a few cents off), and the savings with it. New field `distance_cost` in `month` and `monthly`.
+- The mobile app is unchanged.
+
 ## 0.20.0 – 2026-11-21
 
 - **Setup step by step.** Until Ladecockpit runs, the web app shows the setup as a checked list instead of a static guide: Tesla developer app → sign in with Tesla → first sync, then (optional) Home Assistant, its entities and further options. Every step says what Ladecockpit sees right now ("Client ID is set.", "12 sessions fetched, last 21.11. 09:14", "1 of 5 entities does not deliver a fitting value", an expired Tesla sign-in with Tesla's message); the next step to do is marked and opens its instructions – the Tesla guide, the sign-in, or *Sync now*. *Check again* reads everything anew. Once all required steps are done, the list moves into the folded *Setup check*. `setup.checks.steps` in `/api/dashboard`, also without Home Assistant.
