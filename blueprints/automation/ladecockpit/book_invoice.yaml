@@ -105,6 +105,7 @@ actions:
         target:
           entity_id: "{{ last_charge_text }}"
         data:
-          value: "{{ text }}"
+          # input_text refuses values longer than its maximum (100 by default)
+          value: "{{ text[:state_attr(last_charge_text, 'max') | int(100)] }}"
   - choose: []
     default: !input extra_actions

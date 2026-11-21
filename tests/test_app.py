@@ -84,3 +84,10 @@ def test_look_is_saved():
         assert client.put("/api/look", json={"look": "neon"}).status_code == 400
         assert client.put("/api/look", json={"look": "classic"}).status_code == 200
         assert client.get("/api/dashboard").json()["look"] == "classic"
+
+
+def test_book_invoice_text_fits_the_input_text():
+    bp = yaml.load((ROOT / "blueprints/automation/ladecockpit/book_invoice.yaml").read_text(), Loader=_Loader)
+    branch = next(a for a in bp["actions"] if "if" in a)
+    value = branch["then"][0]["data"]["value"]
+    assert "state_attr(last_charge_text, 'max')" in value and "int(100)" in value
