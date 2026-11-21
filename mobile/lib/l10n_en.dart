@@ -719,4 +719,6 @@ const Map<String, String> english = {
       '{0} of {1} entities need a look',
   '{0}: Tesla {1} €, Verbrenner {2} €':
       '{0}: Tesla {1} €, combustion car {2} €',
+  'Nächster Schritt: {0}':
+      'Next step: {0}',
 };

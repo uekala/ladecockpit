@@ -50,6 +50,50 @@
                     "ok": false,
                     "problem": "gerade nicht verfügbar"
                 }
+            ],
+            "steps": [
+                {
+                    "id": "tesla_app",
+                    "status": "done",
+                    "title": "Tesla-Developer-App",
+                    "text": "Client ID ist eingetragen.",
+                    "required": true
+                },
+                {
+                    "id": "tesla_login",
+                    "status": "done",
+                    "title": "Mit Tesla anmelden",
+                    "text": "Angemeldet.",
+                    "required": true
+                },
+                {
+                    "id": "sync",
+                    "status": "done",
+                    "title": "Erster Abgleich",
+                    "text": "12 Ladungen geholt.",
+                    "required": true
+                },
+                {
+                    "id": "ha",
+                    "status": "done",
+                    "title": "Home Assistant",
+                    "text": "Verbunden.",
+                    "required": false
+                },
+                {
+                    "id": "entities",
+                    "status": "problem",
+                    "title": "Entitäten",
+                    "text": "1 von 2 liefern keinen passenden Wert.",
+                    "required": false
+                },
+                {
+                    "id": "extras",
+                    "status": "optional",
+                    "title": "Weitere Auswertungen",
+                    "text": "1 Option würde noch etwas bringen.",
+                    "required": false
+                }
             ]
         }
     },

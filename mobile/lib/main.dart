@@ -1713,7 +1713,13 @@ class _DashboardPageState extends State<DashboardPage> {
     final entities = checks['entities'] is List
         ? (checks['entities'] as List).whereType<Map>().toList() : <Map>[];
     final bad = entities.where((e) => e['ok'] == false).toList();
-    if (hints.isEmpty && bad.isEmpty) return SizedBox.shrink();
+    // Setup steps that are not done yet (a required one opens the card).
+    final steps = checks['steps'] is List
+        ? (checks['steps'] as List).whereType<Map>().toList() : <Map>[];
+    final openSteps = steps.where((step) =>
+        step['status'] == 'todo' || step['status'] == 'problem' || step['status'] == 'waiting').toList();
+    final requiredOpen = openSteps.where((step) => step['required'] == true).toList();
+    if (hints.isEmpty && bad.isEmpty && openSteps.isEmpty) return SizedBox.shrink();
     final muted = Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary, height: 1.35);
     return Card(
       key: ValueKey('setup-check'),
@@ -1722,18 +1728,36 @@ class _DashboardPageState extends State<DashboardPage> {
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           key: PageStorageKey<String>('setup-check'),
-          initiallyExpanded: bad.isNotEmpty,
-          leading: Icon(bad.isNotEmpty ? Icons.error_outline : Icons.tips_and_updates_outlined,
-            color: bad.isNotEmpty ? AppTheme.warning : AppTheme.accentTeal),
+          initiallyExpanded: bad.isNotEmpty || requiredOpen.isNotEmpty,
+          leading: Icon(bad.isNotEmpty || requiredOpen.isNotEmpty ? Icons.error_outline : Icons.tips_and_updates_outlined,
+            color: bad.isNotEmpty || requiredOpen.isNotEmpty ? AppTheme.warning : AppTheme.accentTeal),
           title: Text(tr('Einrichtung prüfen'), style: TextStyle(fontWeight: FontWeight.w700)),
           subtitle: Text(
-            bad.isNotEmpty
-                ? trf('{0} von {1} Entitäten prüfen', [bad.length, entities.length])
-                : trf('{0} Tipps für mehr Auswertungen', [hints.length]),
+            requiredOpen.isNotEmpty
+                ? trf('Nächster Schritt: {0}', [requiredOpen.first['title'] ?? ''])
+                : bad.isNotEmpty
+                    ? trf('{0} von {1} Entitäten prüfen', [bad.length, entities.length])
+                    : trf('{0} Tipps für mehr Auswertungen', [hints.length]),
             maxLines: 2, overflow: TextOverflow.ellipsis),
           childrenPadding: EdgeInsets.fromLTRB(16, 0, 16, 14),
           expandedCrossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            for (final step in openSteps)
+              Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: MergeSemantics(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(step['status'] == 'problem' ? Icons.priority_high_rounded
+                          : step['status'] == 'todo' ? Icons.arrow_forward_rounded : Icons.more_horiz,
+                        color: step['status'] == 'waiting' ? AppTheme.textSecondary : AppTheme.warning, size: 18),
+                      SizedBox(width: 8),
+                      Expanded(child: Text('${step['title'] ?? ''}: ${step['text'] ?? ''}', style: muted)),
+                    ],
+                  ),
+                ),
+              ),
             for (final entity in bad)
               Padding(
                 padding: EdgeInsets.only(bottom: 8),

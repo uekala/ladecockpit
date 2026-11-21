@@ -219,6 +219,17 @@ def _car(sessions: list[dict] | None = None) -> dict:
     return carimage.current(db, None if settings.demo else _vin(sessions), settings.lang)
 
 
+def _when(iso: str | None) -> str:
+    """A sync time for the setup steps, in local time: "21.11. 08:14" / "Nov 21, 08:14"."""
+    if not iso:
+        return ""
+    try:
+        t = datetime.fromisoformat(iso).astimezone(settings.tz)
+    except ValueError:
+        return ""
+    return f"{t:%d.%m. %H:%M}" if settings.lang == "de" else f"{t:%b} {t.day}, {t:%H:%M}"
+
+
 @app.get("/api/dashboard")
 async def dashboard():
     if settings.demo:
@@ -241,7 +252,7 @@ async def dashboard():
             "push_since": db.kv_get("push_since"),
             "entities": sorted(ha.entities()),
             "addon": settings.addon,
-            "checks": checks.report(settings, ha.entities(), live) if ha.configured else None,
+            "checks": None,
         },
         "sync": {"last": sync.last_sync, "next": sync.next_sync,
                  "error": sync.last_error, "burst": sync.bursting,
@@ -249,6 +260,11 @@ async def dashboard():
         "api_calls": db.calls_this_month(),
     }
     sessions = db.sessions()
+    meta["setup"]["checks"] = checks.report(settings, ha.entities(), live, {
+        "tesla_connected": tesla.connected, "tesla_auth_error": tesla.auth_error,
+        "last_sync": sync.last_sync, "sync_error": sync.last_error, "sessions": len(sessions),
+        "ha_ok": bool(live.get("available")), "ha_error": live.get("error"),
+        "when": _when(sync.last_sync)})
     d = build_dashboard(sessions=sessions, live=live, readings=await _readings(now),
                         settings=settings, meta=meta, now=now)
     d["car"] = _car(sessions)

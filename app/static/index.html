@@ -1142,6 +1142,18 @@ footer .look-pick button[aria-pressed="true"] { background: var(--accent-fill); 
 .check-list small { display: block; color: var(--mute); font-size: .78rem; overflow-wrap: anywhere; }
 .check-hints { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; font-size: .9rem; color: var(--ink-2); }
 .check-hints li.hint-missing::marker { color: var(--warn); }
+.setup-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.setup-list li { display: grid; grid-template-columns: 1.8em minmax(0, 1fr); gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+.setup-list li:first-child { border-top: none; }
+.setup-list.compact li { padding: 7px 0; font-size: .9rem; }
+.setup-list .st-mark { display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: 50%; font-weight: 700; font-size: .85rem; background: var(--btn); color: var(--mute); }
+.setup-list .st-done .st-mark { background: var(--good-soft); color: var(--good); }
+.setup-list .st-todo .st-mark { background: var(--accent-fill); color: var(--bg); }
+.setup-list .st-problem .st-mark { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
+.setup-list .st-waiting { opacity: .6; }
+.setup-list .st-text { display: block; margin-top: 2px; }
+.setup-list.compact .st-text { display: inline; }
+.setup-list .step-body { display: grid; gap: 10px; margin-top: 12px; }
 .ex-grid { display: grid; gap: 14px; }
 .ex-grid h3 { margin: 0 0 6px; font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); }
 .ex-months { display: grid; gap: 0; font-size: .9rem; }
@@ -1237,6 +1249,7 @@ try {
       supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", mpChipTip: "MultiPass: charged at another operator, billed through Tesla.", ofWhichMp: "of which MultiPass ({n})", thSiteAny: "Site", energy: "Energy",
       fuelCompare: "Combustion car ({c} L/100 km · {p}/L)", fuelComparePaid: "Combustion car ({c} L/100 km · {p}/L paid)", saved: "Saved",
       fuelPaidTip: "Price per litre you paid: {litres} L {span}", fuelPaidDays: "in the last {n} days", fuelPaidAll: "in total", fuelCompareDaily: "Combustion car ({c} L/100 km · Ø {p}/L per day)", fuelDailyTip: "Every day's distance at that day's average fuel price",
+      stepOf: "step {n} of {m}", stepsTitle: "Set up Ladecockpit", recheck: "Check again", optionalLower: "optional", rechecked: "Checked again",
       radarAll: "All sites", radarFor: "Price radar for", radarSiteAvg: "average at {site}: {p}",
       tipsEyebrow: "Tips", tipsTitle: "What stands out", goRadar: "To the price radar", goSite: "Radar for {site}", goSessions: "To the sessions", goMonth: "To this month", goClimate: "To consumption by temperature",
       checkEyebrow: "Setup", checkTitle: "Setup check", checkAllOk: "All {n} entities deliver values.", checkSome: "{n} of {m} entities need a look.", checkEntities: "Entities in Home Assistant", checkHints: "What else would help", checkHaDown: "Home Assistant is not reachable – the entities cannot be checked.",
@@ -1350,6 +1363,7 @@ try {
       supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", mpChipTip: "MultiPass: Laden bei einem anderen Anbieter, abgerechnet über Tesla.", ofWhichMp: "davon MultiPass ({n})", thSiteAny: "Standort", energy: "Energie",
       fuelCompare: "Verbrenner ({c} L/100 km · {p}/L)", fuelComparePaid: "Verbrenner ({c} L/100 km · {p}/L bezahlt)", saved: "Gespart",
       fuelPaidTip: "Literpreis, den du bezahlt hast: {litres} L {span}", fuelPaidDays: "in den letzten {n} Tagen", fuelPaidAll: "insgesamt", fuelCompareDaily: "Verbrenner ({c} L/100 km · Ø {p}/L je Tag)", fuelDailyTip: "Die Strecke jedes Tages mit dem Durchschnittspreis dieses Tages gerechnet",
+      stepOf: "Schritt {n} von {m}", stepsTitle: "Ladecockpit einrichten", recheck: "Erneut prüfen", optionalLower: "optional", rechecked: "Neu geprüft",
       radarAll: "Alle Standorte", radarFor: "Preis-Radar für", radarSiteAvg: "Schnitt in {site}: {p}",
       tipsEyebrow: "Tipps", tipsTitle: "Was auffällt", goRadar: "Zum Preis-Radar", goSite: "Radar für {site}", goSessions: "Zu den Ladungen", goMonth: "Zum Monat", goClimate: "Zum Verbrauch nach Temperatur",
       checkEyebrow: "Einrichtung", checkTitle: "Einrichtung prüfen", checkAllOk: "Alle {n} Entitäten liefern Werte.", checkSome: "{n} von {m} Entitäten prüfen.", checkEntities: "Entitäten in Home Assistant", checkHints: "Was noch helfen würde", checkHaDown: "Home Assistant ist nicht erreichbar – die Entitäten lassen sich nicht prüfen.",
@@ -1556,7 +1570,7 @@ try {
     renderBanners(d);
     $("#content").innerHTML = `
       <div style="display:grid;gap:16px">
-        ${setupPanel(d)}
+        ${stepsPanel(d) || setupPanel(d)}
         ${d.car || d.setup?.ha_configured ? `<section class="hero" aria-labelledby="${d.car ? "h-car" : "h-batt"}">
           ${d.car ? `<div class="car-panel" id="car-panel">${carPanelBody()}</div>` : ""}
           ${d.setup?.ha_configured ? batteryPanel(d) : ""}
@@ -1759,10 +1773,10 @@ try {
     $("#banners").hidden = out.length === 0;
   }
 
-  function setupPanel(d) {
-    const st = d.setup || {};
+  // How to create the Tesla app, and how to sign in: used by the steps and by the demo panel.
+  function teslaGuide(st) {
     const kind = st.addon ? "Addon" : "Docker";
-    const guide = () => `<p class="sub">${T("setupGuideText")}</p>
+    return `<p class="sub">${T("setupGuideText")}</p>
         <ol class="steps">
           <li>${T("setupStep1")}</li>
           <li>${T("setupStep2")}
@@ -1775,6 +1789,55 @@ try {
           <li>${T("setupStep5" + kind)}</li>
         </ol>
         <p class="sub">${T("setupCost")}</p>`;
+  }
+  function teslaConnect(st) {
+    return `<p class="sub">${T("connectText")}</p>
+      ${st.addon ? `<ol class="steps">
+        <li>${T("addonStep1")}</li>
+        <li>${T("addonStep2", { uri: esc(st.redirect_uri || "") })}</li>
+        <li>${T("addonStep3")}</li>
+      </ol>` : ""}
+      <div><a class="btn primary" href="auth/login" target="${st.addon ? "_blank" : "_self"}" rel="noopener">${T("signIn")}</a></div>
+      ${st.addon ? codeForm() : `<details>
+        <summary>${T("redirectHelp")}</summary>
+        <p class="sub" style="margin-bottom:10px">${T("redirectText")} <span class="mono">${esc(st.redirect_uri || "")}</span></p>
+        ${codeForm()}
+      </details>`}`;
+  }
+
+  // --- The setup, step by step, each step checked ------------------------------------------------
+  const stepMark = { done: "✓", todo: "→", problem: "!", optional: "○", waiting: "·" };
+  function stepsPanel(d) {
+    const steps = d.setup?.checks?.steps;
+    if (!steps || offline()) return "";
+    if (!steps.some((s) => s.required && s.status !== "done")) return "";
+    const st = d.setup || {};
+    const req = steps.filter((s) => s.required);
+    const cur = steps.find((s) => s.status === "todo" || (s.required && s.status === "problem"));
+    const n = req.indexOf(cur) + 1;
+    const body = (s) => {
+      if (s !== cur) return "";
+      if (s.id === "tesla_app") return `<div class="step-body">${teslaGuide(st)}</div>`;
+      if (s.id === "tesla_login") return `<div class="step-body">${teslaConnect(st)}</div>`;
+      if (s.id === "sync") return `<div class="step-body"><button class="btn primary" id="btn-sync-step" type="button" ${st.tesla_connected ? "" : "disabled"}>${T("syncNow")}</button></div>`;
+      return "";
+    };
+    return `<section class="panel" aria-labelledby="h-steps" id="steps-panel">
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline">
+        <div><span class="eyebrow">${T("setup")}${n > 0 ? " · " + esc(T("stepOf", { n, m: req.length })) : ""}</span><h2 id="h-steps">${T("stepsTitle")}</h2></div>
+        <button class="btn" id="btn-recheck" type="button">${T("recheck")}</button>
+      </div>
+      <ol class="setup-list">${steps.map((s) => `<li class="st-${esc(s.status)}${s === cur ? " cur" : ""}" ${s === cur ? 'aria-current="step"' : ""}>
+        <span class="st-mark" aria-hidden="true">${stepMark[s.status] || "·"}</span>
+        <div><strong>${esc(s.title)}</strong>${s.required ? "" : ` <span class="muted">· ${T("optionalLower")}</span>`}
+          <span class="sub st-text">${esc(s.text)}</span>${body(s)}</div>
+      </li>`).join("")}</ol>
+    </section>`;
+  }
+
+  function setupPanel(d) {
+    const st = d.setup || {};
+    const guide = () => teslaGuide(st);
     // The demo shows sample data: offer the way to the real thing, folded away.
     if (d.mode === "demo" && !state.preview) {
       return `<section class="panel"><details id="setup-details" ${state.setupOpen ? "open" : ""}>
@@ -1793,18 +1856,7 @@ try {
     return `<section class="panel">
       <span class="eyebrow">${T("setup")} · ${T("setupProgress2")}</span>
       <h2>${T("connectTitle")}</h2>
-      <p class="sub">${T("connectText")}</p>
-      ${st.addon ? `<ol class="steps">
-        <li>${T("addonStep1")}</li>
-        <li>${T("addonStep2", { uri: esc(st.redirect_uri || "") })}</li>
-        <li>${T("addonStep3")}</li>
-      </ol>` : ""}
-      <div><a class="btn primary" href="auth/login" target="${st.addon ? "_blank" : "_self"}" rel="noopener">${T("signIn")}</a></div>
-      ${st.addon ? codeForm() : `<details>
-        <summary>${T("redirectHelp")}</summary>
-        <p class="sub" style="margin-bottom:10px">${T("redirectText")} <span class="mono">${esc(st.redirect_uri || "")}</span></p>
-        ${codeForm()}
-      </details>`}
+      ${teslaConnect(st)}
     </section>`;
   }
 
@@ -2182,18 +2234,24 @@ try {
   }
 
   // --- Setup check: what is missing, and what each entity delivers -----------------------------
+  function stepList(steps) {
+    return steps && steps.length ? `<ol class="setup-list compact">${steps.map((s) => `<li class="st-${esc(s.status)}">
+        <span class="st-mark" aria-hidden="true">${stepMark[s.status] || "·"}</span>
+        <div><strong>${esc(s.title)}</strong> <span class="sub st-text">${esc(s.text)}</span></div></li>`).join("")}</ol>` : "";
+  }
   function checkPanel(d) {
     const c = d.setup?.checks;
     if (!c || offline() && d.mode !== "demo") return "";
+    if (stepsPanel(d)) return "";
     const ents = c.entities || [];
     const bad = ents.filter((e) => e.ok === false);
     const down = ents.length && ents.every((e) => e.ok == null);
     const hints = c.hints || [];
     if (!hints.length && !bad.length && !down) {
       // All fine: one quiet line in a folded panel.
-      return ents.length ? `<section class="panel"><details>
-        <summary>${T("checkTitle")} · ${esc(T("checkAllOk", { n: ents.length }))}</summary>
-        ${entityList(ents)}
+      return ents.length || (c.steps || []).length ? `<section class="panel"><details>
+        <summary>${T("checkTitle")}${ents.length ? " · " + esc(T("checkAllOk", { n: ents.length })) : ""}</summary>
+        <div style="display:grid;gap:14px">${stepList(c.steps)}${ents.length ? entityList(ents) : ""}</div>
       </details></section>` : "";
     }
     return `<section class="panel" aria-labelledby="h-check">
@@ -2201,6 +2259,7 @@ try {
         <summary><strong id="h-check">${T("checkTitle")}</strong>
           · ${esc(down ? T("checkHaDown") : bad.length ? T("checkSome", { n: bad.length, m: ents.length }) : T("checkAllOk", { n: ents.length }))}</summary>
         <div style="display:grid;gap:14px">
+          ${stepList(c.steps)}
           ${hints.length ? `<div><h3 class="sub" style="margin:0 0 6px">${T("checkHints")}</h3>
             <ul class="check-hints">${hints.map((h) => `<li class="hint-${esc(h.level)}">${esc(h.text)}</li>`).join("")}</ul>
             ${c.hidden_note ? `<p class="sub" style="margin:8px 0 0">${esc(c.hidden_note)}</p>` : ""}</div>` : ""}
@@ -2212,7 +2271,7 @@ try {
   function entityList(ents) {
     return `<div class="check-list">${ents.map((e) => {
       const mark = e.ok == null ? '<span class="na" aria-hidden="true">–</span>' : e.ok ? '<span class="ok" aria-hidden="true">✓</span>' : '<span class="bad" aria-hidden="true">!</span>';
-      const value = e.state == null || e.state === "" ? "–" : e.state + (e.unit ? " " + e.unit : "");
+      const value = e.note ? e.note : e.state == null || e.state === "" ? "–" : e.state + (e.unit ? " " + e.unit : "");
       return `<div>${mark}<span>${esc(e.label || e.role)}<small class="mono">${esc(e.entity)}</small>${e.problem ? `<small style="color:var(--warn)">${esc(e.problem)}</small>` : ""}</span><span class="mono">${esc(value)}</span></div>`;
     }).join("")}</div>`;
   }
@@ -2788,6 +2847,13 @@ try {
         toast(err.message);
       }
     };
+    const recheck = $("#btn-recheck");
+    if (recheck) recheck.onclick = async () => {
+      recheck.disabled = true;
+      try { await load(); toast(T("rechecked")); } catch (e) { toast(e.message); recheck.disabled = false; }
+    };
+    const stepSync = $("#btn-sync-step");
+    if (stepSync) stepSync.onclick = () => $("#btn-sync")?.click();
     document.querySelectorAll("[data-radar-site]").forEach((b) => {
       b.onclick = () => { state.radarSite = b.dataset.radarSite || null; render(); $("#radar-panel")?.querySelector("[aria-pressed=true]")?.focus(); };
     });
