@@ -224,3 +224,59 @@ def test_reference_price_zero_or_an_unavailable_entity_turns_the_comparison_off(
         d = _tariff_dashboard(settings, _DAY_PRICE_ROWS, now=_OCTOBER, **options)
         assert d["compare"]["reference_cost"] is None and "reference_saving" not in d["compare"]
         assert not [i for i in d["insights"] if i["kind"] == "reference"]
+
+
+# --- price changes per site -------------------------------------------------------------------
+_NOVEMBER = datetime(2026, 11, 1, 12, tzinfo=timezone.utc)
+
+
+def test_price_change_per_site(settings):
+    # Willich: one price all day for weeks, then dearer – also in the evening, where it was cheap before.
+    d = _tariff_dashboard(settings, [
+        ("Willich, Germany", 4, 12, 40, 0.37), ("Willich, Germany", 7, 17, 30, 0.3701),
+        ("Willich, Germany", 15, 16, 30, 0.37), ("Willich, Germany", 22, 20, 6, 0.3704),
+        ("Willich, Germany", 28, 19, 20, 0.3999),
+        # Moers: night and day price – a tariff, no change.
+        ("Moers, Germany", 1, 4, 30, 0.28), ("Moers, Germany", 2, 21, 20, 0.28),
+        ("Moers, Germany", 3, 11, 40, 0.46), ("Moers, Germany", 4, 15, 10, 0.46),
+    ], now=_NOVEMBER)
+    assert [c["site_name"] for c in d["price_changes"]] == ["Willich, Germany"]
+    c = d["price_changes"][0]
+    assert (c["before"], c["now"], c["sessions_before"], c["sessions_now"]) == (0.37, 0.4, 4, 1)
+    assert c["since"] == "2026-10-28T20:00:00+01:00"
+    row = next(r for r in d["sites"] if r["site_name"] == "Willich, Germany")
+    assert row["price_now"] == 0.4 and row["price_since"] == c["since"]
+    assert next(r for r in d["sites"] if r["site_name"] == "Moers, Germany")["price_now"] is None
+    tip = next(i for i in d["insights"] if i["kind"] == "price")
+    assert tip["text"].startswith("Neuer Preis in Willich: Seit 28.10. kostet die kWh 0,40 € statt 0,37 € (+0,03 €/kWh).")
+    assert tip["action"] == {"go": "radar", "site": "Willich, Germany"}
+
+
+def test_latest_price_change_wins(settings):
+    d = _tariff_dashboard(settings, [
+        ("Krefeld, Germany", 1, 19, 30, 0.45), ("Krefeld, Germany", 3, 19, 30, 0.45),
+        ("Krefeld, Germany", 10, 19, 30, 0.31), ("Krefeld, Germany", 12, 21, 30, 0.30),
+        ("Krefeld, Germany", 20, 19, 30, 0.35), ("Krefeld, Germany", 25, 6, 30, 0.35),
+    ], lang="en", now=_NOVEMBER)
+    c = d["price_changes"][0]
+    assert (c["before"], c["now"]) == (0.305, 0.35)
+    tip = next(i["text"] for i in d["insights"] if i["kind"] == "price")
+    assert tip.startswith("New price in Krefeld: since Oct 20 a kWh costs €0.35 instead of €0.30 (+€0.04/kWh).")
+
+
+def test_no_price_change_from_a_different_time_of_day(settings):
+    # Cheap only at night, dear only in the afternoon: that may be a tariff by time of day.
+    d = _tariff_dashboard(settings, [
+        ("Seestadt, Germany", 1, 1, 30, 0.30), ("Seestadt, Germany", 3, 2, 30, 0.30),
+        ("Seestadt, Germany", 20, 15, 30, 0.45), ("Seestadt, Germany", 25, 16, 30, 0.45),
+    ], now=_NOVEMBER)
+    assert d["price_changes"] == []
+
+
+def test_no_price_change_tip_when_too_old_or_too_few_sessions(settings):
+    rows = [("Willich, Germany", 2, 12, 40, 0.37), ("Willich, Germany", 3, 13, 30, 0.37),
+            ("Willich, Germany", 5, 12, 20, 0.40)]
+    old = _tariff_dashboard(settings, rows, now=datetime(2027, 1, 15, 12, tzinfo=timezone.utc))
+    assert len(old["price_changes"]) == 1 and not [i for i in old["insights"] if i["kind"] == "price"]
+    few = _tariff_dashboard(settings, rows[1:], now=_NOVEMBER)
+    assert few["price_changes"] == []

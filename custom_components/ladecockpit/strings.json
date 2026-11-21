@@ -1,0 +1,53 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Ladecockpit",
+        "description": "Real entities for the Ladecockpit app: with a unique ID and a device, renamable, restored after a restart. Nothing to enter – the app finds the integration within a few minutes and sends its values here. The entity IDs stay the same."
+      }
+    },
+    "abort": {
+      "already_configured": "Ladecockpit is already set up.",
+      "single_instance_allowed": "Ladecockpit is already set up."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_charge": {
+        "name": "Next charge"
+      },
+      "battery": {
+        "name": "Battery"
+      },
+      "month_cost": {
+        "name": "Charging cost this month"
+      },
+      "month_energy": {
+        "name": "Energy charged this month"
+      },
+      "last_charge": {
+        "name": "Last charge"
+      },
+      "price_tip": {
+        "name": "Price tip"
+      },
+      "range_at_100": {
+        "name": "Range at 100 %"
+      },
+      "consumption": {
+        "name": "Consumption"
+      },
+      "car": {
+        "name": "Car"
+      },
+      "multipass": {
+        "name": "MultiPass stations"
+      }
+    },
+    "binary_sensor": {
+      "problem": {
+        "name": "Problem"
+      }
+    }
+  }
+}

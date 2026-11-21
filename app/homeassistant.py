@@ -135,6 +135,17 @@ class HAClient:
         points.sort(key=lambda p: p[0])
         return points
 
+    async def components(self) -> set[str] | None:
+        """The integrations Home Assistant has loaded – or None when it cannot be asked."""
+        if not self._http:
+            return None
+        try:
+            r = await self._http.get("/api/config")
+            r.raise_for_status()
+            return set(r.json().get("components") or [])
+        except (httpx.HTTPError, ValueError, AttributeError):
+            return None
+
     async def fire_event(self, event_type: str, data: dict) -> bool:
         if not self._http:
             return False

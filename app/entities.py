@@ -1,9 +1,13 @@
 """Ladecockpit's own entities in Home Assistant, for dashboards and automations.
 
-They are written through the REST API (POST /api/states), so no YAML and no custom
-integration are needed. Such entities have no unique ID: they cannot be renamed in the
-UI, and after a Home Assistant restart they are missing until Ladecockpit writes them
-again (within a few minutes).
+Without the Ladecockpit integration they are written through the REST API (POST /api/states),
+so no YAML and no custom integration are needed. Such entities have no unique ID: they cannot
+be renamed in the UI, and after a Home Assistant restart they are missing until Ladecockpit
+writes them again (within a few minutes).
+
+With the integration (custom_components/ladecockpit, e.g. through HACS) loaded, every state goes
+to it as an event instead. The integration keeps real entities with the same entity IDs, a
+unique ID and a device, and restores them after a restart.
 """
 from __future__ import annotations
 
@@ -13,6 +17,7 @@ import logging
 import time
 from collections.abc import Awaitable, Callable
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from . import i18n
 from .config import Settings
@@ -22,6 +27,10 @@ log = logging.getLogger("ladecockpit.entities")
 
 PUBLISH_EVERY_S = 60
 REWRITE_ALL_S = 600     # write everything again now and then, e.g. after an HA restart
+EVENT_REWRITE_ALL_S = 3600  # the same with the integration, which restores its entities itself
+INTEGRATION = "ladecockpit"        # the integration's domain, see custom_components/ladecockpit
+STATE_EVENT = "ladecockpit_state"  # one event per entity: {"entity_id", "state", "attributes"}
+INTEGRATION_CHECK_S = 300           # how often to ask Home Assistant whether it is loaded
 MAX_STATE_LEN = 255     # Home Assistant rejects longer states
 MAX_STATIONS = 30       # keeps the attributes well below the recorder's 16 KB limit
 
@@ -29,6 +38,7 @@ ENTITY_IDS = (
     "sensor.ladecockpit_next_charge",
     "sensor.ladecockpit_battery",
     "sensor.ladecockpit_month_cost",
+    "sensor.ladecockpit_month_energy",
     "sensor.ladecockpit_last_charge",
     "sensor.ladecockpit_price_tip",
     "sensor.ladecockpit_range_at_100",
@@ -56,6 +66,20 @@ def _when(lang: str, iso: str | None) -> str:
         return "–"
     dt = datetime.fromisoformat(iso)
     return dt.strftime("%d.%m. %H:%M") if lang == "de" else f"{dt:%b} {dt.day}, {dt:%H:%M}"
+
+
+def _month_start(d: dict) -> str | None:
+    """Start of the month shown, as `last_reset` – Home Assistant then keeps long-term statistics
+    of the monthly totals (state_class total) and starts a new sum each month."""
+    key = (d.get("month") or {}).get("key")
+    if not key:
+        return None
+    try:
+        tz = ZoneInfo(d.get("tz") or "UTC")
+    except (KeyError, ValueError):
+        tz = ZoneInfo("UTC")
+    year, month = (int(v) for v in key.split("-"))
+    return datetime(year, month, 1, tzinfo=tz).isoformat()
 
 
 def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
@@ -93,8 +117,10 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
     m = d.get("month") or {}
     prev = m.get("prev") or {}
     home = m.get("home") or {}
+    month_start = _month_start(d)
     out["sensor.ladecockpit_month_cost"] = (_state(m.get("total_cost", m.get("cost")) or 0.0), {
         "friendly_name": name("month_cost"), "unit_of_measurement": cur, "device_class": "monetary",
+        "state_class": "total", "last_reset": month_start,
         "icon": "mdi:cash-multiple", "month": m.get("label"), "sessions": m.get("sessions"),
         "invoice_cost": m.get("cost"), "home_kwh": home.get("kwh"), "home_cost": home.get("cost"),
         "energy_kwh": m.get("kwh"), "price_per_kwh": _round(m.get("avg_price"), 4),
@@ -110,6 +136,14 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         "projected_year_savings": (d.get("projection") or {}).get("savings"),
         "previous_month": prev.get("label"),
         "previous_cost": prev.get("cost"), "previous_price_per_kwh": _round(prev.get("avg_price"), 4),
+    })
+
+    invoice_kwh = m.get("kwh") or 0.0
+    out["sensor.ladecockpit_month_energy"] = (_state(invoice_kwh + (home.get("kwh") or 0.0), 1), {
+        "friendly_name": name("month_energy"), "unit_of_measurement": "kWh", "device_class": "energy",
+        "state_class": "total", "last_reset": month_start, "icon": "mdi:ev-station",
+        "month": m.get("label"), "invoice_kwh": _round(invoice_kwh, 1), "home_kwh": home.get("kwh"),
+        "sessions": m.get("sessions"),
     })
 
     # --- last session -------------------------------------------------------------------------
@@ -234,6 +268,23 @@ class EntityPublisher:
         self.build = build
         self._sent: dict[str, str] = {}
         self._last_full = 0.0
+        self.integration = False      # True: states go to the Ladecockpit integration as events
+        self._checked_at: float | None = None
+
+    async def _check_integration(self, now: float) -> None:
+        if self._checked_at is not None and now - self._checked_at < INTEGRATION_CHECK_S:
+            return
+        components = await self.ha.components()
+        self._checked_at = now
+        if components is None:
+            return
+        loaded = INTEGRATION in components
+        if loaded != self.integration:
+            log.info("Ladecockpit integration %s – entities now go %s", "found" if loaded else "gone",
+                     "to it as events" if loaded else "to the states API")
+            self.integration = loaded
+            self._sent.clear()   # send everything once on the new way
+            self._last_full = 0.0
 
     async def run_forever(self) -> None:
         await asyncio.sleep(15)  # let the watcher read Home Assistant first
@@ -250,14 +301,21 @@ class EntityPublisher:
         d = await self.build()
         if not (d.get("setup") or {}).get("ha_ok", True):
             self._sent.clear()  # HA unreachable – write everything once it is back
+            self._checked_at = None
             return 0
-        rewrite = now - self._last_full >= REWRITE_ALL_S
+        await self._check_integration(now)
+        rewrite = now - self._last_full >= (EVENT_REWRITE_ALL_S if self.integration else REWRITE_ALL_S)
         written = 0
         for entity_id, (state, attributes) in build_states(d, self.s.lang).items():
             fingerprint = json.dumps([state, attributes], sort_keys=True, default=str)
             if not rewrite and self._sent.get(entity_id) == fingerprint:
                 continue
-            if await self.ha.set_state(entity_id, state, attributes):
+            if self.integration:
+                ok = await self.ha.fire_event(STATE_EVENT, {"entity_id": entity_id, "state": state,
+                                                            "attributes": attributes})
+            else:
+                ok = await self.ha.set_state(entity_id, state, attributes)
+            if ok:
                 self._sent[entity_id] = fingerprint
                 written += 1
             else:
