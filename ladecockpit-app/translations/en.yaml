@@ -82,6 +82,12 @@ configuration:
   fuel_price_daily:
     name: Fuel price as a daily average
     description: Prices every day's distance at that day's average of "Fuel price from an entity" – instead of the price per litre you paid. Ladecockpit keeps the prices itself and takes the last 10 days from Home Assistant on the first start.
+  ntfy_url:
+    name: Push to the phone (ntfy topic)
+    description: Address of an ntfy topic, e.g. https://ntfy.sh/ladecockpit-7f3k9q – subscribe to the same topic in the ntfy phone app. New invoices, problems and the monthly report then reach the phone directly, without a Home Assistant blueprint. On ntfy.sh the topic name is the secret – make it long and random.
+  ntfy_token:
+    name: ntfy access token
+    description: Only for an ntfy server that requires signing in (token "tk_…").
   entity_home_energy:
     name: Wallbox energy meter (kWh)
     description: Energy meter of your wallbox in kWh that only increases (e.g. from the Tesla Wall Connector or a sub-meter). Ladecockpit then includes charging at home.

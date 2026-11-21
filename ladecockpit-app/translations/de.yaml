@@ -82,6 +82,12 @@ configuration:
   fuel_price_daily:
     name: Spritpreis als Tagesdurchschnitt
     description: Rechnet die Strecke jedes Tages mit dem Durchschnittspreis dieses Tages aus „Spritpreis aus Entität“ – statt mit dem bezahlten Literpreis. Ladecockpit merkt sich die Preise dafür selbst und übernimmt beim ersten Start die letzten 10 Tage aus Home Assistant.
+  ntfy_url:
+    name: Push aufs Handy (ntfy-Thema)
+    description: Adresse eines ntfy-Themas, z. B. https://ntfy.sh/ladecockpit-7f3k9q – im ntfy-Handy-App dasselbe Thema abonnieren. Dann kommen neue Rechnungen, Probleme und der Monatsbericht direkt aufs Handy, auch ohne Home-Assistant-Blueprint. Auf ntfy.sh ist der Name des Themas das Geheimnis – lang und zufällig wählen.
+  ntfy_token:
+    name: ntfy-Zugangstoken
+    description: Nur für einen ntfy-Server, der eine Anmeldung verlangt (Token „tk_…“).
   entity_home_energy:
     name: Wallbox-Zähler (kWh)
     description: Energiezähler deiner Wallbox in kWh, der nur steigt (z. B. vom Tesla Wall Connector oder einem Zwischenzähler). Damit rechnet Ladecockpit das Laden zu Hause mit ein.

@@ -56,6 +56,8 @@ ADDON_OPTION_MAP = {
     "entity_fuel_cost_total": "HA_ENT_FUEL_COST_TOTAL",
     "entity_fuel_litres_total": "HA_ENT_FUEL_LITRES_TOTAL",
     "fuel_price_daily": "FUEL_PRICE_DAILY",
+    "ntfy_url": "NTFY_URL",
+    "ntfy_token": "NTFY_TOKEN",
     "month_report": "MONTH_REPORT",
     "multipass_min_price": "MULTIPASS_MIN_PRICE",
     "operator_lookup": "OPERATOR_LOOKUP",
@@ -174,6 +176,9 @@ class Settings:
     # Price every day's distance at that day's average of the fuel price entity (instead of the
     # price paid).
     fuel_price_daily: bool
+    # Notifications on the phone through ntfy (see push.py): topic address and optional access token
+    ntfy_url: str
+    ntfy_token: str
     ent_outside_temp: str
     # Charging at home: an energy meter of the wallbox (kWh, increasing) and the electricity price
     ent_home_energy: str
@@ -275,6 +280,8 @@ def load() -> Settings:
         ent_fuel_cost_total=_env("HA_ENT_FUEL_COST_TOTAL"),
         ent_fuel_litres_total=_env("HA_ENT_FUEL_LITRES_TOTAL"),
         fuel_price_daily=_bool("FUEL_PRICE_DAILY", False),
+        ntfy_url=_env("NTFY_URL"),
+        ntfy_token=_env("NTFY_TOKEN"),
         ent_outside_temp=_env("HA_ENT_OUTSIDE_TEMP"),
         ent_home_energy=_env("HA_ENT_HOME_ENERGY"),
         home_price=_float("HOME_PRICE", None),
