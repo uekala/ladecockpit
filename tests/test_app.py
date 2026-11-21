@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -91,3 +92,11 @@ def test_book_invoice_text_fits_the_input_text():
     branch = next(a for a in bp["actions"] if "if" in a)
     value = branch["then"][0]["data"]["value"]
     assert "state_attr(last_charge_text, 'max')" in value and "int(100)" in value
+
+
+def test_map_link_is_big_enough_to_tap_on_a_phone():
+    html = (ROOT / "app/static/index.html").read_text(encoding="utf-8")
+    phone = re.findall(r"@media \(max-width: 560px\) \{[^\n]*\.map-link \{([^}]*)\}", html)
+    assert len(phone) == 2                                   # both looks
+    for rule in phone:
+        assert "min-width: 44px" in rule and "min-height: 44px" in rule
