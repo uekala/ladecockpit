@@ -1,6 +1,6 @@
-name: Ladecockpit
+name: Ladecockpit Test
 version: "0.22.0"
-slug: ladecockpit
+slug: ladecockpit_test
 description: Real Tesla Supercharger invoices in Home Assistant – price radar, next charging stop and a small web app.
 url: https://github.com/uekala/ladecockpit
 image: ghcr.io/uekala/ladecockpit
@@ -8,18 +8,18 @@ arch:
   - aarch64
   - amd64
 startup: application
-boot: auto
+boot: manual
 ingress: true
 ingress_port: 8077
 panel_icon: mdi:ev-station
-panel_title: Ladecockpit
-homeassistant_api: true
+panel_title: Ladecockpit Test
+homeassistant_api: false
 ports:
   8077/tcp: null
 ports_description:
   8077/tcp: Direct access (requires mobile app password; use only on a trusted private network or VPN, never expose publicly)
 options:
-  language: en
+  language: de
   mobile_app_password: ""
   tesla_client_id: ""
   tesla_client_secret: ""
@@ -32,9 +32,9 @@ options:
   charging_state: charging
   soc_floor: 10
   soc_target: 80
-  notify_problems: true
-  publish_entities: true
-  month_report: true
+  notify_problems: false
+  publish_entities: false
+  month_report: false
   operator_lookup: true
   map_lookup: true
   site_operators: ""
