@@ -196,6 +196,20 @@ class CockpitClient {
     return utf8.decode(response.bodyBytes, allowMalformed: true);
   }
 
+  /// Charging history, readings and invoices in one file (without the Tesla sign-in).
+  Future<List<int>> backupZip() async {
+    final uri = await _endpoint('/api/backup.zip');
+    final response = await _http.get(uri, headers: await _headers())
+        .timeout(Duration(seconds: 180));
+    if (response.statusCode == 401) {
+      throw CockpitException(tr('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.'));
+    }
+    if (response.statusCode != 200) {
+      throw CockpitException(trf('Datensicherung fehlgeschlagen (HTTP {0}).', [response.statusCode]));
+    }
+    return response.bodyBytes;
+  }
+
   Future<List<int>> invoiceZip(String month) async {
     final uri = await _endpoint('/api/invoices/$month.zip');
     final response = await _http.get(uri, headers: await _headers())
@@ -334,12 +348,22 @@ class _DashboardPageState extends State<DashboardPage> {
   String _sessionNetworkFilter = 'all';
   String _sessionSiteFilter = 'all';
   String _sessionSearch = '';
+  final TextEditingController _searchController = TextEditingController();
+  // The site the price radar shows (null: all sites).
+  String? _radarSite;
+  final GlobalKey _radarKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _load();
     _checkForUpdate();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkForUpdate() async {
@@ -615,6 +639,15 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _metric(String title, dynamic value, {String suffix = '', int? digits}) {
     final text = _value(value, digits: digits);
     if (text.isEmpty) return SizedBox.shrink();
+    return Semantics(
+      container: true,
+      label: '$title: $text$suffix',
+      excludeSemantics: true,
+      child: _metricCard(title, text, suffix),
+    );
+  }
+
+  Widget _metricCard(String title, String text, String suffix) {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Container(
@@ -1066,6 +1099,7 @@ class _DashboardPageState extends State<DashboardPage> {
           padding: EdgeInsets.only(bottom: 8),
           child: TextField(
             key: ValueKey('session-search'),
+            controller: _searchController,
             onChanged: (value) => setState(() => _sessionSearch = value.trim()),
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
@@ -1597,6 +1631,365 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  /// What the month would have cost with a combustion car, as the web app shows it.
+  Widget _fuelCompare(Map<String, dynamic>? compare, Map<String, dynamic>? month) {
+    final fuel = compare?['fuel'];
+    final equivalent = month?['fuel_equivalent'];
+    final savings = month?['savings'];
+    if (fuel is! Map || equivalent is! num || savings is! num) return SizedBox.shrink();
+    final consumption = fuel['consumption'];
+    final dailyPrice = month?['fuel_price'];
+    final price = dailyPrice is num ? dailyPrice : fuel['price'];
+    final distance = month?['distance'];
+    final per100 = month?['per_100'];
+    String euro(num value) => '${formatNumber(value, 2)} €';
+    final priceText = price is num ? formatNumber(price, 3) : '–';
+    final consumptionText = consumption is num ? formatNumber(consumption, 1) : '–';
+    final carLine = dailyPrice is num
+        ? trf('Verbrenner ({0} L/100 km · Ø {1} €/L je Tag)', [consumptionText, priceText])
+        : fuel['source'] == 'paid'
+            ? trf('Verbrenner ({0} L/100 km · {1} €/L bezahlt)', [consumptionText, priceText])
+            : trf('Verbrenner ({0} L/100 km · {1} €/L)', [consumptionText, priceText]);
+    final tesla = equivalent - savings;
+    final good = savings >= 0;
+    Widget line(String label, String value, {Color? color, bool bold = false}) => Padding(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: Text(label, style: TextStyle(
+                color: bold ? AppTheme.textPrimary : AppTheme.textSecondary,
+                fontWeight: bold ? FontWeight.w700 : FontWeight.w400))),
+              SizedBox(width: 12),
+              Text(value, style: TextStyle(color: color ?? AppTheme.textPrimary,
+                fontWeight: bold ? FontWeight.w800 : FontWeight.w600)),
+            ],
+          ),
+        );
+    return Semantics(
+      container: true,
+      label: trf('Vergleich mit Verbrenner: {0} {1}, Tesla {2}, gespart {3}',
+        [carLine, euro(equivalent), euro(tesla), euro(savings)]),
+      excludeSemantics: true,
+      child: Card(
+        key: ValueKey('fuel-compare'),
+        margin: EdgeInsets.only(top: 10, bottom: 4),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, 14, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.local_gas_station_outlined, color: AppTheme.accentGreen, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(child: Text(
+                    distance is num
+                        ? trf('Vergleich mit Verbrenner · {0} km', [formatNumber(distance, 0)])
+                        : tr('Vergleich mit Verbrenner'),
+                    style: TextStyle(fontWeight: FontWeight.w800))),
+                ],
+              ),
+              SizedBox(height: 8),
+              line(carLine, euro(equivalent)),
+              line(per100 is num ? trf('Tesla ({0} € pro 100 km)', [formatNumber(per100, 2)]) : tr('Tesla'),
+                euro(tesla)),
+              Divider(height: 14),
+              line(tr('Gespart'), euro(savings),
+                color: good ? AppTheme.accentGreen : AppTheme.warning, bold: true),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Hints for the setup and entities that deliver nothing useful. Hidden when all is well.
+  Widget _setupCheck(Map<String, dynamic>? setup) {
+    final checks = setup?['checks'];
+    if (checks is! Map) return SizedBox.shrink();
+    final hints = checks['hints'] is List
+        ? (checks['hints'] as List).whereType<Map>().toList() : <Map>[];
+    final entities = checks['entities'] is List
+        ? (checks['entities'] as List).whereType<Map>().toList() : <Map>[];
+    final bad = entities.where((e) => e['ok'] == false).toList();
+    if (hints.isEmpty && bad.isEmpty) return SizedBox.shrink();
+    final muted = Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary, height: 1.35);
+    return Card(
+      key: ValueKey('setup-check'),
+      margin: EdgeInsets.only(top: 2, bottom: 10),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          key: PageStorageKey<String>('setup-check'),
+          initiallyExpanded: bad.isNotEmpty,
+          leading: Icon(bad.isNotEmpty ? Icons.error_outline : Icons.tips_and_updates_outlined,
+            color: bad.isNotEmpty ? AppTheme.warning : AppTheme.accentTeal),
+          title: Text(tr('Einrichtung prüfen'), style: TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Text(
+            bad.isNotEmpty
+                ? trf('{0} von {1} Entitäten prüfen', [bad.length, entities.length])
+                : trf('{0} Tipps für mehr Auswertungen', [hints.length]),
+            maxLines: 2, overflow: TextOverflow.ellipsis),
+          childrenPadding: EdgeInsets.fromLTRB(16, 0, 16, 14),
+          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final entity in bad)
+              Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.priority_high_rounded, color: AppTheme.warning, size: 18),
+                    SizedBox(width: 8),
+                    Expanded(child: Text(
+                      '${entity['label'] ?? entity['role']}: ${entity['problem'] ?? ''}\n${entity['entity'] ?? ''}',
+                      style: muted)),
+                  ],
+                ),
+              ),
+            for (final hint in hints)
+              Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(hint['level'] == 'missing' ? Icons.info_outline : Icons.lightbulb_outline,
+                      color: hint['level'] == 'missing' ? AppTheme.warning : AppTheme.accentTeal, size: 18),
+                    SizedBox(width: 8),
+                    Expanded(child: Text(hint['text']?.toString() ?? '', style: muted)),
+                  ],
+                ),
+              ),
+            if (checks['hidden_note'] is String)
+              Text(checks['hidden_note'] as String, style: muted),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The tips of the server as cards; each leads to what it is about.
+  Widget _insightCards(dynamic raw) {
+    final tips = raw is List
+        ? raw.whereType<Map<String, dynamic>>()
+            .where((tip) => tip['kind'] != 'fuel' && (tip['text']?.toString() ?? '').isNotEmpty)
+            .toList()
+        : <Map<String, dynamic>>[];
+    if (tips.isEmpty) return SizedBox.shrink();
+    final siteRadar = _data?['site_radar'] is List
+        ? (_data?['site_radar'] as List).whereType<Map<String, dynamic>>().toList()
+        : <Map<String, dynamic>>[];
+    IconData iconOf(String? kind) => switch (kind) {
+          'slot' => Icons.schedule,
+          'tariff' => Icons.nightlight_outlined,
+          'site' => Icons.location_on_outlined,
+          'idle' => Icons.timer_outlined,
+          'speed' => Icons.speed,
+          'credit' => Icons.redeem_outlined,
+          'reference' => Icons.sell_outlined,
+          'climate' => Icons.thermostat_outlined,
+          _ => Icons.bolt,
+        };
+    Widget? actionOf(Map<String, dynamic> tip) {
+      final action = tip['action'];
+      if (action is! Map) return null;
+      final go = action['go'];
+      if (go == 'radar') {
+        final site = action['site']?.toString();
+        final known = siteRadar.where((r) => r['site_name'] == site).toList();
+        final label = known.isNotEmpty
+            ? trf('Radar für {0}', [known.first['site'] ?? site])
+            : tr('Zum Preisradar');
+        return TextButton(
+          onPressed: () {
+            setState(() => _radarSite = known.isNotEmpty ? site : null);
+            final target = _radarKey.currentContext;
+            if (target != null) {
+              Scrollable.ensureVisible(target, duration: Duration(milliseconds: 350));
+            }
+          },
+          child: Text(label),
+        );
+      }
+      if (go == 'sessions') {
+        final query = action['query']?.toString() ?? '';
+        return TextButton(
+          onPressed: () => setState(() {
+            _selectedTab = 1;
+            _sessionSearch = query;
+            _searchController.text = query;
+          }),
+          child: Text(tr('Zu den Ladevorgängen')),
+        );
+      }
+      if (go == 'month') {
+        return TextButton(
+          onPressed: () => setState(() => _selectedTab = 0),
+          child: Text(tr('Zum Monatsüberblick')),
+        );
+      }
+      return null;
+    }
+    return Column(
+      key: ValueKey('insight-cards'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeading(tr('Was auffällt'), icon: Icons.lightbulb_outline),
+        for (final tip in tips)
+          Card(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(14, 12, 10, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MergeSemantics(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(iconOf(tip['kind']?.toString()),
+                          color: tip['kind'] == 'idle' || tip['kind'] == 'speed'
+                              ? AppTheme.warning : AppTheme.accentTeal,
+                          size: 19),
+                        SizedBox(width: 10),
+                        Expanded(child: Text(tip['text'].toString(),
+                          style: TextStyle(height: 1.35))),
+                      ],
+                    ),
+                  ),
+                  if (actionOf(tip) case final action?)
+                    Align(alignment: Alignment.centerRight, child: action)
+                  else
+                    SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Cost per 100 km of the Tesla next to the combustion car, month by month.
+  Widget _per100Chart(dynamic rawMonths) {
+    final months = rawMonths is List
+        ? rawMonths.whereType<Map<String, dynamic>>()
+            .where((month) => month['key'] is String && month['per_100'] is num)
+            .toList()
+        : <Map<String, dynamic>>[];
+    if (months.isEmpty || !months.any((month) => month['fuel_per_100'] is num)) {
+      return SizedBox.shrink();
+    }
+    months.sort((a, b) => a['key'].toString().compareTo(b['key'].toString()));
+    num maxValue = 0.01;
+    for (final month in months) {
+      for (final value in [month['per_100'], month['fuel_per_100']]) {
+        if (value is num && value > maxValue) maxValue = value;
+      }
+    }
+    String label(String key) {
+      final parts = key.split('-');
+      return parts.length == 2 ? '${parts[1]}.${parts[0].substring(2)}' : key;
+    }
+    Widget bar(num? value, Color color) => Expanded(
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: FractionallySizedBox(
+              heightFactor: value == null ? 0.01 : (value / maxValue).clamp(0.01, 1.0).toDouble(),
+              child: Container(
+                margin: EdgeInsets.symmetric(horizontal: 1.5),
+                decoration: BoxDecoration(color: color, borderRadius: BorderRadius.vertical(top: Radius.circular(4))),
+              ),
+            ),
+          ),
+        );
+    final fuelColor = AppTheme.textSecondary.withValues(alpha: 0.55);
+    final summary = months.map((month) => trf('{0}: Tesla {1} €, Verbrenner {2} €', [
+          label(month['key'].toString()),
+          formatNumber(month['per_100'] as num, 2),
+          month['fuel_per_100'] is num ? formatNumber(month['fuel_per_100'] as num, 2) : '–',
+        ])).join('; ');
+    return Column(
+      key: ValueKey('per100-chart'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeading(tr('Pro 100 km: Tesla und Verbrenner'), icon: Icons.compare_arrows_rounded),
+        Card(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(14, 16, 14, 12),
+            child: Column(
+              children: [
+                Semantics(
+                  label: summary,
+                  excludeSemantics: true,
+                  child: SizedBox(
+                    height: 150,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        for (final month in months)
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  bar(month['per_100'] as num?, AppTheme.accentGreen),
+                                  bar(month['fuel_per_100'] is num ? month['fuel_per_100'] as num : null, fuelColor),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 6),
+                ExcludeSemantics(
+                  child: Row(
+                    children: [
+                      for (final month in months)
+                        Expanded(child: Text(label(month['key'].toString()), textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 10, color: AppTheme.textSecondary))),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 10),
+                Wrap(
+                  spacing: 14,
+                  runSpacing: 8,
+                  children: [
+                    _costLegend(AppTheme.accentGreen, tr('Tesla')),
+                    _costLegend(fuelColor, tr('Verbrenner')),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _shareBackup() async {
+    try {
+      final bytes = await _client.backupZip();
+      final directory = await getTemporaryDirectory();
+      final stamp = DateTime.now().toIso8601String().substring(0, 10);
+      final file = File('${directory.path}/ladecockpit-sicherung-$stamp.zip');
+      await file.writeAsBytes(bytes, flush: true);
+      if (!mounted) return;
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'application/zip')],
+        subject: tr('Ladecockpit Datensicherung'),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
+  }
+
   static const _radarMinSlotSessions = 3;
   static const _radarMinSiteSessions = 2;
 
@@ -1688,9 +2081,16 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _priceRadar(dynamic rawSlots, dynamic rawSites, [dynamic rawTariffs]) {
-    final slots = rawSlots is List
-        ? rawSlots.whereType<Map<String, dynamic>>()
+  Widget _priceRadar(dynamic rawSlots, dynamic rawSites, [dynamic rawTariffs, dynamic rawSiteRadar]) {
+    // The radar of one site, when one is chosen and the server has it.
+    final siteRadar = rawSiteRadar is List
+        ? rawSiteRadar.whereType<Map<String, dynamic>>().toList()
+        : <Map<String, dynamic>>[];
+    final chosen = siteRadar.where((r) => r['site_name'] != null && r['site_name'] == _radarSite).toList();
+    final selectedSite = chosen.isEmpty ? null : chosen.first;
+    final shownSlots = selectedSite != null ? selectedSite['slots'] : rawSlots;
+    final slots = shownSlots is List
+        ? shownSlots.whereType<Map<String, dynamic>>()
             .where((slot) => slot['sessions'] is num && (slot['sessions'] as num) > 0)
             .toList()
         : <Map<String, dynamic>>[];
@@ -1743,6 +2143,7 @@ class _DashboardPageState extends State<DashboardPage> {
         );
 
     return Column(
+      key: _radarKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
@@ -1751,6 +2152,28 @@ class _DashboardPageState extends State<DashboardPage> {
             style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
         ),
         _sectionHeading(tr('Preisradar')),
+        if (siteRadar.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Wrap(
+              key: ValueKey('radar-sites'),
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                ChoiceChip(
+                  label: Text(tr('Alle Standorte')),
+                  selected: selectedSite == null,
+                  onSelected: (_) => setState(() => _radarSite = null),
+                ),
+                for (final site in siteRadar)
+                  ChoiceChip(
+                    label: Text('${site['site'] ?? site['site_name']} · ${site['sessions'] ?? ''}'),
+                    selected: identical(site, selectedSite),
+                    onSelected: (_) => setState(() => _radarSite = site['site_name']?.toString()),
+                  ),
+              ],
+            ),
+          ),
         Card(
           key: ValueKey('radar-summary'),
           margin: EdgeInsets.only(bottom: 12),
@@ -1815,7 +2238,7 @@ class _DashboardPageState extends State<DashboardPage> {
             final count = sessionsOf(slot);
             final isCheapest = identical(slot, cheapestSlot);
             final fewSessions = count < _radarMinSlotSessions;
-            return Card(
+            return MergeSemantics(child: Card(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                 child: Column(
@@ -1850,7 +2273,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ],
                 ),
               ),
-            );
+            ));
           }),
         ],
         _tariffs(rawTariffs),
@@ -2418,6 +2841,27 @@ class _DashboardPageState extends State<DashboardPage> {
             onTap: _showCsvExport,
           ),
         ),
+        if (_data?['mode'] != 'demo')
+          Card(
+            child: ListTile(
+              key: ValueKey('backup-share'),
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+              leading: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppTheme.accentTeal.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(Icons.backup_outlined, color: AppTheme.accentTeal),
+              ),
+              title: Text(tr('Datensicherung'),
+                style: TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(tr('Ladehistorie, Messwerte und Rechnungen in einer Datei teilen oder speichern')),
+              trailing: Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+              onTap: _shareBackup,
+            ),
+          ),
         for (final year in years)
           Card(
             child: ListTile(
@@ -3119,9 +3563,12 @@ class _DashboardPageState extends State<DashboardPage> {
             SizedBox(width: 8),
           ],
           Expanded(
-            child: Text(title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold)),
+            child: Semantics(
+              header: true,
+              child: Text(title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold)),
+            ),
           ),
           if (trailing != null)
             Text(trailing,
@@ -3346,6 +3793,7 @@ class _DashboardPageState extends State<DashboardPage> {
             if (_data != null && _selectedTab == 0) ...[
               _vehicleHero(_map(_data?['status']), _map(_data?['car'])),
               _connectionStatus(),
+              _setupCheck(_map(_data?['setup'])),
               Padding(
                 padding: EdgeInsets.fromLTRB(4, 2, 4, 9),
                 child: Column(
@@ -3364,15 +3812,20 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
               if (overviewMetrics.isNotEmpty)
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 9,
-                  mainAxisSpacing: 9,
-                  childAspectRatio: 1.85,
-                  children: overviewMetrics,
-                )
+                // Large system text: one tile per row, taller, so nothing is cut off.
+                Builder(builder: (context) {
+                  final scale = MediaQuery.textScalerOf(context).scale(10) / 10;
+                  final large = scale > 1.3;
+                  return GridView.count(
+                    crossAxisCount: large ? 1 : 2,
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 9,
+                    mainAxisSpacing: 9,
+                    childAspectRatio: large ? (3.6 / scale).clamp(1.4, 3.6).toDouble() : 1.85,
+                    children: overviewMetrics,
+                  );
+                })
               else
                 Card(
                   child: Padding(
@@ -3382,6 +3835,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
               _homeChargingSummary(_map(month?['home'])),
+              _fuelCompare(_map(_data?['compare']), month),
               _section('Letzter Ladevorgang', last,
                 keys: ['site', 'network', 'operator', 'start', 'end', 'duration_min',
                   'kwh', 'price', 'cost', 'idle', 'credit', 'avg_kw'],
@@ -3429,8 +3883,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 tr('Behalte Ladepreise, Kostenentwicklung und deine Monatsberichte im Blick.'),
                 Icons.insights_rounded,
               ),
-              _priceRadar(_data?['slots'], _data?['sites'], _data?['tariffs']),
+              _insightCards(_data?['insights']),
+              _priceRadar(_data?['slots'], _data?['sites'], _data?['tariffs'], _data?['site_radar']),
               _costDevelopment(_data?['monthly']),
+              _per100Chart(_data?['monthly']),
               _exports(_data?['monthly'], _data?['years']),
             ],
             if (_data == null && !_loading && _error == null)

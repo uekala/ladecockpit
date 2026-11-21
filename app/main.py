@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Resp
 from starlette.background import BackgroundTask
 from pydantic import BaseModel
 
-from . import __version__, analytics, backup, carimage, demo, invoices, monthpdf, networks, pdfview, stations, yearpdf
+from . import __version__, analytics, backup, carimage, checks, demo, invoices, monthpdf, networks, pdfview, stations, yearpdf
 from .analytics import build_dashboard
 from .export import sessions_csv
 from .config import settings
@@ -241,6 +241,7 @@ async def dashboard():
             "push_since": db.kv_get("push_since"),
             "entities": sorted(ha.entities()),
             "addon": settings.addon,
+            "checks": checks.report(settings, ha.entities(), live) if ha.configured else None,
         },
         "sync": {"last": sync.last_sync, "next": sync.next_sync,
                  "error": sync.last_error, "burst": sync.bursting,

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.0 – 2026-11-21
+
+- **Tips as cards.** What Ladecockpit notices – the cheapest time and site, off-peak prices, MultiPass, idle fees, slow sessions, credits – now stands as cards near the top of the web app and in *Auswertung* of the mobile app, each with a way to what it is about: "Radar for Mainz", "To the sessions" (the mobile app fills the search with the site), "To this month".
+- **Price radar per site.** Chips above the radar switch from all sites to one of your frequent sites (from 3 sessions there), so the time windows no longer mix the prices of different sites. `site_radar` in `/api/dashboard`.
+- **Setup check.** The web app and the mobile app say which options would add something ("You have a fuel price sensor – with *Fuel price as a daily average* …", "Without *Odometer entity* there is no distance …") and show every entity from Home Assistant with its current value and unit – an entity that is missing, unavailable, not a number or in an unexpected unit is marked. In the Home Assistant app a note says how to show options the configuration hides. `setup.checks` in `/api/dashboard`.
+- **Cost per 100 km next to the combustion car.** The monthly chart of the web app switches between cost, kWh and cost per 100 km, the latter with the combustion car beside the Tesla for every month (`fuel_per_100` in `monthly`). The mobile app has the same comparison as its own chart.
+- **Mobile app: comparison with a combustion car.** The cockpit shows the month as the web app does: combustion car (with the price per litre – daily average, paid or fixed), Tesla and what you saved.
+- **Exports in one place.** The web app gathers the CSV, the backup (download and restore), the year overviews and the monthly reports with their invoices in one panel *Exports and backup*. The mobile app can now share or save the backup as well.
+- **Mobile app: accessibility.** Figures, the radar rows, the comparison and the charts are read out as one sentence each, headings are marked as headings, and with large system text the figures of the month stand one per row.
+
 ## 0.18.0 – 2026-11-21
 
 - **Fuel price as a daily average.** New option *Fuel price as a daily average* (`FUEL_PRICE_DAILY`, off by default): the comparison with a combustion car prices every day's distance at that day's average of *Fuel price from an entity* – e.g. the cheapest E10 price near you, which changes many times a day – instead of the price per litre you paid. Each price counts for as long as it was shown. The web app shows the average over the month, weighted by the kilometres of each day ("Verbrenner (8,3 L/100 km · Ø 1,92 €/L je Tag)"); the monthly history, the monthly report and the projection follow. A day without a price takes the nearest day with one (up to 7 days away). Ladecockpit now keeps the readings of the fuel price entity itself and takes the last 10 days from Home Assistant on the first start; months before that keep the price you paid.
