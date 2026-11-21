@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.1 – 2026-11-21
+
+- **Fewer Tesla requests when Tesla asks to slow down.** If the Fleet API answers *Too many requests* (HTTP 429), Ladecockpit now waits as long as Tesla says (`Retry-After`, otherwise 5 minutes) before it asks again – also during the quick syncs after charging – instead of repeating the request and using up the monthly request budget. The log shows one line instead of an error with traceback; after three failed syncs in a row the problem notification appears as before.
+- The mobile app is unchanged.
+
 ## 0.23.0 – 2026-11-21
 
 - **New price at a site.** When a site's price changed, Ladecockpit says so: "New price in Willich: since 20.11. a kWh costs €0.40 instead of €0.37 (+€0.03/kWh)." The sites table shows the price now next to the average, which still includes the older sessions. A change is only taken when the sessions before and after it each have one price, at least 0.02 apart, and some of them were charged at the same time of day – so a price by time of day, or a site with an off-peak price, never passes for a change. The tip shows for 60 days. New field `price_changes` in `/api/dashboard`, `price_now` and `price_since` in `sites`.
