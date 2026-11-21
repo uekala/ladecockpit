@@ -12,6 +12,7 @@ import json
 import logging
 import time
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from urllib.parse import quote, urlencode
 
 import httpx
@@ -28,6 +29,9 @@ PAGE_SIZE = 50
 MAX_PAGES = 20
 # Rejected token refreshes in a row before Ladecockpit asks you to sign in to Tesla again
 REFRESH_FAILURES_FOR_SIGN_IN = 2
+# After HTTP 429 without a usable Retry-After, wait this long; never longer than a day
+RATE_LIMIT_DEFAULT_S = 300
+RATE_LIMIT_MAX_S = 86400
 
 
 class TeslaError(Exception):
@@ -40,6 +44,28 @@ class NotConnected(TeslaError):
 
 class BudgetExceeded(TeslaError):
     pass
+
+
+class RateLimited(TeslaError):
+    pass
+
+
+def retry_after_seconds(value: str | None, now: float | None = None) -> float:
+    """Seconds to wait from a Retry-After header (seconds or an HTTP date)."""
+    now = time.time() if now is None else now
+    wait: float | None = None
+    if value:
+        value = value.strip()
+        try:
+            wait = float(value)
+        except ValueError:
+            try:
+                wait = parsedate_to_datetime(value).timestamp() - now
+            except (TypeError, ValueError):
+                wait = None
+    if wait is None or wait != wait:  # missing, unreadable or NaN
+        wait = RATE_LIMIT_DEFAULT_S
+    return min(max(wait, 0.0), RATE_LIMIT_MAX_S)
 
 
 def pkce_challenge(verifier: str) -> str:
@@ -153,6 +179,11 @@ class TeslaClient:
             raise BudgetExceeded(
                 f"Monthly budget of {self.s.api_budget} Tesla requests reached – sync paused until next month."
             )
+        retry_at = float(self.db.kv_get("tesla_retry_at", "0") or 0)
+        if time.time() < retry_at:
+            # Asking again while Tesla still limits us only costs requests and prolongs the limit.
+            raise RateLimited("Tesla asked to wait (HTTP 429) until "
+                              f"{datetime.fromtimestamp(retry_at, timezone.utc).isoformat(timespec='seconds')}.")
         for attempt in (1, 2):
             token = await self._access_token(force_refresh=attempt == 2)
             r = await self._http.get(
@@ -163,6 +194,11 @@ class TeslaClient:
             self.db.log_call(path.split("/invoice/")[0], "data", r.status_code)
             if r.status_code == 401 and attempt == 1:
                 continue
+            if r.status_code == 429:
+                wait = retry_after_seconds(r.headers.get("retry-after"))
+                self.db.kv_set("tesla_retry_at", str(time.time() + wait))
+                log.warning("Tesla limits requests (HTTP 429) – pausing for %d s", round(wait))
+                raise RateLimited(f"Tesla {path}: HTTP 429 – too many requests, waiting {round(wait)} s.")
             if r.status_code >= 400:
                 raise TeslaError(f"Tesla {path}: HTTP {r.status_code} – {r.text[:200]}")
             return r.content if raw else r.json()

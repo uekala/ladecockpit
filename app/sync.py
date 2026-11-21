@@ -19,7 +19,7 @@ from .config import Settings
 from .db import DB, utcnow_iso
 from .homeassistant import HAClient
 from .push import Ntfy, mark_sent, pending
-from .tesla import BudgetExceeded, NotConnected, TeslaClient, parse_session
+from .tesla import BudgetExceeded, NotConnected, RateLimited, TeslaClient, parse_session
 
 log = logging.getLogger("ladecockpit.sync")
 
@@ -89,6 +89,14 @@ class SyncService:
         except BudgetExceeded as e:
             self.last_error = str(e)
             await self.report("budget")
+            return
+        except RateLimited as e:
+            # Not a fault of the setup: no traceback, but it counts like any other failed sync.
+            log.warning("Sync paused: %s", e)
+            self.last_error = str(e)
+            self.failures += 1
+            if self.failures >= FAILURES_BEFORE_ALERT:
+                await self.report("sync", str(e))
             return
         except Exception as e:  # noqa: BLE001 – keep the service running
             log.exception("Sync failed")
