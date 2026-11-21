@@ -10,6 +10,8 @@ from .config import Settings
 from .networks import MULTIPASS, SUPERCHARGER
 
 MIN_SLOT_SESSIONS = 3
+SITE_RADAR_MIN = 3     # sessions at a site before it gets a radar of its own
+SITE_RADAR_MAX = 8
 SLOT_HOURS = [("night", 0, 6), ("morning", 6, 11), ("midday", 11, 16), ("afternoon", 16, 20), ("evening", 20, 24)]
 USD_PER_DATA_CALL = 0.002
 MONTHLY_CREDIT_USD = 10.0
@@ -475,6 +477,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
                 per_100 = consumption * d["price"]
                 entry["fuel_price"] = d["price"]
         if per_100 is not None and entry.get("distance") and entry.get("per_100") is not None:
+            entry["fuel_per_100"] = round(per_100, 2)
             entry["fuel_equivalent"] = round(per_100 * entry["distance"] / 100, 2)
             entry["savings"] = round((per_100 - entry["per_100"]) * entry["distance"] / 100, 2)
         return entry
@@ -558,6 +561,23 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
 
     sites = sorted((_site_row(k, v) for k, v in groups.items()), key=lambda r: (-r["sessions"], r["avg_price"] or 9))
 
+    # The radar per site: the time windows of one site alone, for sites with a few sessions.
+    def _slots(items: list[dict]) -> list[dict]:
+        out = []
+        for (sid, a, b), (label, rng) in zip(SLOT_HOURS, i18n.SLOTS.get(lang, i18n.SLOTS["en"])):
+            st = _stats([x for x in items if a <= x["_local"].hour < b])
+            out.append({"id": sid, "label": label, "range": rng, "avg_price": st["list_price"],
+                        "sessions": st["sessions"], "kwh": st["kwh"], "solid": st["sessions"] >= MIN_SLOT_SESSIONS})
+        return out
+
+    site_radar = []
+    for k, v in sorted(groups.items(), key=lambda kv: -len(kv[1])):
+        if len(v) < SITE_RADAR_MIN or len(site_radar) >= SITE_RADAR_MAX:
+            continue
+        row = _site_row(k, v)
+        site_radar.append({"site": row["label"], "site_name": row["site_name"], "sessions": row["sessions"],
+                           "avg_price": row["avg_price"], "slots": _slots(v)})
+
     # Off-peak and peak price per site, where both were seen (see _tariff).
     tariff_sites = []
     for k, v in groups.items():
@@ -594,7 +614,8 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         t = tariff_sites[0]
         insights.append({"kind": "tariff", "text": i18n.t(
             lang, "in_tariff", site=t["site"], off=money(t["offpeak"]), peak=money(t["peak"]),
-            saving=money(tariffs["saving"]), kwh=f"{tariffs['peak_kwh']:.0f}")})
+            saving=money(tariffs["saving"]), kwh=f"{tariffs['peak_kwh']:.0f}"),
+            "action": {"go": "radar", "site": t["site_name"]}})
 
     priced_sites = [r for r in sites if r["avg_price"]]
     if len(priced_sites) >= 2 and len(priced) >= 4:
@@ -603,7 +624,8 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         if hi["avg_price"] - lo["avg_price"] >= 0.01:
             insights.append({"kind": "site", "text": i18n.t(
                 lang, "in_site", lo=lo["label"], lo_price=money(lo["avg_price"]),
-                hi=hi["label"], hi_price=money(hi["avg_price"]))})
+                hi=hi["label"], hi_price=money(hi["avg_price"])),
+                "action": {"go": "radar", "site": lo["site_name"]}})
 
     nets = _by_network(priced)
     mp, sc = nets.get(MULTIPASS), nets.get(SUPERCHARGER)
@@ -628,7 +650,8 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         day = f"{x['_local']:%d.%m.}" if lang == "de" else f"{x['_local']:%b} {x['_local'].day}"
         insights.append({"kind": "speed", "text": i18n.t(
             lang, "in_slow_one" if len(slow) == 1 else "in_slow_many", n=len(slow), day=day,
-            site=_place(x.get("site") or i18n.t(lang, "unknown_site")), kw=sp["kw"], typical=sp["typical_kw"])})
+            site=_place(x.get("site") or i18n.t(lang, "unknown_site")), kw=sp["kw"], typical=sp["typical_kw"]),
+            "action": {"go": "sessions", "query": _place(x.get("site") or "")}})
 
     # --- comparisons -------------------------------------------------------------------------
     reference = values.get("reference_price")
@@ -669,6 +692,12 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
             insights.append({"kind": "climate", "text": i18n.t(
                 lang, "in_climate", cold=i18n.temp_band(lang, cold["from"], cold["to"]),
                 warm=i18n.temp_band(lang, warm["from"], warm["to"]), more=round(more), unit=unit)})
+
+    # Where each tip leads in the apps: a panel, or the sessions with a search.
+    goes = {"slot": "radar", "tariff": "radar", "site": "radar", "network": "sessions", "credit": "sessions",
+            "idle": "sessions", "speed": "sessions", "reference": "month", "fuel": "month", "climate": "climate"}
+    for i in insights:
+        i.setdefault("action", {"go": goes.get(i["kind"], "month")})
 
     forecast["plan"] = _plan(lang, forecast, priced, overall["list_price"], now_utc, tz, money)
     projection = _projection(odo_all, priced, now_utc, fuel, home)
@@ -716,6 +745,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         "slots": slots,
         "tariffs": tariffs,
         "sites": sites,
+        "site_radar": site_radar,
         "multipass": _multipass(sessions, tz, lang),
         "insights": insights,
         "compare": compare,

@@ -1121,6 +1121,42 @@ footer .look-pick button[aria-pressed="true"] { background: var(--accent-fill); 
 .pdf-pages figcaption { color: var(--mute); font-size: .74rem; text-align: center; margin-top: 4px; }
 .pdf-pages .pdf-msg { color: var(--mute); text-align: center; padding: 40px 0; }
 
+/* --- 0.19: chips, tip cards, setup check, exports ------------------------------------------- */
+.pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.pick button {
+  font: inherit; font-size: .8rem; font-weight: 500; border: 1px solid var(--line); background: none; color: var(--ink-2);
+  padding: 5px 12px; min-height: 32px; border-radius: 999px; cursor: pointer;
+}
+.pick button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.pick button:focus-visible, .tip-card button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tip-cards { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.tip-card { display: grid; grid-template-rows: auto 1fr auto; gap: 8px; padding: 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--btn); }
+.tip-card .tip-head { display: flex; gap: 8px; align-items: center; color: var(--accent); }
+.tip-card.idle .tip-head, .tip-card.speed .tip-head { color: var(--warn); }
+.tip-card p { margin: 0; font-size: .9rem; color: var(--ink-2); line-height: 1.4; }
+.tip-card button { justify-self: start; font: inherit; font-size: .84rem; font-weight: 600; border: 0; background: none; color: var(--accent); padding: 4px 0; min-height: 32px; cursor: pointer; }
+.check-list { display: grid; gap: 0; font-size: .9rem; }
+.check-list div { display: grid; grid-template-columns: 1.4em minmax(0, 1fr) auto; gap: 10px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--line); }
+.check-list div:first-child { border-top: none; }
+.check-list .ok { color: var(--good); } .check-list .bad { color: var(--warn); } .check-list .na { color: var(--mute); }
+.check-list small { display: block; color: var(--mute); font-size: .78rem; overflow-wrap: anywhere; }
+.check-hints { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; font-size: .9rem; color: var(--ink-2); }
+.check-hints li.hint-missing::marker { color: var(--warn); }
+.ex-grid { display: grid; gap: 14px; }
+.ex-grid h3 { margin: 0 0 6px; font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); }
+.ex-months { display: grid; gap: 0; font-size: .9rem; }
+.ex-months div { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; justify-content: space-between; padding: 7px 0; border-top: 1px solid var(--line); }
+.ex-months div:first-child { border-top: none; }
+.ex-months .links { display: flex; gap: 14px; flex-wrap: wrap; }
+.col .bars2 { display: flex; gap: 3px; align-items: flex-end; justify-content: center; width: 100%; max-width: 46px; height: 100%; }
+.col .bars2 .bar { max-width: 20px; }
+.col .bars2 .bar.fuel { background: var(--mute); opacity: .55; }
+.hist-legend { display: flex; gap: 14px; font-size: .78rem; color: var(--mute); }
+.hist-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; background: var(--accent-fill); }
+.hist-legend i.fuel { background: var(--mute); opacity: .55; }
+.hit-flash { animation: hit-flash 1.6s ease-out 1; }
+@keyframes hit-flash { 0% { box-shadow: 0 0 0 3px var(--accent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+
 /* --- Look picker (footer) ----------------------------------------------------------------- */
 .look-pick { display: inline-flex; align-items: center; gap: 8px; }
 footer { align-items: center; }
@@ -1171,7 +1207,7 @@ try {
 
   const $ = (sel) => document.querySelector(sel);
   // car: the open editor of the car picture – { catalog, choice, view } while it is open
-  const state = { data: null, preview: false, busy: false, car: null };
+  const state = { data: null, preview: false, busy: false, car: null, radarSite: null, histMode: "cost" };
 
   // --- Texts -----------------------------------------------------------------------
   const TEXT = {
@@ -1201,6 +1237,11 @@ try {
       supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", mpChipTip: "MultiPass: charged at another operator, billed through Tesla.", ofWhichMp: "of which MultiPass ({n})", thSiteAny: "Site", energy: "Energy",
       fuelCompare: "Combustion car ({c} L/100 km · {p}/L)", fuelComparePaid: "Combustion car ({c} L/100 km · {p}/L paid)", saved: "Saved",
       fuelPaidTip: "Price per litre you paid: {litres} L {span}", fuelPaidDays: "in the last {n} days", fuelPaidAll: "in total", fuelCompareDaily: "Combustion car ({c} L/100 km · Ø {p}/L per day)", fuelDailyTip: "Every day's distance at that day's average fuel price",
+      radarAll: "All sites", radarFor: "Price radar for", radarSiteAvg: "average at {site}: {p}",
+      tipsEyebrow: "Tips", tipsTitle: "What stands out", goRadar: "To the price radar", goSite: "Radar for {site}", goSessions: "To the sessions", goMonth: "To this month", goClimate: "To consumption by temperature",
+      checkEyebrow: "Setup", checkTitle: "Setup check", checkAllOk: "All {n} entities deliver values.", checkSome: "{n} of {m} entities need a look.", checkEntities: "Entities in Home Assistant", checkHints: "What else would help", checkHaDown: "Home Assistant is not reachable – the entities cannot be checked.",
+      histCost: "Cost", histKwh: "kWh", histPer100: "Per 100 {unit}", histShow: "Show", histTesla: "Tesla", histFuel: "Combustion car", histInfo100: "{m}: Tesla {t} · combustion car {f} per 100 {unit}",
+      exEyebrow: "Export", exTitle: "Exports and backup", exAll: "All data", exYears: "Years", exMonths: "Months", exReport: "Report (PDF)", exInvoices: "Invoices (ZIP)", exYear: "{year} (PDF)",
       fuelHead: "Compared with a combustion car · {dist} {unit}", fuelSince: " since {d}", teslaSame: "Tesla ({p} per 100 {unit})",
       credit: "Tesla credit", listPrice: "List price", creditsUsed: "Tesla credits used", plusCredit: "− {p} Tesla credit",
       invoicesLine: "Superchargers & MultiPass (invoices)", homeLine: "At home ({kwh} kWh · {p}/kWh)", homeLineNoPrice: "At home ({kwh} kWh, no price set)",
@@ -1309,6 +1350,11 @@ try {
       supercharger: "Supercharger {site}", multipass: "MultiPass · {site}", mpChip: "MultiPass", mpChipTip: "MultiPass: Laden bei einem anderen Anbieter, abgerechnet über Tesla.", ofWhichMp: "davon MultiPass ({n})", thSiteAny: "Standort", energy: "Energie",
       fuelCompare: "Verbrenner ({c} L/100 km · {p}/L)", fuelComparePaid: "Verbrenner ({c} L/100 km · {p}/L bezahlt)", saved: "Gespart",
       fuelPaidTip: "Literpreis, den du bezahlt hast: {litres} L {span}", fuelPaidDays: "in den letzten {n} Tagen", fuelPaidAll: "insgesamt", fuelCompareDaily: "Verbrenner ({c} L/100 km · Ø {p}/L je Tag)", fuelDailyTip: "Die Strecke jedes Tages mit dem Durchschnittspreis dieses Tages gerechnet",
+      radarAll: "Alle Standorte", radarFor: "Preis-Radar für", radarSiteAvg: "Schnitt in {site}: {p}",
+      tipsEyebrow: "Tipps", tipsTitle: "Was auffällt", goRadar: "Zum Preis-Radar", goSite: "Radar für {site}", goSessions: "Zu den Ladungen", goMonth: "Zum Monat", goClimate: "Zum Verbrauch nach Temperatur",
+      checkEyebrow: "Einrichtung", checkTitle: "Einrichtung prüfen", checkAllOk: "Alle {n} Entitäten liefern Werte.", checkSome: "{n} von {m} Entitäten prüfen.", checkEntities: "Entitäten in Home Assistant", checkHints: "Was noch helfen würde", checkHaDown: "Home Assistant ist nicht erreichbar – die Entitäten lassen sich nicht prüfen.",
+      histCost: "Kosten", histKwh: "kWh", histPer100: "Pro 100 {unit}", histShow: "Anzeigen", histTesla: "Tesla", histFuel: "Verbrenner", histInfo100: "{m}: Tesla {t} · Verbrenner {f} pro 100 {unit}",
+      exEyebrow: "Export", exTitle: "Exporte und Sicherung", exAll: "Alle Daten", exYears: "Jahre", exMonths: "Monate", exReport: "Bericht (PDF)", exInvoices: "Rechnungen (ZIP)", exYear: "{year} (PDF)",
       fuelHead: "Vergleich mit Verbrenner · {dist} {unit}", fuelSince: " seit {d}", teslaSame: "Tesla ({p} pro 100 {unit})",
       credit: "Tesla-Gutschrift", listPrice: "Listenpreis", creditsUsed: "Tesla-Gutschriften genutzt", plusCredit: "− {p} Tesla-Gutschrift",
       invoicesLine: "Supercharger & MultiPass (Rechnungen)", homeLine: "Zu Hause ({kwh} kWh · {p}/kWh)", homeLineNoPrice: "Zu Hause ({kwh} kWh, kein Preis hinterlegt)",
@@ -1516,12 +1562,15 @@ try {
           ${d.setup?.ha_configured ? batteryPanel(d) : ""}
         </section>` : ""}
         ${d.setup?.ha_configured ? `<div class="grid-2">${nextStopPanel(d)}${receiptPanel(d)}</div>` : receiptPanel(d)}
+        ${checkPanel(d)}
         ${monthPanel(d)}
+        ${tipsPanel(d)}
         ${radarPanel(d)}
         <div class="grid-2">${sitesPanel(d)}${historyPanel(d)}</div>
         ${multipassPanel(d)}
         ${d.setup?.ha_configured && (d.battery_health || d.climate) ? `<div class="grid-2">${healthPanel(d)}${climatePanel(d)}</div>` : ""}
         ${sessionsPanel(d)}
+        ${exportsPanel(d)}
         <div class="grid-2">${d.setup?.ha_configured && d.reconcile ? reconcilePanel(d) : ""}${opsPanel(d)}</div>
       </div>`;
     $("#footer").innerHTML = `<span>${T("footerSrc")}</span>
@@ -2028,9 +2077,14 @@ try {
     </div>`;
   }
 
+  // The site the radar shows (null: all sites), if the server still has a radar for it.
+  const radarSel = (d) => (d.site_radar || []).find((r) => r.site_name === state.radarSite) || null;
+
   function radarPanel(d) {
-    const slots = d.slots || [];
-    const avg = d.totals?.list_price ?? d.totals?.avg_price;
+    const sel = radarSel(d);
+    const slots = sel ? sel.slots : d.slots || [];
+    const avg = sel ? sel.avg_price : d.totals?.list_price ?? d.totals?.avg_price;
+    const siteRadar = d.site_radar || [];
     const priced = slots.filter((s) => s.avg_price != null);
     const maxP = Math.max(0.6, ...priced.map((s) => s.avg_price));
     const step = maxP > 1.2 ? 0.5 : 0.2;
@@ -2072,20 +2126,117 @@ try {
         <div class="radar-val">${has ? money(s.avg_price) : '<span class="muted">–</span>'}<small>${has ? (isBest ? bestText(s) : sessionsText(s.sessions)) : T("noSession")}</small></div>
       </div>`;
     }).join("");
-    // The tariff block below says the same as the tariff tip, per site.
-    const insights = (d.insights || []).filter((i) => !["slot", "fuel", "climate", "tariff"].includes(i.kind));
-    return `<section class="panel" aria-labelledby="h-radar">
+    const avgText = sel ? T("radarSiteAvg", { site: sel.site, p: money(avg) }) : avg ? T("yourAvg", { p: money(avg) }) : "";
+    return `<section class="panel" aria-labelledby="h-radar" id="radar-panel">
       <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline">
         <div><span class="eyebrow">${T("radar")}</span><h2 id="h-radar">${T("radarTitle")}</h2></div>
-        <span class="sub">${T("radarSub")}${avg ? " · " + esc(T("yourAvg", { p: money(avg) })) : ""}</span>
+        <span class="sub">${T("radarSub")}${avgText ? " · " + esc(avgText) : ""}</span>
       </div>
+      ${siteRadar.length ? `<div class="pick" role="group" aria-label="${T("radarFor")}">
+        <button type="button" data-radar-site="" aria-pressed="${!sel}">${T("radarAll")}</button>
+        ${siteRadar.map((r) => `<button type="button" data-radar-site="${esc(r.site_name || "")}" aria-pressed="${sel === r}">${esc(r.site)} <span class="muted">· ${r.sessions}</span></button>`).join("")}
+      </div>` : ""}
       <div class="radar">
         ${rows}
         <div class="radar-axis" aria-hidden="true"><span></span><div class="ticks">${ticks.map((t) => `<span style="left:${pct(t)}%">${num(t, 1)}</span>`).join("")}</div><span class="sub" style="font-size:.72rem;text-align:right">/kWh</span></div>
       </div>
       ${avg ? `<div class="tone-legend"><span>${T("toneCheap")}</span><span class="scale" aria-hidden="true"></span><span>${T("toneDear")}</span></div>` : ""}
-      ${tariffBlock(d)}
-      ${insights.length ? `<ul class="insights">${insights.map((i) => `<li class="${esc(i.kind)}">${insightIcon[i.kind] || ico.bolt}<span>${esc(i.text)}</span></li>`).join("")}</ul>` : ""}
+      ${sel ? "" : tariffBlock(d)}
+    </section>`;
+  }
+
+  // --- Tips as cards, each with a way to the panel it is about --------------------------------
+  const tipTargets = { radar: "#radar-panel", sessions: "#sessions-panel", month: "#h-month", climate: "#h-climate" };
+  function tipButton(i, d) {
+    const a = i.action || {};
+    if (a.go === "radar" && a.site && (d.site_radar || []).some((r) => r.site_name === a.site)) {
+      const r = d.site_radar.find((x) => x.site_name === a.site);
+      return `<button type="button" data-go="radar" data-site="${esc(a.site)}">${esc(T("goSite", { site: r.site }))} →</button>`;
+    }
+    const label = { radar: "goRadar", sessions: "goSessions", month: "goMonth", climate: "goClimate" }[a.go];
+    if (!label || (a.go === "climate" && !d.climate)) return "";
+    return `<button type="button" data-go="${esc(a.go)}">${T(label)} →</button>`;
+  }
+  function tipsPanel(d) {
+    const tips = (d.insights || []).filter((i) => i.kind !== "fuel");   // the fuel tip is the month panel itself
+    if (!tips.length) return "";
+    return `<section class="panel" aria-labelledby="h-tips">
+      <div><span class="eyebrow">${T("tipsEyebrow")}</span><h2 id="h-tips">${T("tipsTitle")}</h2></div>
+      <div class="tip-cards">${tips.map((i) => `<article class="tip-card ${esc(i.kind)}">
+        <div class="tip-head" aria-hidden="true">${insightIcon[i.kind] || ico.bolt}</div>
+        <p>${esc(i.text)}</p>
+        ${tipButton(i, d)}
+      </article>`).join("")}</div>
+    </section>`;
+  }
+  function goTo(go, site) {
+    if (go === "radar") state.radarSite = site || null;
+    if (site !== undefined || go === "radar") render();
+    const el = $(tipTargets[go]);
+    const box = el && (el.closest("section") || el);
+    if (!box) return;
+    box.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    box.classList.remove("hit-flash");
+    void box.offsetWidth;
+    box.classList.add("hit-flash");
+  }
+
+  // --- Setup check: what is missing, and what each entity delivers -----------------------------
+  function checkPanel(d) {
+    const c = d.setup?.checks;
+    if (!c || offline() && d.mode !== "demo") return "";
+    const ents = c.entities || [];
+    const bad = ents.filter((e) => e.ok === false);
+    const down = ents.length && ents.every((e) => e.ok == null);
+    const hints = c.hints || [];
+    if (!hints.length && !bad.length && !down) {
+      // All fine: one quiet line in a folded panel.
+      return ents.length ? `<section class="panel"><details>
+        <summary>${T("checkTitle")} · ${esc(T("checkAllOk", { n: ents.length }))}</summary>
+        ${entityList(ents)}
+      </details></section>` : "";
+    }
+    return `<section class="panel" aria-labelledby="h-check">
+      <details ${bad.length || hints.some((h) => h.level === "missing") ? "open" : ""}>
+        <summary><strong id="h-check">${T("checkTitle")}</strong>
+          · ${esc(down ? T("checkHaDown") : bad.length ? T("checkSome", { n: bad.length, m: ents.length }) : T("checkAllOk", { n: ents.length }))}</summary>
+        <div style="display:grid;gap:14px">
+          ${hints.length ? `<div><h3 class="sub" style="margin:0 0 6px">${T("checkHints")}</h3>
+            <ul class="check-hints">${hints.map((h) => `<li class="hint-${esc(h.level)}">${esc(h.text)}</li>`).join("")}</ul>
+            ${c.hidden_note ? `<p class="sub" style="margin:8px 0 0">${esc(c.hidden_note)}</p>` : ""}</div>` : ""}
+          ${ents.length ? `<div><h3 class="sub" style="margin:0 0 6px">${T("checkEntities")}</h3>${entityList(ents)}</div>` : ""}
+        </div>
+      </details>
+    </section>`;
+  }
+  function entityList(ents) {
+    return `<div class="check-list">${ents.map((e) => {
+      const mark = e.ok == null ? '<span class="na" aria-hidden="true">–</span>' : e.ok ? '<span class="ok" aria-hidden="true">✓</span>' : '<span class="bad" aria-hidden="true">!</span>';
+      const value = e.state == null || e.state === "" ? "–" : e.state + (e.unit ? " " + e.unit : "");
+      return `<div>${mark}<span>${esc(e.label || e.role)}<small class="mono">${esc(e.entity)}</small>${e.problem ? `<small style="color:var(--warn)">${esc(e.problem)}</small>` : ""}</span><span class="mono">${esc(value)}</span></div>`;
+    }).join("")}</div>`;
+  }
+
+  // --- All exports and the backup in one place ------------------------------------------------
+  function exportsPanel(d) {
+    if (offline() || !(d.sessions || []).length) return "";
+    const months = (d.monthly || []).filter((m) => m.sessions).reverse();
+    const monthName = (key) => fmtDate(key + "-15T12:00:00Z", { month: "long", year: "numeric" });
+    const live = d.mode === "live" && !state.preview;
+    return `<section class="panel" aria-labelledby="h-ex">
+      <div><span class="eyebrow">${T("exEyebrow")}</span><h2 id="h-ex">${T("exTitle")}</h2></div>
+      <div class="ex-grid">
+        <div><h3>${T("exAll")}</h3><div class="exports">
+          <a href="api/export.csv" data-download target="_blank" rel="noopener">${T("csvAll")}</a>
+          ${live ? `<a href="api/backup.zip" data-download target="_blank" rel="noopener">${T("backupDownload")}</a>
+          <button class="link-btn" id="btn-restore" type="button">${T("backupRestore")}</button>
+          <input type="file" id="restore-file" accept=".zip,application/zip" hidden>` : ""}
+        </div>${live ? `<p class="sub" style="margin:6px 0 0">${T("backupHint")}</p>` : ""}</div>
+        ${(d.years || []).length ? `<div><h3>${T("exYears")}</h3><div class="exports">${d.years.map((y) => `<a href="api/year/${y}.pdf" data-view="api/year/${y}" target="_blank" rel="noopener">${esc(T("exYear", { year: y }))}</a>`).join("")}</div></div>` : ""}
+        ${months.length ? `<div><h3>${T("exMonths")}</h3><div class="ex-months">${months.map((m) => `<div><span>${esc(monthName(m.key))}</span><span class="links">
+          <a href="api/report/${m.key}.pdf" data-view="api/report/${m.key}" target="_blank" rel="noopener">${T("exReport")}</a>
+          <a href="api/invoices/${m.key}.zip" data-download target="_blank" rel="noopener">${T("exInvoices")}</a></span></div>`).join("")}</div></div>` : ""}
+      </div>
     </section>`;
   }
 
@@ -2230,18 +2381,33 @@ try {
 
   function historyPanel(d) {
     const months = d.monthly || [];
-    const mc = (m) => (m.cost || 0) + (m.home_cost || 0);
-    const max = Math.max(1, ...months.map(mc));
+    // What the bars show: cost (default), energy, or cost per 100 km next to the combustion car.
+    const has100 = months.some((m) => m.per_100 != null);
+    const hasFuel = months.some((m) => m.fuel_per_100 != null);
+    const mode = state.histMode === "per100" && !has100 ? "cost" : state.histMode;
+    const mc = (m) => mode === "kwh" ? (m.kwh || 0) + (m.home_kwh || 0)
+      : mode === "per100" ? Math.max(m.per_100 || 0, m.fuel_per_100 || 0) : (m.cost || 0) + (m.home_cost || 0);
+    const max = Math.max(mode === "kwh" ? 1 : 0.01, ...months.map(mc));
     const curKey = d.month?.key;
-    const info = (m) => `${m.label}: ${money(m.cost)} · ${num(m.kwh, 1)} kWh · ${sessionsText(m.sessions)}${m.avg_price ? " · " + ppk(m.avg_price) : ""}${m.kwh_per_100 ? " · " + num(m.kwh_per_100, 1) + " kWh/100 " + unit() : ""}`;
+    const info = (m) => mode === "per100"
+      ? T("histInfo100", { m: m.label, t: m.per_100 == null ? "–" : money(m.per_100), f: m.fuel_per_100 == null ? "–" : money(m.fuel_per_100), unit: unit() })
+      : `${m.label}: ${money(m.cost)} · ${num(m.kwh, 1)} kWh · ${sessionsText(m.sessions)}${m.avg_price ? " · " + ppk(m.avg_price) : ""}${m.kwh_per_100 ? " · " + num(m.kwh_per_100, 1) + " kWh/100 " + unit() : ""}`;
     const sel = dynamic() ? months.find((m) => m.key === dyn.month) || months.find((m) => m.key === curKey) || months[months.length - 1] : null;
+    const val = (m) => mode === "kwh" ? (mc(m) ? num(mc(m), 0) + " kWh" : "") : mode === "per100" ? (m.per_100 != null ? money(m.per_100) : "") : (mc(m) ? money(mc(m), 0) : "");
+    const h = (v) => `${(v / max) * 100 * 0.82}%`;
+    const bars = (m) => mode === "per100"
+      ? `<div class="bars2"><div class="bar" style="height:${h(m.per_100 || 0)}"></div>${hasFuel ? `<div class="bar fuel" style="height:${h(m.fuel_per_100 || 0)}"></div>` : ""}</div>`
+      : `<div class="bar" style="height:${h(mc(m))}"></div>`;
+    const modes = [["cost", T("histCost")], ["kwh", T("histKwh")], ...(has100 ? [["per100", T("histPer100", { unit: unit() })]] : [])];
     return `<section class="panel" aria-labelledby="h-hist">
       <div><span class="eyebrow">${T("history")}</span><h2 id="h-hist">${T("historyTitle")}</h2>${projectionLine(d)}</div>
-      ${sel ? `<div class="readout" id="readout" aria-live="polite">${readoutHtml(sel)}</div>` : ""}
-      <div class="cols" role="img" aria-label="${T("perMonthAria")}">
-        ${months.map((m) => `<div class="col ${m.key === curKey ? "cur" : ""} ${sel && sel.key === m.key ? "sel" : ""}" tabindex="0" data-month="${esc(m.key)}" ${sel ? "" : `data-tip="${esc(info(m))}"`}>
-          <span class="v">${mc(m) ? money(mc(m), 0) : ""}</span>
-          <div class="bar" style="height:${(mc(m) / max) * 100 * 0.82}%"></div>
+      <div class="pick" role="group" aria-label="${T("histShow")}">${modes.map(([k, l]) => `<button type="button" data-hist="${k}" aria-pressed="${mode === k}">${esc(l)}</button>`).join("")}</div>
+      ${sel && mode === "cost" ? `<div class="readout" id="readout" aria-live="polite">${readoutHtml(sel)}</div>` : ""}
+      ${mode === "per100" ? `<div class="hist-legend"><span><i></i>${T("histTesla")}</span>${hasFuel ? `<span><i class="fuel"></i>${T("histFuel")}</span>` : ""}</div>` : ""}
+      <div class="cols" role="img" aria-label="${esc(T("perMonthAria") + ": " + months.map(info).join("; "))}">
+        ${months.map((m) => `<div class="col ${m.key === curKey ? "cur" : ""} ${sel && mode === "cost" && sel.key === m.key ? "sel" : ""}" tabindex="0" data-month="${esc(m.key)}" ${sel && mode === "cost" ? "" : `data-tip="${esc(info(m))}"`}>
+          <span class="v">${val(m)}</span>
+          ${bars(m)}
         </div>`).join("")}
       </div>
       <div class="col-labels">${months.map((m) => `<span>${esc(m.label)}${m.key === curKey ? " " + T("current") : ""}</span>`).join("")}</div>
@@ -2257,7 +2423,6 @@ try {
         <div><span class="eyebrow">${T("allSessions")}</span><h2 id="h-list">${esc(sessionsText(t.sessions || 0))} · ${money(t.cost || 0)}</h2></div>
         <span class="sub">${t.since ? esc(T("sinceDate", { d: fmtDate(t.since, { day: "2-digit", month: "2-digit", year: "numeric" }) })) : ""}${t.avg_price ? " · " + ppk(t.avg_price) : ""}</span>
       </div>
-      ${list.length && !offline() ? exportsRow(d) : ""}
       ${list.length ? `<div class="scroll"><table>
         <thead><tr><th>${T("thDate")}</th><th>${siteHead(d)}</th><th class="n">kWh</th><th class="n">/kWh</th><th class="n">${T("thKw")}</th><th class="n">${T("thAmount")}</th>${d.setup?.ha_configured ? `<th>${T("thHa")}</th>` : ""}<th>${T("thInvoice")}</th></tr></thead>
         <tbody>${list.map((s, i) => `<tr${fold && i >= SESSIONS_FOLDED ? ' class="more"' : ""}>
@@ -2273,18 +2438,6 @@ try {
       </table></div>` : `<p class="sub">${T("noneYet")}</p>`}
       ${fold ? `<button class="btn more-btn" id="more-sessions" type="button" aria-expanded="${dyn.allSessions}">${dyn.allSessions ? T("showFewer") : esc(T("showAll", { n: list.length }))}</button>` : ""}
     </section>`;
-  }
-
-  function exportsRow(d) {
-    const months = (d.monthly || []).filter((m) => m.sessions).reverse();
-    const monthName = (key) => fmtDate(key + "-15T12:00:00Z", { month: "short", year: "numeric" });
-    return `<div class="exports">
-      <span class="label">${T("exportLabel")}</span>
-      <a href="api/export.csv" data-download target="_blank" rel="noopener">${T("csvAll")}</a>
-      ${(d.years || []).map((y) => `<a href="api/year/${y}.pdf" data-view="api/year/${y}" target="_blank" rel="noopener">${esc(T("pdfYear", { year: y }))}</a>`).join("")}
-      ${months.map((m) => `<a href="api/report/${m.key}.pdf" data-view="api/report/${m.key}" target="_blank" rel="noopener">${esc(T("pdfMonth", { month: monthName(m.key) }))}</a>`).join("")}
-      ${months.map((m) => `<a href="api/invoices/${m.key}.zip" data-download target="_blank" rel="noopener">${esc(T("zipMonth", { month: monthName(m.key) }))}</a>`).join("")}
-    </div>`;
   }
 
   function reconcilePanel(d) {
@@ -2332,15 +2485,6 @@ try {
         <div class="meter" role="img" aria-label="${a.calls ?? 0} / ${a.budget}"><i style="width:${usedPct}%"></i></div>
         <span class="sub">${esc(T("apiCost", { usd: num(a.cost_usd, 2), credit: num(a.credit_usd, 0) }))}</span>
       </div>
-      ${d.mode === "live" && !offline() && !state.preview ? `<div style="display:grid;gap:6px;border-top:1px solid var(--line);padding-top:12px">
-        <div style="display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;font-size:.88rem">
-          <span>${T("backupTitle")}</span>
-          <a class="link-btn" href="api/backup.zip" data-download target="_blank" rel="noopener">${T("backupDownload")}</a>
-          <button class="link-btn" id="btn-restore" type="button">${T("backupRestore")}</button>
-          <input type="file" id="restore-file" accept=".zip,application/zip" hidden>
-        </div>
-        <span class="sub">${T("backupHint")}</span>
-      </div>` : ""}
       ${connected && !offline() ? `<div><button class="link-btn" id="btn-logout" type="button">${T("disconnect")}</button></div>` : ""}
     </section>`;
   }
@@ -2644,6 +2788,15 @@ try {
         toast(err.message);
       }
     };
+    document.querySelectorAll("[data-radar-site]").forEach((b) => {
+      b.onclick = () => { state.radarSite = b.dataset.radarSite || null; render(); $("#radar-panel")?.querySelector("[aria-pressed=true]")?.focus(); };
+    });
+    document.querySelectorAll("[data-hist]").forEach((b) => {
+      b.onclick = () => { state.histMode = b.dataset.hist; render(); document.querySelector(`[data-hist="${b.dataset.hist}"]`)?.focus(); };
+    });
+    document.querySelectorAll("[data-go]").forEach((b) => {
+      b.onclick = () => goTo(b.dataset.go, b.dataset.go === "radar" ? b.dataset.site || null : undefined);
+    });
     const setupDetails = $("#setup-details");
     if (setupDetails) setupDetails.ontoggle = () => { state.setupOpen = setupDetails.open; };
     const copyBtn = $("#btn-copy-uri");

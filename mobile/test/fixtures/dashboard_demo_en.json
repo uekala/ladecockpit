@@ -21,7 +21,37 @@
             "odometer",
             "charging"
         ],
-        "addon": false
+        "addon": false,
+        "checks": {
+            "hints": [
+                {
+                    "id": "no_home",
+                    "level": "tip",
+                    "text": "Do you charge at home too?"
+                }
+            ],
+            "hidden_note": null,
+            "entities": [
+                {
+                    "role": "soc",
+                    "label": "Battery level",
+                    "entity": "sensor.my_tesla_battery_level",
+                    "state": "40",
+                    "unit": "%",
+                    "ok": true,
+                    "problem": null
+                },
+                {
+                    "role": "odometer",
+                    "label": "Odometer",
+                    "entity": "sensor.my_tesla_odometer",
+                    "state": "unavailable",
+                    "unit": null,
+                    "ok": false,
+                    "problem": "unavailable right now"
+                }
+            ]
+        }
     },
     "sync": {
         "last": "2026-11-12T17:07:46+00:00",
@@ -160,7 +190,8 @@
             "home_kwh": 88.0,
             "home_cost": 27.28,
             "fuel_equivalent": 206.24,
-            "savings": 84.64
+            "savings": 84.64,
+            "fuel_per_100": 12.89
         },
         {
             "key": "2026-11",
@@ -178,7 +209,8 @@
             "home_kwh": 22.0,
             "home_cost": 6.82,
             "fuel_equivalent": 83.14,
-            "savings": 1.1
+            "savings": 1.1,
+            "fuel_per_100": 12.89
         }
     ],
     "slots": [
@@ -372,39 +404,66 @@
     "insights": [
         {
             "kind": "slot",
-            "text": "Evening (20–24 h) is your cheapest time: avg €0.35/kWh, €0.13/kWh below your average."
+            "text": "Evening (20–24 h) is your cheapest time: avg €0.35/kWh, €0.13/kWh below your average.",
+            "action": {
+                "go": "radar"
+            }
         },
         {
             "kind": "site",
-            "text": "Cheapest so far: Mainz (avg €0.39/kWh). Most expensive: IONITY (avg €0.59/kWh)."
+            "text": "Cheapest so far: Mainz (avg €0.39/kWh). Most expensive: IONITY (avg €0.59/kWh).",
+            "action": {
+                "go": "radar"
+            }
         },
         {
             "kind": "network",
-            "text": "MultiPass sessions (2) cost you avg €0.58/kWh, Superchargers €0.46/kWh."
+            "text": "MultiPass sessions (2) cost you avg €0.58/kWh, Superchargers €0.46/kWh.",
+            "action": {
+                "go": "sessions"
+            }
         },
         {
             "kind": "credit",
-            "text": "Tesla credits covered €10.00 so far. You paid avg €0.45/kWh, the list price was avg €0.48/kWh – price comparisons use the list price."
+            "text": "Tesla credits covered €10.00 so far. You paid avg €0.45/kWh, the list price was avg €0.48/kWh – price comparisons use the list price.",
+            "action": {
+                "go": "sessions"
+            }
         },
         {
             "kind": "idle",
-            "text": "Idle fees so far: €2.40 in 1 session – unplugging on time saves money."
+            "text": "Idle fees so far: €2.40 in 1 session – unplugging on time saves money.",
+            "action": {
+                "go": "sessions"
+            }
         },
         {
             "kind": "speed",
-            "text": "On Oct 19 at Mainz you only charged at 38 kW on average, where you usually get about 81 kW. Common reasons: a cold battery (set the Supercharger as navigation destination so the car preconditions) or a shared or throttled stall."
+            "text": "On Oct 19 at Mainz you only charged at 38 kW on average, where you usually get about 81 kW. Common reasons: a cold battery (set the Supercharger as navigation destination so the car preconditions) or a shared or throttled stall.",
+            "action": {
+                "go": "sessions"
+            }
         },
         {
             "kind": "reference",
-            "text": "At your reference price of €0.49/kWh this month would have cost €78.99 – the invoices say €75.20 (−€3.79)."
+            "text": "At your reference price of €0.49/kWh this month would have cost €78.99 – the invoices say €75.20 (−€3.79).",
+            "action": {
+                "go": "month"
+            }
         },
         {
             "kind": "fuel",
-            "text": "This month's 645 km would have cost about €83.14 with a combustion car (7.2 L/100 km, €1.79/L) – saved: €1.10."
+            "text": "This month's 645 km would have cost about €83.14 with a combustion car (7.2 L/100 km, €1.79/L) – saved: €1.10.",
+            "action": {
+                "go": "month"
+            }
         },
         {
             "kind": "climate",
-            "text": "At 0 to 10 °C your Tesla uses about 45 % more battery per 100 km than at 10 to 20 °C."
+            "text": "At 0 to 10 °C your Tesla uses about 45 % more battery per 100 km than at 10 to 20 °C.",
+            "action": {
+                "go": "climate"
+            }
         }
     ],
     "compare": {
@@ -840,5 +899,103 @@
     "look": "classic",
     "years": [
         2026
+    ],
+    "site_radar": [
+        {
+            "site": "Mainz",
+            "site_name": "Mainz",
+            "sessions": 3,
+            "avg_price": 0.3926,
+            "slots": [
+                {
+                    "id": "night",
+                    "label": "Night",
+                    "range": "0–6 h",
+                    "avg_price": null,
+                    "sessions": 0,
+                    "kwh": 0
+                },
+                {
+                    "id": "morning",
+                    "label": "Morning",
+                    "range": "6–11 h",
+                    "avg_price": 0.4962,
+                    "sessions": 2,
+                    "kwh": 63.2
+                },
+                {
+                    "id": "midday",
+                    "label": "Midday",
+                    "range": "11–16 h",
+                    "avg_price": 0.5391,
+                    "sessions": 3,
+                    "kwh": 99.4
+                },
+                {
+                    "id": "afternoon",
+                    "label": "Afternoon",
+                    "range": "16–20 h",
+                    "avg_price": 0.5242,
+                    "sessions": 4,
+                    "kwh": 115.2
+                },
+                {
+                    "id": "evening",
+                    "label": "Evening",
+                    "range": "20–24 h",
+                    "avg_price": 0.3499,
+                    "sessions": 2,
+                    "kwh": 90.7
+                }
+            ]
+        },
+        {
+            "site": "Weiterstadt",
+            "site_name": "Weiterstadt",
+            "sessions": 3,
+            "avg_price": 0.5299,
+            "slots": [
+                {
+                    "id": "night",
+                    "label": "Night",
+                    "range": "0–6 h",
+                    "avg_price": null,
+                    "sessions": 0,
+                    "kwh": 0
+                },
+                {
+                    "id": "morning",
+                    "label": "Morning",
+                    "range": "6–11 h",
+                    "avg_price": 0.4962,
+                    "sessions": 2,
+                    "kwh": 63.2
+                },
+                {
+                    "id": "midday",
+                    "label": "Midday",
+                    "range": "11–16 h",
+                    "avg_price": 0.5391,
+                    "sessions": 3,
+                    "kwh": 99.4
+                },
+                {
+                    "id": "afternoon",
+                    "label": "Afternoon",
+                    "range": "16–20 h",
+                    "avg_price": 0.5242,
+                    "sessions": 4,
+                    "kwh": 115.2
+                },
+                {
+                    "id": "evening",
+                    "label": "Evening",
+                    "range": "20–24 h",
+                    "avg_price": 0.3499,
+                    "sessions": 2,
+                    "kwh": 90.7
+                }
+            ]
+        }
     ]
 }

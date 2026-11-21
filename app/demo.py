@@ -5,7 +5,7 @@ import dataclasses
 import math
 from datetime import datetime, timedelta, timezone
 
-from . import carimage
+from . import carimage, checks
 from .analytics import build_dashboard
 from .config import Settings
 
@@ -184,6 +184,22 @@ def build_demo(settings: Settings) -> dict:
             "push_since": (now - timedelta(days=5)).isoformat(timespec="seconds"),
             "entities": ["soc", "range", "odometer", "charging"],
             "addon": False,
+            # The setup check with a sample tip and the entities of the sample car
+            "checks": {
+                "hints": [{"id": "no_home", "level": "tip",
+                           "text": checks.TEXTS[settings.lang if settings.lang in checks.TEXTS else "en"]["no_home"].format(
+                               option=checks.OPTION[settings.lang if settings.lang in checks.OPTION else "en"]["entity_home_energy"])}],
+                "hidden_note": None,
+                "entities": checks.entity_report(
+                    {"soc": "sensor.my_tesla_battery_level", "range": "sensor.my_tesla_battery_range",
+                     "charging": "sensor.my_tesla_charging", "charge_power": "sensor.my_tesla_charger_power",
+                     "fuel_price": "sensor.fuel_price_e10"},
+                    {"available": True, "raw": {"soc": str(soc_now), "range": str(round(soc_now * 5.7)),
+                                                "charging": "charging", "charge_power": "104", "fuel_price": "1.79"},
+                     "values": {"soc": soc_now, "range": round(soc_now * 5.7), "charge_power": 104.0, "fuel_price": 1.79},
+                     "units": {"soc": "%", "range": "km", "charge_power": "kW", "fuel_price": "€"}},
+                    settings.lang),
+            },
         },
         "sync": {
             "last": (now - timedelta(hours=2)).isoformat(timespec="seconds"),

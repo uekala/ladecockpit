@@ -21,7 +21,37 @@
             "odometer",
             "charging"
         ],
-        "addon": false
+        "addon": false,
+        "checks": {
+            "hints": [
+                {
+                    "id": "no_home",
+                    "level": "tip",
+                    "text": "Lädst du auch zu Hause?"
+                }
+            ],
+            "hidden_note": null,
+            "entities": [
+                {
+                    "role": "soc",
+                    "label": "Akkustand",
+                    "entity": "sensor.my_tesla_battery_level",
+                    "state": "40",
+                    "unit": "%",
+                    "ok": true,
+                    "problem": null
+                },
+                {
+                    "role": "odometer",
+                    "label": "Kilometerstand",
+                    "entity": "sensor.my_tesla_odometer",
+                    "state": "unavailable",
+                    "unit": null,
+                    "ok": false,
+                    "problem": "gerade nicht verfügbar"
+                }
+            ]
+        }
     },
     "sync": {
         "last": "2026-11-12T16:12:47+00:00",
@@ -160,7 +190,8 @@
             "home_kwh": 88.0,
             "home_cost": 27.28,
             "fuel_equivalent": 206.24,
-            "savings": 84.64
+            "savings": 84.64,
+            "fuel_per_100": 12.89
         },
         {
             "key": "2026-11",
@@ -178,7 +209,8 @@
             "home_kwh": 22.0,
             "home_cost": 6.82,
             "fuel_equivalent": 83.14,
-            "savings": 1.1
+            "savings": 1.1,
+            "fuel_per_100": 12.89
         }
     ],
     "slots": [
@@ -372,39 +404,66 @@
     "insights": [
         {
             "kind": "slot",
-            "text": "Abends (20–24 Uhr) lädst du am günstigsten: Ø 0,35 €/kWh, 0,13 €/kWh unter deinem Schnitt."
+            "text": "Abends (20–24 Uhr) lädst du am günstigsten: Ø 0,35 €/kWh, 0,13 €/kWh unter deinem Schnitt.",
+            "action": {
+                "go": "radar"
+            }
         },
         {
             "kind": "site",
-            "text": "Am günstigsten warst du in Mainz (Ø 0,39 €/kWh), am teuersten in IONITY (Ø 0,59 €/kWh)."
+            "text": "Am günstigsten warst du in Mainz (Ø 0,39 €/kWh), am teuersten in IONITY (Ø 0,59 €/kWh).",
+            "action": {
+                "go": "radar"
+            }
         },
         {
             "kind": "network",
-            "text": "MultiPass-Ladungen (2) kosten dich im Schnitt 0,58 €/kWh, am Supercharger sind es 0,46 €/kWh."
+            "text": "MultiPass-Ladungen (2) kosten dich im Schnitt 0,58 €/kWh, am Supercharger sind es 0,46 €/kWh.",
+            "action": {
+                "go": "sessions"
+            }
         },
         {
             "kind": "credit",
-            "text": "Tesla-Gutschriften haben bisher 10,00 € übernommen. Gezahlt hast du Ø 0,45 €/kWh, der Listenpreis lag bei Ø 0,48 €/kWh – Preisvergleiche nutzen den Listenpreis."
+            "text": "Tesla-Gutschriften haben bisher 10,00 € übernommen. Gezahlt hast du Ø 0,45 €/kWh, der Listenpreis lag bei Ø 0,48 €/kWh – Preisvergleiche nutzen den Listenpreis.",
+            "action": {
+                "go": "sessions"
+            }
         },
         {
             "kind": "idle",
-            "text": "Blockiergebühren bisher: 2,40 € bei 1 Ladung – rechtzeitig abstecken spart Geld."
+            "text": "Blockiergebühren bisher: 2,40 € bei 1 Ladung – rechtzeitig abstecken spart Geld.",
+            "action": {
+                "go": "sessions"
+            }
         },
         {
             "kind": "speed",
-            "text": "Am 19.10. in Mainz hast du nur mit Ø 38 kW geladen, sonst bekommst du dort rund 81 kW. Häufige Gründe: ein kalter Akku (den Supercharger vorher als Navi-Ziel eingeben, dann heizt das Auto vor) oder eine geteilte oder gedrosselte Säule."
+            "text": "Am 19.10. in Mainz hast du nur mit Ø 38 kW geladen, sonst bekommst du dort rund 81 kW. Häufige Gründe: ein kalter Akku (den Supercharger vorher als Navi-Ziel eingeben, dann heizt das Auto vor) oder eine geteilte oder gedrosselte Säule.",
+            "action": {
+                "go": "sessions"
+            }
         },
         {
             "kind": "reference",
-            "text": "Mit dem Referenzpreis von 0,49 €/kWh wären es diesen Monat 78,99 € gewesen – laut Rechnungen sind es 75,20 € (−3,79 €)."
+            "text": "Mit dem Referenzpreis von 0,49 €/kWh wären es diesen Monat 78,99 € gewesen – laut Rechnungen sind es 75,20 € (−3,79 €).",
+            "action": {
+                "go": "month"
+            }
         },
         {
             "kind": "fuel",
-            "text": "Die 645 km diesen Monat hätten mit dem Verbrenner (7,2 L/100 km, 1,79 €/L) etwa 83,14 € gekostet – gespart: 1,10 €."
+            "text": "Die 645 km diesen Monat hätten mit dem Verbrenner (7,2 L/100 km, 1,79 €/L) etwa 83,14 € gekostet – gespart: 1,10 €.",
+            "action": {
+                "go": "month"
+            }
         },
         {
             "kind": "climate",
-            "text": "Bei 0 bis 10 °C braucht dein Tesla rund 40 % mehr Akku pro 100 km als bei 10 bis 20 °C."
+            "text": "Bei 0 bis 10 °C braucht dein Tesla rund 40 % mehr Akku pro 100 km als bei 10 bis 20 °C.",
+            "action": {
+                "go": "climate"
+            }
         }
     ],
     "compare": {
@@ -840,5 +899,103 @@
     "look": "classic",
     "years": [
         2026
+    ],
+    "site_radar": [
+        {
+            "site": "Mainz",
+            "site_name": "Mainz",
+            "sessions": 3,
+            "avg_price": 0.3926,
+            "slots": [
+                {
+                    "id": "night",
+                    "label": "Nachts",
+                    "range": "0–6 Uhr",
+                    "avg_price": null,
+                    "sessions": 0,
+                    "kwh": 0
+                },
+                {
+                    "id": "morning",
+                    "label": "Morgens",
+                    "range": "6–11 Uhr",
+                    "avg_price": 0.4962,
+                    "sessions": 2,
+                    "kwh": 63.2
+                },
+                {
+                    "id": "midday",
+                    "label": "Mittags",
+                    "range": "11–16 Uhr",
+                    "avg_price": 0.5391,
+                    "sessions": 3,
+                    "kwh": 99.4
+                },
+                {
+                    "id": "afternoon",
+                    "label": "Nachmittags",
+                    "range": "16–20 Uhr",
+                    "avg_price": 0.5242,
+                    "sessions": 4,
+                    "kwh": 115.2
+                },
+                {
+                    "id": "evening",
+                    "label": "Abends",
+                    "range": "20–24 Uhr",
+                    "avg_price": 0.3499,
+                    "sessions": 2,
+                    "kwh": 90.7
+                }
+            ]
+        },
+        {
+            "site": "Weiterstadt",
+            "site_name": "Weiterstadt",
+            "sessions": 3,
+            "avg_price": 0.5299,
+            "slots": [
+                {
+                    "id": "night",
+                    "label": "Nachts",
+                    "range": "0–6 Uhr",
+                    "avg_price": null,
+                    "sessions": 0,
+                    "kwh": 0
+                },
+                {
+                    "id": "morning",
+                    "label": "Morgens",
+                    "range": "6–11 Uhr",
+                    "avg_price": 0.4962,
+                    "sessions": 2,
+                    "kwh": 63.2
+                },
+                {
+                    "id": "midday",
+                    "label": "Mittags",
+                    "range": "11–16 Uhr",
+                    "avg_price": 0.5391,
+                    "sessions": 3,
+                    "kwh": 99.4
+                },
+                {
+                    "id": "afternoon",
+                    "label": "Nachmittags",
+                    "range": "16–20 Uhr",
+                    "avg_price": 0.5242,
+                    "sessions": 4,
+                    "kwh": 115.2
+                },
+                {
+                    "id": "evening",
+                    "label": "Abends",
+                    "range": "20–24 Uhr",
+                    "avg_price": 0.3499,
+                    "sessions": 2,
+                    "kwh": 90.7
+                }
+            ]
+        }
     ]
 }

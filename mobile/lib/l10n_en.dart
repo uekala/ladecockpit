@@ -673,4 +673,50 @@ const Map<String, String> english = {
       'Peak',
   'Deine {0} kWh aus der Hauptzeit an diesen Standorten hätten in der Nebenzeit {1} € weniger gekostet.':
       'Your {0} kWh at peak time at these sites would have cost €{1} less off-peak.',
+  'Datensicherung':
+      'Backup',
+  'Datensicherung fehlgeschlagen (HTTP {0}).':
+      'Backup failed (HTTP {0}).',
+  'Einrichtung prüfen':
+      'Setup check',
+  'Gespart':
+      'Saved',
+  'Ladecockpit Datensicherung':
+      'Ladecockpit backup',
+  'Ladehistorie, Messwerte und Rechnungen in einer Datei teilen oder speichern':
+      'Share or save charging history, readings and invoices in one file',
+  'Pro 100 km: Tesla und Verbrenner':
+      'Per 100 km: Tesla and combustion car',
+  'Radar für {0}':
+      'Radar for {0}',
+  'Tesla ({0} € pro 100 km)':
+      'Tesla ({0} € per 100 km)',
+  'Verbrenner':
+      'Combustion car',
+  'Verbrenner ({0} L/100 km · {1} €/L bezahlt)':
+      'Combustion car ({0} L/100 km · {1} €/L paid)',
+  'Verbrenner ({0} L/100 km · {1} €/L)':
+      'Combustion car ({0} L/100 km · {1} €/L)',
+  'Verbrenner ({0} L/100 km · Ø {1} €/L je Tag)':
+      'Combustion car ({0} L/100 km · Ø {1} €/L per day)',
+  'Vergleich mit Verbrenner':
+      'Compared with a combustion car',
+  'Vergleich mit Verbrenner · {0} km':
+      'Compared with a combustion car · {0} km',
+  'Vergleich mit Verbrenner: {0} {1}, Tesla {2}, gespart {3}':
+      'Compared with a combustion car: {0} {1}, Tesla {2}, saved {3}',
+  'Was auffällt':
+      'What stands out',
+  'Zu den Ladevorgängen':
+      'To the sessions',
+  'Zum Monatsüberblick':
+      'To the monthly overview',
+  'Zum Preisradar':
+      'To the price radar',
+  '{0} Tipps für mehr Auswertungen':
+      '{0} tips for more insights',
+  '{0} von {1} Entitäten prüfen':
+      '{0} of {1} entities need a look',
+  '{0}: Tesla {1} €, Verbrenner {2} €':
+      '{0}: Tesla {1} €, combustion car {2} €',
 };
