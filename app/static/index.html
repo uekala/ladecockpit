@@ -1142,6 +1142,11 @@ footer .look-pick button[aria-pressed="true"] { background: var(--accent-fill); 
 .check-list small { display: block; color: var(--mute); font-size: .78rem; overflow-wrap: anywhere; }
 .check-hints { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; font-size: .9rem; color: var(--ink-2); }
 .check-hints li.hint-missing::marker { color: var(--warn); }
+.check-hints .hint-row { display: flex; gap: 6px; align-items: flex-start; justify-content: space-between; }
+.hint-hide { flex: none; display: inline-grid; place-items: center; min-width: 44px; min-height: 44px; margin: -12px -10px -12px 0; border: 0; border-radius: 10px; background: none; color: var(--mute); font: inherit; font-size: 1.15rem; line-height: 1; cursor: pointer; }
+.hint-hide:hover { color: var(--ink); }
+.hints-show { font: inherit; font-size: .84rem; font-weight: 600; border: 0; background: none; color: var(--accent); padding: 4px 0; min-height: 44px; cursor: pointer; justify-self: start; }
+.hint-hide:focus-visible, .hints-show:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .setup-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
 .setup-list li { display: grid; grid-template-columns: 1.8em minmax(0, 1fr); gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
 .setup-list li:first-child { border-top: none; }
@@ -1254,6 +1259,7 @@ try {
       radarAll: "All sites", radarFor: "Price radar for", radarSiteAvg: "average at {site}: {p}",
       tipsEyebrow: "Tips", tipsTitle: "What stands out", goRadar: "To the price radar", goSite: "Radar for {site}", goSessions: "To the sessions", goMonth: "To this month", goClimate: "To consumption by temperature",
       checkEyebrow: "Setup", checkTitle: "Setup check", checkAllOk: "All {n} entities deliver values.", checkSome: "{n} of {m} entities need a look.", checkEntities: "Entities in Home Assistant", checkHints: "What else would help", checkHaDown: "Home Assistant is not reachable – the entities cannot be checked.",
+      checkOffline: "Car offline – values from the last reading {when}.", hintHide: "Hide tip", hintHidden: "Tip hidden", hintsShow: "Show hidden tips again ({n})", hintFailed: "Could not save: {e}",
       histCost: "Cost", histKwh: "kWh", histPer100: "Per 100 {unit}", histShow: "Show", histTesla: "Tesla", histFuel: "Combustion car", histInfo100: "{m}: Tesla {t} · combustion car {f} per 100 {unit}",
       exEyebrow: "Export", exTitle: "Exports and backup", exAll: "All data", exYears: "Years", exMonths: "Months", exReport: "Report (PDF)", exInvoices: "Invoices (ZIP)", exYear: "{year} (PDF)",
       fuelHead: "Compared with a combustion car · {dist} {unit}", fuelSince: " since {d}", teslaSame: "Tesla ({p} per 100 {unit})",
@@ -1371,6 +1377,7 @@ try {
       radarAll: "Alle Standorte", radarFor: "Preis-Radar für", radarSiteAvg: "Schnitt in {site}: {p}",
       tipsEyebrow: "Tipps", tipsTitle: "Was auffällt", goRadar: "Zum Preis-Radar", goSite: "Radar für {site}", goSessions: "Zu den Ladungen", goMonth: "Zum Monat", goClimate: "Zum Verbrauch nach Temperatur",
       checkEyebrow: "Einrichtung", checkTitle: "Einrichtung prüfen", checkAllOk: "Alle {n} Entitäten liefern Werte.", checkSome: "{n} von {m} Entitäten prüfen.", checkEntities: "Entitäten in Home Assistant", checkHints: "Was noch helfen würde", checkHaDown: "Home Assistant ist nicht erreichbar – die Entitäten lassen sich nicht prüfen.",
+      checkOffline: "Auto offline – Werte vom letzten Stand {when}.", hintHide: "Tipp ausblenden", hintHidden: "Tipp ausgeblendet", hintsShow: "Ausgeblendete Tipps wieder zeigen ({n})", hintFailed: "Konnte nicht gespeichert werden: {e}",
       histCost: "Kosten", histKwh: "kWh", histPer100: "Pro 100 {unit}", histShow: "Anzeigen", histTesla: "Tesla", histFuel: "Verbrenner", histInfo100: "{m}: Tesla {t} · Verbrenner {f} pro 100 {unit}",
       exEyebrow: "Export", exTitle: "Exporte und Sicherung", exAll: "Alle Daten", exYears: "Jahre", exMonths: "Monate", exReport: "Bericht (PDF)", exInvoices: "Rechnungen (ZIP)", exYear: "{year} (PDF)",
       fuelHead: "Vergleich mit Verbrenner · {dist} {unit}", fuelSince: " seit {d}", teslaSame: "Tesla ({p} pro 100 {unit})",
@@ -2262,27 +2269,53 @@ try {
     const bad = ents.filter((e) => e.ok === false);
     const down = ents.length && ents.every((e) => e.ok == null);
     const hints = c.hints || [];
+    // An offline car is no problem of the setup: its entities keep the last value until it is back.
+    const fine = c.offline ? T("checkOffline", { when: c.offline }) : T("checkAllOk", { n: ents.length });
+    const live = d.mode === "live" && !state.preview;
+    const showHidden = c.hidden && live
+      ? `<button class="hints-show" type="button" data-hints-show>${esc(T("hintsShow", { n: c.hidden }))}</button>` : "";
     if (!hints.length && !bad.length && !down) {
       // All fine: one quiet line in a folded panel.
-      return ents.length || (c.steps || []).length ? `<section class="panel"><details>
-        <summary>${T("checkTitle")}${ents.length ? " · " + esc(T("checkAllOk", { n: ents.length })) : ""}</summary>
-        <div style="display:grid;gap:14px">${stepList(c.steps)}${ents.length ? entityList(ents) : ""}</div>
+      return ents.length || (c.steps || []).length ? `<section class="panel"><details id="check-details">
+        <summary>${T("checkTitle")}${ents.length ? " · " + esc(fine) : ""}</summary>
+        <div style="display:grid;gap:14px">${stepList(c.steps)}${ents.length ? entityList(ents) : ""}${showHidden}</div>
       </details></section>` : "";
     }
+    const hintItem = (h) => `<li class="hint-${esc(h.level)}"><div class="hint-row"><span>${esc(h.text)}</span>${h.dismissable && live
+      ? `<button class="hint-hide" type="button" data-hint-hide="${esc(h.id)}" aria-label="${esc(T("hintHide"))}" title="${esc(T("hintHide"))}">×</button>` : ""}</div></li>`;
     return `<section class="panel" aria-labelledby="h-check">
-      <details ${bad.length || hints.some((h) => h.level === "missing") ? "open" : ""}>
+      <details id="check-details" ${bad.length || hints.some((h) => h.level === "missing") ? "open" : ""}>
         <summary><strong id="h-check">${T("checkTitle")}</strong>
-          · ${esc(down ? T("checkHaDown") : bad.length ? T("checkSome", { n: bad.length, m: ents.length }) : T("checkAllOk", { n: ents.length }))}</summary>
+          · ${esc(down ? T("checkHaDown") : bad.length ? T("checkSome", { n: bad.length, m: ents.length }) : fine)}</summary>
         <div style="display:grid;gap:14px">
           ${stepList(c.steps)}
           ${hints.length ? `<div><h3 class="sub" style="margin:0 0 6px">${T("checkHints")}</h3>
-            <ul class="check-hints">${hints.map((h) => `<li class="hint-${esc(h.level)}">${esc(h.text)}</li>`).join("")}</ul>
+            <ul class="check-hints">${hints.map(hintItem).join("")}</ul>
             ${c.hidden_note ? `<p class="sub" style="margin:8px 0 0">${esc(c.hidden_note)}</p>` : ""}</div>` : ""}
+          ${showHidden}
           ${ents.length ? `<div><h3 class="sub" style="margin:0 0 6px">${T("checkEntities")}</h3>${entityList(ents)}</div>` : ""}
         </div>
       </details>
     </section>`;
   }
+
+  // Hide a tip of the setup check, or show the hidden ones again
+  document.addEventListener("click", async (e) => {
+    const hide = e.target.closest("[data-hint-hide]");
+    const show = e.target.closest("[data-hints-show]");
+    if (!hide && !show) return;
+    try {
+      const r = hide
+        ? await fetch("api/hint", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: hide.dataset.hintHide, hidden: true }) })
+        : await fetch("api/hints/hidden", { method: "DELETE" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      if (hide) toast(T("hintHidden"));
+      await load();
+      $("#check-details")?.setAttribute("open", "");  // stay where the user was
+    } catch (err) {
+      toast(T("hintFailed", { e: err.message }));
+    }
+  });
   function entityList(ents) {
     return `<div class="check-list">${ents.map((e) => {
       const mark = e.ok == null ? '<span class="na" aria-hidden="true">–</span>' : e.ok ? '<span class="ok" aria-hidden="true">✓</span>' : '<span class="bad" aria-hidden="true">!</span>';

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.23.4 – 2026-11-22
+
+- **An offline car is no setup problem.** When the car is asleep or has no reception and Home Assistant restarts, the car integration has no values until the car is back online – the setup check then reported battery level, range, odometer and charging state as "unavailable right now" and asked to check the setup. Now, when every entity the car delivers exists but has no value, and Ladecockpit has kept values of the car before, the setup check says "Car offline – values from the last reading 21.11. 21:12" and shows no warning. A single entity without a value while the car is online, an entity that does not exist, and a car that never delivered a value are still marked. New field `offline` in `setup.checks` (time of the last reading), `offline` per entity.
+- **Tips can be hidden.** A tip of the setup check ("Do you charge at home too? …") can be hidden with × in the web app and the mobile app; *Show hidden tips again* brings them back. A feature that is half set up (e.g. a comparison with a combustion car without a fuel price) stays until it is fixed. Hidden tips are kept on the server and go into the backup. API: `PUT /api/hint` (`{"id": "no_home", "hidden": true}`), `DELETE /api/hints/hidden`; new fields `dismissable` per hint and `hidden` (number of hidden tips) in `setup.checks`.
+- Mobile app: the cockpit says "Car offline" instead of an orange "Charging state not available" while it shows the last known values; × next to each tip, and *Show hidden tips again* in the setup check.
+
 ## 0.23.3 – 2026-11-21
 
 - Web app on the phone: the map pin next to a MultiPass station is now a 44 × 44 px button instead of a 16 px wide icon, so it is easy to tap – in both looks, also in the Home Assistant app.

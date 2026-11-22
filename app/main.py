@@ -263,11 +263,13 @@ async def dashboard():
         "api_calls": db.calls_this_month(),
     }
     sessions = db.sessions()
+    car_last = db.last_reading("soc") or db.last_reading("odometer") or db.last_reading("range")
     meta["setup"]["checks"] = checks.report(settings, ha.entities(), live, {
         "tesla_connected": tesla.connected, "tesla_auth_error": tesla.auth_error,
         "last_sync": sync.last_sync, "sync_error": sync.last_error, "sessions": len(sessions),
         "ha_ok": bool(live.get("available")), "ha_error": live.get("error"),
-        "when": _when(sync.last_sync)})
+        "when": _when(sync.last_sync), "car_when": _when(car_last[0].isoformat()) if car_last else None},
+        hidden=_hidden_hints())
     d = build_dashboard(sessions=sessions, live=live, readings=await _readings(now),
                         settings=settings, meta=meta, now=now)
     d["car"] = _car(sessions)
@@ -299,6 +301,49 @@ async def look_save(body: LookIn):
         raise HTTPException(400, f"Use one of: {', '.join(LOOKS)}.")
     db.kv_set("ui_look", look)
     return {"look": look}
+
+
+# --- tips of the setup check the user has hidden ---------------------------------------------------
+_HIDDEN_HINTS_KEY = "hints_hidden"
+
+
+def _hidden_hints() -> set[str]:
+    try:
+        saved = json.loads(db.kv_get(_HIDDEN_HINTS_KEY) or "[]")
+    except ValueError:
+        saved = []
+    return {str(x) for x in saved} if isinstance(saved, list) else set()
+
+
+class HintIn(BaseModel):
+    id: str
+    hidden: bool = True
+
+
+@app.put("/api/hint")
+async def hint_save(body: HintIn):
+    """Hide a tip of the setup check (or show it again). Only tips can be hidden: a feature that is
+    half set up stays in the list until it is fixed."""
+    if settings.demo:
+        raise HTTPException(404, "The demo keeps its tips.")
+    if body.id not in checks.HINT_IDS:
+        raise HTTPException(400, "Unknown tip.")
+    hidden = _hidden_hints()
+    if body.hidden:
+        hidden.add(body.id)
+    else:
+        hidden.discard(body.id)
+    db.kv_set(_HIDDEN_HINTS_KEY, json.dumps(sorted(hidden)))
+    return {"hidden": sorted(hidden)}
+
+
+@app.delete("/api/hints/hidden")
+async def hints_show_all():
+    """Show every hidden tip again."""
+    if settings.demo:
+        raise HTTPException(404, "The demo keeps its tips.")
+    db.kv_set(_HIDDEN_HINTS_KEY, "[]")
+    return {"hidden": []}
 
 
 # --- operators assigned by hand ------------------------------------------------------------------

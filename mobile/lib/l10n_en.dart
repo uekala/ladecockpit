@@ -721,4 +721,16 @@ const Map<String, String> english = {
       '{0}: Tesla {1} €, combustion car {2} €',
   'Nächster Schritt: {0}':
       'Next step: {0}',
+  'Tipp ausblenden':
+      'Hide tip',
+  'Tipp ausgeblendet':
+      'Tip hidden',
+  'Tipps werden wieder gezeigt':
+      'Tips are shown again',
+  'Ausgeblendete Tipps wieder zeigen ({0})':
+      'Show hidden tips again ({0})',
+  'Konnte nicht gespeichert werden (HTTP {0}).':
+      'Could not save (HTTP {0}).',
+  'Auto offline':
+      'Car offline',
 };
