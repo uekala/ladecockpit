@@ -15,7 +15,7 @@ Future<void> _settle(WidgetTester tester) async {
   }
 }
 
-/// Opens the cockpit with the demo data, changed as the test needs; returns the requests sent.
+/// Öffnet das Cockpit mit den Demodaten, geändert, wie der Test es braucht; gibt die gesendeten Anfragen zurück.
 Future<List<http.Request>> _open(WidgetTester tester, void Function(Map<String, dynamic> data) change) async {
   final data = jsonDecode(File('test/fixtures/dashboard_demo.json').readAsStringSync())
       as Map<String, dynamic>;
@@ -43,7 +43,7 @@ Future<List<http.Request>> _open(WidgetTester tester, void Function(Map<String, 
   return requests;
 }
 
-/// The setup check as the server sends it while the car is offline: no problem, one tip.
+/// Die Einrichtungsprüfung, wie der Server sie schickt, während das Auto offline ist: kein Problem, ein Tipp.
 void _carOffline(Map<String, dynamic> data) {
   final checks = data['setup']['checks'] as Map<String, dynamic>;
   checks['hints'] = [

@@ -1,5 +1,5 @@
-// English texts of the app, keyed by the German text in the code.
-// A text that is missing here stays German.
+// Englische Texte der App, mit dem deutschen Text im Code als Schlüssel.
+// Ein Text, der hier fehlt, bleibt deutsch.
 const Map<String, String> english = {
   'Ladecockpit':
       'Ladecockpit',

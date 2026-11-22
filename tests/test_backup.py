@@ -1,4 +1,4 @@
-"""Backup and restore: the charging history moves, the Tesla sign-in stays."""
+"""Sichern und Wiederherstellen: Die Ladehistorie zieht um, die Tesla-Anmeldung bleibt."""
 import asyncio
 import dataclasses
 import io
@@ -57,7 +57,7 @@ def test_backup_leaves_the_tesla_sign_in_out(tmp_path):
         assert sorted(zf.namelist()) == ["invoices/a1.pdf", "ladecockpit.db", "manifest.json"]
         blob = b"".join(zf.read(n) for n in zf.namelist())
     assert b"SECRET" not in blob
-    # The running installation still has its sign-in.
+    # Die laufende Installation hat weiter ihre Anmeldung.
     assert db.kv_get("tesla_refresh_token") == "SECRET-REFRESH"
 
 
@@ -75,7 +75,7 @@ def test_restore_replaces_history_and_keeps_local_sign_in(tmp_path):
     result = backup.restore(dest, dest_dir, target)
     assert result["sessions"] == 2 and result["readings"] == 1 and result["invoices"] == 1
     assert [s["session_id"] for s in dest.sessions()] == ["b2", "a1"]
-    # Restored sessions keep their state, so nothing is reported to Home Assistant twice.
+    # Wiederhergestellte Ladungen behalten ihren Zustand, an Home Assistant wird also nichts doppelt gemeldet.
     assert {s["session_id"]: s["push_state"] for s in dest.sessions()} == {"a1": "pushed", "b2": "backfill"}
     assert dest.sessions_to_push() == []
     assert dest.kv_get("ui_look") == "dynamic" and dest.kv_get("push_since") == "2026-10-01T00:00:00+00:00"

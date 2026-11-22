@@ -1,11 +1,11 @@
-"""Sync with Tesla and hand new invoices to Home Assistant.
+"""Abgleich mit Tesla und Weitergabe neuer Rechnungen an Home Assistant.
 
-Rhythm:
-  * normally every SYNC_INTERVAL_H hours (default 6 h)
-  * after a charging session ends (detected by the watcher, or POST /api/sync)
-    every BURST_INTERVAL_MIN minutes until the new invoice shows up –
-    for at most BURST_DURATION_MIN.
-That keeps it at a few dozen Tesla requests per month.
+Takt:
+  * normalerweise alle SYNC_INTERVAL_H Stunden (Standard 6 h)
+  * nach dem Ende einer Ladung (vom Watcher erkannt oder POST /api/sync)
+    alle BURST_INTERVAL_MIN Minuten, bis die neue Rechnung auftaucht –
+    höchstens BURST_DURATION_MIN lang.
+So bleibt es bei einigen Dutzend Tesla-Anfragen im Monat.
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ log = logging.getLogger("ladecockpit.sync")
 BURST_START_DELAY_S = 5
 PROBLEM_ID = "ladecockpit_problem"
 FAILURES_BEFORE_ALERT = 3
-# Invoices read for the network per sync, and how far back (each is one Tesla request, once).
+# Je Abgleich auf das Netz hin gelesene Rechnungen und wie weit zurück (jede ist eine Tesla-Anfrage, einmalig).
 CHECK_PER_SYNC = 25
 CHECK_DAYS = 120
 
@@ -51,7 +51,7 @@ class SyncService:
     # --- control -------------------------------------------------------------
     def trigger_burst(self) -> None:
         self.burst_until = time.time() + self.s.burst_duration_min * 60
-        # Short delay so an HA automation that called us is already listening for the event.
+        # Kurze Pause, damit eine HA-Automation, die uns aufgerufen hat, schon auf das Event wartet.
         asyncio.get_running_loop().call_later(BURST_START_DELAY_S, self._wake.set)
 
     def wake(self) -> None:
@@ -66,7 +66,7 @@ class SyncService:
             await self.tick()
             wait_s = self.s.burst_interval_min * 60 if self.bursting else self.s.sync_interval_h * 3600
             if self.failures and not self.bursting:
-                wait_s = min(wait_s, 1800)  # retry sooner after an error
+                wait_s = min(wait_s, 1800)  # nach einem Fehler früher erneut versuchen
             self.next_sync = datetime.fromtimestamp(time.time() + wait_s, timezone.utc).isoformat(timespec="seconds")
             try:
                 await asyncio.wait_for(self._wake.wait(), timeout=wait_s)
@@ -75,7 +75,7 @@ class SyncService:
             self._wake.clear()
 
     async def tick(self) -> None:
-        """One round: sync if possible and keep the problem notification up to date."""
+        """Eine Runde: abgleichen, wenn möglich, und die Problem-Benachrichtigung aktuell halten."""
         if self.tesla.auth_error:
             await self.report("auth")
             return
@@ -91,7 +91,7 @@ class SyncService:
             await self.report("budget")
             return
         except RateLimited as e:
-            # Not a fault of the setup: no traceback, but it counts like any other failed sync.
+            # Kein Fehler der Einrichtung: kein Traceback, zählt aber wie jeder andere fehlgeschlagene Abgleich.
             log.warning("Sync paused: %s", e)
             self.last_error = str(e)
             self.failures += 1
@@ -110,10 +110,10 @@ class SyncService:
         self.failures = 0
         await self.report(None)
         if new and self.bursting:
-            self.burst_until = 0.0  # invoice arrived – back to the normal rhythm
+            self.burst_until = 0.0  # Rechnung da – zurück zum normalen Takt
 
     async def report(self, kind: str | None, detail: str = "") -> None:
-        """Raise or clear the problem notification in Home Assistant (shown once per problem)."""
+        """Die Problem-Benachrichtigung in Home Assistant setzen oder entfernen (einmal je Problem gezeigt)."""
         current = self.db.kv_get("problem_kind")
         if kind == current:
             return
@@ -140,12 +140,12 @@ class SyncService:
 
     # --- sync -------------------------------------------------------------------
     async def sync_once(self) -> int:
-        """Fetch history, store it, send new invoices to HA. Returns number of new sessions."""
+        """Historie holen, speichern, neue Rechnungen an HA senden. Gibt die Zahl neuer Ladungen zurück."""
         async with self._busy:
             push_since = self.db.kv_get("push_since")
             if not push_since:
-                # First sync: everything up to now is only imported, never sent to HA,
-                # so totals the user already keeps in HA are not counted twice.
+                # Erster Abgleich: Alles bis jetzt wird nur importiert, nie an HA gesendet,
+                # damit Summen, die der Nutzer schon in HA führt, nicht doppelt zählen.
                 push_since = utcnow_iso()
                 self.db.kv_set("push_since", push_since)
 
@@ -171,19 +171,19 @@ class SyncService:
             return new_count
 
     async def check_invoices(self, now: datetime | None = None) -> int:
-        """Before sessions go to Home Assistant: their network from the invoice, and for MultiPass
-        sessions the station's address from the invoice and its operator from the register.
+        """Bevor Ladungen an Home Assistant gehen: ihr Netz aus der Rechnung, und bei MultiPass-Ladungen
+        die Adresse der Station aus der Rechnung und ihr Betreiber aus dem Register.
 
-        The invoice number in the file name usually tells the network already ("P" Supercharger,
-        "MSP" MultiPass); only when it does not, the PDF is fetched. MultiPass invoices are fetched
-        for the station's address. PDFs are kept, so viewing them or the month report needs no
-        further request. Returns the number of invoices read."""
+        Die Rechnungsnummer im Dateinamen verrät das Netz meist schon („P“ Supercharger, „MSP“
+        MultiPass); nur wenn nicht, wird das PDF geholt. MultiPass-Rechnungen werden für die Adresse
+        der Station geholt. PDFs bleiben gespeichert, Ansicht und Monatsbericht brauchen also keine
+        weitere Anfrage. Gibt die Zahl gelesener Rechnungen zurück."""
         now = now or datetime.now(timezone.utc)
         since = (now - timedelta(days=CHECK_DAYS)).isoformat(timespec="seconds")
         read = 0
         for s in self.db.sessions_to_check(since, CHECK_PER_SYNC * 4):
             if (s.get("network_reason") or "").startswith("invoice "):
-                self.db.set_invoice_network(s["session_id"], s["network"])  # told by the file name
+                self.db.set_invoice_network(s["session_id"], s["network"])  # vom Dateinamen verraten
                 continue
             if read >= CHECK_PER_SYNC:
                 break
@@ -197,7 +197,7 @@ class SyncService:
                 log.info("Session %s is a MultiPass session (invoice number)", s["session_id"])
         for s in self.db.sessions_without_station(since, CHECK_PER_SYNC * 4):
             if s.get("network") != networks.MULTIPASS:
-                self.db.set_station(s["session_id"], {})  # Superchargers: the site name says it all
+                self.db.set_station(s["session_id"], {})  # Supercharger: Der Standortname sagt alles
                 continue
             if read >= CHECK_PER_SYNC:
                 break
@@ -213,14 +213,14 @@ class SyncService:
     async def _invoice_text(self, s: dict) -> str | None:
         try:
             path = await invoices.pdf_path(self.tesla, self.s.data_dir, s)
-        except Exception as e:  # noqa: BLE001 – try again with the next sync
+        except Exception as e:  # noqa: BLE001 – beim nächsten Abgleich erneut versuchen
             log.warning("Could not fetch the invoice of session %s: %s", s["session_id"], e)
             return None
         return invoices.pdf_text(path.read_bytes())
 
     async def lookup_operators(self, now: datetime | None = None) -> int:
-        """Operators of German MultiPass stations from the register of the Bundesnetzagentur.
-        Returns the number of stations found."""
+        """Betreiber deutscher MultiPass-Stationen aus dem Register der Bundesnetzagentur.
+        Gibt die Zahl gefundener Stationen zurück."""
         if not self.s.operator_lookup:
             return 0
         now = now or datetime.now(timezone.utc)
@@ -229,7 +229,7 @@ class SyncService:
             return 0
         try:
             rows = await self.register.rows_for({s["station"]["postcode"] for s in due})
-        except Exception:  # noqa: BLE001 – the operator is a nice-to-have, never stop a sync for it
+        except Exception:  # noqa: BLE001 – der Betreiber ist eine Zugabe, nie deswegen einen Abgleich abbrechen
             log.exception("Charging station register lookup failed")
             return 0
         if rows is None:
@@ -252,9 +252,9 @@ class SyncService:
         return found
 
     async def lookup_on_map(self, now: datetime | None = None) -> int:
-        """Operators of MultiPass stations the register does not have (all stations outside
-        Germany), from OpenStreetMap. Every address is asked once and the answer is used for all
-        its sessions. Returns the number of sessions that got an operator."""
+        """Betreiber von MultiPass-Stationen, die das Register nicht hat (alle Stationen außerhalb
+        Deutschlands), aus OpenStreetMap. Jede Adresse wird einmal gefragt und die Antwort für alle
+        ihre Ladungen genutzt. Gibt die Zahl der Ladungen zurück, die einen Betreiber bekamen."""
         if not self.s.map_lookup:
             return 0
         now = now or datetime.now(timezone.utc)
@@ -284,13 +284,13 @@ class SyncService:
                 except osm.Unavailable as e:
                     log.warning("OpenStreetMap lookup not available now (%s); trying again with the next sync", e)
                     break
-                except Exception:  # noqa: BLE001 – the operator is a nice-to-have, never stop a sync for it
+                except Exception:  # noqa: BLE001 – der Betreiber ist eine Zugabe, nie deswegen einen Abgleich abbrechen
                     log.exception("OpenStreetMap lookup failed")
                     break
                 result = {"map_checked": now.isoformat(timespec="seconds"), "map_v": osm.VERSION}
                 if hit:
                     result.update(operator=hit["operator"], operator_src="osm")
-                # Say which station and why, so a miss can be understood (town only, no street).
+                # Sagen, welche Station und warum, damit ein Fehlschlag nachvollziehbar ist (nur Ort, keine Straße).
                 town = sessions[0]["station"].get("city") or sessions[0]["station"].get("postcode") or "?"
                 log.info("OpenStreetMap, station in %s: %s", town,
                          getattr(self.map, "why", "") or ("operator found" if hit else "no operator"))
@@ -303,8 +303,8 @@ class SyncService:
 
     @staticmethod
     def _log_format(raw: dict, session_id: str) -> None:
-        """Note what Tesla sent for sessions that are not plain Supercharger records
-        (no personal data: field names and the rule that matched only)."""
+        """Festhalten, was Tesla für Ladungen geschickt hat, die keine einfachen Supercharger-Datensätze sind
+        (keine persönlichen Daten: nur Feldnamen und die zutreffende Regel)."""
         network, reason = networks.classify(raw)
         if network != networks.SUPERCHARGER:
             log.info("Session %s looks like %s (%s)", session_id, network, reason)
@@ -320,7 +320,7 @@ class SyncService:
         now = datetime.now(timezone.utc)
         for s in self.db.sessions_to_push():
             if s["kwh"] is None or s["total"] is None:
-                continue  # billing not final yet – try again next sync
+                continue  # Abrechnung noch nicht endgültig – beim nächsten Abgleich erneut
             started = datetime.fromisoformat(s["start_ts"]) if s["start_ts"] else now
             if now - started > max_age:
                 self.db.set_push_state(s["session_id"], "stale")
@@ -331,7 +331,7 @@ class SyncService:
         return pushed
 
     async def push_phone(self) -> int:
-        """New invoices to the phone through ntfy (independent of Home Assistant)."""
+        """Neue Rechnungen über ntfy aufs Handy (unabhängig von Home Assistant)."""
         if not (self.push and self.push.configured):
             return 0
         sent = 0
@@ -344,7 +344,7 @@ class SyncService:
                 mark_sent(self.db, s["session_id"])
                 sent += 1
             else:
-                break  # ntfy not reachable: the rest waits for the next sync
+                break  # ntfy nicht erreichbar: Der Rest wartet auf den nächsten Abgleich
         return sent
 
     def event_payload(self, s: dict) -> dict:
@@ -389,7 +389,7 @@ class SyncService:
         }
 
     def _speed(self, s: dict) -> dict:
-        """Average power of the session against the usual one at the site (see vehicle.charging_speed)."""
+        """Mittlere Leistung der Ladung gegenüber der üblichen am Standort (siehe vehicle.charging_speed)."""
         if not s.get("start_ts"):
             return {}
         since = datetime.fromisoformat(s["start_ts"]) - timedelta(days=400)

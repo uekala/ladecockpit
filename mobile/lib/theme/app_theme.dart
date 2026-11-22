@@ -1,9 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 
-/// Central visual system for the Ladecockpit mobile app.
+/// Zentrales Gestaltungssystem der Ladecockpit-Handy-App.
 ///
-/// Keep this theme presentation-only: API behavior and dashboard data remain
-/// owned by the existing screens and client.
+/// Dieses Theme betrifft nur die Darstellung: API-Verhalten und Dashboard-Daten
+/// gehören weiter den bestehenden Bildschirmen und dem Client.
 abstract final class AppTheme {
   static const background = Color(0xFF070B10);
   static const surface = Color(0xFF111820);

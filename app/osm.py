@@ -1,18 +1,18 @@
-"""Who runs a station, from OpenStreetMap.
+"""Wer eine Station betreibt, aus OpenStreetMap.
 
-Outside Germany there is no register Ladecockpit could read, and the German register does not have
-every station. OpenStreetMap maps charging stations all over Europe, most with their operator. So
-for a station without an operator Ladecockpit asks two public services:
+Außerhalb Deutschlands gibt es kein Register, das Ladecockpit lesen könnte, und das deutsche Register
+hat nicht jede Station. OpenStreetMap verzeichnet Ladestationen in ganz Europa, die meisten mit
+Betreiber. Für eine Station ohne Betreiber fragt Ladecockpit deshalb zwei öffentliche Dienste:
 
-1. Nominatim turns the address from the invoice into a coordinate.
-2. Overpass lists the charging stations around that coordinate with their tags.
+1. Nominatim macht aus der Adresse auf der Rechnung eine Koordinate.
+2. Overpass listet die Ladestationen rund um diese Koordinate mit ihren Tags.
 
-The operator is only taken when the map leaves no doubt (see `pick`); otherwise the station stays
-without one rather than getting a wrong name. Both services are free and shared: one address per
-second at most, a few addresses per sync, every address only once (again after RETRY when nothing
-was found). Only the address of the station is sent.
+Der Betreiber wird nur übernommen, wenn die Karte keinen Zweifel lässt (siehe `pick`); sonst bleibt die
+Station lieber ohne als mit falschem Namen. Beide Dienste sind kostenlos und geteilt: höchstens eine
+Adresse pro Sekunde, wenige Adressen je Abgleich, jede Adresse nur einmal (nach RETRY erneut, wenn
+nichts gefunden wurde). Gesendet wird nur die Adresse der Station.
 
-Data © OpenStreetMap contributors, ODbL.
+Daten © OpenStreetMap-Mitwirkende, ODbL.
 """
 from __future__ import annotations
 
@@ -32,20 +32,20 @@ OVERPASS = "https://overpass-api.de/api/interpreter"
 USER_AGENT = f"Ladecockpit/{__version__} (+https://github.com/uekala/ladecockpit)"
 PAUSE_S = 1.1                  # between two requests (Nominatim allows one per second)
 PER_SYNC = 8                   # addresses looked up in one sync
-RETRY = timedelta(days=30)     # a station the map did not know: look again after this
-VERSION = 2                    # stations looked up by an older rule are looked up again
-WIDE_M = 400                   # how far around the address stations are looked at
-CLEAR_M = 50                   # the nearest station must be this close, and the next this much farther
-HOUSE_RANK = 28                # Nominatim: place_rank from here on is a house or a place on a street
+RETRY = timedelta(days=30)     # eine Station, die die Karte nicht kannte: danach erneut suchen
+VERSION = 2                    # nach einer älteren Regel gesuchte Stationen werden neu gesucht
+WIDE_M = 400                   # wie weit rund um die Adresse Stationen betrachtet werden
+CLEAR_M = 50                   # die nächste Station muss so nah sein und die übernächste so viel weiter
+HOUSE_RANK = 28                # Nominatim: place_rank ab hier ist ein Haus oder ein Ort an einer Straße
 
 
 class Unavailable(Exception):
-    """A map service did not answer; try again with the next sync."""
+    """Ein Kartendienst hat nicht geantwortet; beim nächsten Abgleich erneut versuchen."""
 
 
 def due(station: dict | None, now: datetime, register_first: bool = True) -> bool:
-    """A station with an address and no operator that the map has not been asked about, or was
-    asked RETRY ago without a result. German stations wait for the register when it is in use."""
+    """Eine Station mit Adresse und ohne Betreiber, nach der die Karte noch nicht gefragt wurde oder
+    vor RETRY ohne Ergebnis. Deutsche Stationen warten auf das Register, wenn es genutzt wird."""
     if not station or station.get("operator") or not station.get("street"):
         return False
     if not (station.get("city") or station.get("postcode")):
@@ -75,8 +75,8 @@ def distance_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 
 def name_of(tags: dict) -> str | None:
-    """The operator in the tags of a charging station: the brand people see, unless that is the
-    shop the station stands at; then who runs it, then the network it belongs to."""
+    """Der Betreiber in den Tags einer Ladestation: die Marke, die man sieht, außer es ist der Laden,
+    an dem die Station steht; dann wer sie betreibt, dann das Netz, zu dem sie gehört."""
     brand, operator, network = (" ".join((tags.get(k) or "").split()) for k in ("brand", "operator", "network"))
     if brand and networks.operator(brand) in {"Aldi", "Lidl", "Kaufland"} and operator:
         return operator
@@ -92,16 +92,16 @@ def _position(element: dict) -> tuple[float, float] | None:
 
 
 def judge(elements: list[dict], lat: float, lon: float, exact: bool) -> tuple[dict | None, str]:
-    """The operator of the station at a coordinate, or None when the map leaves a doubt – and in
-    both cases a few words why, for the log.
+    """Der Betreiber der Station an einer Koordinate, oder None, wenn die Karte Zweifel lässt – und in
+    beiden Fällen ein paar Worte zum Grund, fürs Log.
 
-    A station without an operator on the map counts as one of its own: when it is the nearest, the
-    answer is "not known". Tesla's own stations are left out; a MultiPass session was not there.
+    Eine Station ohne Betreiber auf der Karte zählt als eigener Betreiber: Ist sie die nächste, lautet
+    die Antwort „nicht bekannt“. Teslas eigene Stationen bleiben außen vor; dort war keine MultiPass-Ladung.
 
-    - All stations within WIDE_M are of one operator: that one.
-    - Several operators, address found to the house: the nearest wins when it is within CLEAR_M and
-      the next operator is at least CLEAR_M farther.
-    - Several operators, address found to the street only: not known.
+    - Alle Stationen innerhalb von WIDE_M haben einen Betreiber: dieser.
+    - Mehrere Betreiber, Adresse bis aufs Haus gefunden: Die nächste gewinnt, wenn sie innerhalb von
+      CLEAR_M liegt und der nächste Betreiber mindestens CLEAR_M weiter weg ist.
+    - Mehrere Betreiber, Adresse nur bis zur Straße gefunden: nicht bekannt.
     """
     nearest: dict[str, tuple[float, str | None]] = {}
     for e in elements:
@@ -133,21 +133,21 @@ def judge(elements: list[dict], lat: float, lon: float, exact: bool) -> tuple[di
 
 
 def pick(elements: list[dict], lat: float, lon: float, exact: bool) -> dict | None:
-    """The operator of the station at a coordinate, or None when the map leaves a doubt (see judge)."""
+    """Der Betreiber der Station an einer Koordinate, oder None, wenn die Karte Zweifel lässt (siehe judge)."""
     return judge(elements, lat, lon, exact)[0]
 
 
 class Lookup:
-    """Asks Nominatim and Overpass for the operator at an address."""
+    """Fragt Nominatim und Overpass nach dem Betreiber an einer Adresse."""
 
     def __init__(self, transport: httpx.AsyncBaseTransport | None = None, pause_s: float = PAUSE_S):
         self.transport = transport
         self.pause_s = pause_s
-        self.why = ""  # a few words about the last answer, for the log
+        self.why = ""  # ein paar Worte zur letzten Antwort, fürs Log
 
     async def operator(self, station: dict) -> dict | None:
-        """{"operator", "distance"} for a station, None when the map does not tell.
-        Raises Unavailable when a service does not answer."""
+        """{"operator", "distance"} für eine Station, None, wenn die Karte es nicht verrät.
+        Wirft Unavailable, wenn ein Dienst nicht antwortet."""
         async with httpx.AsyncClient(timeout=httpx.Timeout(40), transport=self.transport,
                                      headers={"User-Agent": USER_AGENT}) as client:
             try:

@@ -1,14 +1,14 @@
-"""What the setup is missing, and whether each Home Assistant entity delivers what it should.
+"""Was der Einrichtung fehlt und ob jede Entität in Home Assistant liefert, was sie soll.
 
-The web app and the mobile app show this under "Setup check": hints for options that would add
-something (with the name of the option in the app configuration) and one line per entity with its
-current value and unit."""
+Web-App und Handy-App zeigen das unter „Einrichtung prüfen“: Hinweise auf Optionen, die etwas
+bringen würden (mit dem Namen der Option in der App-Konfiguration), und eine Zeile je Entität mit
+ihrem aktuellen Wert und ihrer Einheit."""
 from __future__ import annotations
 
 from .config import Settings
 from .homeassistant import INVALID_STATES
 
-# Units an entity may have, per role (lower case, without spaces). An empty tuple: any unit.
+# Einheiten, die eine Entität je Rolle haben darf (klein geschrieben, ohne Leerzeichen). Leeres Tupel: jede Einheit.
 UNITS = {
     "soc": ("%",),
     "range": ("km", "mi"),
@@ -26,17 +26,17 @@ UNITS = {
     "home_energy": ("kwh", "wh"),
     "home_price": ("€/kwh", "eur/kwh", "ct/kwh", "$/kwh", "usd/kwh", "£/kwh", "gbp/kwh"),
 }
-# Roles whose state is text or a time, not a number
+# Rollen, deren Zustand Text oder eine Zeit ist, keine Zahl
 TEXT_ROLES = ("charging", "time_to_full")
-# Roles that only have a value while the car charges: unavailable or unknown is normal otherwise
+# Rollen, die nur beim Laden einen Wert haben: sonst sind unavailable oder unknown normal
 WHILE_CHARGING = ("time_to_full", "charge_power")
-# Roles the car itself delivers. When the car is offline (asleep, no reception) and Home Assistant
-# restarts, the car integration has no value for any of them until the car is back online.
+# Rollen, die das Auto selbst liefert. Ist das Auto offline (schläft, kein Empfang) und Home Assistant
+# startet neu, hat die Auto-Integration für keine davon einen Wert, bis das Auto wieder online ist.
 CAR_ROLES = ("soc", "range", "odometer", "charging")
-# Roles that may come from the car too and then drop out together with CAR_ROLES
+# Rollen, die auch vom Auto kommen können und dann zusammen mit CAR_ROLES ausfallen
 CAR_TOO = ("outside_temp",)
 
-# Option names as the app configuration in Home Assistant shows them
+# Optionsnamen, wie die App-Konfiguration in Home Assistant sie zeigt
 OPTION = {
     "de": {"fuel_price_daily": "Spritpreis als Tagesdurchschnitt", "entity_odometer": "Entität Kilometerstand",
            "entity_charging": "Entität Ladestatus", "fuel_consumption": "Verbrauch Vergleichsauto",
@@ -48,7 +48,7 @@ OPTION = {
            "entity_outside_temp": "Outside temperature", "entity_battery": "Battery level entity"},
 }
 
-# What each entity is for, as the setup check names it
+# Wofür jede Entität da ist, wie die Einrichtungsprüfung sie nennt
 ROLE_NAMES = {
     "de": {"soc": "Akkustand", "range": "Reichweite", "odometer": "Kilometerstand", "charging": "Ladestatus",
            "charge_power": "Ladeleistung", "time_to_full": "Zeit bis voll", "cost_total": "Ladekosten gesamt",
@@ -64,7 +64,7 @@ ROLE_NAMES = {
            "outside_temp": "Outside temperature", "home_energy": "Wallbox meter", "home_price": "Electricity price at home"},
 }
 
-# The setup, step by step: title and what each state says
+# Die Einrichtung Schritt für Schritt: Titel und was jeder Zustand sagt
 STEPS = {
     "de": {
         "tesla_app": ("Tesla-Developer-App", "Client ID ist eingetragen.", "Noch keine Client ID – lege die App bei Tesla an und trage Client ID und Secret ein."),
@@ -132,7 +132,7 @@ TEXTS = {
 }
 
 
-# Ids of the hints, as hints() hands them out
+# IDs der Hinweise, wie hints() sie ausgibt
 HINT_IDS = ("fuel_daily", "fuel_no_consumption", "fuel_no_price", "no_odometer", "no_charging", "no_battery",
             "no_home", "no_temp")
 
@@ -146,8 +146,8 @@ def _option(lang: str, key: str) -> str:
 
 
 def hints(settings: Settings, lang: str) -> list[dict]:
-    """Options that would add something. Each: {id, text, dismissable}; `level` "tip" (adds a
-    feature, can be hidden) or "missing" (a feature is half set up, stays until it is fixed)."""
+    """Optionen, die etwas bringen würden. Je: {id, text, dismissable}; `level` "tip" (bringt eine
+    Funktion, lässt sich ausblenden) oder "missing" (eine Funktion ist halb eingerichtet, bleibt bis zur Behebung)."""
     s = settings
     if not s.ha_url:
         return []
@@ -183,9 +183,9 @@ def _invalid(raw: dict, role: str) -> bool:
 
 
 def car_offline(roles: dict[str, str], live: dict, seen_before: bool) -> bool:
-    """True when the car is offline rather than the setup wrong: every entity the car delivers
-    exists but has no value, and the car has delivered values before. A car that never delivered a
-    value is a setup to check, and so is a single entity without a value while the others have one."""
+    """True, wenn das Auto offline ist und nicht die Einrichtung falsch: Jede Entität des Autos existiert,
+    hat aber keinen Wert, und das Auto hat früher Werte geliefert. Ein Auto, das nie einen Wert geliefert
+    hat, ist eine zu prüfende Einrichtung, ebenso eine einzelne Entität ohne Wert, während die anderen einen haben."""
     if not seen_before or not live.get("available"):
         return False
     car = [role for role in CAR_ROLES if roles.get(role)]
@@ -195,8 +195,8 @@ def car_offline(roles: dict[str, str], live: dict, seen_before: bool) -> bool:
 
 
 def entity_report(roles: dict[str, str], live: dict, lang: str, seen_before: bool = False) -> list[dict]:
-    """One line per configured entity: {role, entity, state, unit, ok, problem, note, offline}.
-    seen_before: Ladecockpit has kept a value of the car before (then an offline car is no problem)."""
+    """Eine Zeile je eingerichteter Entität: {role, entity, state, unit, ok, problem, note, offline}.
+    seen_before: Ladecockpit hat schon einen Wert des Autos gespeichert (dann ist ein Auto offline kein Problem)."""
     raw, values, units = live.get("raw") or {}, live.get("values") or {}, live.get("units") or {}
     missing = set(live.get("missing") or [])
     reachable = bool(live.get("available"))
@@ -207,14 +207,14 @@ def entity_report(roles: dict[str, str], live: dict, lang: str, seen_before: boo
         row = {"role": role, "label": (ROLE_NAMES.get(lang) or ROLE_NAMES["en"]).get(role, role), "entity": eid, "state": raw.get(role), "unit": units.get(role), "ok": True,
                "problem": None, "note": None, "offline": False}
         if not reachable:
-            row["ok"] = None                       # Home Assistant itself is down: nothing to judge
+            row["ok"] = None                       # Home Assistant selbst ist nicht erreichbar: nichts zu beurteilen
         elif eid in missing:
             row.update(ok=False, problem=_t(lang, "missing"))
         elif _invalid(raw, role):
             if offline and role in CAR_ROLES + CAR_TOO:
-                row.update(note=_t(lang, "offline"), offline=True)   # fine: the car is offline
+                row.update(note=_t(lang, "offline"), offline=True)   # in Ordnung: Das Auto ist offline
             elif role in WHILE_CHARGING:
-                row["note"] = _t(lang, "charging_only")      # fine: the car is not charging
+                row["note"] = _t(lang, "charging_only")      # in Ordnung: Das Auto lädt nicht
             else:
                 row.update(ok=False, problem=_t(lang, "unavailable"))
         elif role not in TEXT_ROLES and values.get(role) is None:
@@ -230,10 +230,10 @@ def entity_report(roles: dict[str, str], live: dict, lang: str, seen_before: boo
 
 def steps(settings: Settings, state: dict, entities: list[dict], hint_list: list[dict], lang: str,
           hidden: int = 0) -> list[dict]:
-    """The setup in order. Each: {id, status, title, text, required}; status is "done", "todo" (the
-    next thing to do), "problem" (set up, but not working) or "optional" (not set up, not needed).
-    state: tesla_connected, tesla_auth_error, last_sync, sync_error, sessions, ha_ok, ha_error, when,
-    car_when (time of the last value kept from the car). hidden: tips the user has hidden."""
+    """Die Einrichtung der Reihe nach. Je: {id, status, title, text, required}; status ist "done", "todo"
+    (das Nächste zu tun), "problem" (eingerichtet, funktioniert aber nicht) oder "optional" (nicht eingerichtet,
+    nicht nötig). state: tesla_connected, tesla_auth_error, last_sync, sync_error, sessions, ha_ok, ha_error,
+    when, car_when (Zeit des letzten gespeicherten Werts des Autos). hidden: ausgeblendete Tipps."""
     t = STEPS.get(lang) or STEPS["en"]
     out: list[dict] = []
 
@@ -276,7 +276,7 @@ def steps(settings: Settings, state: dict, entities: list[dict], hint_list: list
         else:
             text = t["extras_hidden"].format(n=hidden) if hidden else t["extras"][1]
         add("extras", "optional" if hint_list else "done", text, required=False)
-    # Only the first open required step is "todo"; the ones after it wait.
+    # Nur der erste offene Pflichtschritt ist "todo"; die danach warten.
     seen_todo = False
     for step in out:
         if step["status"] == "todo":
@@ -288,8 +288,8 @@ def steps(settings: Settings, state: dict, entities: list[dict], hint_list: list
 
 def report(settings: Settings, roles: dict[str, str], live: dict, state: dict | None = None,
            hidden: frozenset[str] | set[str] = frozenset()) -> dict:
-    """The setup check for the web app and the mobile app. state as for steps(); hidden: ids of the
-    tips the user has hidden. `offline` is the time of the last value when the car is offline."""
+    """Die Einrichtungsprüfung für Web-App und Handy-App. state wie bei steps(); hidden: IDs der
+    ausgeblendeten Tipps. `offline` ist die Zeit des letzten Werts, wenn das Auto offline ist."""
     lang = settings.lang
     state = state or {}
     all_hints = hints(settings, lang)

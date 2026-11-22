@@ -16,12 +16,12 @@ SESSIONS = [
      "kwh": 10.5, "total": 5.25, "net_total": 4.41, "credit": 2.0},
     {"session_id": "3", "vin": "TESTVIN0000000001", "start_ts": "2026-03-05T10:00:00+00:00", "network": "multipass",
      "kwh": 20.0, "total": 11.8, "net_total": 9.92, "credit": 0.0},
-    # New Year's Eve 23:30 UTC is already January in Berlin: it belongs to 2027.
+    # Silvester 23:30 UTC ist in Berlin schon Januar: Es gehört zu 2027.
     {"session_id": "4", "vin": "TESTVIN0000000001", "start_ts": "2026-12-31T23:30:00+00:00",
      "kwh": 30.0, "total": 15.0, "net_total": 12.61, "credit": 0.0},
     {"session_id": "5", "vin": "TESTVIN0000000001", "start_ts": "2025-06-01T10:00:00+00:00",
      "kwh": 99.0, "total": 50.0, "net_total": 42.02, "credit": 0.0},
-    # Not billed yet: no total, so it is in no report.
+    # Noch nicht abgerechnet: keine Summe, also in keinem Bericht.
     {"session_id": "6", "vin": "TESTVIN0000000001", "start_ts": "2026-04-01T10:00:00+00:00", "kwh": 5.0, "total": None},
 ]
 

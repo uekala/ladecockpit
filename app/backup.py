@@ -1,9 +1,9 @@
-"""Backup and restore: charging history, readings, settings made in the web app and the cached
-invoices in one ZIP file.
+"""Sichern und Wiederherstellen: Ladehistorie, Messwerte, Einstellungen aus der Web-App und die
+zwischengespeicherten Rechnungen in einer ZIP-Datei.
 
-The Tesla sign-in is left out on purpose: a backup file must not hold the keys to a Tesla account.
-After moving to another device, sign in with Tesla once. Restoring keeps the sign-in the
-installation has."""
+Die Tesla-Anmeldung bleibt absichtlich draußen: Eine Sicherungsdatei darf nicht die Schlüssel zu
+einem Tesla-Konto enthalten. Nach dem Umzug auf ein anderes Gerät einmal bei Tesla anmelden. Beim
+Wiederherstellen bleibt die Anmeldung der Installation erhalten."""
 from __future__ import annotations
 
 import json
@@ -28,11 +28,11 @@ _INVOICE = re.compile(r"invoices/[A-Za-z0-9_-]{1,120}\.pdf")
 
 
 class BackupError(ValueError):
-    """The file is not a usable Ladecockpit backup."""
+    """Die Datei ist keine brauchbare Ladecockpit-Sicherung."""
 
 
 def create(db: DB, data_dir: Path, version: str, target: Path) -> dict:
-    """Write a backup to `target` and return its manifest."""
+    """Eine Sicherung nach `target` schreiben und ihr Manifest zurückgeben."""
     with tempfile.TemporaryDirectory(prefix="ladecockpit-backup-") as tmp:
         snapshot = Path(tmp) / DB_NAME
         counts = db.snapshot(snapshot)
@@ -49,10 +49,10 @@ def create(db: DB, data_dir: Path, version: str, target: Path) -> dict:
 
 
 def restore(db: DB, data_dir: Path, source: Path) -> dict:
-    """Replace the charging history with the one in the backup at `source`.
+    """Die Ladehistorie durch die aus der Sicherung in `source` ersetzen.
 
-    The database is checked before anything changes and swapped in one transaction, so a broken
-    file leaves the installation as it was. Invoices in the backup are added to the cache."""
+    Die Datenbank wird geprüft, bevor sich etwas ändert, und in einer Transaktion getauscht; eine
+    kaputte Datei lässt die Installation also unverändert. Rechnungen der Sicherung kommen in den Cache."""
     try:
         zf = zipfile.ZipFile(source)
     except (zipfile.BadZipFile, OSError) as e:

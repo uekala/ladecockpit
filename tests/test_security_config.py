@@ -30,7 +30,7 @@ def test_demo_mode_does_not_require_password_at_startup(monkeypatch):
     settings = load()
 
     assert settings.demo
-    assert settings.require_password is True  # the live-only startup check is skipped
+    assert settings.require_password is True  # die Startprüfung nur für den Live-Betrieb wird übersprungen
 
 
 def test_home_assistant_addon_uses_ingress_auth_by_default(monkeypatch):

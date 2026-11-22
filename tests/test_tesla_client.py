@@ -1,4 +1,4 @@
-"""TeslaClient against a mocked Fleet API: expired tokens, the time filter, paging and the budget."""
+"""TeslaClient gegen eine nachgebildete Fleet API: abgelaufene Tokens, der Zeitfilter, Seiten und das Budget."""
 import asyncio
 import dataclasses
 import time
@@ -45,7 +45,7 @@ def test_expired_access_token_is_refreshed_once_and_the_request_repeated(setting
     items = asyncio.run(client.charging_history())
     assert [i["sessionId"] for i in items] == ["s1"]
     assert seen == [("data", "Bearer old-access"), ("token", None), ("data", "Bearer new-access")]
-    assert db.kv_get("tesla_refresh_token") == "r2"                   # single-use: the newest is kept
+    assert db.kv_get("tesla_refresh_token") == "r2"                   # einmalig: Der neueste wird behalten
     assert client.calls_used() == 2                                    # both data requests count
 
 
@@ -58,7 +58,7 @@ def test_second_401_after_a_refresh_gives_up(settings, db):
     client = _client(settings, db, handler)
     with pytest.raises(TeslaError, match="HTTP 401"):
         asyncio.run(client.charging_history())
-    assert db.kv_get("tesla_refresh_token") == "r1"                   # no new one sent: the old one stays
+    assert db.kv_get("tesla_refresh_token") == "r1"                   # kein neuer geschickt: Der alte bleibt
 
 
 def test_rejected_time_filter_is_asked_again_without_it(settings, db):
@@ -103,7 +103,7 @@ def test_pages_are_fetched_until_the_total_and_duplicates_dropped(settings, db):
     items = asyncio.run(client.charging_history())
     ids = [i["sessionId"] for i in items]
     assert len(ids) == PAGE_SIZE + 3 and len(set(ids)) == len(ids)
-    assert asked == [None, "1"]                                        # the short page ends it
+    assert asked == [None, "1"]                                        # die kurze Seite beendet es
 
 
 def test_paging_without_a_total_stops_at_a_page_with_nothing_new(settings, db):

@@ -1,5 +1,5 @@
-"""Settings – from environment variables (see .env.example), or from the
-Home Assistant app options (/data/options.json) when running as an HA app."""
+"""Einstellungen – aus Umgebungsvariablen (siehe .env.example) oder aus den Optionen
+der Home-Assistant-App (/data/options.json), wenn sie als HA-App läuft."""
 from __future__ import annotations
 
 import json
@@ -14,19 +14,19 @@ FLEET_BASE = {
 }
 AUTH_AUTHORIZE_URL = "https://auth.tesla.com/oauth2/v3/authorize"
 AUTH_TOKEN_URL = "https://fleet-auth.prd.vn.cloud.tesla.com/oauth2/v3/token"
-# Tesla "Open Source Apps" have no client secret and sign in with PKCE at this endpoint.
+# Tesla-„Open Source Apps“ haben kein Client-Secret und melden sich an diesem Endpunkt mit PKCE an.
 AUTH_TOKEN_URL_OPEN_SOURCE = "https://auth.tesla.com/oauth2/v3/token"
 
-# Only what we need: sign-in, refresh token, and the charging history incl. invoices.
-# Tesla bundles charging history and charging commands into the same scope.
-# Ladecockpit only calls read endpoints (see tesla.py) – there is no command code.
+# Nur, was gebraucht wird: Anmeldung, Refresh-Token und die Ladehistorie samt Rechnungen.
+# Tesla fasst Ladehistorie und Ladebefehle im selben Scope zusammen.
+# Ladecockpit ruft nur lesende Endpunkte auf (siehe tesla.py) – es gibt keinen Code für Befehle.
 SCOPES = "openid offline_access vehicle_charging_cmds"
 
 DEFAULT_LOCALES = {"de": "de-DE", "en": "en-US"}
 
 ADDON_OPTIONS_PATH = Path(os.environ.get("ADDON_OPTIONS_PATH", "/data/options.json"))
 
-# Option name of the Home Assistant app → environment variable
+# Optionsname der Home-Assistant-App → Umgebungsvariable
 ADDON_OPTION_MAP = {
     "language": "APP_LANG",
     "locale": "APP_LOCALE",
@@ -77,7 +77,7 @@ ADDON_OPTION_MAP = {
 
 
 def addon_overlay() -> dict[str, str]:
-    """When running as a Home Assistant app: map its options to our settings."""
+    """Beim Lauf als Home-Assistant-App: ihre Optionen auf die Einstellungen abbilden."""
     token = os.environ.get("SUPERVISOR_TOKEN")
     if not token or not ADDON_OPTIONS_PATH.exists():
         return {}
@@ -155,7 +155,7 @@ class Settings:
     ent_odometer: str
     ent_charging: str
     charging_value: str
-    # While charging (optional): charger power and time until the charge limit is reached
+    # Beim Laden (optional): Ladeleistung und Zeit bis zum Erreichen des Ladelimits
     ent_charge_power: str
     ent_time_to_full: str
     ent_cost_total: str
@@ -164,23 +164,23 @@ class Settings:
     reference_price: float | None
     ent_fuel_month: str
     fuel_label: str
-    # Comparison with a combustion car (both optional: entity wins over the fixed value)
+    # Vergleich mit einem Verbrenner (beides optional: Entität geht vor festem Wert)
     fuel_consumption: float | None
     ent_fuel_consumption: str
     fuel_price: float | None
     ent_fuel_price: str
-    # What you actually paid: two totals that grow when you fill up (money and litres). They win over
-    # the fuel price above.
+    # Was du wirklich bezahlt hast: zwei Summen, die beim Tanken wachsen (Geld und Liter). Sie gehen
+    # vor dem Spritpreis oben.
     ent_fuel_cost_total: str
     ent_fuel_litres_total: str
-    # Price every day's distance at that day's average of the fuel price entity (instead of the
-    # price paid).
+    # Die Strecke jedes Tages zum Tagesdurchschnitt der Spritpreis-Entität bewerten (statt zum
+    # bezahlten Preis).
     fuel_price_daily: bool
-    # Notifications on the phone through ntfy (see push.py): topic address and optional access token
+    # Benachrichtigungen aufs Handy über ntfy (siehe push.py): Topic-Adresse und optionaler Zugangstoken
     ntfy_url: str
     ntfy_token: str
     ent_outside_temp: str
-    # Charging at home: an energy meter of the wallbox (kWh, increasing) and the electricity price
+    # Laden zu Hause: ein Energiezähler der Wallbox (kWh, steigend) und der Strompreis
     ent_home_energy: str
     home_price: float | None
     ent_home_price: str
@@ -201,13 +201,13 @@ class Settings:
     month_report: bool
     # MultiPass price rule (EUR/kWh; 0 = off), see networks.classify
     multipass_min_price: float = 0.50
-    # Look up the operators of German MultiPass stations in the register of the Bundesnetzagentur
+    # Betreiber deutscher MultiPass-Stationen im Register der Bundesnetzagentur nachschlagen
     operator_lookup: bool = True
-    # Ask OpenStreetMap for the operator of a station the register does not have (all of Europe)
+    # OpenStreetMap nach dem Betreiber einer Station fragen, die das Register nicht hat (ganz Europa)
     map_lookup: bool = True
-    # Operators assigned by hand: "text in site name or address=Operator; …", see networks.configure
+    # Von Hand zugeordnete Betreiber: "Text in Standortname oder Adresse=Betreiber; …", siehe networks.configure
     site_operators: str = ""
-    # Development only: point the app at a mock server
+    # Nur für die Entwicklung: die App auf einen Mock-Server zeigen lassen
     api_base_override: str = ""
     token_url_override: str = ""
 
@@ -227,7 +227,7 @@ class Settings:
 
     @property
     def tesla_open_source(self) -> bool:
-        """A client ID without a secret: a Tesla "Open Source App", signed in with PKCE."""
+        """Eine Client-ID ohne Secret: eine Tesla-„Open Source App“, angemeldet mit PKCE."""
         return bool(self.tesla_client_id and not self.tesla_client_secret)
 
     @property
@@ -294,8 +294,8 @@ def load() -> Settings:
         push_max_age_h=_float("PUSH_MAX_AGE_H", 72) or 72,
         api_budget=_int("API_BUDGET_REQUESTS", 1500),
         app_password=_env("APP_PASSWORD"),
-        # Direct live deployments must authenticate by default. Home Assistant Ingress
-        # already authenticates users; keep its internal route working without Basic Auth.
+        # Direkte Live-Installationen müssen sich standardmäßig anmelden. Ingress von Home Assistant
+        # meldet Nutzer schon an; dessen interne Route funktioniert weiter ohne Basic Auth.
         require_password=_bool("APP_REQUIRE_PASSWORD", not addon),
         force_demo=_env("APP_MODE", "").lower() == "demo",
         addon=addon,

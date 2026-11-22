@@ -1,8 +1,8 @@
 services:
   ladecockpit:
-    # Build locally from this repository …
+    # Lokal aus diesem Repository bauen …
     build: .
-    # … or use the published image instead (remove "build" above):
+    # … oder stattdessen das veröffentlichte Image nutzen ("build" oben entfernen):
     # image: ghcr.io/uekala/ladecockpit:latest
     container_name: ladecockpit
     restart: unless-stopped

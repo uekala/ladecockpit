@@ -1,4 +1,4 @@
-"""The Ladecockpit integration: takes over the app's states, follows its events, restores itself."""
+"""Die Ladecockpit-Integration: übernimmt die Zustände der App, folgt ihren Events, stellt sich selbst wieder her."""
 from datetime import date, datetime
 
 from homeassistant import config_entries
@@ -39,7 +39,7 @@ async def test_config_flow_creates_one_entry(hass: HomeAssistant):
 
 
 async def test_takes_over_the_app_states_with_the_same_ids(hass: HomeAssistant):
-    # What the app wrote through the states API before the integration was there.
+    # Was die App über die States-API geschrieben hat, bevor es die Integration gab.
     hass.states.async_set("sensor.ladecockpit_month_cost", "122.24", MONTH)
     hass.states.async_set("binary_sensor.ladecockpit_problem", "off", {"device_class": "problem", "kind": None})
     entry = await setup(hass)
@@ -92,7 +92,7 @@ async def test_follows_the_events(hass: HomeAssistant):
     await send(hass, "sensor.ladecockpit_battery", "unknown", {"unit_of_measurement": "%", "device_class": "battery"})
     assert hass.states.get("sensor.ladecockpit_battery").state == "unknown"
 
-    # An entity of a newer app version, or something that is not ours, is ignored.
+    # Eine Entität einer neueren App-Version oder etwas, das nicht uns gehört, wird ignoriert.
     await send(hass, "sensor.ladecockpit_something_new", "1", {})
     await send(hass, "sensor.other_thing", "1", {})
     assert hass.states.get("sensor.ladecockpit_something_new") is None

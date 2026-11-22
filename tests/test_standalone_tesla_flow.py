@@ -1,4 +1,4 @@
-"""End-to-end Tesla sync checks for standalone mode without Home Assistant."""
+"""Durchgehende Prüfungen des Tesla-Abgleichs im eigenständigen Betrieb ohne Home Assistant."""
 import asyncio
 import dataclasses
 import io
@@ -29,7 +29,7 @@ def invoice_pdf() -> bytes:
 
 
 def test_tesla_history_invoice_and_export_work_without_home_assistant(settings, tmp_path, monkeypatch):
-    """Mock Tesla's HTTP API, persist the session/PDF locally, and serve both artifacts."""
+    """Teslas HTTP-API nachbilden, Ladung und PDF lokal speichern und beides ausliefern."""
     settings = dataclasses.replace(
         settings,
         data_dir=tmp_path,
@@ -92,11 +92,11 @@ def test_tesla_history_invoice_and_export_work_without_home_assistant(settings, 
     assert len(requests) == 2
     assert all(request.headers.get("Authorization") == "Bearer test-access-token" for request in requests)
 
-    # Reopen the SQLite database to prove that the imported data survives a process restart.
+    # Die SQLite-Datenbank neu öffnen, um zu zeigen, dass die importierten Daten einen Neustart des Prozesses überstehen.
     reopened = DB(database_path)
     assert reopened.session("standalone-session-42")["total"] == stored["total"]
 
-    # Exercise the same invoice and CSV response handlers used by the HTTP routes.
+    # Dieselben Handler für Rechnungs- und CSV-Antworten durchlaufen, die die HTTP-Routen nutzen.
     monkeypatch.setattr(main, "settings", settings)
     monkeypatch.setattr(main, "db", reopened)
     monkeypatch.setattr(main, "tesla", tesla)
@@ -110,7 +110,7 @@ def test_tesla_history_invoice_and_export_work_without_home_assistant(settings, 
     assert "standalone-session-42" in csv_text
     assert "Partnerstadt, Germany" in csv_text
 
-    # Exercise the actual HTTP routes, including PDF page rendering and monthly ZIP export.
+    # Die echten HTTP-Routen durchlaufen, samt Darstellung der PDF-Seiten und ZIP-Export des Monats.
     async def exercise_http_routes():
         transport = httpx.ASGITransport(app=main.app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
@@ -151,7 +151,7 @@ def test_tesla_history_invoice_and_export_work_without_home_assistant(settings, 
 
 
 def test_invoice_and_export_routes_require_configured_app_password(settings, tmp_path, monkeypatch):
-    """The global Basic Auth middleware must cover invoice and export endpoints too."""
+    """Die globale Basic-Auth-Middleware muss auch Rechnungs- und Export-Endpunkte abdecken."""
     protected_settings = dataclasses.replace(
         settings,
         data_dir=tmp_path,

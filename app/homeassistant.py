@@ -99,7 +99,7 @@ class HAClient:
             attrs = item.get("attributes") or {}
             raw[role] = str(item.get("state", ""))
             values[role] = as_float(item.get("state"))
-            if eid.startswith("weather."):  # a weather entity keeps the temperature in an attribute
+            if eid.startswith("weather."):  # eine Wetter-Entität führt die Temperatur in einem Attribut
                 values[role] = as_float(attrs.get("temperature"))
             unit = attrs.get("unit_of_measurement") or attrs.get("temperature_unit")
             if unit:
@@ -109,11 +109,11 @@ class HAClient:
                 "missing": missing if reachable else [], "values": values, "raw": raw, "units": units}
 
     async def history(self, entity_id: str, start: datetime) -> list[tuple[datetime, float]]:
-        """Numeric history of one entity since start (HA keeps ~10 days by default)."""
+        """Zahlenverlauf einer Entität seit start (HA hält standardmäßig etwa 10 Tage)."""
         if not self._http or not entity_id:
             return []
         ts = quote(start.astimezone(timezone.utc).isoformat(timespec="seconds"), safe="")
-        # Without end_time Home Assistant returns only the first day after start.
+        # Ohne end_time liefert Home Assistant nur den ersten Tag nach start.
         end = datetime.now(timezone.utc).isoformat(timespec="seconds")
         try:
             r = await self._http.get(
@@ -136,7 +136,7 @@ class HAClient:
         return points
 
     async def components(self) -> set[str] | None:
-        """The integrations Home Assistant has loaded – or None when it cannot be asked."""
+        """Die Integrationen, die Home Assistant geladen hat – oder None, wenn es nicht gefragt werden kann."""
         if not self._http:
             return None
         try:
@@ -169,7 +169,7 @@ class HAClient:
         return r.status_code < 400
 
     async def set_state(self, entity_id: str, state: str, attributes: dict) -> bool:
-        """Create or update an entity of our own (see entities.py)."""
+        """Eine eigene Entität anlegen oder aktualisieren (siehe entities.py)."""
         if not self._http:
             return False
         try:

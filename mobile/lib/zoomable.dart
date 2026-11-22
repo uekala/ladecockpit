@@ -1,8 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 
-/// Lets the pages of an invoice or a report be enlarged: with two fingers, or with a
-/// double tap that zooms in on the tapped spot and back out. Unzoomed, the list inside
-/// scrolls as before.
+/// Lässt die Seiten einer Rechnung oder eines Berichts vergrößern: mit zwei Fingern oder mit einem
+/// Doppeltipp, der auf die angetippte Stelle hinein- und wieder herauszoomt. Nicht gezoomt scrollt
+/// die Liste darin wie bisher.
 class Zoomable extends StatefulWidget {
   const Zoomable({super.key, required this.child, this.maxScale = 5, this.doubleTapScale = 2.5});
 
@@ -30,7 +30,7 @@ class _ZoomableState extends State<Zoomable> {
       return;
     }
     final scale = widget.doubleTapScale;
-    // Keep the tapped spot where it is while everything around it grows.
+    // Die angetippte Stelle bleibt, wo sie ist, während alles um sie herum wächst.
     _controller.value = Matrix4.identity()
       ..translateByDouble(-_tapped.dx * (scale - 1), -_tapped.dy * (scale - 1), 0, 1)
       ..scaleByDouble(scale, scale, 1, 1);

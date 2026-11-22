@@ -24,7 +24,7 @@ def pdf(*lines):
     return bytes(doc.output())
 
 
-# Shape of real invoices (numbers and names made up)
+# Aufbau echter Rechnungen (Nummern und Namen erfunden)
 MULTIPASS_PDF = pdf("Rechnung", "Tesla Germany GmbH", "Rechnungsnummer 4020MSP0000012345", "Rechnungsdatum 2026/10/31",
                     "Verkauft an", "Erika Muster", "Musterweg 1", "12345 Musterstadt DE",
                     "Ladestation", "Musterstadt - Markt", "Hauptstraße 12", "12309 Neustadt DE",
@@ -61,7 +61,7 @@ def test_the_invoice_has_the_last_word(db):
     db.set_invoice_network("2", SUPERCHARGER)          # a Supercharger on a supermarket car park
     got = {s["session_id"]: (s["network"], s["network_reason"]) for s in db.sessions()}
     assert got == {"1": (MULTIPASS, "invoice number"), "2": (SUPERCHARGER, "invoice number")}
-    db.set_invoice_network("1", invoices.UNKNOWN)       # the invoice did not tell: the hints decide
+    db.set_invoice_network("1", invoices.UNKNOWN)       # die Rechnung hat es nicht verraten: Die Hinweise entscheiden
     assert db.session("1")["network"] == SUPERCHARGER
 
 
@@ -99,7 +99,7 @@ def test_sync_reads_new_invoices_once(settings, db):
     tesla = InvoiceTesla({"c1": MULTIPASS_PDF, "c2": SUPERCHARGER_PDF})
     sync = SyncService(settings, db, tesla, None)
     sync.register = FakeRegister([])
-    assert asyncio.run(sync.check_invoices()) == 3        # two for the network, one for the station (kept PDF)
+    assert asyncio.run(sync.check_invoices()) == 3        # zwei für das Netz, eine für die Station (PDF behalten)
     assert asyncio.run(sync.check_invoices()) == 0                                   # each invoice once
     assert sorted(tesla.asked) == ["c1", "c2"]
     assert db.session("1")["network"] == MULTIPASS and db.session("2")["network"] == SUPERCHARGER
@@ -157,7 +157,7 @@ def test_operators_from_the_register(settings, db):
     sync.register = register
     assert asyncio.run(sync.lookup_operators(now)) == 1
     assert register.asked == [["12309"]]
-    assert db.session("1")["station"]["operator"] == "Muster Energie GmbH"           # nearest house number on the street
+    assert db.session("1")["station"]["operator"] == "Muster Energie GmbH"           # nächste Hausnummer in der Straße
     assert "operator" not in db.session("2")["station"] and db.session("2")["station"]["checked"]
     assert asyncio.run(sync.lookup_operators(now)) == 0 and len(register.asked) == 1   # not again right away
     assert asyncio.run(sync.lookup_operators(now + timedelta(days=31))) == 0 and len(register.asked) == 2  # unmatched: again after a month
@@ -180,7 +180,7 @@ def test_one_rejected_token_refresh_is_not_a_lost_sign_in(settings, db):
             asyncio.run(client._access_token())
         except TeslaError:
             pass
-        assert client.auth_error == expected_error                                   # only the second in a row
+        assert client.auth_error == expected_error                                   # erst die zweite in Folge
     db.kv_del("tesla_auth_error")
     try:
         asyncio.run(client._access_token())
@@ -193,7 +193,7 @@ def test_one_rejected_token_refresh_is_not_a_lost_sign_in(settings, db):
 def test_only_real_pdfs_are_kept(tmp_path):
     session = {"session_id": "7", "invoices": [{"id": "c7"}]}
     tesla = InvoiceTesla({"c7": b"<html>Service unavailable</html>"})
-    with pytest.raises(TeslaError):                      # an answer that is no PDF is not cached
+    with pytest.raises(TeslaError):                      # eine Antwort, die kein PDF ist, wird nicht zwischengespeichert
         asyncio.run(invoices.pdf_path(tesla, tmp_path, session))
     assert not invoices.cache_path(tmp_path, "7").exists()
     assert not list((tmp_path / "invoices").glob("*.tmp"))
@@ -207,7 +207,7 @@ def test_only_real_pdfs_are_kept(tmp_path):
 def test_a_cached_file_that_is_no_pdf_is_fetched_again(tmp_path):
     session = {"session_id": "8", "invoices": [{"id": "c8"}]}
     broken = invoices.cache_path(tmp_path, "8")
-    broken.write_bytes(b"%PD")                           # e.g. a write that was cut short
+    broken.write_bytes(b"%PD")                           # z. B. ein abgebrochenes Schreiben
     tesla = InvoiceTesla({"c8": SUPERCHARGER_PDF})
     path = asyncio.run(invoices.pdf_path(tesla, tmp_path, session))
     assert path.read_bytes() == SUPERCHARGER_PDF and tesla.asked == ["c8"]

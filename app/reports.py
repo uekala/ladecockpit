@@ -1,9 +1,9 @@
-"""Monthly report: on the first days of a month, a summary of the previous one.
+"""Monatsbericht: an den ersten Tagen eines Monats eine Zusammenfassung des vorigen.
 
-Always fired as the event ladecockpit_month_report (for your own automations, e.g. a push
-message), plus a notification in Home Assistant when the option month_report is on.
-Each month is reported once. A fresh install starts with the next month change, so it
-does not report a month it barely saw.
+Immer als Event ladecockpit_month_report ausgelöst (für eigene Automationen, z. B. eine Push-
+Nachricht), dazu eine Benachrichtigung in Home Assistant, wenn die Option month_report an ist.
+Jeder Monat wird einmal berichtet. Eine Neuinstallation beginnt mit dem nächsten Monatswechsel,
+damit sie keinen Monat berichtet, den sie kaum gesehen hat.
 """
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ def _key(dt: datetime) -> str:
 
 
 def build_report(d: dict, month_key: str, lang: str) -> dict | None:
-    """Event payload for one month of the dashboard data (None without sessions)."""
+    """Event-Daten für einen Monat der Dashboard-Daten (None ohne Ladungen)."""
     entry = next((m for m in d.get("monthly") or [] if m.get("key") == month_key), None)
     if not entry or not entry.get("sessions"):
         return None
@@ -90,7 +90,7 @@ class MonthReporter:
         current = _key(now_local)
         done = self.db.kv_get(KV_KEY)
         if done is None:
-            self.db.kv_set(KV_KEY, current)  # fresh install: start with the next month change
+            self.db.kv_set(KV_KEY, current)  # Neuinstallation: mit dem nächsten Monatswechsel beginnen
             return None
         if done >= current:
             return None
@@ -98,7 +98,7 @@ class MonthReporter:
         d = await self.build()
         use_ha = getattr(self.ha, "configured", True)
         if use_ha and not (d.get("setup") or {}).get("ha_ok", True):
-            return None  # try again when Home Assistant is back
+            return None  # erneut versuchen, wenn Home Assistant zurück ist
         report = build_report(d, previous, self.s.lang)
         if report:
             if use_ha and not await self.ha.fire_event(EVENT, report):

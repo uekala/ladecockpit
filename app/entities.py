@@ -1,13 +1,13 @@
-"""Ladecockpit's own entities in Home Assistant, for dashboards and automations.
+"""Ladecockpits eigene Entitäten in Home Assistant, für Dashboards und Automationen.
 
-Without the Ladecockpit integration they are written through the REST API (POST /api/states),
-so no YAML and no custom integration are needed. Such entities have no unique ID: they cannot
-be renamed in the UI, and after a Home Assistant restart they are missing until Ladecockpit
-writes them again (within a few minutes).
+Ohne die Ladecockpit-Integration werden sie über die REST-API geschrieben (POST /api/states),
+es braucht also kein YAML und keine eigene Integration. Solche Entitäten haben keine eindeutige ID:
+Sie lassen sich in der Oberfläche nicht umbenennen und fehlen nach einem Neustart von Home
+Assistant, bis Ladecockpit sie wieder schreibt (innerhalb weniger Minuten).
 
-With the integration (custom_components/ladecockpit, e.g. through HACS) loaded, every state goes
-to it as an event instead. The integration keeps real entities with the same entity IDs, a
-unique ID and a device, and restores them after a restart.
+Ist die Integration (custom_components/ladecockpit, z. B. über HACS) geladen, geht jeder Zustand
+stattdessen als Event an sie. Die Integration führt echte Entitäten mit denselben Entitäts-IDs,
+einer eindeutigen ID und einem Gerät und stellt sie nach einem Neustart wieder her.
 """
 from __future__ import annotations
 
@@ -26,13 +26,13 @@ from .homeassistant import HAClient
 log = logging.getLogger("ladecockpit.entities")
 
 PUBLISH_EVERY_S = 60
-REWRITE_ALL_S = 600     # write everything again now and then, e.g. after an HA restart
-EVENT_REWRITE_ALL_S = 3600  # the same with the integration, which restores its entities itself
+REWRITE_ALL_S = 600     # ab und zu alles neu schreiben, z. B. nach einem Neustart von HA
+EVENT_REWRITE_ALL_S = 3600  # dasselbe mit der Integration, die ihre Entitäten selbst wiederherstellt
 INTEGRATION = "ladecockpit"        # the integration's domain, see custom_components/ladecockpit
 STATE_EVENT = "ladecockpit_state"  # one event per entity: {"entity_id", "state", "attributes"}
-INTEGRATION_CHECK_S = 300           # how often to ask Home Assistant whether it is loaded
+INTEGRATION_CHECK_S = 300           # wie oft Home Assistant gefragt wird, ob sie geladen ist
 MAX_STATE_LEN = 255     # Home Assistant rejects longer states
-MAX_STATIONS = 30       # keeps the attributes well below the recorder's 16 KB limit
+MAX_STATIONS = 30       # hält die Attribute deutlich unter der Grenze von 16 KB des Recorders
 
 ENTITY_IDS = (
     "sensor.ladecockpit_next_charge",
@@ -69,8 +69,8 @@ def _when(lang: str, iso: str | None) -> str:
 
 
 def _month_start(d: dict) -> str | None:
-    """Start of the month shown, as `last_reset` – Home Assistant then keeps long-term statistics
-    of the monthly totals (state_class total) and starts a new sum each month."""
+    """Beginn des angezeigten Monats als `last_reset` – Home Assistant führt dann eine Langzeitstatistik
+    der Monatssummen (state_class total) und beginnt jeden Monat eine neue Summe."""
     key = (d.get("month") or {}).get("key")
     if not key:
         return None
@@ -83,7 +83,7 @@ def _month_start(d: dict) -> str | None:
 
 
 def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
-    """Entity ID → (state, attributes), from the same data the web app shows."""
+    """Entitäts-ID → (Zustand, Attribute), aus denselben Daten, die die Web-App zeigt."""
     name = lambda key: f"Ladecockpit {i18n.t(lang, 'ent_' + key)}"  # noqa: E731
     cur = d.get("currency") or "EUR"
     unit = d.get("distance_unit") or "km"
@@ -102,7 +102,7 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         "plan_site": (fc.get("plan") or {}).get("site"), "plan_saving": (fc.get("plan") or {}).get("saving"),
     })
 
-    # --- battery (also the last known value while the car is offline) -----------------------
+    # --- Akku (auch der zuletzt bekannte Wert, während das Auto offline ist) ----------------------
     last_known = st.get("soc_source") == "last"
     out["sensor.ladecockpit_battery"] = (_state(st.get("soc"), 0), {
         "friendly_name": name("battery"), "unit_of_measurement": "%", "device_class": "battery",
@@ -200,7 +200,7 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         "samples": h.get("samples"), "supercharger_share": h.get("dc_share"),
     })
 
-    # --- consumption: this month, and by outside temperature ------------------------------------------
+    # --- Verbrauch: dieser Monat und nach Außentemperatur ---------------------------------------------
     climate = d.get("climate") or {}
     bands = [{"label": i18n.temp_band(lang, b["from"], b["to"]), "days": b["days"], "distance": b["distance"],
               "pct_per_100": b["pct_per_100"], "kwh_per_100": b["kwh_per_100"]} for b in climate.get("bands") or []]
@@ -211,7 +211,7 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         "note": i18n.t(lang, "ent_consumption_note"), "by_temperature": bands, "temperature_tip": tip,
     })
 
-    # --- picture of the car (Tesla's configurator image, chosen in the web app) ----------------------
+    # --- Bild des Autos (Konfigurator-Bild von Tesla, in der Web-App gewählt) ------------------------
     car = d.get("car")
     if car:
         labels, views = car.get("labels") or {}, car.get("views") or {}
@@ -223,7 +223,7 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
             "wheels": labels.get("wheel"), "view": labels.get("view"), "auto_detected": car.get("auto"),
         })
 
-    # --- third-party stations where MultiPass has worked (from the invoices) -------------------------
+    # --- Fremdstationen, an denen MultiPass funktioniert hat (aus den Rechnungen) --------------------
     mp = d.get("multipass") or {}
     stations = mp.get("stations") or []
     out["sensor.ladecockpit_multipass"] = (str(len(stations)), {
@@ -268,7 +268,7 @@ class EntityPublisher:
         self.build = build
         self._sent: dict[str, str] = {}
         self._last_full = 0.0
-        self.integration = False      # True: states go to the Ladecockpit integration as events
+        self.integration = False      # True: Zustände gehen als Events an die Ladecockpit-Integration
         self._checked_at: float | None = None
 
     async def _check_integration(self, now: float) -> None:
@@ -283,7 +283,7 @@ class EntityPublisher:
             log.info("Ladecockpit integration %s – entities now go %s", "found" if loaded else "gone",
                      "to it as events" if loaded else "to the states API")
             self.integration = loaded
-            self._sent.clear()   # send everything once on the new way
+            self._sent.clear()   # alles einmal auf dem neuen Weg senden
             self._last_full = 0.0
 
     async def run_forever(self) -> None:
@@ -296,11 +296,11 @@ class EntityPublisher:
             await asyncio.sleep(PUBLISH_EVERY_S)
 
     async def publish_once(self, now: float | None = None) -> int:
-        """Write changed entities (all of them every REWRITE_ALL_S). Returns how many were written."""
+        """Geänderte Entitäten schreiben (alle alle REWRITE_ALL_S). Gibt zurück, wie viele geschrieben wurden."""
         now = time.time() if now is None else now
         d = await self.build()
         if not (d.get("setup") or {}).get("ha_ok", True):
-            self._sent.clear()  # HA unreachable – write everything once it is back
+            self._sent.clear()  # HA nicht erreichbar – alles neu schreiben, sobald es zurück ist
             self._checked_at = None
             return 0
         await self._check_integration(now)

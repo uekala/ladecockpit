@@ -76,7 +76,7 @@ void main() {
   testWidgets('filter chips narrow the list and the summary follows', (tester) async {
     await open(tester);
     expect(summary(tester), '4 Ladevorgänge · 100,0 kWh · 39,40 €');
-    // Every card shows its price per kWh.
+    // Jede Karte zeigt ihren Preis pro kWh.
     expect(find.text('0,60'), findsOneWidget);
     expect(find.text('0,30'), findsOneWidget);
 

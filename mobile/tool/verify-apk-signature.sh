@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Prints the signing certificate of an APK and, if ANDROID_SIGNING_CERT_SHA256
-# is set (repository variable, not a secret), fails when it does not match.
-# This guarantees that every release is signed with the same key, so Android
-# accepts it as an update of the installed app.
+# Gibt das Signierzertifikat einer APK aus und schlägt fehl, wenn ANDROID_SIGNING_CERT_SHA256
+# gesetzt ist (Repository-Variable, kein Secret) und es nicht passt.
+# So ist sichergestellt, dass jedes Release mit demselben Schlüssel signiert ist und Android
+# es als Update der installierten App annimmt.
 set -euo pipefail
 
 APK="${1:?Pfad zur APK fehlt}"

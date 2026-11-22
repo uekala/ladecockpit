@@ -1,12 +1,13 @@
-"""Notifications on the phone without Home Assistant, through ntfy (ntfy.sh or your own server).
+"""Benachrichtigungen aufs Handy ohne Home Assistant, über ntfy (ntfy.sh oder ein eigener Server).
 
-Set NTFY_URL to the full address of a topic, e.g. https://ntfy.sh/ladecockpit-7f3k9q (the topic name is
-the secret on a public server: make it long and random), and subscribe to the same topic in the ntfy
-app. NTFY_TOKEN is for a server that needs an access token. Ladecockpit then sends:
+NTFY_URL auf die volle Adresse eines Topics setzen, z. B. https://ntfy.sh/ladecockpit-7f3k9q (auf einem
+öffentlichen Server ist der Topic-Name das Geheimnis: lang und zufällig wählen), und in der ntfy-App
+dasselbe Topic abonnieren. NTFY_TOKEN ist für einen Server, der einen Zugangstoken verlangt. Ladecockpit
+sendet dann:
 
-* every new invoice (place, kWh, amount, price per kWh) – like the Home Assistant event,
-* a problem (Tesla sign-in expired, syncing fails) and when it is solved again,
-* the monthly report on the first of the month.
+* jede neue Rechnung (Ort, kWh, Betrag, Preis pro kWh) – wie das Event in Home Assistant,
+* ein Problem (Tesla-Anmeldung abgelaufen, Abgleich schlägt fehl) und wenn es wieder behoben ist,
+* den Monatsbericht am Monatsersten.
 """
 from __future__ import annotations
 
@@ -22,13 +23,13 @@ from .db import DB
 
 log = logging.getLogger("ladecockpit.push")
 
-KV_SINCE = "ntfy_since"     # sessions that started before this are never sent
-KV_SENT = "ntfy_sent"       # ids of the sessions sent lately (JSON list)
+KV_SINCE = "ntfy_since"     # Ladungen, die davor begannen, werden nie gesendet
+KV_SENT = "ntfy_sent"       # IDs der zuletzt gesendeten Ladungen (JSON-Liste)
 KEEP_SENT = 200
 
 
 def split_url(url: str) -> tuple[str, str] | None:
-    """"https://ntfy.sh/my-topic" → ("https://ntfy.sh", "my-topic"); None if it is no topic address."""
+    """„https://ntfy.sh/my-topic“ → ("https://ntfy.sh", "my-topic"); None, wenn es keine Topic-Adresse ist."""
     parts = urlsplit((url or "").strip())
     path = parts.path.strip("/")
     if parts.scheme not in ("http", "https") or not parts.netloc or not path or "/" in path:
@@ -49,7 +50,7 @@ class Ntfy:
 
     @property
     def topic_host(self) -> str | None:
-        """Where the messages go, without the topic (the topic is the secret)."""
+        """Wohin die Nachrichten gehen, ohne das Topic (das Topic ist das Geheimnis)."""
         return urlsplit(self.target[0]).netloc if self.target else None
 
     async def send(self, title: str, message: str, tags: list[str] | None = None, priority: int = 3) -> bool:
@@ -78,8 +79,8 @@ class Ntfy:
 
 
 def pending(db: DB, sessions: list[dict], now: datetime, max_age: timedelta) -> list[dict]:
-    """New sessions with a final invoice that were not sent yet. The first call only remembers the
-    moment, so the existing history is never sent."""
+    """Neue Ladungen mit endgültiger Rechnung, die noch nicht gesendet wurden. Der erste Aufruf merkt sich
+    nur den Zeitpunkt, die vorhandene Historie wird also nie gesendet."""
     since = db.kv_get(KV_SINCE)
     if not since:
         db.kv_set(KV_SINCE, now.isoformat(timespec="seconds"))

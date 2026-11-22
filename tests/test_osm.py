@@ -9,7 +9,7 @@ from app import osm, stations
 from app.sync import SyncService
 from app.tesla import parse_session
 
-REAL_LOOKUP = osm.Lookup.operator   # conftest replaces it for every test
+REAL_LOOKUP = osm.Lookup.operator   # conftest ersetzt sie für jeden Test
 NOW = datetime(2026, 11, 15, 12, tzinfo=timezone.utc)
 HAFEN = {"name": "Hafenstadt", "street": "Kadeweg", "number": "12", "postcode": "2980 AB", "city": "Hafenstadt", "country": "NL"}
 LAT, LON = 51.9, 4.6
@@ -21,15 +21,15 @@ def charger(metres_north, **tags):
 
 def test_which_stations_are_due():
     assert osm.due(HAFEN, NOW)
-    assert not osm.due({**HAFEN, "operator": "Fastned"}, NOW)                      # has one already
-    assert not osm.due({"name": "x", "city": "Hafenstadt"}, NOW)                   # no street to look for
+    assert not osm.due({**HAFEN, "operator": "Fastned"}, NOW)                      # hat schon einen
+    assert not osm.due({"name": "x", "city": "Hafenstadt"}, NOW)                   # keine Straße zum Suchen
     assert not osm.due({**HAFEN, "map_checked": NOW.isoformat(), "map_v": osm.VERSION}, NOW)
     old = (NOW - osm.RETRY).isoformat()
     assert osm.due({**HAFEN, "map_checked": old, "map_v": osm.VERSION}, NOW)        # not found a month ago
     assert osm.due({**HAFEN, "map_checked": NOW.isoformat(), "map_v": 0}, NOW)      # older rule
     german = {"street": "Hauptstraße", "postcode": "12309", "city": "Neustadt"}
     assert not osm.due(german, NOW)                                                 # the register comes first
-    assert osm.due({**german, "checked": NOW.isoformat()}, NOW)                     # … and did not have it
+    assert osm.due({**german, "checked": NOW.isoformat()}, NOW)                     # … und hatte sie nicht
     assert osm.due(german, NOW, register_first=False)                               # register switched off
 
 
@@ -49,16 +49,16 @@ def test_several_operators_need_a_clear_nearest():
 
 
 def test_unnamed_and_tesla_stations():
-    # a station without an operator that is nearer leaves the doubt
+    # eine nähere Station ohne Betreiber lässt den Zweifel
     assert osm.pick([charger(10), charger(30, operator="Allego")], LAT, LON, True) is None
     assert osm.pick([charger(10)], LAT, LON, True) is None
-    # a MultiPass session was not at a Supercharger
+    # eine MultiPass-Ladung war nicht an einem Supercharger
     assert osm.pick([charger(10, operator="Tesla, Inc.", brand="Tesla Supercharger"), charger(60, operator="Fastned")], LAT, LON, True)["operator"] == "Fastned"
 
 
 def test_name_from_the_tags():
     assert osm.name_of({"brand": "Aral pulse", "operator": "Aral AG"}) == "Aral pulse"
-    assert osm.name_of({"brand": "Lidl", "operator": "Allego"}) == "Allego"         # the shop only hosts it
+    assert osm.name_of({"brand": "Lidl", "operator": "Allego"}) == "Allego"         # der Laden beherbergt sie nur
     assert osm.name_of({"network": "Powerdot"}) == "Powerdot"
     assert osm.name_of({"amenity": "charging_station"}) is None
 
@@ -103,7 +103,7 @@ def test_lookup_falls_back_to_the_plain_address():
             return httpx.Response(200, json=[{"lat": str(LAT), "lon": str(LON), "place_rank": 26}])
         return httpx.Response(200, json={"elements": [charger(15, operator="Fastned"), charger(120, operator="Allego")]})
 
-    # found to the street only, two operators there: not known
+    # nur bis zur Straße gefunden, dort zwei Betreiber: nicht bekannt
     assert asyncio.run(REAL_LOOKUP(lookup(handler), HAFEN)) is None
     assert asked[1]["q"] == "Kadeweg 12, 2980 AB Hafenstadt"
 
@@ -161,7 +161,7 @@ def test_sync_asks_each_address_once(settings, db):
     got = stations_of(db)
     assert got["a"]["operator"] == got["b"]["operator"] == "Fastned B.V." and got["a"]["operator_src"] == "osm"
     assert "operator" not in got["c"] and got["c"]["map_v"] == osm.VERSION
-    # nothing is due now, and a later session at a known address is not asked again
+    # jetzt ist nichts fällig, und eine spätere Ladung an einer bekannten Adresse wird nicht erneut gefragt
     assert asyncio.run(sync.lookup_on_map(NOW + timedelta(days=1))) == 0
     add(db, "d", dict(other))
     asyncio.run(sync.lookup_on_map(NOW + timedelta(days=2)))
@@ -171,7 +171,7 @@ def test_sync_asks_each_address_once(settings, db):
 def test_sync_leaves_stations_alone_when_the_map_is_down_or_off(settings, db):
     sync = service(settings, db, {"Kadeweg": osm.Unavailable("busy")}, [("a", HAFEN)])
     assert asyncio.run(sync.lookup_on_map(NOW)) == 0
-    assert "map_checked" not in stations_of(db)["a"]            # asked again with the next sync
+    assert "map_checked" not in stations_of(db)["a"]            # beim nächsten Abgleich erneut gefragt
     sync.s = dataclasses.replace(settings, map_lookup=False)
     assert asyncio.run(sync.lookup_on_map(NOW)) == 0 and len(sync.map.asked) == 1
 

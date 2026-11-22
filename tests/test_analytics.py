@@ -21,7 +21,7 @@ def test_demo_dashboard_en_and_de(settings):
         assert d["last_charge"]["kwh"] == 18.0
         assert d["forecast"]["days_to_floor"] is not None
         assert len(d["slots"]) == 5
-        # (month-dependent values are not asserted: the demo is relative to "now")
+        # (monatsabhängige Werte werden nicht geprüft: Die Demo ist relativ zu „jetzt“)
         assert {i["kind"] for i in d["insights"]} >= {"slot", "site", "idle", "network", "speed"}
         assert d["reconcile"]["inv_sessions"] == 11
         assert set(d["totals"]["by_network"]) == {"supercharger", "multipass"}
@@ -132,13 +132,13 @@ def _tariff_dashboard(settings, rows, lang="de", now=None, values=None, **option
 
 
 def test_tariffs_per_site(settings):
-    # Moers: cheap early in the morning and late at night, dear during the day (times in UTC, Berlin = +2 h).
+    # Moers: früh morgens und spät nachts günstig, tagsüber teuer (Zeiten in UTC, Berlin = +2 h).
     d = _tariff_dashboard(settings, [
         ("Moers, Germany", 1, 4, 30, 0.28), ("Moers, Germany", 2, 21, 20, 0.28),
         ("Moers, Germany", 3, 11, 40, 0.46), ("Moers, Germany", 4, 15, 10, 0.46),
-        # Willich: one price only – no tariff.
+        # Willich: nur ein Preis – kein Tarif.
         ("Willich, Germany", 5, 12, 30, 0.40), ("Willich, Germany", 6, 16, 30, 0.40),
-        # Seestadt: the price went up, the cheap session was during the day – a price change, no tariff.
+        # Seestadt: Der Preis stieg, die günstige Ladung war tagsüber – eine Preisänderung, kein Tarif.
         ("Seestadt, Germany", 7, 10, 30, 0.42), ("Seestadt, Germany", 20, 12, 30, 0.52),
         # Bergstadt: only a few cents apart – no tariff.
         ("Bergstadt, Germany", 8, 4, 30, 0.44), ("Bergstadt, Germany", 9, 12, 30, 0.47),
@@ -161,7 +161,7 @@ def test_no_tariffs_without_both_prices(settings):
     assert not [i for i in d["insights"] if i["kind"] == "tariff"]
 
 
-# Moers has an off-peak and a peak price, Willich one price only (times in UTC, Berlin = +2 h).
+# Moers hat einen Preis in Neben- und Hauptzeit, Willich nur einen Preis (Zeiten in UTC, Berlin = +2 h).
 _DAY_PRICE_ROWS = [
     ("Moers, Germany", 1, 4, 30, 0.28), ("Moers, Germany", 2, 21, 20, 0.28),
     ("Moers, Germany", 3, 11, 40, 0.46), ("Moers, Germany", 4, 15, 10, 0.46),
@@ -174,8 +174,8 @@ def test_reference_price_from_the_invoices_is_the_day_price_of_the_sites(setting
     d = _tariff_dashboard(settings, _DAY_PRICE_ROWS, now=_OCTOBER)
     c = d["compare"]
     assert c["reference_source"] == "invoices"
-    # The 50 off-peak kWh in Moers count at its day price; everything else at its own price –
-    # also Willich at night, which has no cheaper night price.
+    # Die 50 kWh der Nebenzeit in Moers zählen zu seinem Tagespreis; alles andere zu seinem eigenen Preis –
+    # auch Willich nachts, das keinen günstigeren Nachtpreis hat.
     listed = 30 * 0.28 + 20 * 0.28 + 40 * 0.46 + 10 * 0.46 + 30 * 0.40 + 30 * 0.40
     assert c["actual_cost"] == round(listed, 2)
     assert c["reference_saving"] == 9.0 and c["reference_off_kwh"] == 50.0
@@ -188,14 +188,14 @@ def test_reference_price_from_the_invoices_is_the_day_price_of_the_sites(setting
 
 
 def test_reference_price_from_the_invoices_counts_only_this_month(settings):
-    # In November the October sessions only tell the day price; there is no session to compare yet.
+    # Im November verraten die Oktober-Ladungen nur den Tagespreis; es gibt noch keine Ladung zum Vergleich.
     d = _tariff_dashboard(settings, _DAY_PRICE_ROWS)
     assert d["compare"]["reference_source"] is None and d["compare"]["reference_cost"] is None
     assert not [i for i in d["insights"] if i["kind"] == "reference"]
 
 
 def test_no_saving_from_the_invoices_without_an_off_peak_price(settings):
-    # A price change (dear later, cheap during the day) is no saving, nor is a site with one price.
+    # Eine Preisänderung (später teuer, tagsüber günstig) ist keine Ersparnis, ebenso wenig ein Standort mit einem Preis.
     d = _tariff_dashboard(settings, [
         ("Seestadt, Germany", 7, 10, 30, 0.42), ("Seestadt, Germany", 20, 12, 30, 0.52),
         ("Willich, Germany", 5, 2, 30, 0.40), ("Willich, Germany", 6, 16, 30, 0.40),
@@ -231,7 +231,7 @@ _NOVEMBER = datetime(2026, 11, 1, 12, tzinfo=timezone.utc)
 
 
 def test_price_change_per_site(settings):
-    # Willich: one price all day for weeks, then dearer – also in the evening, where it was cheap before.
+    # Willich: wochenlang ein Preis den ganzen Tag, dann teurer – auch abends, wo es vorher günstig war.
     d = _tariff_dashboard(settings, [
         ("Willich, Germany", 4, 12, 40, 0.37), ("Willich, Germany", 7, 17, 30, 0.3701),
         ("Willich, Germany", 15, 16, 30, 0.37), ("Willich, Germany", 22, 20, 6, 0.3704),
@@ -265,7 +265,7 @@ def test_latest_price_change_wins(settings):
 
 
 def test_no_price_change_from_a_different_time_of_day(settings):
-    # Cheap only at night, dear only in the afternoon: that may be a tariff by time of day.
+    # Nur nachts günstig, nur nachmittags teuer: Das kann ein Tarif nach Tageszeit sein.
     d = _tariff_dashboard(settings, [
         ("Seestadt, Germany", 1, 1, 30, 0.30), ("Seestadt, Germany", 3, 2, 30, 0.30),
         ("Seestadt, Germany", 20, 15, 30, 0.45), ("Seestadt, Germany", 25, 16, 30, 0.45),

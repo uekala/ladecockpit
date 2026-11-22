@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 COPY scripts ./scripts
 
-# Runs as root on purpose: as a Home Assistant app the /data folder belongs to root.
+# Läuft absichtlich als root: Als Home-Assistant-App gehört der Ordner /data root.
 RUN mkdir -p /data
 VOLUME /data
 EXPOSE 8077

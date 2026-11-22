@@ -38,7 +38,7 @@ def test_stations_operators_and_entity(settings):
         _s("b", "EnBW Ladepark Südstadt", 12, 20, 12.0),
         _s("c", "EnBW Schnelllader Weststadt", 8, 25, 16.25),
         _s("d", "Fastned Nordstadt", 20, 40, 26.0),
-        _s("e", "Stadtpark", 1, 0, None),                       # no invoice amount yet: still counts as worked
+        _s("e", "Stadtpark", 1, 0, None),                       # noch kein Rechnungsbetrag: zählt trotzdem als funktioniert
         _s("f", "Mainz, Germany", 22, 35, 13.3, network="supercharger"),
     ]
     mp = _dash(settings, sessions)["multipass"]
@@ -103,7 +103,7 @@ def test_operator_and_address_from_invoice_and_register(settings):
          "station": {"name": "Brunnenhausstr. 46, Neustadt", **kw, "operator": "SWN ENERGIE GmbH", "checked": "2026-10-21"}},
         {**_s("b", "Neustadt - KiK", 21, 10, 6.9),
          "station": {"name": "Neustadt - KiK", "street": "Gartenstraße", "number": "237", "postcode": "12309",
-                     "city": "Neustadt", "country": "DE", "checked": "2026-10-22"}},       # not in the register
+                     "city": "Neustadt", "country": "DE", "checked": "2026-10-22"}},       # nicht im Register
         _s("c", "Neustadt, Germany", 22, 30, 9.3, network="supercharger"),
         _s("d", "Bergstadt, Germany", 23, 30, 11.1, network="supercharger"),
         _s("e", "Bergstadt, Germany", 18, 30, 11.1, network="supercharger"),
@@ -114,7 +114,7 @@ def test_operator_and_address_from_invoice_and_register(settings):
     assert swn["operator"] == "SWN ENERGIE" and swn["address"] == "Brunnenhausstraße 46, Neustadt"
     assert swn["operator_source"] == "register" and "Brunnenhausstra%C3%9Fe%2046%2C%2012301%20Neustadt" in swn["map_url"]
     kik = by_site["Neustadt - KiK"]
-    assert kik["operator"] is None and kik["address"] == "Gartenstraße 237, Neustadt"   # "Neustadt" is a town, not a network
+    assert kik["operator"] is None and kik["address"] == "Gartenstraße 237, Neustadt"   # „Neustadt“ ist ein Ort, kein Netz
     assert [o["name"] for o in d["multipass"]["operators"]] == ["SWN ENERGIE"]
     row = next(s for s in d["sessions"] if s["id"] == "a")
     assert row["operator"] == "SWN ENERGIE" and row["address"] == "Brunnenhausstraße 46, Neustadt"

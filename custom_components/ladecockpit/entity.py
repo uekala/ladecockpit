@@ -1,4 +1,4 @@
-"""Common base of the Ladecockpit entities."""
+"""Gemeinsame Basis der Ladecockpit-Entitäten."""
 from __future__ import annotations
 
 from typing import Any
@@ -16,12 +16,12 @@ from .const import DOMAIN, OWN_ATTRIBUTES, object_id, signal
 
 def claim_entity_ids(hass: HomeAssistant, entry: ConfigEntry, platform: str,
                      keys: tuple[str, ...]) -> dict[str, State | None]:
-    """Register `<platform>.ladecockpit_<key>` for this integration and return the state the app
-    wrote there before, if any.
+    """`<platform>.ladecockpit_<key>` für diese Integration registrieren und den Zustand zurückgeben,
+    den die App dort vorher geschrieben hat, falls vorhanden.
 
-    Without the integration the app writes plain states under these IDs. Their state is taken
-    over and removed in the same step as the registry entry is created, so the entity keeps its
-    ID (no `_2`) and dashboards and automations go on working.
+    Ohne die Integration schreibt die App unter diesen IDs einfache Zustände. Ihr Zustand wird
+    übernommen und im selben Schritt entfernt, in dem der Registereintrag entsteht, sodass die Entität
+    ihre ID behält (kein `_2`) und Dashboards und Automationen weiter funktionieren.
     """
     registry = er.async_get(hass)
     taken_over: dict[str, State | None] = {}
@@ -43,7 +43,7 @@ def claim_entity_ids(hass: HomeAssistant, entry: ConfigEntry, platform: str,
 
 
 class LadecockpitEntity(RestoreEntity):
-    """An entity whose state and attributes the app sends (see const.STATE_EVENT)."""
+    """Eine Entität, deren Zustand und Attribute die App sendet (siehe const.STATE_EVENT)."""
 
     _attr_has_entity_name = True
     _attr_should_poll = False

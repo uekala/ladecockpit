@@ -1,8 +1,8 @@
-"""Start Ladecockpit: `python -m app`.
+"""Ladecockpit starten: `python -m app`.
 
-On SIGTERM uvicorn shuts the app down cleanly, then raises the signal again so the
-process ends with exit code 143. Home Assistant takes that for an app that did not
-handle SIGTERM. After the clean shutdown, Ladecockpit ends with exit code 0 instead.
+Bei SIGTERM fährt uvicorn die App sauber herunter und löst das Signal danach erneut aus, sodass
+der Prozess mit Exit-Code 143 endet. Home Assistant hält das für eine App, die SIGTERM nicht
+behandelt hat. Nach dem sauberen Herunterfahren endet Ladecockpit stattdessen mit Exit-Code 0.
 """
 
 import signal
@@ -16,7 +16,7 @@ def _stopped(_signum, _frame) -> None:
 
 
 def main(port: int = 8077) -> None:
-    # uvicorn swaps in its own handler while it runs and puts this one back afterwards.
+    # uvicorn setzt während des Laufs einen eigenen Handler ein und stellt diesen danach wieder her.
     signal.signal(signal.SIGTERM, _stopped)
     uvicorn.run("app.main:app", host="0.0.0.0", port=port, proxy_headers=True)
 

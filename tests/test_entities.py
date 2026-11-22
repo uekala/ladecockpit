@@ -22,7 +22,7 @@ def test_states_from_demo_data(settings):
     for entity_id, (state, attributes) in states.items():
         assert isinstance(state, str) and 0 < len(state) <= MAX_STATE_LEN, entity_id
         assert attributes["friendly_name"].startswith("Ladecockpit ")
-        json.dumps(attributes)                                   # must be JSON for the REST API
+        json.dumps(attributes)                                   # muss JSON für die REST-API sein
     cost, attrs = states["sensor.ladecockpit_month_cost"]
     assert float(cost) == d["month"]["total_cost"] and attrs["invoice_cost"] == d["month"]["cost"]
     assert attrs["unit_of_measurement"] == d["currency"] and attrs["home_kwh"] == d["month"]["home"]["kwh"]
@@ -95,7 +95,7 @@ def test_publisher_writes_changes_only(settings):
         assert await pub.publish_once(now=1000.0) == len(ENTITY_IDS)      # first round: all
         assert await pub.publish_once(now=1060.0) == 0                    # nothing changed
         data["month"] = {**data["month"], "cost": data["month"]["cost"] + 5}
-        assert await pub.publish_once(now=1120.0) == 1                    # only the month cost
+        assert await pub.publish_once(now=1120.0) == 1                    # nur die Monatskosten
         assert await pub.publish_once(now=1000.0 + REWRITE_ALL_S) == len(ENTITY_IDS)
         data["setup"]["ha_ok"] = False
         assert await pub.publish_once(now=5000.0) == 0                    # HA away: wait
@@ -119,7 +119,7 @@ def test_publisher_sends_events_once_the_integration_is_loaded(settings):
         assert await pub.publish_once(now=1000.0) == len(ENTITY_IDS)       # no integration: states API
         assert len(ha.writes) == len(ENTITY_IDS) and not ha.events and pub.integration is False
         ha.loaded = {"sensor", "ladecockpit"}
-        assert await pub.publish_once(now=1060.0) == 0                     # not asked again yet
+        assert await pub.publish_once(now=1060.0) == 0                     # noch nicht erneut gefragt
         assert await pub.publish_once(now=1000.0 + INTEGRATION_CHECK_S) == len(ENTITY_IDS)
         assert pub.integration is True and len(ha.writes) == len(ENTITY_IDS)  # all again, as events
         event_type, payload = ha.events[0]
@@ -130,7 +130,7 @@ def test_publisher_sends_events_once_the_integration_is_loaded(settings):
         assert await pub.publish_once(now=start + 60) == 1                 # changes only
         assert await pub.publish_once(now=start + REWRITE_ALL_S) == 0      # no 10-minute rewrite
         assert await pub.publish_once(now=start + EVENT_REWRITE_ALL_S) == len(ENTITY_IDS)
-        ha.loaded = None                                                   # HA cannot be asked: keep the way
+        ha.loaded = None                                                   # HA nicht fragbar: Weg beibehalten
         assert await pub.publish_once(now=start + EVENT_REWRITE_ALL_S + INTEGRATION_CHECK_S) == 0
         assert pub.integration is True
 
@@ -179,7 +179,7 @@ def test_health_and_consumption_entities(settings):
     r100, attrs = states["sensor.ladecockpit_range_at_100"]
     assert r100 == str(d["battery_health"]["range_at_100"]) and attrs["state_class"] == "measurement"
     cons, attrs = states["sensor.ladecockpit_consumption"]
-    # On the first days of a month the demo month may have no distance yet
+    # An den ersten Tagen eines Monats hat der Demomonat eventuell noch keine Strecke
     expected = d["month"]["kwh_per_100"]
     assert (cons == "unknown" if expected is None else float(cons) == expected)
     assert attrs["unit_of_measurement"] == "kWh/100 km"

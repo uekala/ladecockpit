@@ -51,7 +51,7 @@ def test_fuel_comparison_and_projection(settings):
     p = d["projection"]
     assert p["basis_days"] == 25 and p["distance"] == 18200          # 50 km/day
     assert p["savings"] is not None and p["cost"] < p["fuel_cost"]
-    # entity values override the fixed ones; without any value there is no comparison
+    # Werte der Entitäten gehen den festen vor; ohne jeden Wert gibt es keinen Vergleich
     d2 = _dash(settings, {"fuel_consumption": 6.0, "fuel_price": 1.5})
     assert d2["compare"]["fuel"]["per_100"] == 9.0 and d2["compare"]["fuel"]["source"] == "entity"
     # what was actually paid wins over both
@@ -70,7 +70,7 @@ def test_plan_picks_cheapest_site_and_window_before_floor(settings):
     assert f["days_to_floor"] == 2.0                                   # 30 % → 10 % at 10 %/day
     plan = f["plan"]
     assert plan["site"] == "Bad Homburg, Germany" and plan["range"] == "20–24 Uhr"
-    assert plan["date"] == "2026-10-24"                                # last evening before the floor
+    assert plan["date"] == "2026-10-24"                                # letzter Abend vor der Untergrenze
     assert "Bad Homburg laden" in plan["text"] and "Germany" not in plan["text"]
     assert plan["saving"] > 0
     states = build_states(d, "de")

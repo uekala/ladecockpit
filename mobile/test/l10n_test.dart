@@ -5,7 +5,7 @@ import 'package:ladecockpit_mobile/format.dart';
 import 'package:ladecockpit_mobile/l10n.dart';
 import 'package:ladecockpit_mobile/l10n_en.dart';
 
-/// The value of a single-quoted Dart string literal as written in the source.
+/// Der Wert eines Dart-String-Literals in einfachen Anführungszeichen, wie im Quelltext geschrieben.
 String _unescape(String source) => source.replaceAllMapped(
       RegExp(r'\\(.)'),
       (match) => switch (match.group(1)) { 'n' => '\n', 't' => '\t', final other => other! },

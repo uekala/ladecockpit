@@ -1,15 +1,15 @@
-"""A picture of the car, rendered by Tesla's own configurator image service.
+"""Ein Bild des Autos, gezeichnet von Teslas eigenem Bilddienst des Konfigurators.
 
-The user picks model, trim, paint, wheels and view in the web app. The choice is stored
-in the database; without one, the model and its generation are guessed from the VIN in
-the charging history. Only image addresses are built here – the browser (or Home
-Assistant's frontend) loads the pictures straight from Tesla, so nothing is downloaded
-by Ladecockpit and no Tesla request counts against the API budget.
+Modell, Ausstattung, Lack, Felgen und Ansicht wählt man in der Web-App. Die Wahl liegt in der
+Datenbank; ohne Wahl werden Modell und Generation an der VIN aus der Ladehistorie erkannt. Hier
+werden nur Bildadressen gebaut – der Browser (oder das Frontend von Home Assistant) lädt die
+Bilder direkt von Tesla, Ladecockpit lädt also nichts herunter, und keine Tesla-Anfrage zählt
+gegen das API-Budget.
 
-Tesla's image service only renders option sets that belong together and silently
-returns an empty or half-drawn picture for anything else. Every combination in the
-catalogue below was checked against it (see tests/test_carimage.py for the rules that
-keep the catalogue consistent).
+Teslas Bilddienst zeichnet nur Optionen, die zusammengehören, und liefert für alles andere
+stillschweigend ein leeres oder halb gezeichnetes Bild. Jede Kombination im Katalog unten
+wurde dagegen geprüft (siehe tests/test_carimage.py für die Regeln, die den Katalog stimmig
+halten).
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ KV_KEY = "car_image"
 VIEWS = {"front": "STUD_3QTR", "side": "STUD_SIDE", "rear": "STUD_REAR"}
 SIZES = (720, 1440, 1920)
 
-# Tesla's own paint names; the same in every language.
+# Teslas eigene Lacknamen; in jeder Sprache gleich.
 PAINTS = {
     "PPSW": "Pearl White Multi-Coat",
     "PBSB": "Solid Black",
@@ -69,7 +69,7 @@ VIEW_LABELS = {
 
 @dataclass(frozen=True)
 class Fit:
-    """One set of wheels on one trim: the interior Tesla needs to render it, and the paints it has."""
+    """Ein Felgensatz an einer Ausstattung: der Innenraum, den Tesla zum Zeichnen braucht, und die Lacke dazu."""
     interior: str
     paints: tuple[str, ...]
 
@@ -78,7 +78,7 @@ class Fit:
 class Trim:
     key: str
     code: str
-    wheels: dict[str, Fit]  # wheel code → Fit, in the order they are offered
+    wheels: dict[str, Fit]  # Felgencode → Fit, in der angebotenen Reihenfolge
 
 
 @dataclass(frozen=True)
@@ -90,11 +90,11 @@ class Generation:
     until: int | None     # last model year, None = still built
     trims: tuple[Trim, ...]
     wheels: dict[str, dict[str, str]]       # code → {"de": …, "en": …}
-    # The views Tesla renders, each with the box (x1, y1, x2, y2) the car takes up on the
-    # 1920 × 1080 canvas – used to crop the empty margin. None: the image service cannot crop.
+    # Die Ansichten, die Tesla zeichnet, jeweils mit dem Rahmen (x1, y1, x2, y2), den das Auto auf der
+    # Fläche von 1920 × 1080 einnimmt – zum Abschneiden des leeren Rands. None: Der Bilddienst kann nicht zuschneiden.
     boxes: dict[str, tuple[int, int, int, int] | None] = field(default_factory=dict)
     legacy: bool = False  # old image service (Model S/X before 2021)
-    default_trim: str = ""  # shown before the user picks one; the first trim if empty
+    default_trim: str = ""  # angezeigt, bevor eine gewählt ist; leer: die erste Ausstattung
 
     @property
     def crop(self) -> dict[str, tuple[int, int, int, int] | None]:
@@ -122,11 +122,11 @@ class Generation:
 
 
 CANVAS = (1920, 1080)
-MARGIN = 0.03  # of the car's width, kept around it when cropping
+MARGIN = 0.03  # Anteil der Autobreite, der beim Zuschneiden ringsum bleibt
 
 
 def _crop(box: tuple[int, int, int, int] | None) -> tuple[int, int, int, int] | None:
-    """Box the car takes up → Tesla's crop parameter (width, height, x, y) with a small margin."""
+    """Rahmen des Autos → Teslas Zuschnitt-Parameter (Breite, Höhe, x, y) mit kleinem Rand."""
     if box is None:
         return None
     x1, y1, x2, y2 = box
@@ -144,7 +144,7 @@ def _w(de: str, en: str | None = None) -> dict[str, str]:
     return {"de": de, "en": en or de}
 
 
-# Paint sets that Tesla's image service has for a trim and its wheels.
+# Lacksätze, die Teslas Bilddienst für eine Ausstattung und ihre Felgen hat.
 _M3H = "PPSW PX02 PN01 PN00 PB02 PR01"
 _M3H_PERF = "PPSW PX02 PN01 PN00 PB02 PB00 PR01"
 _CLASSIC = "PPSW PBSB PMNG PPSB PPMR"
@@ -252,7 +252,7 @@ _VIN_YEARS = "ABCDEFGHJKLMNPRSTVWXY"  # 10th character, A = 2010 … Y = 2030
 
 
 def from_vin(vin: str | None) -> Generation | None:
-    """Model and generation from a VIN: 4th character is the model, 10th the model year."""
+    """Modell und Generation aus einer VIN: 4. Zeichen ist das Modell, 10. das Modelljahr."""
     if not vin or len(vin) < 10:
         return None
     model = _VIN_MODELS.get(vin[3].upper())
@@ -271,14 +271,14 @@ def from_vin(vin: str | None) -> Generation | None:
 
 # --- choice ---------------------------------------------------------------------------------
 def normalize(choice: dict | None, vin: str | None = None) -> dict:
-    """A complete, renderable choice. Unknown or unfitting parts fall back to sensible defaults."""
+    """Eine vollständige, zeichenbare Wahl. Unbekannte oder unpassende Teile fallen auf sinnvolle Standards zurück."""
     choice = dict(choice or {})
     gen = generation(choice.get("generation")) or from_vin(vin) or CATALOG[0]
     trim = gen.trim(choice.get("trim"))
     paint = choice.get("paint")
     wheel = choice.get("wheel")
     if wheel not in trim.wheels:
-        # Keep the paint if possible: take the first wheels that come in it.
+        # Den Lack möglichst behalten: die ersten Felgen nehmen, die es darin gibt.
         wheel = next((w for w, fit in trim.wheels.items() if paint in fit.paints), next(iter(trim.wheels)))
     fit = trim.wheels[wheel]
     if paint not in fit.paints:
@@ -322,7 +322,7 @@ def url(choice: dict, size: int = 1440, view: str | None = None) -> str:
 
 
 def describe(choice: dict, lang: str, *, auto: bool) -> dict:
-    """What the web app and Home Assistant need: name, picture addresses and the choice."""
+    """Was Web-App und Home Assistant brauchen: Name, Bildadressen und die Wahl."""
     gen = generation(choice["generation"])
     return {
         "name": name(choice, lang),
@@ -342,7 +342,7 @@ def describe(choice: dict, lang: str, *, auto: bool) -> dict:
 
 
 def catalog(lang: str) -> list[dict]:
-    """Everything the web app needs to offer the choices – only sets Tesla can render."""
+    """Alles, was die Web-App für die Auswahl braucht – nur Sätze, die Tesla zeichnen kann."""
     return [{
         "key": g.key,
         "label": g.label(lang),

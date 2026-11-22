@@ -1,4 +1,4 @@
-// The texts are looked up at run time (tr), so widgets holding them cannot be const.
+// Die Texte werden zur Laufzeit nachgeschlagen (tr), Widgets mit ihnen können also nicht const sein.
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, prefer_const_declarations, unnecessary_brace_in_string_interps
 import 'dart:async';
 import 'dart:convert';
@@ -21,7 +21,7 @@ import 'theme/app_theme.dart';
 import 'update_check.dart';
 
 void main() {
-  // Until the server has answered, the app speaks the phone's language.
+  // Bis der Server geantwortet hat, spricht die App die Sprache des Handys.
   appLanguage = languageFrom(Platform.localeName) ?? 'en';
   runApp(const LadecockpitApp());
 }
@@ -140,7 +140,7 @@ class CockpitClient {
   Future<Uri> invoicePageUri(String sessionId, int page) =>
       _endpoint('/api/invoice/${Uri.encodeComponent(sessionId)}/page/$page.png');
 
-  /// The invoice of a session as PDF, for sharing or saving.
+  /// Die Rechnung einer Ladung als PDF, zum Teilen oder Speichern.
   Future<List<int>> invoicePdf(String sessionId) async {
     final uri = await _endpoint('/api/invoice/${Uri.encodeComponent(sessionId)}');
     final response = await _http.get(uri, headers: await _headers())
@@ -154,7 +154,7 @@ class CockpitClient {
     return response.bodyBytes;
   }
 
-  /// Operator names the server knows, to choose from.
+  /// Betreibernamen, die der Server kennt, zur Auswahl.
   Future<List<String>> knownOperators() async {
     final uri = await _endpoint('/api/operators');
     final response = await _http.get(uri, headers: await _headers(json: true))
@@ -165,7 +165,7 @@ class CockpitClient {
     return known is List ? known.map((name) => name.toString()).toList() : [];
   }
 
-  /// Assigns an operator to a site; an empty name removes the assignment.
+  /// Ordnet einem Standort einen Betreiber zu; ein leerer Name entfernt die Zuordnung.
   Future<void> assignOperator(String site, String operator) async {
     final uri = await _endpoint('/api/operator');
     final response = await _http.put(uri,
@@ -183,7 +183,7 @@ class CockpitClient {
     }
   }
 
-  /// Hides a tip of the setup check; without an id every hidden tip shows again.
+  /// Blendet einen Tipp der Einrichtungsprüfung aus; ohne ID erscheint jeder ausgeblendete Tipp wieder.
   Future<void> hideHint(String? id) async {
     final uri = await _endpoint(id == null ? '/api/hints/hidden' : '/api/hint');
     final headers = {...await _headers(json: true), 'Content-Type': 'application/json'};
@@ -212,7 +212,7 @@ class CockpitClient {
     return utf8.decode(response.bodyBytes, allowMalformed: true);
   }
 
-  /// Charging history, readings and invoices in one file (without the Tesla sign-in).
+  /// Ladehistorie, Messwerte und Rechnungen in einer Datei (ohne die Tesla-Anmeldung).
   Future<List<int>> backupZip() async {
     final uri = await _endpoint('/api/backup.zip');
     final response = await _http.get(uri, headers: await _headers())
@@ -338,7 +338,7 @@ return trf('Verbindung fehlgeschlagen.\nDiagnose: {0} · {1}', [error.runtimeTyp
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key, this.client, this.updates, this.cache, this.lock});
 
-  /// Injectable for tests; the app uses the defaults.
+  /// Für Tests austauschbar; die App nutzt die Standards.
   final CockpitClient? client;
   final UpdateChecker? updates;
   final DashboardCache? cache;
@@ -353,7 +353,7 @@ class _DashboardPageState extends State<DashboardPage> {
   late final UpdateChecker _updates = widget.updates ?? UpdateChecker();
   late final DashboardCache _cache = widget.cache ?? DashboardCache();
   late final AppLock _lock = widget.lock ?? AppLock();
-  // True while the figures on screen come from the phone's own copy.
+  // True, solange die Zahlen auf dem Bildschirm aus der eigenen Kopie des Handys stammen.
   bool _fromCache = false;
   Map<String, dynamic>? _data;
   String? _error;
@@ -365,7 +365,7 @@ class _DashboardPageState extends State<DashboardPage> {
   String _sessionSiteFilter = 'all';
   String _sessionSearch = '';
   final TextEditingController _searchController = TextEditingController();
-  // The site the price radar shows (null: all sites).
+  // Der Standort, den das Preis-Radar zeigt (null: alle Standorte).
   String? _radarSite;
   final GlobalKey _radarKey = GlobalKey();
 
@@ -431,7 +431,7 @@ class _DashboardPageState extends State<DashboardPage> {
       final now = DateTime.now();
       if (mounted) {
         setState(() {
-          // The app follows the language of the server (APP_LANG), like the web app.
+          // Die App folgt der Sprache des Servers (APP_LANG), wie die Web-App.
           appLanguage = languageFrom(data['lang']) ?? appLanguage;
           _data = data;
           _lastSuccessfulFetch = now;
@@ -440,7 +440,7 @@ class _DashboardPageState extends State<DashboardPage> {
       }
       unawaited(_cache.write(data, now));
     } catch (e) {
-      // Nothing on screen yet: show the last figures the phone has kept.
+      // Noch nichts auf dem Bildschirm: die letzten Zahlen zeigen, die das Handy behalten hat.
       final cached = _data == null ? await _cache.read() : null;
       if (mounted) {
         setState(() {
@@ -625,13 +625,13 @@ class _DashboardPageState extends State<DashboardPage> {
       if (saved == true) {
         if (showUpdateSwitch) await _updates.setEnabled(updateCheck);
         if (showLockSwitch && appLock != lockBefore) {
-          // Both directions ask the phone first: the lock is only switched on
-          // when it works, and only its owner can switch it off.
+          // Beide Richtungen fragen zuerst das Handy: Die Sperre wird nur eingeschaltet,
+          // wenn sie funktioniert, und nur ihr Besitzer kann sie abschalten.
           if (await _lock.unlock(tr('Ladecockpit entsperren'))) await _lock.setEnabled(appLock);
         }
         await _client.saveConnection(urlController.text, passwordController.text);
         if (urlController.text.trim() != previousUrl) {
-          // Another server: its figures must not mix with the old ones.
+          // Ein anderer Server: Seine Zahlen dürfen sich nicht mit den alten mischen.
           await _cache.clear();
           if (mounted) setState(() => _data = null);
         }
@@ -707,8 +707,8 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
             SizedBox(height: 6),
-            // Flexible + FittedBox: the value shrinks instead of overflowing
-            // when a long title takes two lines on a narrow phone.
+            // Flexible + FittedBox: Der Wert schrumpft statt überzulaufen,
+            // wenn ein langer Titel auf einem schmalen Handy zwei Zeilen braucht.
             Flexible(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
@@ -843,7 +843,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return value.toString();
   }
 
-  /// Joins the non-empty parts of a card's summary line.
+  /// Fügt die nicht leeren Teile der Zusammenfassungszeile einer Karte zusammen.
   String? _summaryLine(List<dynamic> parts) {
     final texts = parts
         .map((part) => part?.toString().trim() ?? '')
@@ -860,12 +860,12 @@ class _DashboardPageState extends State<DashboardPage> {
     return '$day.$month.';
   }
 
-  /// [keys] picks and orders the rows; without it the card shows the plain
-  /// values the server sent. [summary] is the line under the title.
+  /// [keys] wählt und ordnet die Zeilen; ohne zeigt die Karte die einfachen
+  /// Werte, die der Server geschickt hat. [summary] ist die Zeile unter dem Titel.
   Widget _section(String title, Map<String, dynamic>? values,
       {List<String>? keys, String? summary}) {
     if (values == null || values.isEmpty) return SizedBox.shrink();
-    // Internal fields mean nothing to the reader.
+    // Interne Felder sagen dem Leser nichts.
     const hidden = {'id', 'url', 'thumb', 'auto', 'push_state', 'currency', 'has_invoice', 'slow'};
     const hideWhenZero = {'idle', 'credit'};
     bool shown(String key, dynamic value) =>
@@ -945,10 +945,10 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _map(dynamic value) =>
       value is Map<String, dynamic> ? value : null;
 
-  // A session counts as cheap or dear when it is this far (per kWh) from your average.
+  // Eine Ladung gilt als günstig oder teuer, wenn sie so weit (pro kWh) von deinem Durchschnitt entfernt ist.
   static const _priceToneGap = 0.03;
 
-  /// A list of options to pick one from, as a sheet from the bottom. `current` gets a check mark.
+  /// Eine Liste von Optionen zur Auswahl als Blatt von unten. `current` bekommt einen Haken.
   Future<String?> _pickOption(String title, Map<String, String> options, String? current) {
     return showModalBottomSheet<String>(
       context: context,
@@ -1019,7 +1019,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _sessions(dynamic raw) {
     final items = raw is List ? raw.whereType<Map<String, dynamic>>().toList() : <Map<String, dynamic>>[];
-    // The page shows its own "no sessions yet" panel below an empty list.
+    // Die Seite zeigt unter einer leeren Liste ihren eigenen Bereich „noch keine Ladungen“.
     if (items.isEmpty) return SizedBox.shrink();
 
     String monthKey(Map<String, dynamic> item) {
@@ -1066,7 +1066,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final selectedNetwork = networks.contains(_sessionNetworkFilter) ? _sessionNetworkFilter : 'all';
     final selectedSite = sites.contains(_sessionSiteFilter) ? _sessionSiteFilter : 'all';
 
-    // Site names without the home country, as the server names them ("place").
+    // Standortnamen ohne das Heimatland, wie der Server sie nennt ("place").
     final placeOf = <String, String>{
       for (final s in items)
         if ((s['site']?.toString() ?? '').isNotEmpty)
@@ -1090,7 +1090,7 @@ class _DashboardPageState extends State<DashboardPage> {
       return monthMatches && networkMatches && siteMatches && searchMatches(session);
     }).toList();
 
-    // Your own average price per kWh, to tell a dear session from a cheap one at a glance.
+    // Dein eigener Durchschnittspreis pro kWh, um eine teure Ladung auf einen Blick von einer günstigen zu unterscheiden.
     double pricedKwh = 0, pricedCost = 0;
     for (final session in items) {
       final price = session['list_price'] ?? session['price'];
@@ -1157,7 +1157,7 @@ class _DashboardPageState extends State<DashboardPage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Wrap, not a sideways scroller: on a narrow phone the third chip would sit off-screen.
+              // Wrap statt seitlichem Scrollen: Auf einem schmalen Handy säße der dritte Chip außerhalb des Bildschirms.
               Wrap(
                 key: ValueKey('session-filter'),
                 runSpacing: 2,
@@ -1369,13 +1369,13 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  /// Lets the user say who runs a station. Returns true when something was saved.
+  /// Lässt den Nutzer sagen, wer eine Station betreibt. Gibt true zurück, wenn etwas gespeichert wurde.
   Future<bool> _assignOperator(String site, String? current) async {
     List<String> known = [];
     try {
       known = await _client.knownOperators();
     } catch (_) {
-      // The list is a convenience; typing a name works without it.
+      // Die Liste ist eine Hilfe; einen Namen einzutippen funktioniert auch ohne sie.
     }
     if (!mounted) return false;
     final controller = TextEditingController(text: current ?? '');
@@ -1465,7 +1465,7 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  /// Hides a tip of the setup check (id null: shows the hidden tips again) and reloads.
+  /// Blendet einen Tipp der Einrichtungsprüfung aus (ID null: zeigt die ausgeblendeten Tipps wieder) und lädt neu.
   Future<void> _hideHint(String? id) async {
     try {
       await _client.hideHint(id);
@@ -1619,7 +1619,7 @@ class _DashboardPageState extends State<DashboardPage> {
               _detailGroup(tr('ZEITRAUM'), timingRows),
               _detailGroup(tr('ENERGIE UND KOSTEN'), costRows),
               _detailGroup(tr('STANDORT'), locationRows),
-              // Third-party stations only: Tesla does not say who runs them, so the user can.
+              // Nur Fremdstationen: Tesla sagt nicht, wer sie betreibt, also kann der Nutzer es tun.
               if (networkValue == 'multipass' && !_fromCache && session['site'] != null)
                 Align(
                   alignment: Alignment.centerLeft,
@@ -1661,7 +1661,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  /// What the month would have cost with a combustion car, as the web app shows it.
+  /// Was der Monat mit einem Verbrenner gekostet hätte, wie die Web-App es zeigt.
   Widget _fuelCompare(Map<String, dynamic>? compare, Map<String, dynamic>? month) {
     final fuel = compare?['fuel'];
     final equivalent = month?['fuel_equivalent'];
@@ -1734,7 +1734,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  /// Hints for the setup and entities that deliver nothing useful. Hidden when all is well.
+  /// Hinweise zur Einrichtung und Entitäten, die nichts Brauchbares liefern. Ausgeblendet, wenn alles in Ordnung ist.
   Widget _setupCheck(Map<String, dynamic>? setup) {
     final checks = setup?['checks'];
     if (checks is! Map) return SizedBox.shrink();
@@ -1743,13 +1743,13 @@ class _DashboardPageState extends State<DashboardPage> {
     final entities = checks['entities'] is List
         ? (checks['entities'] as List).whereType<Map>().toList() : <Map>[];
     final bad = entities.where((e) => e['ok'] == false).toList();
-    // Setup steps that are not done yet (a required one opens the card).
+    // Noch nicht erledigte Einrichtungsschritte (ein Pflichtschritt öffnet die Karte).
     final steps = checks['steps'] is List
         ? (checks['steps'] as List).whereType<Map>().toList() : <Map>[];
     final openSteps = steps.where((step) =>
         step['status'] == 'todo' || step['status'] == 'problem' || step['status'] == 'waiting').toList();
     final requiredOpen = openSteps.where((step) => step['required'] == true).toList();
-    // Tips the user has hidden (servers before 0.23.4 send none)
+    // Vom Nutzer ausgeblendete Tipps (Server vor 0.23.4 senden keine)
     final hidden = checks['hidden'] is num ? (checks['hidden'] as num).toInt() : 0;
     if (hints.isEmpty && bad.isEmpty && openSteps.isEmpty) return SizedBox.shrink();
     final muted = Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary, height: 1.35);
@@ -1842,7 +1842,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  /// The tips of the server as cards; each leads to what it is about.
+  /// Die Tipps des Servers als Karten; jede führt zu dem, worum es geht.
   Widget _insightCards(dynamic raw) {
     final tips = raw is List
         ? raw.whereType<Map<String, dynamic>>()
@@ -1943,7 +1943,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  /// Cost per 100 km of the Tesla next to the combustion car, month by month.
+  /// Kosten pro 100 km des Tesla neben dem Verbrenner, Monat für Monat.
   Widget _per100Chart(dynamic rawMonths) {
     final months = rawMonths is List
         ? rawMonths.whereType<Map<String, dynamic>>()
@@ -2080,7 +2080,7 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       );
 
-  /// Off-peak and peak price per site, from the user's own invoices. Nothing from an older server.
+  /// Preis in Neben- und Hauptzeit je Standort aus den eigenen Rechnungen. Von einem älteren Server nichts.
   Widget _tariffs(dynamic raw) {
     if (raw is! Map) return SizedBox.shrink();
     final sites = raw['sites'] is List
@@ -2156,7 +2156,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _priceRadar(dynamic rawSlots, dynamic rawSites, [dynamic rawTariffs, dynamic rawSiteRadar]) {
-    // The radar of one site, when one is chosen and the server has it.
+    // Das Radar eines Standorts, wenn einer gewählt ist und der Server es hat.
     final siteRadar = rawSiteRadar is List
         ? rawSiteRadar.whereType<Map<String, dynamic>>().toList()
         : <Map<String, dynamic>>[];
@@ -2172,8 +2172,8 @@ class _DashboardPageState extends State<DashboardPage> {
         ? rawSites.whereType<Map<String, dynamic>>().take(8).toList()
         : <Map<String, dynamic>>[];
     if (slots.isEmpty && sites.isEmpty) return SizedBox.shrink();
-    // The lowest price wins. An entry with only a session or two behind it is
-    // still named, with a note that it rests on little.
+    // Der niedrigste Preis gewinnt. Ein Eintrag mit nur ein oder zwei Ladungen dahinter wird
+    // trotzdem genannt, mit dem Hinweis, dass er auf wenig beruht.
     int sessionsOf(Map<String, dynamic> row) =>
         row['sessions'] is num ? (row['sessions'] as num).round() : 0;
     Map<String, dynamic>? cheapestOf(Iterable<Map<String, dynamic>> rows) {
@@ -2188,7 +2188,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final cheapestSite = cheapestOf(sites);
     String sessionsLabel(int count) =>
         count == 1 ? tr('1 Ladevorgang') : trf('{0} Ladevorgänge', [count]);
-    // "nur 1 Ladevorgang" behind a cheapest entry that rests on little.
+    // „nur 1 Ladevorgang“ hinter einem günstigsten Eintrag, der auf wenig beruht.
     String fewNote(Map<String, dynamic> row, int minSessions) => sessionsOf(row) >= minSessions
         ? ''
         : trf(' (nur {0})', [sessionsLabel(sessionsOf(row))]);
@@ -3207,8 +3207,8 @@ class _DashboardPageState extends State<DashboardPage> {
     final readingColor = socSource == 'last'
         ? AppTheme.warning
         : socSource == 'live' ? AppTheme.accentGreen : AppTheme.textSecondary;
-    // No charging state while the figures are the last known ones: the car is offline (asleep or
-    // without reception), which is normal and no fault.
+    // Kein Ladezustand, solange die Zahlen die zuletzt bekannten sind: Das Auto ist offline (schläft oder
+    // hat keinen Empfang), was normal und kein Fehler ist.
     final carOffline = charging == null && socSource == 'last';
     final chargingText = charging == true ? tr('Wird geladen')
         : charging == false ? tr('Lädt derzeit nicht')
@@ -3891,7 +3891,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
               if (overviewMetrics.isNotEmpty)
-                // Large system text: one tile per row, taller, so nothing is cut off.
+                // Große Systemschrift: eine Kachel je Zeile, höher, damit nichts abgeschnitten wird.
                 Builder(builder: (context) {
                   final scale = MediaQuery.textScalerOf(context).scale(10) / 10;
                   final large = scale > 1.3;

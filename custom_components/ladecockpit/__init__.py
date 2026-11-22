@@ -1,9 +1,10 @@
-"""Ladecockpit: real entities for the Ladecockpit app.
+"""Ladecockpit: echte Entitäten für die Ladecockpit-App.
 
-The app (Home Assistant app or Docker container) works out everything from the Tesla
-invoices and fires one `ladecockpit_state` event per entity. This integration turns those
-events into entities with a unique ID and a device, so they can be renamed, assigned to an
-area and are restored after a restart. Without it, the app writes plain states instead.
+Die App (Home-Assistant-App oder Docker-Container) ermittelt alles aus den Tesla-Rechnungen
+und löst je Entität ein Event `ladecockpit_state` aus. Diese Integration macht aus diesen
+Events Entitäten mit eindeutiger ID und einem Gerät, sodass sie sich umbenennen und einem
+Bereich zuordnen lassen und nach einem Neustart wiederhergestellt werden. Ohne sie schreibt
+die App stattdessen einfache Zustände.
 """
 from __future__ import annotations
 
@@ -23,7 +24,7 @@ KNOWN = {Platform.SENSOR.value: set(SENSORS), Platform.BINARY_SENSOR.value: set(
 
 
 def parse_entity_id(entity_id: object) -> tuple[str, str] | None:
-    """`sensor.ladecockpit_month_cost` → ("sensor", "month_cost"), for the entities we know."""
+    """`sensor.ladecockpit_month_cost` → ("sensor", "month_cost"), für die bekannten Entitäten."""
     if not isinstance(entity_id, str) or "." not in entity_id:
         return None
     platform, obj = entity_id.split(".", 1)

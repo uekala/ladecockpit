@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
-"""Sign Android release builds with one persistent upload key.
+"""Android-Release-Builds mit einem dauerhaften Upload-Schlüssel signieren.
 
-Android only installs an update over an existing app if both are signed with
-the same key. CI regenerates the Android project with `flutter create`, which
-signs release builds with the runner's throwaway debug key, so every build had
-a different signature. This script switches the release build to a persistent
-key that lives only in GitHub Actions secrets.
+Android installiert ein Update über eine vorhandene App nur, wenn beide mit
+demselben Schlüssel signiert sind. Die CI erzeugt das Android-Projekt mit
+`flutter create` neu, das Release-Builds mit dem Wegwerf-Debug-Schlüssel des
+Runners signiert, sodass jeder Build eine andere Signatur hatte. Dieses Skript
+stellt den Release-Build auf einen dauerhaften Schlüssel um, der nur in den
+Secrets von GitHub Actions liegt.
 
-Run it after `flutter create`, from the Flutter app directory:
+Nach `flutter create` im Verzeichnis der Flutter-App ausführen:
 
     python3 tool/configure-android-signing.py [--required]
 
-Environment variables (GitHub Actions secrets):
-    ANDROID_KEYSTORE_BASE64    base64 of the upload keystore (.jks)
-    ANDROID_KEYSTORE_PASSWORD  keystore password
-    ANDROID_KEY_ALIAS          key alias
-    ANDROID_KEY_PASSWORD       key password
+Umgebungsvariablen (Secrets von GitHub Actions):
+    ANDROID_KEYSTORE_BASE64    Base64 des Upload-Keystores (.jks)
+    ANDROID_KEYSTORE_PASSWORD  Keystore-Passwort
+    ANDROID_KEY_ALIAS          Schlüssel-Alias
+    ANDROID_KEY_PASSWORD       Schlüssel-Passwort
 
-Passwords are never written to disk: Gradle reads them from the environment.
-In GitHub Actions the step output `signed` is set to `true` or `false`.
-The keystore is written to android/app/release-upload.jks (mode 0600, ignored
-by git) and should be deleted after the build.
+Passwörter werden nie auf die Platte geschrieben: Gradle liest sie aus der Umgebung.
+In GitHub Actions wird die Schrittausgabe `signed` auf `true` oder `false` gesetzt.
+Der Keystore wird nach android/app/release-upload.jks geschrieben (Modus 0600, von
+git ignoriert) und sollte nach dem Build gelöscht werden.
 """
 from __future__ import annotations
 
@@ -58,7 +59,7 @@ class SigningError(RuntimeError):
 
 
 def patch_gradle(text: str) -> str:
-    """Add the release signing config to a Flutter-generated build.gradle.kts."""
+    """Die Signierkonfiguration für Releases in eine von Flutter erzeugte build.gradle.kts einfügen."""
     if 'create("release")' not in text:
         marker = "android {\n"
         if marker not in text:

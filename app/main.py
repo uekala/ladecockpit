@@ -38,13 +38,13 @@ from .watcher import Watcher
 networks.configure(settings.multipass_min_price, settings.site_operators)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-# httpx logs every request at INFO – with the Home Assistant watcher that is about a dozen
-# lines a minute, which buries real problems. Errors are still logged by Ladecockpit itself.
+# httpx schreibt jede Anfrage mit INFO ins Log – mit dem Home-Assistant-Watcher sind das etwa ein
+# Dutzend Zeilen pro Minute, die echte Probleme verdecken. Fehler schreibt Ladecockpit weiter selbst.
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 class _SkipHealthCheck(logging.Filter):
-    """Leave the Docker health check (every minute) out of the access log."""
+    """Die Zustandsprüfung von Docker (jede Minute) aus dem Zugriffslog heraushalten."""
 
     def filter(self, record: logging.LogRecord) -> bool:
         return "/healthz" not in record.getMessage()
@@ -87,7 +87,7 @@ async def lifespan(_app: FastAPI):
     yield
     for task in tasks:
         task.cancel()
-    # Let them finish their cleanup before the process ends.
+    # Sie ihr Aufräumen beenden lassen, bevor der Prozess endet.
     await asyncio.gather(*tasks, return_exceptions=True)
 
 
@@ -100,11 +100,11 @@ SUPERVISOR_INGRESS_IP = "172.30.32.2"
 
 
 def _is_trusted_ingress(request: Request) -> bool:
-    """Trust Ingress only when the TCP peer is the Supervisor and its marker is present.
+    """Ingress nur vertrauen, wenn die TCP-Gegenstelle der Supervisor ist und seine Kennung vorliegt.
 
-    The header alone is not sufficient: direct clients can forge HTTP headers.
-    Home Assistant documents 172.30.32.2 as the only source allowed to reach
-    an Ingress app. Never use X-Forwarded-For for this trust decision.
+    Der Header allein reicht nicht: Direkte Clients können HTTP-Header fälschen.
+    Home Assistant dokumentiert 172.30.32.2 als einzige Quelle, die eine
+    Ingress-App erreichen darf. Für diese Entscheidung nie X-Forwarded-For nutzen.
     """
     peer = request.client.host if request.client else ""
     return (
@@ -122,12 +122,12 @@ async def basic_auth(request: Request, call_next):
     }:
         return await call_next(request)
 
-    # Home Assistant Ingress has already authenticated the user. Only trust
-    # requests that actually arrive from the Supervisor's fixed network IP.
+    # Ingress von Home Assistant hat den Nutzer schon angemeldet. Nur Anfragen
+    # vertrauen, die wirklich von der festen Netzwerk-IP des Supervisors kommen.
     if _is_trusted_ingress(request):
         return await call_next(request)
 
-    # Every non-Ingress request is direct access and must have its own password.
+    # Jede Anfrage ohne Ingress ist direkter Zugriff und braucht ein eigenes Passwort.
     if settings.addon and not settings.app_password:
         return Response(
             status_code=403,
@@ -158,8 +158,8 @@ _SHELL = (
 
 @app.get("/", include_in_schema=False)
 async def index():
-    # index.html holds only the page content (the same file doubles as a standalone preview),
-    # so doctype and viewport are added here.
+    # index.html enthält nur den Seiteninhalt (dieselbe Datei dient auch als eigenständige Vorschau),
+    # deshalb werden Doctype und Viewport hier ergänzt.
     body = (STATIC / "index.html").read_text(encoding="utf-8")
     return Response(_SHELL.format(lang=settings.lang) + body, media_type="text/html; charset=utf-8",
                     headers={"Cache-Control": "no-cache"})
@@ -173,7 +173,7 @@ async def healthz():
 # --- dashboard --------------------------------------------------------------------------
 async def _live() -> dict:
     if watcher.latest is not None:
-        return watcher.latest  # refreshed by the watcher every HA_POLL_SECONDS
+        return watcher.latest  # vom Watcher alle HA_POLL_SECONDS aufgefrischt
     if time.time() - _live_cache["at"] < 30 and _live_cache["data"] is not None:
         return _live_cache["data"]
     data = await ha.live()
@@ -182,7 +182,7 @@ async def _live() -> dict:
 
 
 def _home(since: datetime) -> list[tuple[datetime, float, float | None]]:
-    """Home charging steps: (time, kWh, cost or None without a price)."""
+    """Schritte beim Laden zu Hause: (Zeit, kWh, Kosten oder None ohne Preis)."""
     costs = dict(db.readings_since("home_cost", since))
     return [(ts, kwh, costs.get(ts)) for ts, kwh in db.readings_since("home_kwh", since)]
 
@@ -205,13 +205,13 @@ async def _readings(now: datetime) -> dict:
         "fuel_price": db.readings_since("fuel_price", min(odo_since, now - timedelta(days=200))),
     }
     if len(soc) < 3 and settings.ent_soc:
-        # Fresh install: fall back to Home Assistant's own history for the forecast.
+        # Neuinstallation: für die Prognose auf den eigenen Verlauf von Home Assistant zurückgreifen.
         readings["soc_ha"] = await ha.history(settings.ent_soc, now - timedelta(days=10))
     return readings
 
 
 def _vin(sessions: list[dict] | None = None) -> str | None:
-    """The car's VIN: from the settings, else from the newest session in the charging history."""
+    """Die VIN des Autos: aus den Einstellungen, sonst aus der neuesten Ladung der Ladehistorie."""
     if settings.tesla_vin:
         return settings.tesla_vin
     return next((s["vin"] for s in (db.sessions() if sessions is None else sessions) if s.get("vin")), None)
@@ -222,7 +222,7 @@ def _car(sessions: list[dict] | None = None) -> dict:
 
 
 def _when(iso: str | None) -> str:
-    """A sync time for the setup steps, in local time: "21.11. 08:14" / "Nov 21, 08:14"."""
+    """Eine Abgleichzeit für die Einrichtungsschritte in Ortszeit: "21.11. 08:14" / "Nov 21, 08:14"."""
     if not iso:
         return ""
     try:
@@ -278,13 +278,13 @@ async def dashboard():
     return d
 
 
-# --- look of the web app ---------------------------------------------------------------------------
-LOOKS = ("classic", "dynamic")  # the first is the default
+# --- Design der Web-App -----------------------------------------------------------------------------
+LOOKS = ("classic", "dynamic")  # das erste ist der Standard
 OLD_LOOKS = {"modern": "dynamic"}  # 0.9–0.10 had "modern" where "dynamic" is now
 
 
 def _look() -> str:
-    """The web app's look, chosen in the web app and kept for every device."""
+    """Das Design der Web-App, in der Web-App gewählt und für jedes Gerät gespeichert."""
     look = db.kv_get("ui_look")
     look = OLD_LOOKS.get(look, look)
     return look if look in LOOKS else LOOKS[0]
@@ -303,7 +303,7 @@ async def look_save(body: LookIn):
     return {"look": look}
 
 
-# --- tips of the setup check the user has hidden ---------------------------------------------------
+# --- ausgeblendete Tipps der Einrichtungsprüfung ---------------------------------------------------
 _HIDDEN_HINTS_KEY = "hints_hidden"
 
 
@@ -322,8 +322,8 @@ class HintIn(BaseModel):
 
 @app.put("/api/hint")
 async def hint_save(body: HintIn):
-    """Hide a tip of the setup check (or show it again). Only tips can be hidden: a feature that is
-    half set up stays in the list until it is fixed."""
+    """Einen Tipp der Einrichtungsprüfung ausblenden (oder wieder zeigen). Nur Tipps lassen sich ausblenden:
+    Eine halb eingerichtete Funktion bleibt in der Liste, bis sie behoben ist."""
     if settings.demo:
         raise HTTPException(404, "The demo keeps its tips.")
     if body.id not in checks.HINT_IDS:
@@ -369,13 +369,13 @@ class OperatorIn(BaseModel):
 
 @app.get("/api/operators")
 async def operators_get():
-    """Operators assigned to single sites, and the names that are offered for choosing."""
+    """Einzelnen Standorten zugeordnete Betreiber und die Namen, die zur Auswahl angeboten werden."""
     return {"assigned": {} if settings.demo else _load_assigned_sites(), "known": networks.known_operators()}
 
 
 @app.put("/api/operator")
 async def operator_save(body: OperatorIn):
-    """Assign an operator to a site (all its sessions, past and future); an empty operator removes it."""
+    """Einem Standort einen Betreiber zuordnen (alle seine Ladungen, frühere und künftige); ein leerer Betreiber entfernt ihn."""
     if settings.demo:
         raise HTTPException(404, "The demo has no stations of your own to assign.")
     site = " ".join(body.site.split())
@@ -391,7 +391,7 @@ async def operator_save(body: OperatorIn):
     return {"site": site, "operator": name or None, "assigned": assigned}
 
 
-# --- picture of the car --------------------------------------------------------------------------
+# --- Bild des Autos -------------------------------------------------------------------------------
 class CarIn(BaseModel):
     generation: str | None = None
     trim: str | None = None
@@ -406,7 +406,7 @@ def _car_response(car: dict) -> dict:
 
 @app.get("/api/car")
 async def car_get():
-    """The current picture plus everything that can be chosen."""
+    """Das aktuelle Bild und alles, was sich wählen lässt."""
     return _car_response(_car())
 
 
@@ -426,7 +426,7 @@ async def car_save(body: CarIn):
 
 @app.delete("/api/car")
 async def car_reset():
-    """Back to the car recognised from the VIN."""
+    """Zurück zum Auto, das an der VIN erkannt wurde."""
     carimage.reset_choice(db)
     return _car_response(_car())
 
@@ -457,7 +457,7 @@ async def ha_summary():
 # --- sync -------------------------------------------------------------------------------
 @app.post("/api/sync")
 async def sync_after_charge():
-    """Call after a charging session ended: looks for the new invoice at short intervals."""
+    """Nach dem Ende einer Ladung aufrufen: sucht in kurzen Abständen nach der neuen Rechnung."""
     if settings.demo:
         return {"ok": True, "demo": True}
     sync.trigger_burst()
@@ -466,7 +466,7 @@ async def sync_after_charge():
 
 @app.post("/api/push/test")
 async def push_test():
-    """Send a test message through ntfy, so the setup can be checked from the web app."""
+    """Eine Testnachricht über ntfy senden, damit sich die Einrichtung in der Web-App prüfen lässt."""
     if not push.configured:
         raise HTTPException(400, "NTFY_URL is not set")
     ok = await push.send(i18n.t(settings.lang, "push_test_title"), i18n.t(settings.lang, "push_test"), tags=["bell"])
@@ -493,8 +493,8 @@ async def sync_now():
 
 # --- invoices ------------------------------------------------------------------------------
 async def _invoice_pdf(s: dict) -> Path:
-    """Path of the cached invoice PDF of a session (fetched from Tesla on first use). A session
-    not checked yet gets its network from the invoice right away."""
+    """Pfad des zwischengespeicherten Rechnungs-PDFs einer Ladung (beim ersten Bedarf von Tesla geholt).
+    Eine noch nicht geprüfte Ladung bekommt ihr Netz sofort aus der Rechnung."""
     path = await invoices.pdf_path(tesla, settings.data_dir, s)
     if s.get("invoice_network") is None:
         db.set_invoice_network(s["session_id"], invoices.network_from_pdf(path.read_bytes()))
@@ -508,7 +508,7 @@ def _pdf_name(s: dict) -> str:
 
 
 async def _invoice_source(session_id: str) -> tuple[Path, str]:
-    """Cached invoice PDF of a session and its download name; HTTP errors when there is none."""
+    """Zwischengespeichertes Rechnungs-PDF einer Ladung und sein Download-Name; HTTP-Fehler, wenn es keines gibt."""
     if settings.demo:
         raise HTTPException(404, "The demo has no real invoices.")
     s = db.session(session_id)
@@ -526,7 +526,7 @@ async def invoice(session_id: str):
     return FileResponse(path, media_type="application/pdf", filename=name)
 
 
-# --- PDF view: pages as pictures (the Home Assistant app has no PDF viewer) --------------------
+# --- PDF-Ansicht: Seiten als Bilder (die Home-Assistant-App hat keinen PDF-Betrachter) -----------
 def _page_response(data: bytes, page: int, cache_path: Path | None = None) -> Response:
     if cache_path is not None and cache_path.exists():
         png = cache_path.read_bytes()
@@ -537,7 +537,7 @@ def _page_response(data: bytes, page: int, cache_path: Path | None = None) -> Re
             raise HTTPException(404, "No such page.") from e
         if cache_path is not None:
             cache_path.write_bytes(png)
-    # Invoices never change; the month report does, so only invoice pages may be cached.
+    # Rechnungen ändern sich nie, der Monatsbericht schon; nur Rechnungsseiten dürfen zwischengespeichert werden.
     cache = "private, max-age=86400" if cache_path is not None else "no-store"
     return Response(png, media_type="image/png", headers={"Cache-Control": cache})
 
@@ -556,7 +556,7 @@ async def invoice_page(session_id: str, page: int):
 
 @app.get("/api/invoices/{month}.zip")
 async def invoices_zip(month: str):
-    """All invoices of one month (YYYY-MM, local time) as a ZIP file."""
+    """Alle Rechnungen eines Monats (JJJJ-MM, Ortszeit) als ZIP-Datei."""
     if not re.fullmatch(r"\d{4}-\d{2}", month):
         raise HTTPException(400, "Use the format YYYY-MM.")
     if settings.demo:
@@ -578,13 +578,13 @@ async def invoices_zip(month: str):
 
 @app.get("/api/report/{month}.pdf")
 async def month_report_pdf(month: str):
-    """Cover sheet with all sessions of a month (net, VAT, gross, credits) plus Tesla's invoices."""
+    """Deckblatt mit allen Ladungen eines Monats (netto, MwSt., brutto, Gutschriften) plus Teslas Rechnungen."""
     data, name = await _month_report(month)
     return Response(data, media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
 
-# The PDF view asks for the page count and then each page; keep the report for that short while
-# instead of rebuilding it per page.
+# Die PDF-Ansicht fragt nach der Seitenzahl und dann nach jeder Seite; den Bericht für diese kurze
+# Zeit behalten, statt ihn je Seite neu zu bauen.
 _report_cache: dict[str, tuple[float, bytes, str]] = {}
 _REPORT_TTL = 300
 
@@ -602,7 +602,7 @@ async def _month_report_cached(month: str) -> tuple[bytes, str]:
 
 @app.get("/api/report/{month}/pages")
 async def month_report_pages(month: str):
-    _report_cache.pop(month, None)  # opening the view always shows the current figures
+    _report_cache.pop(month, None)  # das Öffnen der Ansicht zeigt immer die aktuellen Zahlen
     data, name = await _month_report_cached(month)
     return {"pages": pdfview.page_count(data), "name": name}
 
@@ -621,7 +621,7 @@ async def _month_report(month: str) -> tuple[bytes, str]:
     chosen = sorted((s for s in sessions if s.get("start_ts") and s.get("total") is not None
                      and datetime.fromisoformat(s["start_ts"]).astimezone(settings.tz).strftime("%Y-%m") == month),
                     key=lambda s: s["start_ts"])
-    stations.describe(sessions)  # names the operators of MultiPass stations in `chosen` too
+    stations.describe(sessions)  # benennt auch in `chosen` die Betreiber der MultiPass-Stationen
     d = await dashboard()
     entry = next((m for m in d.get("monthly") or [] if m["key"] == month), {})
     if not chosen and not entry.get("home_kwh"):
@@ -641,7 +641,7 @@ async def _month_report(month: str) -> tuple[bytes, str]:
     return monthpdf.merge(cover, pdfs), name
 
 
-# --- year overview: one page with a line per month ---------------------------------------------
+# --- Jahresübersicht: eine Seite mit einer Zeile je Monat ------------------------------------------
 def _year_report(year: int) -> tuple[bytes, str]:
     if not 2000 <= year <= 2100:
         raise HTTPException(400, "Use a four-digit year.")
@@ -660,7 +660,7 @@ def _year_report(year: int) -> tuple[bytes, str]:
 
 @app.get("/api/year/{year}.pdf")
 async def year_report_pdf(year: int):
-    """Charging costs of one year: sessions, kWh, net, VAT, gross and credits per month."""
+    """Ladekosten eines Jahres: Ladungen, kWh, netto, MwSt., brutto und Gutschriften je Monat."""
     data, name = _year_report(year)
     return Response(data, media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
@@ -680,7 +680,7 @@ async def year_report_page(year: int, page: int):
 # --- backup and restore -------------------------------------------------------------------------
 @app.get("/api/backup.zip")
 async def backup_download():
-    """Charging history, readings and cached invoices in one file – without the Tesla sign-in."""
+    """Ladehistorie, Messwerte und zwischengespeicherte Rechnungen in einer Datei – ohne die Tesla-Anmeldung."""
     if settings.demo:
         raise HTTPException(404, "The demo has nothing to back up.")
     handle, path = tempfile.mkstemp(prefix="ladecockpit-backup-", suffix=".zip")
@@ -699,10 +699,10 @@ async def backup_download():
 
 @app.post("/api/restore")
 async def backup_restore(request: Request):
-    """Replace the charging history with a backup. The body is the ZIP file itself."""
+    """Die Ladehistorie durch eine Sicherung ersetzen. Der Inhalt der Anfrage ist die ZIP-Datei selbst."""
     if settings.demo:
         raise HTTPException(400, "The demo cannot restore a backup.")
-    # A plain cross-site form cannot send this content type, so another website cannot post here.
+    # Ein einfaches seitenübergreifendes Formular kann diesen Content-Type nicht senden, eine andere Website also nicht hierher posten.
     if request.headers.get("content-type", "").split(";")[0].strip().lower() != "application/zip":
         raise HTTPException(415, "Send the backup as application/zip.")
     handle, path = tempfile.mkstemp(prefix="ladecockpit-restore-", suffix=".zip")
@@ -735,7 +735,7 @@ async def export_csv():
                     headers={"Content-Disposition": 'attachment; filename="ladecockpit-sessions.csv"'})
 
 
-# --- installable web app (icon on the home screen) ----------------------------------------
+# --- installierbare Web-App (Symbol auf dem Startbildschirm) ----------------------------------
 @app.get("/manifest.webmanifest", include_in_schema=False)
 async def manifest():
     return JSONResponse({
@@ -747,14 +747,14 @@ async def manifest():
 
 
 FONTS = ("geist-latin.woff2", "geist-latin-ext.woff2",   # both looks
-         "saira-latin.woff2", "saira-latin-ext.woff2")    # figures of the dynamic look
+         "saira-latin.woff2", "saira-latin-ext.woff2")    # Ziffern des dynamischen Designs
 
 
 @app.get("/fonts/{name}", include_in_schema=False)
 async def font(name: str):
-    """The web app's typefaces (Geist, Saira – SIL Open Font License, see
-    static/fonts/OFL-*.txt), served here so the page needs no outside font service. A browser only
-    loads the files of the look in use."""
+    """Die Schriften der Web-App (Geist, Saira – SIL Open Font License, siehe
+    static/fonts/OFL-*.txt), hier ausgeliefert, damit die Seite keinen fremden Schriftdienst braucht.
+    Ein Browser lädt nur die Dateien des genutzten Designs."""
     if name not in FONTS:
         raise HTTPException(404)
     return FileResponse(STATIC / "fonts" / name, media_type="font/woff2",
@@ -778,7 +778,7 @@ async def auth_login():
     db.kv_set("oauth_state", state)
     verifier = None
     if settings.tesla_open_source:
-        # No client secret: the sign-in is tied to this verifier instead (PKCE).
+        # Kein Client-Secret: Die Anmeldung ist stattdessen an diesen Verifier gebunden (PKCE).
         verifier = secrets.token_urlsafe(64)
         db.kv_set("oauth_verifier", verifier)
     else:
@@ -802,7 +802,7 @@ class CodeIn(BaseModel):
 
 @app.post("/auth/code")
 async def auth_code(body: CodeIn):
-    """If the redirect does not land here: paste the full address or just the code."""
+    """Landet die Weiterleitung nicht hier: die ganze Adresse oder nur den Code einfügen."""
     value = body.value.strip()
     code = value
     if "code=" in value:
@@ -835,5 +835,5 @@ async def auth_logout():
 # --- troubleshooting ----------------------------------------------------------------------------
 @app.get("/api/debug/raw")
 async def debug_raw():
-    """Last raw response of the Tesla charging history (to check field names)."""
+    """Letzte Rohantwort der Tesla-Ladehistorie (zum Prüfen der Feldnamen)."""
     return JSONResponse(tesla.last_raw if tesla.last_raw is not None else {"note": "No sync has run yet."})

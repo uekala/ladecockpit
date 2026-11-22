@@ -10,10 +10,10 @@ class CachedDashboard {
   final DateTime fetchedAt;
 }
 
-/// Keeps the last dashboard on the phone, so the app can show the latest
-/// known figures when the server cannot be reached (VPN off, no network).
-/// The file lives in the app's private storage. Every failure is silent:
-/// without a cache the app simply shows what it shows today.
+/// Behält das letzte Dashboard auf dem Handy, damit die App die zuletzt
+/// bekannten Zahlen zeigen kann, wenn der Server nicht erreichbar ist (VPN aus, kein Netz).
+/// Die Datei liegt im privaten Speicher der App. Jeder Fehler bleibt still:
+/// Ohne Cache zeigt die App einfach, was sie auch heute zeigt.
 class DashboardCache {
   DashboardCache({Future<Directory> Function()? directory})
       : _directory = directory ?? getApplicationSupportDirectory;

@@ -4,7 +4,7 @@ import httpx
 
 from app import stations
 
-# Text of a real MultiPass invoice as pypdf reads it (customer made up)
+# Text einer echten MultiPass-Rechnung, wie pypdf ihn liest (Kunde erfunden)
 INVOICE_TEXT = """Rech nu ng
 Tesla Germany GmbH
 Ludwig-Prandtl-Straße 27 - 29
@@ -44,10 +44,10 @@ def test_operator_names():
     assert stations.clean_operator("Stadtwerke Neustadt AG") == "Stadtwerke Neustadt"   # not just "Stadtwerke"
     assert stations.clean_operator("E.ON Drive Infrastructure GmbH") == "E.ON Drive"
     assert stations.clean_operator("") is None
-    # the register wins over the site name, but a more specific brand of the same company stays
+    # das Register schlägt den Standortnamen, aber eine genauere Marke derselben Firma bleibt
     assert stations.operator_label({"operator": "SWN ENERGIE GmbH"}, "Brunnenhausstr. 46, Neustadt") == "SWN ENERGIE"
     assert stations.operator_label({"operator": "Aral Aktiengesellschaft"}, "Aral pulse Brassertstraße 124") == "Aral pulse"
-    # a charging network in the site name is what people know; a supermarket only hosts the station
+    # ein Ladenetz im Standortnamen ist das, was man kennt; ein Supermarkt beherbergt die Station nur
     assert stations.operator_label({"operator": "BP Europa SE"}, "Aral pulse Musterstraße 124, 12345 Musterstadt") == "Aral pulse"
     assert stations.operator_label({"operator": "SWN ENERGIE GmbH"}, "Allego - Neustadt") == "Allego"
     assert stations.operator_label({"operator": "HomE of Mobility GmbH"}, "Charging Station ALDI SÜD") == "HomE of Mobility"
@@ -56,7 +56,7 @@ def test_operator_names():
 
 
 def test_the_registers_short_name():
-    # The map name when it is the operator's short name, else the company name
+    # Der Kartenname, wenn er der Kurzname des Betreibers ist, sonst der Firmenname
     assert stations.registered_name("SEW Seestadt Energie und Wasser GmbH", "SEW") == "SEW"
     assert stations.registered_name("ALDI SÜD Immobilienverwaltungs-GmbH & Co. oHG", "ALDI SÜD") == "ALDI SÜD"
     assert stations.registered_name("Stadtwerke Talstadt AG", "SWT AG") == "Stadtwerke Talstadt AG"
@@ -65,7 +65,7 @@ def test_the_registers_short_name():
     assert stations.operator_label({"operator": "SEW Seestadt Energie und Wasser GmbH", "operator_shown": "SEW"},
                                    "Musterstr. 46, Musterstadt") == "SEW"
     assert stations.operator_label({"operator": "Electra Germany GmbH"}, "Musterstadt - Markt") == "Electra"
-    # public bodies and very long names are cut to what people call them
+    # Behörden und sehr lange Namen werden auf das gekürzt, wie man sie nennt
     assert stations.clean_operator("Sparkasse Musterstadt Anstalt des öffentlichen Rechts Zweckverbandssparkasse "
                                    "der Stadt Musterstadt und des Kreises Beispiel") == "Sparkasse Musterstadt"
     assert len(stations.clean_operator("Ein sehr langer Name einer Firma die Ladesäulen in vielen Städten betreibt GmbH")) <= stations.MAX_NAME
@@ -81,7 +81,7 @@ def test_matching_the_register():
     assert stations.match_operator(st, rows)["operator"] == "SWN ENERGIE GmbH"
     assert stations.match_operator({**st, "street": "Gartenstraße"}, rows) is None
     assert stations.match_operator({**st, "number": "300"}, rows) is None          # too far along the street
-    # The register and the invoice spell the street a little differently; the house number decides
+    # Register und Rechnung schreiben die Straße etwas anders; die Hausnummer entscheidet
     rows = [{"operator": "HomE of Mobility GmbH", "street": "Brunnenhaustraße", "number": "70", "postcode": "12301"},
             {"operator": "ALDI SÜD Immobilienverwaltungs-GmbH & Co. oHG", "street": "Brunnenhausstr.", "number": "50", "postcode": "12301"},
             {"operator": "Ganz Andere GmbH", "street": "Kleiststraße", "number": "50", "postcode": "12301"}]
@@ -133,7 +133,7 @@ def test_register_download(tmp_path):
     rows = asyncio.run(reg.rows_for({"12301"}))
     assert [r["operator"] for r in rows] == ["SWN ENERGIE GmbH"]
     assert "data.bundesnetzagentur.de" in seen
-    assert not list((tmp_path / "tmp").iterdir())                                  # the download is not kept
+    assert not list((tmp_path / "tmp").iterdir())                                  # der Download wird nicht behalten
     assert asyncio.run(reg.rows_for({"12301"})) is None                              # not twice in a row
 
 
@@ -147,5 +147,5 @@ def test_due_for_lookup():
     assert not stations.due_for_lookup({**base, "checked": now.isoformat(), "operator": "X", "match_v": v}, now)
     assert not stations.due_for_lookup({**base, "checked": (now - timedelta(days=3)).isoformat(), "match_v": v}, now)
     assert stations.due_for_lookup({**base, "checked": (now - timedelta(days=40)).isoformat(), "match_v": v}, now)
-    assert stations.due_for_lookup({**base, "checked": now.isoformat(), "operator": "X"}, now)   # matched by an older rule
+    assert stations.due_for_lookup({**base, "checked": now.isoformat(), "operator": "X"}, now)   # nach einer älteren Regel zugeordnet
     assert not stations.due_for_lookup({}, now) and not stations.due_for_lookup(None, now)

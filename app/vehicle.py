@@ -1,7 +1,7 @@
-"""Analyses of the car's own readings: battery health and consumption by outside temperature.
+"""Auswertungen der eigenen Messwerte des Autos: Akkugesundheit und Verbrauch nach Außentemperatur.
 
-Both work from the readings Ladecockpit keeps anyway (battery level, range, odometer and,
-if configured, the outside temperature), so they need no extra Tesla requests.
+Beide arbeiten mit den Messwerten, die Ladecockpit ohnehin speichert (Akkustand, Reichweite,
+Kilometerstand und, falls eingerichtet, die Außentemperatur), brauchen also keine zusätzlichen Tesla-Anfragen.
 """
 from __future__ import annotations
 
@@ -9,10 +9,10 @@ from bisect import bisect_left
 from datetime import date, datetime, timedelta, timezone
 from statistics import median
 
-PAIR_WINDOW = timedelta(minutes=15)   # battery level and range must be this close together
-MIN_SOC_FOR_RANGE = 50                # the range estimate is most stable in the upper half
+PAIR_WINDOW = timedelta(minutes=15)   # Akkustand und Reichweite müssen so nah beieinander liegen
+MIN_SOC_FOR_RANGE = 50                # die Reichweitenschätzung ist in der oberen Hälfte am stabilsten
 HEALTH_MIN_SAMPLES = 5
-HEALTH_MIN_SPAN = timedelta(days=30)  # before that a change is mostly noise
+HEALTH_MIN_SPAN = timedelta(days=30)  # davor ist eine Änderung meist Rauschen
 
 TEMP_BANDS = [(-99.0, 0.0), (0.0, 10.0), (10.0, 20.0), (20.0, 99.0)]
 DAY_MIN_DISTANCE = 15.0
@@ -32,8 +32,8 @@ def _nearest(points: list[tuple[datetime, float]], times: list[datetime], ts: da
 
 
 def battery_health(soc: list[tuple[datetime, float]], rng: list[tuple[datetime, float]], tz) -> dict | None:
-    """Range at 100 % (the car's own estimate, scaled from the current battery level) over time.
-    A slowly falling value is the usual sign of battery ageing."""
+    """Reichweite bei 100 % (die eigene Schätzung des Autos, hochgerechnet vom aktuellen Akkustand) im Zeitverlauf.
+    Ein langsam sinkender Wert ist das übliche Zeichen der Akkualterung."""
     if not soc or not rng:
         return None
     soc_times = [p[0] for p in soc]
@@ -67,8 +67,8 @@ def _band(temp: float) -> int:
 
 
 def kwh_per_percent(sessions: list[dict], soc: list[tuple[datetime, float]]) -> float | None:
-    """Billed kWh per 1 % battery, from sessions with a battery reading right before and after.
-    Includes charging losses, like the kWh per 100 km the app shows elsewhere."""
+    """Abgerechnete kWh pro 1 % Akku, aus Ladungen mit einem Akku-Messwert direkt davor und danach.
+    Enthält Ladeverluste, wie die kWh pro 100 km, die die App an anderer Stelle zeigt."""
     if not soc:
         return None
     times = [p[0] for p in soc]
@@ -91,7 +91,7 @@ def kwh_per_percent(sessions: list[dict], soc: list[tuple[datetime, float]]) -> 
 
 def consumption_by_temperature(soc: list[tuple[datetime, float]], odo: list[tuple[datetime, float]],
                                temp: list[tuple[datetime, float]], tz, kwh_pct: float | None) -> dict | None:
-    """Battery use per 100 km/mi per day, grouped by the day's mean outside temperature."""
+    """Akkuverbrauch pro 100 km/mi je Tag, gruppiert nach der mittleren Außentemperatur des Tages."""
     if len(temp) < 2 or len(soc) < 2 or len(odo) < 2:
         return None
     days: dict = {}
@@ -130,15 +130,15 @@ def consumption_by_temperature(soc: list[tuple[datetime, float]], odo: list[tupl
 
 
 # --- charging speed ---------------------------------------------------------------------------
-SLOW_MIN_KWH = 20.0                    # shorter sessions rarely reach full power, so they are not compared
-SLOW_SHARE = 0.6                       # slow: below 60 % of the usual average at the same site
-SLOW_MAX_START_SOC = 50                # from about here the car charges slower on purpose
-SLOW_MIN_PEERS = 2                     # other comparable sessions at the site needed for a "usual" value
-START_SOC_WINDOW = timedelta(hours=2)  # a battery reading this close before the start counts
+SLOW_MIN_KWH = 20.0                    # kürzere Ladungen erreichen selten volle Leistung und werden nicht verglichen
+SLOW_SHARE = 0.6                       # langsam: unter 60 % des üblichen Durchschnitts am selben Standort
+SLOW_MAX_START_SOC = 50                # etwa ab hier lädt das Auto absichtlich langsamer
+SLOW_MIN_PEERS = 2                     # nötige andere vergleichbare Ladungen am Standort für einen „üblichen“ Wert
+START_SOC_WINDOW = timedelta(hours=2)  # ein Akku-Messwert so kurz vor dem Start zählt
 
 
 def session_kw(x: dict) -> float | None:
-    """Average charging power of a session (billed kWh over start to stop, at least 3 minutes)."""
+    """Mittlere Ladeleistung einer Ladung (abgerechnete kWh über Start bis Ende, mindestens 3 Minuten)."""
     if not (x.get("kwh") and x.get("start_ts") and x.get("stop_ts")):
         return None
     hours = (datetime.fromisoformat(x["stop_ts"]) - datetime.fromisoformat(x["start_ts"])).total_seconds() / 3600
@@ -146,13 +146,13 @@ def session_kw(x: dict) -> float | None:
 
 
 def charging_speed(sessions: list[dict], soc: list[tuple[datetime, float]]) -> dict[str, dict]:
-    """Average power of each session compared with what the car usually gets at the same site.
+    """Mittlere Leistung jeder Ladung im Vergleich zu dem, was das Auto am selben Standort üblicherweise bekommt.
 
-    The usual power is the median of the other sessions there with enough energy (at least two).
-    A session is slow when it got less than 60 % of that. Short sessions and sessions that started
-    with more than half a battery are never called slow: they charge slower on purpose.
-    Typical reasons are a cold battery without preconditioning or a shared or throttled stall.
-    Returns {session_id: {"kw", "typical_kw", "slow", "start_soc"}} for sessions with a duration."""
+    Die übliche Leistung ist der Median der anderen Ladungen dort mit genug Energie (mindestens zwei).
+    Eine Ladung ist langsam, wenn sie weniger als 60 % davon bekam. Kurze Ladungen und Ladungen, die mit
+    mehr als halbem Akku begannen, gelten nie als langsam: Sie laden absichtlich langsamer.
+    Häufige Gründe sind ein kalter Akku ohne Vorkonditionierung oder eine geteilte oder gedrosselte Ladesäule.
+    Gibt {session_id: {"kw", "typical_kw", "slow", "start_soc"}} für Ladungen mit Dauer zurück."""
     times = [p[0] for p in soc]
 
     def start_soc(x: dict) -> float | None:
@@ -187,17 +187,17 @@ def charging_speed(sessions: list[dict], soc: list[tuple[datetime, float]]) -> d
 
 # --- fuel price actually paid --------------------------------------------------------------------
 PAID_WINDOW = timedelta(days=90)
-PAID_MIN_LITRES = 20.0           # less than this in the window: too few fill-ups for an average
-PAID_PRICE_RANGE = (0.3, 5.0)    # per litre; anything else is a mix-up of entities or units
+PAID_MIN_LITRES = 20.0           # weniger im Zeitraum: zu wenige Tankvorgänge für einen Durchschnitt
+PAID_PRICE_RANGE = (0.3, 5.0)    # pro Liter; alles andere ist eine Verwechslung von Entitäten oder Einheiten
 
 
 def paid_fuel_price(cost: list[tuple[datetime, float]], litres: list[tuple[datetime, float]],
                     cost_now: float | None, litres_now: float | None, now: datetime) -> dict | None:
-    """Average price per litre you actually paid, from two totals that grow when you fill up.
+    """Durchschnittspreis pro Liter, den du wirklich bezahlt hast, aus zwei Summen, die beim Tanken wachsen.
 
-    Over the last 90 days when at least 20 litres were bought then (from Ladecockpit's own readings
-    of the totals), else over everything the totals hold – right after the setup, or when the totals
-    were reset. Returns {"price", "litres", "days"} (days None: all the totals hold) or None."""
+    Über die letzten 90 Tage, wenn darin mindestens 20 Liter gekauft wurden (aus Ladecockpits eigenen
+    Messwerten der Summen), sonst über alles, was die Summen enthalten – direkt nach der Einrichtung oder
+    wenn die Summen zurückgesetzt wurden. Gibt {"price", "litres", "days"} (days None: alles in den Summen) oder None zurück."""
     if cost_now is None or litres_now is None:
         return None
     start = now - PAID_WINDOW
@@ -219,14 +219,14 @@ def paid_fuel_price(cost: list[tuple[datetime, float]], litres: list[tuple[datet
 
 
 # --- fuel price as a daily average ---------------------------------------------------------------
-PRICE_MAX_HOLD = timedelta(hours=36)   # a price older than this without a new reading no longer counts
-DAILY_NEAREST = 7                      # days: a day without a price takes the nearest one this close
+PRICE_MAX_HOLD = timedelta(hours=36)   # ein älterer Preis ohne neuen Messwert zählt nicht mehr
+DAILY_NEAREST = 7                      # Tage: ein Tag ohne Preis nimmt den nächsten in diesem Abstand
 
 
 def daily_fuel_prices(points: list[tuple[datetime, float]], tz, now: datetime) -> dict[date, float]:
-    """Average of the fuel price entity per local day, weighted by how long each price was shown.
+    """Durchschnitt der Spritpreis-Entität je lokalem Tag, gewichtet nach der Dauer, die jeder Preis anstand.
 
-    A price holds until the next reading (at most PRICE_MAX_HOLD); the current day counts up to now."""
+    Ein Preis gilt bis zum nächsten Messwert (höchstens PRICE_MAX_HOLD); der laufende Tag zählt bis jetzt."""
     pts = sorted(p for p in points if PAID_PRICE_RANGE[0] <= p[1] <= PAID_PRICE_RANGE[1])
     acc: dict[date, list[float]] = {}
     for i, (t, v) in enumerate(pts):
@@ -247,11 +247,11 @@ def daily_fuel_prices(points: list[tuple[datetime, float]], tz, now: datetime) -
 
 
 def distance_fuel_price(odo: list[tuple[datetime, float]], daily: dict[date, float], tz) -> dict | None:
-    """Price per litre for a stretch of odometer readings when every day's kilometres are priced at
-    that day's average: the mean of the daily prices weighted by the distance driven each day.
+    """Preis pro Liter für eine Strecke von Kilometerständen, wenn die Kilometer jedes Tages zum Durchschnitt
+    dieses Tages bewertet werden: das Mittel der Tagespreise, gewichtet nach der täglich gefahrenen Strecke.
 
-    A day without a price takes the nearest day with one (up to DAILY_NEAREST days away); kilometres
-    farther from any price are left out. Returns {"price", "days"} (days with their own price) or None."""
+    Ein Tag ohne Preis nimmt den nächsten Tag mit Preis (bis zu DAILY_NEAREST Tage entfernt); Kilometer
+    weiter weg von jedem Preis bleiben außen vor. Gibt {"price", "days"} (Tage mit eigenem Preis) oder None zurück."""
     if not daily or len(odo) < 2:
         return None
     known = sorted(daily)
@@ -280,15 +280,15 @@ def distance_fuel_price(odo: list[tuple[datetime, float]], daily: dict[date, flo
 
 
 # --- While the car charges ------------------------------------------------------------------------
-RATE_WINDOW = timedelta(minutes=90)   # battery readings this recent give the charging rate
+RATE_WINDOW = timedelta(minutes=90)   # so junge Akku-Messwerte ergeben die Laderate
 RATE_MIN_SPAN = timedelta(minutes=8)
 RATE_MIN_GAIN = 1.0                    # % – less is rounding noise
-FINISH_MAX = timedelta(hours=48)       # anything later is a stale or wrong value
+FINISH_MAX = timedelta(hours=48)       # alles Spätere ist ein veralteter oder falscher Wert
 
 
 def _until(raw: str | None, value: float | None, unit: str | None, now: datetime) -> datetime | None:
-    """Time-to-full as Home Assistant reports it: a timestamp (Tesla Fleet, Teslemetry) or a
-    duration with its unit (h, min, s); a bare number counts as hours."""
+    """Zeit bis voll, wie Home Assistant sie meldet: ein Zeitstempel (Tesla Fleet, Teslemetry) oder eine
+    Dauer mit Einheit (h, min, s); eine bloße Zahl zählt als Stunden."""
     if raw and ("T" in raw or ":" in raw) and value is None:
         try:
             at = datetime.fromisoformat(raw.replace("Z", "+00:00"))
@@ -306,7 +306,7 @@ def _until(raw: str | None, value: float | None, unit: str | None, now: datetime
 
 
 def soc_rate(soc: list[tuple[datetime, float]], soc_now: float | None, now: datetime) -> float | None:
-    """Percent per hour the battery gained recently, from the rising run of readings up to now."""
+    """Prozent pro Stunde, die der Akku zuletzt gewonnen hat, aus der steigenden Folge von Messwerten bis jetzt."""
     pts = [p for p in soc if now - RATE_WINDOW <= p[0] <= now]
     if soc_now is not None and (not pts or pts[-1][0] < now):
         pts.append((now, soc_now))
@@ -324,11 +324,11 @@ def soc_rate(soc: list[tuple[datetime, float]], soc_now: float | None, now: date
 def live_charge(*, raw: dict, values: dict, units: dict, charging_value: str, soc: float | None,
                 target: int, soc_readings: list[tuple[datetime, float]], kwh_pct: float | None,
                 now: datetime) -> dict:
-    """What the car does right now: {"charging", "power", "rate", "finish"}.
+    """Was das Auto gerade tut: {"charging", "power", "rate", "finish"}.
 
-    charging is None when the state is unknown (no entity, car asleep or offline). The finish time
-    comes from the time-to-full entity, else from the charger power and the kWh one percent takes,
-    else from how fast the battery level rose in the last readings."""
+    charging ist None, wenn der Zustand unbekannt ist (keine Entität, Auto schläft oder offline). Die Endzeit
+    kommt aus der Entität für die Zeit bis voll, sonst aus Ladeleistung und den kWh je Prozent, sonst daraus,
+    wie schnell der Akkustand in den letzten Messwerten stieg."""
     state = (raw.get("charging") or "").strip().lower()
     if not state or state in ("unknown", "unavailable", "none"):
         return {"charging": None}

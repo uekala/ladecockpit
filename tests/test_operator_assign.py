@@ -1,4 +1,4 @@
-"""Operators assigned to a site in the app: stored, applied to all its sessions, no restart."""
+"""In der App einem Standort zugeordnete Betreiber: gespeichert, auf alle seine Ladungen angewandt, ohne Neustart."""
 import asyncio
 import dataclasses
 import json
@@ -61,7 +61,7 @@ def test_assign_and_remove_an_operator(monkeypatch, tmp_path):
             saved = client.put("/api/operator", json={"site": "hafenstadt,  netherlands", "operator": " Fastned "})
             assert saved.status_code == 200 and saved.json()["operator"] == "Fastned"
 
-            # Applies to every session of the site at once, without a restart.
+            # Gilt sofort für jede Ladung des Standorts, ohne Neustart.
             after = site_row()
             assert after["operator"] == "Fastned" and after["operator_assigned"] is True
             assert after["label"].startswith("Fastned")

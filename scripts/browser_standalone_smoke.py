@@ -1,4 +1,4 @@
-"""Browser smoke test for the standalone dashboard (no Home Assistant)."""
+"""Browser-Smoke-Test für das eigenständige Dashboard (ohne Home Assistant)."""
 from __future__ import annotations
 
 import os
@@ -61,7 +61,7 @@ def main() -> None:
                         page.goto(base_url, wait_until="networkidle")
                         page.locator("#h-ops").wait_for()
 
-                        # HA-only panels must be absent in standalone mode.
+                        # Nur-HA-Bereiche müssen im eigenständigen Betrieb fehlen.
                         for selector in ("#h-batt", "#h-next", "#h-health", "#h-climate", "#h-rec"):
                             assert page.locator(selector).count() == 0, f"{selector} unexpectedly visible at {width}px"
 

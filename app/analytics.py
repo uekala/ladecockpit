@@ -10,12 +10,12 @@ from .config import Settings
 from .networks import MULTIPASS, SUPERCHARGER
 
 MIN_SLOT_SESSIONS = 3
-SITE_RADAR_MIN = 3     # sessions at a site before it gets a radar of its own
+SITE_RADAR_MIN = 3     # Ladungen an einem Standort, bevor er ein eigenes Radar bekommt
 SITE_RADAR_MAX = 8
 SLOT_HOURS = [("night", 0, 6), ("morning", 6, 11), ("midday", 11, 16), ("afternoon", 16, 20), ("evening", 20, 24)]
 USD_PER_DATA_CALL = 0.002
 MONTHLY_CREDIT_USD = 10.0
-SLOW_RECENT = timedelta(days=45)  # slow sessions older than this no longer get a tip
+SLOW_RECENT = timedelta(days=45)  # ältere langsame Ladungen bekommen keinen Tipp mehr
 
 
 def _iso(dt: datetime | None) -> str | None:
@@ -27,8 +27,8 @@ def _month_key(dt: datetime) -> str:
 
 
 def _stats(items: list[dict]) -> dict:
-    """Totals of sessions. avg_price is what you paid per kWh; list_price is the Supercharger's
-    own rate before credits – use it whenever prices are compared."""
+    """Summen der Ladungen. avg_price ist, was du pro kWh bezahlt hast; list_price ist der eigene
+    Preis des Superchargers vor Gutschriften – immer diesen nehmen, wenn Preise verglichen werden."""
     kwh = sum(i["kwh"] for i in items)
     charge = sum(i["charge_cost"] or 0.0 for i in items)
     total = sum(i["total"] for i in items)
@@ -48,7 +48,7 @@ def _stats(items: list[dict]) -> dict:
 
 
 def _hours(x: dict) -> float | None:
-    """Charging duration in hours (start to stop), only for sessions of at least 3 minutes."""
+    """Ladedauer in Stunden (Start bis Ende), nur für Ladungen von mindestens 3 Minuten."""
     if not (x.get("start_ts") and x.get("stop_ts")):
         return None
     h = (datetime.fromisoformat(x["stop_ts"]) - datetime.fromisoformat(x["start_ts"])).total_seconds() / 3600
@@ -63,7 +63,7 @@ def _avg_kw(items: list[dict]) -> float | None:
 
 
 def _home_sum(home: list, start: datetime | None = None, end: datetime | None = None) -> dict:
-    """Home charging in a window: kWh, cost (of the steps that had a price) and avg price."""
+    """Laden zu Hause in einem Zeitraum: kWh, Kosten (der Schritte mit Preis) und Durchschnittspreis."""
     steps = [h for h in home if (start is None or h[0] >= start) and (end is None or h[0] < end)]
     kwh = sum(h[1] for h in steps)
     priced = [h for h in steps if h[2] is not None]
@@ -74,8 +74,8 @@ def _home_sum(home: list, start: datetime | None = None, end: datetime | None = 
 
 
 def _distance(odo: list[tuple[datetime, float]], items: list[dict], home: list | None = None) -> dict:
-    """Distance from odometer readings and the cost/energy of all charging in the same window
-    (invoices plus charging at home)."""
+    """Strecke aus den Kilometerständen und Kosten/Energie allen Ladens im selben Zeitraum
+    (Rechnungen plus Laden zu Hause)."""
     out = {"distance": None, "distance_since": None, "per_100": None, "kwh_per_100": None, "distance_cost": None}
     if len(odo) < 2:
         return out
@@ -151,14 +151,14 @@ def _forecast(lang, history, soc, floor, now_utc, tz, odometer_14d) -> dict:
     return out
 
 
-MIN_PRICE_GAP = 0.03       # €/kWh: smaller differences are not worth a tip
-MIN_REFERENCE_SAVING = 0.5  # €: what charging off-peak must have saved in a month to be shown
-TARIFF_GAP = 0.06          # €/kWh: two prices at one site this far apart are two tariffs
-OFF_PEAK_HOURS = (10, 20)  # a session starting in [10, 20) local time is never off-peak at Tesla in Europe
+MIN_PRICE_GAP = 0.03       # €/kWh: kleinere Unterschiede sind keinen Tipp wert
+MIN_REFERENCE_SAVING = 0.5  # €: so viel muss Laden in der Nebenzeit im Monat gespart haben, um angezeigt zu werden
+TARIFF_GAP = 0.06          # €/kWh: zwei Preise an einem Standort mit diesem Abstand sind zwei Tarife
+OFF_PEAK_HOURS = (10, 20)  # eine Ladung mit Start in [10, 20) Ortszeit ist bei Tesla in Europa nie Nebenzeit
 
 
 def _rate(x: dict) -> float | None:
-    """The listed price per kWh of one session (before credits)."""
+    """Der Listenpreis pro kWh einer Ladung (vor Gutschriften)."""
     if not x.get("kwh"):
         return None
     listed = x["list_cost"] if x.get("list_cost") is not None else x.get("charge_cost")
@@ -166,12 +166,12 @@ def _rate(x: dict) -> float | None:
 
 
 def _tariff_groups(items: list[dict]) -> tuple[list[dict], list[dict]] | None:
-    """The off-peak and the peak sessions of one site – or None.
+    """Die Ladungen eines Standorts in Neben- und Hauptzeit – oder None.
 
-    Tesla charges less at night and early in the morning at many Superchargers. A site gets two
-    tariffs when its prices fall into two groups at least TARIFF_GAP apart, every cheap session
-    started outside the day (before 10 or from 20 o'clock) and at least one dear one during the
-    day. Otherwise the difference is more likely a price change than a tariff, and None is returned.
+    Tesla verlangt an vielen Superchargern nachts und am frühen Morgen weniger. Ein Standort bekommt
+    zwei Tarife, wenn seine Preise in zwei Gruppen mit mindestens TARIFF_GAP Abstand fallen, jede
+    günstige Ladung außerhalb des Tages begann (vor 10 oder ab 20 Uhr) und mindestens eine teure am
+    Tag. Sonst ist der Unterschied eher eine Preisänderung als ein Tarif, und es kommt None zurück.
     """
     rated = sorted(((r, x) for x in items if x.get("kwh", 0) >= 3 and (r := _rate(x))), key=lambda p: p[0])
     if len(rated) < 2:
@@ -187,13 +187,13 @@ def _tariff_groups(items: list[dict]) -> tuple[list[dict], list[dict]] | None:
 
 
 def _group_price(group: list[dict]) -> float:
-    """The listed price per kWh of a group of sessions, weighted by kWh."""
+    """Der Listenpreis pro kWh einer Gruppe von Ladungen, nach kWh gewichtet."""
     kwh = sum(x["kwh"] for x in group)
     return round(sum(_rate(x) * x["kwh"] for x in group) / kwh, 4)
 
 
 def _tariff(items: list[dict]) -> dict | None:
-    """Off-peak and peak price of one site, from the sessions there – or None (see _tariff_groups)."""
+    """Preis in Neben- und Hauptzeit eines Standorts aus den Ladungen dort – oder None (siehe _tariff_groups)."""
     groups = _tariff_groups(items)
     if not groups:
         return None
@@ -202,25 +202,26 @@ def _tariff(items: list[dict]) -> dict | None:
     peak_kwh = sum(x["kwh"] for x in high)
     return {"offpeak": off, "peak": peak, "off_sessions": len(low), "peak_sessions": len(high),
             "off_kwh": round(sum(x["kwh"] for x in low), 1), "peak_kwh": round(peak_kwh, 1),
-            # When the cheap price was seen, as a hint for the user (Tesla's app shows the exact hours).
+            # Wann der günstige Preis vorkam, als Hinweis (Teslas App zeigt die genauen Zeiten).
             "off_times": sorted({f"{x['_local']:%H:%M}" for x in low})[:3],
             "saving": round(peak_kwh * (peak - off), 2)}
 
 
 def _day_price_reference(month_items: list[dict], site_items: dict[tuple[str, str], list[dict]]) -> dict | None:
-    """The reference price from the invoices themselves: the day price of the sites you charged at.
+    """Der Referenzpreis aus den Rechnungen selbst: der Tagespreis der Standorte, an denen du geladen hast.
 
-    A session in the off-peak group of a site with two tariffs (see _tariff_groups) counts at that
-    site's peak price; every other session at its own listed price. So the difference to the
-    invoices is exactly what charging off-peak saved – a price change or a dear site on its own
-    never shows up as a saving. Listed prices are used on both sides, so credits stay out of it.
+    Eine Ladung in der Nebenzeit-Gruppe eines Standorts mit zwei Tarifen (siehe _tariff_groups) zählt
+    zum Hauptzeit-Preis dieses Standorts, jede andere Ladung zu ihrem eigenen Listenpreis. Der Abstand
+    zu den Rechnungen ist also genau das, was Laden in der Nebenzeit gespart hat – eine Preisänderung
+    oder ein teurer Standort allein erscheint nie als Ersparnis. Auf beiden Seiten zählen Listenpreise,
+    Gutschriften bleiben also außen vor.
     """
     kwh = sum(x["kwh"] for x in month_items)
     if not kwh:
         return None
     listed = sum(x["list_cost"] if x.get("list_cost") is not None else (x.get("charge_cost") or 0.0)
                  for x in month_items)
-    peak_of: dict[str, float] = {}   # session id → peak price of its site, for off-peak sessions
+    peak_of: dict[str, float] = {}   # Ladungs-ID → Hauptzeit-Preis ihres Standorts, für Ladungen in der Nebenzeit
     for items in site_items.values():
         groups = _tariff_groups(items)
         if groups:
@@ -236,26 +237,26 @@ def _day_price_reference(month_items: list[dict], site_items: dict[tuple[str, st
             "reference_off_kwh": round(off_kwh, 1)}
 
 
-PRICE_LEVEL_TOL = 0.015   # €/kWh: prices of one site this close are the same price
-PRICE_CHANGE_MIN = 0.02    # €/kWh: two prices this far apart are a change
+PRICE_LEVEL_TOL = 0.015   # €/kWh: so nah beieinander liegende Preise eines Standorts sind derselbe Preis
+PRICE_CHANGE_MIN = 0.02    # €/kWh: zwei Preise mit diesem Abstand sind eine Änderung
 PRICE_CHANGE_RECENT = timedelta(days=60)  # older changes no longer get a tip
 
 
 def _price_change(items: list[dict]) -> dict | None:
-    """The latest change of a site's listed price, from the sessions there – or None.
+    """Die letzte Änderung des Listenpreises eines Standorts aus den Ladungen dort – oder None.
 
-    The sessions, in order, end in a run at one price ("now") that follows a run at another
-    price ("before"), at least PRICE_CHANGE_MIN apart, with three sessions or more between them.
-    At least one session of each run started in the same time window of the day (SLOT_HOURS),
-    so a price by time of day never passes for a change; a site with two tariffs (see
-    _tariff_groups) gets none.
+    Die Ladungen enden der Reihe nach in einer Folge zu einem Preis („jetzt“), die auf eine Folge zu
+    einem anderen Preis („vorher“) folgt, mit mindestens PRICE_CHANGE_MIN Abstand und drei oder mehr
+    Ladungen dazwischen. Mindestens eine Ladung jeder Folge begann im selben Zeitfenster des Tages
+    (SLOT_HOURS), ein Preis nach Tageszeit gilt also nie als Änderung; ein Standort mit zwei Tarifen
+    (siehe _tariff_groups) bekommt keine.
     """
     if _tariff_groups(items):
         return None
     rated = sorted(((x, r) for x in items if x.get("kwh", 0) >= 1 and (r := _rate(x))), key=lambda p: p[0]["_local"])
 
     def run_before(end: int) -> int:
-        """Start index of the run at one price that ends right before `end`."""
+        """Startindex der Folge zu einem Preis, die direkt vor `end` endet."""
         start = end - 1
         while start > 0:
             prices = [r for _, r in rated[start - 1:end]]
@@ -287,14 +288,14 @@ def _price_change(items: list[dict]) -> dict | None:
             "sessions_before": len(before), "sessions_now": len(now), "_since": since}
 
 
-PROJECTION_DAYS = 90       # look-back for the yearly projection
+PROJECTION_DAYS = 90       # Rückblick für die Jahreshochrechnung
 PROJECTION_MIN_DAYS = 7
 PROJECTION_MIN_DIST = 200
 
 
 def _projection(odo: list[tuple[datetime, float]], priced: list[dict], now_utc: datetime,
                 fuel: dict | None, home: list | None = None) -> dict | None:
-    """Cost and distance per year, from the last PROJECTION_DAYS days."""
+    """Kosten und Strecke pro Jahr aus den letzten PROJECTION_DAYS Tagen."""
     window = [p for p in odo if p[0] >= now_utc - timedelta(days=PROJECTION_DAYS)]
     if len(window) < 2:
         return None
@@ -322,8 +323,8 @@ def _place(site: str) -> str:
 
 def _plan(lang: str, forecast: dict, priced: list[dict], overall_price: float | None,
           now_utc: datetime, tz, money) -> dict | None:
-    """When and where to charge before the battery reaches the floor: the cheapest
-    combination of Supercharger and time window from your own invoices."""
+    """Wann und wo laden, bevor der Akku die Untergrenze erreicht: die günstigste Kombination
+    aus Supercharger und Zeitfenster aus deinen eigenen Rechnungen."""
     days = forecast.get("days_to_floor")
     if days is None or not overall_price or len(priced) < 4:
         return None
@@ -399,8 +400,8 @@ def _session_view(x: dict, tz, lang: str, home: str | None = None) -> dict:
 
 
 def _label(site: str, operator: str | None, address: str | None) -> str:
-    """How a site is named in running text: "SEW (Brunnenhausstraße 46, Neustadt)"
-    for a MultiPass station with a known operator, else the place of the site name."""
+    """Wie ein Standort im Fließtext heißt: „SEW (Brunnenhausstraße 46, Neustadt)“ für eine
+    MultiPass-Station mit bekanntem Betreiber, sonst der Ort aus dem Standortnamen."""
     if operator:
         where = address or (None if operator.casefold() in (site or "").casefold() else site)
         return f"{operator} ({where})" if where else operator
@@ -408,11 +409,11 @@ def _label(site: str, operator: str | None, address: str | None) -> str:
 
 
 def _site_group_key(session: dict) -> tuple[str, str]:
-    """Keep equal Tesla site labels separate when their invoice addresses differ.
+    """Gleiche Tesla-Standortnamen getrennt halten, wenn ihre Rechnungsadressen sich unterscheiden.
 
-    Tesla can use the same generic label for multiple physical charging sites. The
-    invoice-derived station address is therefore part of the grouping key whenever
-    it is available; sessions without an address retain the previous site-name grouping.
+    Tesla kann dieselbe allgemeine Bezeichnung für mehrere echte Ladestandorte verwenden. Die
+    Adresse der Station aus der Rechnung gehört deshalb zum Gruppierungsschlüssel, wann immer sie
+    vorliegt; Ladungen ohne Adresse werden weiter nach dem Standortnamen gruppiert.
     """
     site = session.get("site") or ""
     address = stations.full_address(session.get("station")) or ""
@@ -424,14 +425,14 @@ MAP_SEARCH = "https://www.google.com/maps/search/?api=1&query="
 
 
 def map_url(site: str) -> str:
-    """A map search for a site name. Only a link: nothing is looked up or sent by Ladecockpit."""
+    """Eine Kartensuche nach einem Standortnamen. Nur ein Link: Ladecockpit fragt nichts ab und sendet nichts."""
     return MAP_SEARCH + quote(site)
 
 
 def _multipass(sessions: list[dict], tz, lang: str) -> dict | None:
-    """Third-party stations where paying with Tesla MultiPass has worked, from your own invoices:
-    per station sessions, energy, avg price, first and last use, plus the operators behind them.
-    Nothing is fetched for this – it only regroups the charging history."""
+    """Fremdstationen, an denen das Bezahlen mit Tesla MultiPass funktioniert hat, aus deinen Rechnungen:
+    je Station Ladungen, Energie, Durchschnittspreis, erste und letzte Nutzung, dazu die Betreiber.
+    Dafür wird nichts abgerufen – es ordnet nur die Ladehistorie neu."""
     used = [x for x in sessions if (x.get("network") or SUPERCHARGER) == MULTIPASS and x.get("start_ts")]
     if not used:
         return None
@@ -496,8 +497,8 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     speed = vehicle.charging_speed(priced, readings.get("soc_long") or [])
     for x in priced:
         x["_speed"] = speed.get(x["session_id"])
-    # Who runs a MultiPass station and where it is: from the register and the invoice when known,
-    # otherwise from the site name.
+    # Wer eine MultiPass-Station betreibt und wo sie steht: aus dem Register und der Rechnung, wenn bekannt,
+    # sonst aus dem Standortnamen.
     stations.describe(sessions)
     currency = Counter(x.get("currency") or "EUR" for x in priced).most_common(1)[0][0] if priced else "EUR"
     money = lambda v: i18n.money(lang, v, currency)  # noqa: E731
@@ -522,7 +523,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         soc_hist = readings.get("soc_ha") or soc_hist
     odo_all = readings.get("odometer") or []
     odo_14d = [p for p in odo_all if p[0] >= now_utc - timedelta(days=14)]
-    # While the car charges, the next stop is counted from the charge limit it is heading for.
+    # Während das Auto lädt, zählt der nächste Stopp ab dem Ladelimit, auf das es zusteuert.
     charging_now = ((live.get("raw") or {}).get("charging") or "").strip().lower() == settings.charging_value.strip().lower()
     soc_from = max(soc, settings.soc_target) if charging_now and soc is not None else soc
     forecast = _forecast(lang, soc_hist, soc_from, settings.soc_floor, now_utc, tz, odo_14d)
@@ -537,7 +538,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         fuel_price, source = values["fuel_price"], "entity"
     else:
         fuel_price, source = settings.fuel_price, "fixed"
-    # Optionally every day's kilometres at that day's average of the fuel price entity.
+    # Optional die Kilometer jedes Tages zum Tagesdurchschnitt der Spritpreis-Entität.
     daily = {}
     if settings.fuel_price_daily and settings.ent_fuel_price:
         daily = vehicle.daily_fuel_prices(readings.get("fuel_price") or [], tz, now_utc)
@@ -552,7 +553,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
                 "per_100": round(consumption * fuel_price, 2) if fuel_price else None, "source": source,
                 "paid_days": paid["days"] if paid else None, "paid_litres": paid["litres"] if paid else None}
         if daily:
-            # The price shown: this month's, else the last 30 days'.
+            # Der angezeigte Preis: der dieses Monats, sonst der der letzten 30 Tage.
             month_start = now_local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             d = daily_price(month_start, now_utc + timedelta(seconds=1)) \
                 or daily_price(now_utc - timedelta(days=30), now_utc + timedelta(seconds=1))
@@ -573,7 +574,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         if per_100 is not None and entry.get("distance") and entry.get("per_100") is not None:
             entry["fuel_per_100"] = round(per_100, 2)
             entry["fuel_equivalent"] = round(per_100 * entry["distance"] / 100, 2)
-            # Against what the distance really cost, so "Tesla" adds up to the invoices to the cent.
+            # Gegen das, was die Strecke wirklich gekostet hat, damit „Tesla“ centgenau zu den Rechnungen passt.
             cost = entry.get("distance_cost")
             if cost is None:
                 cost = entry["per_100"] * entry["distance"] / 100
@@ -656,15 +657,15 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
                 "avg_price": _stats(v)["list_price"], "avg_kw": _avg_kw(v),
                 "network": Counter(x.get("network") or SUPERCHARGER for x in v).most_common(1)[0][0],
                 "operator": operator, "address": addr, "label": _label(site, operator, addr),
-                # The name to assign an operator to, and whether one was assigned in the app.
+                # Der Name, dem ein Betreiber zugeordnet wird, und ob in der App einer zugeordnet wurde.
                 "site_name": k[0] or None, "operator_assigned": bool(k[0]) and networks.assigned_operator(k[0]) is not None,
-                # The price since the last change, when the site's price changed.
+                # Der Preis seit der letzten Änderung, wenn sich der Preis des Standorts geändert hat.
                 "price_now": changes[k]["now"] if k in changes else None,
                 "price_since": changes[k]["since"] if k in changes else None}
 
     sites = sorted((_site_row(k, v) for k, v in groups.items()), key=lambda r: (-r["sessions"], r["avg_price"] or 9))
 
-    # The radar per site: the time windows of one site alone, for sites with a few sessions.
+    # Das Radar je Standort: die Zeitfenster eines einzelnen Standorts, für Standorte mit einigen Ladungen.
     def _slots(items: list[dict]) -> list[dict]:
         out = []
         for (sid, a, b), (label, rng) in zip(SLOT_HOURS, i18n.SLOTS.get(lang, i18n.SLOTS["en"])):
@@ -707,7 +708,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     insights: list[dict] = []
     used = [s for s in slots if s["sessions"]]
     if len(priced) >= 4 and len(used) >= 2 and overall["list_price"]:
-        # The lowest price wins; with only a session or two behind it, the tip says so.
+        # Der niedrigste Preis gewinnt; stehen nur ein oder zwei Ladungen dahinter, sagt der Tipp das.
         best = min(used, key=lambda s: s["avg_price"])
         diff = overall["list_price"] - best["avg_price"]
         if diff >= MIN_PRICE_GAP:
@@ -774,9 +775,9 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
             site=_place(x.get("site") or i18n.t(lang, "unknown_site")), kw=sp["kw"], typical=sp["typical_kw"]),
             "action": {"go": "sessions", "query": _place(x.get("site") or "")}})
 
-    # --- comparisons -------------------------------------------------------------------------
-    # A reference price of your own (entity or fixed number; 0 turns the comparison off) –
-    # otherwise the day price of your sites, from the invoices.
+    # --- Vergleiche ---------------------------------------------------------------------------
+    # Ein eigener Referenzpreis (Entität oder feste Zahl; 0 schaltet den Vergleich ab) –
+    # sonst der Tagespreis deiner Standorte aus den Rechnungen.
     own_reference = bool(settings.ent_reference_price) or settings.reference_price is not None
     reference = values.get("reference_price")
     if reference is None:
@@ -814,7 +815,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
 
     health = vehicle.battery_health(readings.get("soc_long") or [], readings.get("range_long") or [], tz)
     kwh_pct = vehicle.kwh_per_percent(priced, readings.get("soc_long") or [])
-    # Right now: charging or not, and while charging the power and when the limit is reached.
+    # Gerade jetzt: lädt oder nicht, und beim Laden die Leistung und wann das Limit erreicht ist.
     status.update(vehicle.live_charge(
         raw=live.get("raw") or {}, values=values, units=units, charging_value=settings.charging_value,
         soc=soc if status["soc_source"] == "live" else None, target=settings.soc_target,
@@ -829,7 +830,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
                 lang, "in_climate", cold=i18n.temp_band(lang, cold["from"], cold["to"]),
                 warm=i18n.temp_band(lang, warm["from"], warm["to"]), more=round(more), unit=unit)})
 
-    # Where each tip leads in the apps: a panel, or the sessions with a search.
+    # Wohin jeder Tipp in den Apps führt: ein Bereich oder die Ladungen mit einer Suche.
     goes = {"slot": "radar", "tariff": "radar", "site": "radar", "network": "sessions", "credit": "sessions",
             "idle": "sessions", "speed": "sessions", "reference": "month", "fuel": "month", "climate": "climate"}
     for i in insights:

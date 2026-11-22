@@ -29,7 +29,7 @@ def test_page_png_and_count():
     png = pdfview.page_png(data, 2, width=600)
     width, height, color_type = _png_size(png)
     assert abs(width - 600) <= 1 and height > width and color_type == 2
-    # One filter byte plus three bytes per pixel and row.
+    # Ein Filterbyte plus drei Bytes je Pixel und Zeile.
     idat_len = struct.unpack(">I", png[33:37])[0]
     assert png[37:41] == b"IDAT"
     assert len(zlib.decompress(png[41:41 + idat_len])) == height * (1 + width * 3)
@@ -69,7 +69,7 @@ def test_invoice_pages_in_demo():
 def test_report_pages_in_demo():
     with TestClient(app) as client:
         monthly = client.get("/api/dashboard").json()["monthly"]
-        month = next(m["key"] for m in reversed(monthly) if m["sessions"])  # the 1st of a month has none yet
+        month = next(m["key"] for m in reversed(monthly) if m["sessions"])  # am Monatsersten gibt es noch keine
         info = client.get(f"/api/report/{month}/pages").json()
         assert info["pages"] >= 1 and info["name"].endswith(f"{month}.pdf")
         r = client.get(f"/api/report/{month}/page/1.png")

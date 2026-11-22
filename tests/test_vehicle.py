@@ -106,7 +106,7 @@ def test_home_meter_steps_with_price_of_the_moment(settings, db):
     asyncio.run(go())
     kwh = db.readings_since("home_kwh", T0)
     cost = db.readings_since("home_cost", T0)
-    assert [round(v, 2) for _, v in kwh] == [11.0, 11.0, 4.0]   # the 0.02 step went into the next one
+    assert [round(v, 2) for _, v in kwh] == [11.0, 11.0, 4.0]   # der Schritt von 0,02 ging in den nächsten
     assert [round(v, 3) for _, v in cost] == [3.3, 1.1, 0.4]
 
 

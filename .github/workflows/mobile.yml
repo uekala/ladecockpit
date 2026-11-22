@@ -135,7 +135,7 @@ jobs:
               root.insert(0, permission)
           tree.write(manifest, encoding="utf-8", xml_declaration=True)
 
-          # The system dialog needs an AppCompat theme on the activity.
+          # Der Systemdialog braucht ein AppCompat-Theme an der Activity.
           styles = list((main / "res").glob("values*/styles.xml"))
           if not styles:
               raise SystemExit("no styles.xml found")

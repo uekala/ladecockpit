@@ -26,9 +26,9 @@ def test_time_to_full_as_timestamp_or_duration():
 def test_rate_from_the_rising_battery_level():
     soc = [(NOW - timedelta(minutes=50), 60.0), (NOW - timedelta(minutes=30), 31.0),
            (NOW - timedelta(minutes=20), 40.0), (NOW - timedelta(minutes=10), 49.0)]
-    # the run starts after the drop: 31 → 58 % in 30 minutes
+    # die Folge beginnt nach dem Abfall: 31 → 58 % in 30 Minuten
     assert soc_rate(soc, 58.0, NOW) == 54.0
-    assert soc_rate(soc[-1:], 49.0, NOW) is None                               # one reading only
+    assert soc_rate(soc[-1:], 49.0, NOW) is None                               # nur ein Messwert
     assert soc_rate([(NOW - timedelta(minutes=5), 48.0)], 50.0, NOW) is None   # too short
 
 
@@ -51,7 +51,7 @@ def test_live_charge():
     assert c["finish"] == at.isoformat(timespec="seconds")                     # the car's own value wins
     c = charge(soc_readings=[(NOW - timedelta(minutes=30), 35.0)])
     assert c["rate"] == 30.0 and c["finish"] == (NOW + timedelta(hours=1)).isoformat(timespec="seconds")
-    assert charge(soc=85.0)["finish"] is None                                   # above the limit already
+    assert charge(soc=85.0)["finish"] is None                                   # schon über dem Limit
 
 
 def test_demo_charges_and_counts_the_next_stop_from_the_limit(settings):
@@ -87,12 +87,12 @@ def test_watcher_polls_faster_while_charging(settings, db):
     assert w.interval() == FAST_POLL_SECONDS
     w.ha = FakeHA("complete")
     asyncio.run(w.poll_once(now=NOW + timedelta(minutes=1)))
-    assert w.interval() == 60 and sync.bursts == 1                              # and the invoice is looked for
+    assert w.interval() == 60 and sync.bursts == 1                              # und nach der Rechnung wird gesucht
 
 
 def test_old_look_name_still_works():
     from app.main import app, db as app_db
     with TestClient(app) as client:
-        app_db.kv_set("ui_look", "modern")                                       # saved by 0.9 or 0.10
+        app_db.kv_set("ui_look", "modern")                                       # von 0.9 oder 0.10 gespeichert
         assert client.get("/api/dashboard").json()["look"] == "dynamic"
         app_db.kv_set("ui_look", "classic")

@@ -28,7 +28,7 @@ SUPERCHARGER_RAW = {
 
 
 def test_plain_supercharger():
-    assert classify(SUPERCHARGER_RAW) == (SUPERCHARGER, None)   # "Partner" in the site name is ignored
+    assert classify(SUPERCHARGER_RAW) == (SUPERCHARGER, None)   # „Partner“ im Standortnamen wird ignoriert
     assert unknown_keys(SUPERCHARGER_RAW) == []
     assert classify(None) == (SUPERCHARGER, None)
 
@@ -72,8 +72,8 @@ def test_network_flows_into_db_event_and_csv(settings, tmp_path):
 
 
 def test_credit_from_real_shape(settings, tmp_path):
-    """A session partly paid with Tesla credits: 58.1 kWh at a list rate of 0.45/kWh,
-    12.65 paid (gross), 10.63 net."""
+    """Eine teils mit Tesla-Guthaben bezahlte Ladung: 58,1 kWh zum Listenpreis von 0,45/kWh,
+    12,65 bezahlt (brutto), 10,63 netto."""
     from app.analytics import build_dashboard
     from app.pricing import price_details
 
@@ -113,7 +113,7 @@ def _priced(site, rate, currency="EUR"):
 
 
 def test_price_rule_for_sites_that_do_not_look_like_superchargers():
-    # Superchargers keep their class even when they are dear at peak hours
+    # Supercharger behalten ihre Klasse, auch wenn sie in der Hauptzeit teuer sind
     assert classify(_priced("Bergstadt, Germany", 0.58)) == (SUPERCHARGER, None)
     assert classify(_priced("Seestadt - Center, Germany", 0.66)) == (SUPERCHARGER, None)
     assert classify(_priced("Tesla Supercharger Südstadt", 0.61)) == (SUPERCHARGER, None)
@@ -121,11 +121,11 @@ def test_price_rule_for_sites_that_do_not_look_like_superchargers():
     network, reason = classify(_priced("Hyper Charge - Musterstadt", 0.69))
     assert network == MULTIPASS and "0.69" in reason
     assert classify(_priced("", 0.79))[0] == MULTIPASS
-    # Looks like "Place, Country" at first sight, but the end is a town, not a country
+    # Sieht auf den ersten Blick wie „Ort, Land“ aus, aber am Ende steht ein Ort, kein Land
     assert classify(_priced("Brunnenhausstr. 46, Neustadt", 0.59))[0] == MULTIPASS
     assert classify(_priced("Oslo, Norway", 0.62)) == (SUPERCHARGER, None)
     assert classify(_priced("Utrecht, The Netherlands", 0.61)) == (SUPERCHARGER, None)
-    # Cheap or not in euros → no conclusion from the price
+    # Günstig oder nicht in Euro → kein Schluss aus dem Preis
     assert classify(_priced("Hyper Charge - Musterstadt", 0.45)) == (SUPERCHARGER, None)
     assert classify(_priced("Hyper Charge - Musterstadt", 0.50)) == (SUPERCHARGER, None)
     assert classify(_priced("Hyper Lading - Oslo", 6.5, "NOK")) == (SUPERCHARGER, None)
@@ -140,7 +140,7 @@ def test_price_rule_can_be_turned_off_and_uses_the_list_rate():
         assert classify(_priced("Hyper Charge - Musterstadt", 0.69)) == (SUPERCHARGER, None)
     finally:
         networks.configure(networks.DEFAULT_MIN_PRICE)
-    # Partly paid with credits: the listed rate counts, not what was left to pay
+    # Teils mit Guthaben bezahlt: Der Listenpreis zählt, nicht der Restbetrag
     credit = {**_priced("Hyper Charge - Musterstadt", 0.69)}
     credit["fees"] = [{**credit["fees"][0], "pricingType": "CREDIT_PARTIAL_PAYMENT", "totalBase": 1.0}]
     assert networks.kwh_rate(credit) == (0.69, "EUR")
@@ -173,5 +173,5 @@ def test_towns_are_not_networks():
     # Network first, or a known brand: unchanged
     assert operator_from_site("Green Energy Nord - AC E5", places) == "Green Energy Nord"
     assert operator_from_site("Allego - ATU Neustadt", places) == "Allego"
-    # Without towns from your own sites, the part before the dash is all there is
+    # Ohne Orte aus den eigenen Standorten bleibt nur der Teil vor dem Bindestrich
     assert operator_from_site("Neustadt - KiK") == "Neustadt"

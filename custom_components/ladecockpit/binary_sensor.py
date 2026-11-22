@@ -1,4 +1,4 @@
-"""Ladecockpit problem sensor: on when the Tesla sign-in expired, syncing fails or an entity is missing."""
+"""Problem-Sensor von Ladecockpit: an, wenn die Tesla-Anmeldung abgelaufen ist, der Abgleich fehlschlägt oder eine Entität fehlt."""
 from __future__ import annotations
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity

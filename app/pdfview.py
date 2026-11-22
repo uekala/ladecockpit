@@ -1,8 +1,8 @@
-"""PDF pages as PNG images, for the PDF view inside the Home Assistant app.
+"""PDF-Seiten als PNG-Bilder, für die PDF-Ansicht in der Home-Assistant-App.
 
-The Home Assistant companion apps show Ladecockpit in a web view that has no PDF viewer and
-opens new windows without the Home Assistant sign-in. Pictures of the pages work everywhere,
-because the web app loads them like any other picture.
+Die Companion-Apps von Home Assistant zeigen Ladecockpit in einer Web-Ansicht ohne PDF-Betrachter,
+die neue Fenster ohne die Anmeldung von Home Assistant öffnet. Bilder der Seiten funktionieren
+überall, weil die Web-App sie wie jedes andere Bild lädt.
 """
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import zlib
 
 import pypdfium2 as pdfium
 
-# A4 at this width is about 170 dpi – sharp on phones, small enough to load quickly.
+# A4 in dieser Breite sind etwa 170 dpi – scharf auf Handys, klein genug zum schnellen Laden.
 PAGE_WIDTH = 1400
 
 
@@ -24,7 +24,7 @@ def page_count(data: bytes) -> int:
 
 
 def page_png(data: bytes, page: int, width: int = PAGE_WIDTH) -> bytes:
-    """Page `page` (counted from 1) as a PNG `width` pixels wide. IndexError if there is no such page."""
+    """Seite `page` (ab 1 gezählt) als PNG, `width` Pixel breit. IndexError, wenn es die Seite nicht gibt."""
     pdf = pdfium.PdfDocument(data)
     try:
         if not 1 <= page <= len(pdf):
@@ -43,7 +43,7 @@ def page_png(data: bytes, page: int, width: int = PAGE_WIDTH) -> bytes:
 
 
 def _png(width: int, height: int, channels: int, stride: int, buffer) -> bytes:
-    """Minimal PNG encoder for 8-bit grey, RGB or RGBA rows (spares a dependency on Pillow)."""
+    """Minimaler PNG-Encoder für Zeilen in 8-Bit-Grau, RGB oder RGBA (spart die Abhängigkeit von Pillow)."""
     color_type = {1: 0, 3: 2, 4: 6}[channels]
     raw = memoryview(buffer).cast("B")
     row = width * channels

@@ -1,5 +1,5 @@
-"""One page per year for tax or an employer: a line per month with sessions, kWh, net, VAT,
-gross and credits, and the totals of the year. The invoices themselves are in the month reports."""
+"""Eine Seite je Jahr für das Finanzamt oder einen Arbeitgeber: eine Zeile je Monat mit Ladungen, kWh,
+netto, MwSt., brutto und Gutschriften, dazu die Summen des Jahres. Die Rechnungen selbst stehen in den Monatsberichten."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -58,8 +58,8 @@ def years(sessions: list[dict], tz) -> list[int]:
 
 
 def month_rows(year: int, sessions: list[dict], tz) -> list[dict]:
-    """Totals per month of the year, only months with sessions. net and vat are None for a month
-    in which a session has no net amount yet."""
+    """Summen je Monat des Jahres, nur Monate mit Ladungen. net und vat sind None für einen Monat,
+    in dem eine Ladung noch keinen Nettobetrag hat."""
     rows: dict[int, dict] = {}
     for s in sessions:
         if not in_year(s, year, tz):

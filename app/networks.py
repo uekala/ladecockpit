@@ -1,12 +1,12 @@
-"""Which network a session from the Tesla charging history belongs to.
+"""Zu welchem Netz eine Ladung aus der Tesla-Ladehistorie gehört.
 
-Tesla bills two kinds of sessions through the same history: its own Superchargers, and
-since 2025 third-party chargers paid with Tesla MultiPass. The Fleet API has no field
-that names the network, and Tesla has not documented how MultiPass sessions look.
-So this goes by hints, from strong to weak; the weakest is the price: a site that does not
-look like a Supercharger and cost more than MULTIPASS_MIN_PRICE per kWh. It runs whenever sessions are read from
-the database (the raw Tesla record is kept), so a better rule in a later version also
-re-classifies older sessions.
+Tesla rechnet zwei Arten von Ladungen über dieselbe Historie ab: die eigenen Supercharger und
+seit 2025 Fremdsäulen, bezahlt mit Tesla MultiPass. Die Fleet API hat kein Feld, das das Netz
+nennt, und Tesla hat nicht dokumentiert, wie MultiPass-Ladungen aussehen. Deshalb geht das nach
+Hinweisen, von stark nach schwach; der schwächste ist der Preis: ein Standort, der nicht wie ein
+Supercharger aussieht und mehr als MULTIPASS_MIN_PRICE pro kWh gekostet hat. Das läuft bei jedem
+Lesen von Ladungen aus der Datenbank (der Roh-Datensatz von Tesla bleibt erhalten), eine bessere
+Regel in einer späteren Version ordnet also auch ältere Ladungen neu ein.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ MULTIPASS = "multipass"
 
 # Values a plain Supercharger record has (seen in real data).
 SUPERCHARGER_BILLING = {"IMMEDIATE"}
-# Fields of a plain Supercharger record. Anything else is logged, so new formats get noticed.
+# Felder eines einfachen Supercharger-Datensatzes. Alles andere wird geloggt, damit neue Formate auffallen.
 KNOWN_KEYS = {
     "billingType", "chargeStartDateTime", "chargeStopDateTime", "countryCode", "credit", "fees",
     "invoices", "sessionId", "siteLocationName", "unlatchDateTime", "vehicleMakeType", "vin",
@@ -25,22 +25,22 @@ KNOWN_KEYS = {
 
 _HINT = re.compile(r"multi\s*pass|roaming|third[\s_-]*party|partner|e-?msp|ocpi|hubject|electroverse", re.I)
 _HINT_KEY = re.compile(r"operator|network|provider|cpo|evse|partner|roaming|third_?party|emsp", re.I)
-# The invoice number names the kind of invoice, and so the network: Supercharger invoices are
-# series "P" (4020P0019025690_DE-DE.pdf), MultiPass invoices series "MSP" – Tesla as mobility service
-# provider (4020MSP0000019849_DE-DE.pdf). Tesla puts the number into the file name of the invoice.
+# Die Rechnungsnummer nennt die Art der Rechnung und damit das Netz: Supercharger-Rechnungen sind
+# Serie "P" (4020P0019025690_DE-DE.pdf), MultiPass-Rechnungen Serie "MSP" – Tesla als Mobilitäts-
+# dienstleister (4020MSP0000019849_DE-DE.pdf). Tesla schreibt die Nummer in den Dateinamen der Rechnung.
 _INVOICE_NUMBER = re.compile(r"(?<![A-Za-z0-9])\d{3,5}([A-Za-z]{1,5})\d{6,}")
 _SERIES = {"MSP": MULTIPASS, "P": SUPERCHARGER}
 
 
 def invoice_series(text: str | None) -> str | None:
-    """The series of the first invoice number in a text or file name ("4020MSP0000019849" → "MSP")."""
+    """Die Serie der ersten Rechnungsnummer in einem Text oder Dateinamen ("4020MSP0000019849" → "MSP")."""
     m = _INVOICE_NUMBER.search(text or "")
     return m.group(1).upper() if m else None
-# Free text and IDs: never searched for hints (a site called "Partnerweg" is still a Supercharger).
+# Freitext und IDs: nie nach Hinweisen durchsucht (ein Standort namens „Partnerweg“ bleibt ein Supercharger).
 _SKIP = {"siteLocationName", "vin", "contentId", "fileName", "sessionId", "sessionFeeId",
          "chargeStartDateTime", "chargeStopDateTime", "unlatchDateTime"}
 
-# Operators that do not run Superchargers. Matched as whole words in the site name.
+# Betreiber, die keine Supercharger betreiben. Als ganze Wörter im Standortnamen gesucht.
 _BRANDS = re.compile(
     r"\b(enbw|ionity|fastned|allego|aral\s*pulse|bp\s*pulse|shell(?:\s*recharge)?|ewe\s*go|e\.on(?:\s*drive)?|eon drive|"
     r"vattenfall|maingau|pfalzwerke|electra|atlante|zunder|plugsurfing|wirelane|elli|qwello|chargepoint|"
@@ -50,9 +50,9 @@ _BRANDS = re.compile(
 )
 
 
-# Tesla names its Superchargers "Place, Country" ("Bergstadt, Germany", "Seestadt - Center, Germany").
-# Third-party sites can look alike ("Brunnenhausstr. 46, Neustadt"), so the part after the last comma
-# must be a country.
+# Tesla nennt seine Supercharger „Ort, Land“ („Bergstadt, Germany“, „Seestadt - Center, Germany“).
+# Fremdstandorte können ähnlich aussehen („Brunnenhausstr. 46, Neustadt“), deshalb muss der Teil nach
+# dem letzten Komma ein Land sein.
 _COUNTRIES = frozenset("""
 germany deutschland netherlands the-netherlands nederland belgium belgique belgië belgie france austria
 österreich osterreich switzerland schweiz suisse svizzera italy italia spain españa espana portugal denmark
@@ -67,16 +67,16 @@ philippines india
 """.split())
 _TESLA_WORDS = re.compile(r"\b(tesla|supercharger)\b", re.I)
 
-# Price rule: a session whose site does not look like a Supercharger and whose energy cost more
-# than this per kWh (EUR) is counted as MultiPass. Superchargers rarely cost more; when they do
-# (peak hours), their site name still has the Supercharger form, so they are not affected.
-# 0 turns the rule off. Set from MULTIPASS_MIN_PRICE at start (see configure).
+# Preisregel: Eine Ladung, deren Standort nicht wie ein Supercharger aussieht und deren Energie mehr
+# als dies pro kWh (EUR) gekostet hat, zählt als MultiPass. Supercharger kosten selten mehr; wenn doch
+# (Hauptzeit), hat ihr Standortname trotzdem die Supercharger-Form, sie sind also nicht betroffen.
+# 0 schaltet die Regel ab. Beim Start aus MULTIPASS_MIN_PRICE gesetzt (siehe configure).
 DEFAULT_MIN_PRICE = 0.50
 _min_price = DEFAULT_MIN_PRICE
 
 
 def home_country(sessions) -> str | None:
-    """The country most sessions were charged in (ISO code as Tesla reports it), or None."""
+    """Das Land, in dem die meisten Ladungen stattfanden (ISO-Code, wie Tesla ihn meldet), oder None."""
     codes = [str(x.get("country")).upper() for x in sessions if x.get("country")]
     if not codes:
         return None
@@ -85,9 +85,9 @@ def home_country(sessions) -> str | None:
 
 
 def place(site: str | None, country: str | None, home: str | None) -> str | None:
-    """"Bergstadt, Germany" → "Bergstadt" for a session in the home country. A site abroad
-    keeps its country, and so does a name whose last part is not a country
-    ("Brunnenhausstr. 46, Neustadt")."""
+    """„Bergstadt, Germany“ → „Bergstadt“ für eine Ladung im Heimatland. Ein Standort im Ausland
+    behält sein Land, ebenso ein Name, dessen letzter Teil kein Land ist
+    („Brunnenhausstr. 46, Neustadt“)."""
     site = (site or "").strip()
     if not site:
         return None
@@ -100,17 +100,17 @@ def place(site: str | None, country: str | None, home: str | None) -> str | None
 
 
 def configure(min_price: float | None, site_operators: str | None = None) -> None:
-    """Set the price rule (EUR per kWh, 0 or None = off) and the operators the user assigned
-    to sites ("Hafenstadt=Fastned; Parkhaus Mitte=Stadtwerke")."""
+    """Die Preisregel setzen (EUR pro kWh, 0 oder None = aus) und die Betreiber, die der Nutzer
+    Standorten zugeordnet hat („Hafenstadt=Fastned; Parkhaus Mitte=Stadtwerke“)."""
     global _min_price, _site_operators
     _min_price = float(min_price) if min_price and min_price > 0 else 0.0
     _site_operators = parse_site_operators(site_operators)
 
 
-# Operators the user assigned by hand: (text in the site name or address, operator), see configure.
+# Von Hand zugeordnete Betreiber: (Text im Standortnamen oder in der Adresse, Betreiber), siehe configure.
 _site_operators: tuple[tuple[str, str], ...] = ()
-# Operators assigned to one site in the app: {site name, lower case: operator}. They come before
-# the option above, which is kept for whole groups of sites ("every site with Hafenstadt in it").
+# In der App einem Standort zugeordnete Betreiber: {Standortname klein geschrieben: Betreiber}. Sie gehen
+# der Option oben vor, die für ganze Gruppen von Standorten bleibt („jeder Standort mit Hafenstadt darin“).
 _assigned_sites: dict[str, str] = {}
 
 
@@ -119,7 +119,7 @@ def _site_key(site: str | None) -> str:
 
 
 def set_assigned_sites(assigned: dict[str, str] | None) -> None:
-    """Replace the operators assigned to single sites ({site name: operator})."""
+    """Die einzelnen Standorten zugeordneten Betreiber ersetzen ({Standortname: Betreiber})."""
     global _assigned_sites
     _assigned_sites = {_site_key(site): " ".join(name.split())
                        for site, name in (assigned or {}).items() if _site_key(site) and name and name.strip()}
@@ -130,8 +130,8 @@ def assigned_sites() -> dict[str, str]:
 
 
 def parse_site_operators(text: str | None) -> tuple[tuple[str, str], ...]:
-    """"Hafenstadt=Fastned; Parkhaus Mitte = Stadtwerke" → (("hafenstadt", "Fastned"), …).
-    Entries are separated by semicolons or line breaks; one without "=" or with an empty side is skipped."""
+    """„Hafenstadt=Fastned; Parkhaus Mitte = Stadtwerke“ → (("hafenstadt", "Fastned"), …).
+    Einträge werden durch Semikolon oder Zeilenumbruch getrennt; einer ohne „=“ oder mit leerer Seite wird übersprungen."""
     pairs = []
     for entry in re.split(r"[;\n]+", text or ""):
         needle, eq, name = entry.partition("=")
@@ -142,8 +142,8 @@ def parse_site_operators(text: str | None) -> tuple[tuple[str, str], ...]:
 
 
 def assigned_operator(*texts: str | None) -> str | None:
-    """The operator the user assigned to a site: the first entry whose text occurs in one of
-    `texts` (site name, station name, address), upper and lower case alike."""
+    """Der Betreiber, den der Nutzer einem Standort zugeordnet hat: der erste Eintrag, dessen Text in einem
+    der `texts` vorkommt (Standortname, Stationsname, Adresse), ohne Unterschied von Groß- und Kleinschreibung."""
     exact = _assigned_sites.get(_site_key(texts[0] if texts else None))
     if exact:
         return exact
@@ -157,7 +157,7 @@ def assigned_operator(*texts: str | None) -> str | None:
 
 
 def looks_like_supercharger(site: str | None) -> bool:
-    """True when the site name has the form Tesla gives its Superchargers, or says Tesla."""
+    """True, wenn der Standortname die Form hat, die Tesla seinen Superchargern gibt, oder Tesla nennt."""
     site = (site or "").strip()
     if not site:
         return False
@@ -169,10 +169,10 @@ def looks_like_supercharger(site: str | None) -> bool:
 
 
 def kwh_rate(raw: dict) -> tuple[float, str] | None:
-    """(list price per kWh, currency) from the CHARGING fees, or None.
+    """(Listenpreis pro kWh, Währung) aus den CHARGING-Gebühren, oder None.
 
-    Uses the listed rate (rateBase), so a session partly paid with Tesla credits keeps its
-    real price; without a rate, the total divided by the kWh.
+    Nimmt den Listenpreis (rateBase), eine teils mit Tesla-Guthaben bezahlte Ladung behält also ihren
+    echten Preis; ohne Preis die Summe geteilt durch die kWh.
     """
     usage = cost = 0.0
     currency = ""
@@ -199,7 +199,7 @@ def kwh_rate(raw: dict) -> tuple[float, str] | None:
     return round(cost / usage, 4), currency
 
 
-# How the operators matched by _BRANDS are written (lower-case match → display name).
+# Wie die von _BRANDS gefundenen Betreiber geschrieben werden (Treffer in Kleinschreibung → Anzeigename).
 _OPERATOR_NAMES = {
     "enbw": "EnBW", "ionity": "IONITY", "fastned": "Fastned", "allego": "Allego", "aral pulse": "Aral pulse",
     "bp pulse": "bp pulse", "shell recharge": "Shell Recharge", "shell": "Shell Recharge", "ewe go": "EWE Go", "e.on": "E.ON", "e.on drive": "E.ON Drive",
@@ -215,12 +215,12 @@ _OPERATOR_NAMES = {
 
 
 def known_operators() -> list[str]:
-    """The operators Ladecockpit knows by name, for choosing from a list."""
+    """Die Betreiber, die Ladecockpit mit Namen kennt, zur Auswahl aus einer Liste."""
     return sorted(set(_OPERATOR_NAMES.values()) - {"Stadtwerke", "Lidl", "Kaufland", "Aldi"}, key=str.casefold)
 
 
 def operator(site: str | None) -> str | None:
-    """The charging network named in a site name ("EnBW Ladepark Südstadt" → "EnBW"), if any."""
+    """Das Ladenetz, das ein Standortname nennt („EnBW Ladepark Südstadt“ → „EnBW“), falls vorhanden."""
     for match in _BRANDS.finditer(site or ""):
         key = re.sub(r"\s+", " ", match.group(0).lower())
         if key in _OPERATOR_NAMES:
@@ -238,10 +238,10 @@ def _plain(text: str) -> str:
 
 
 def place_names(sites) -> frozenset[str]:
-    """Towns named in your own site names: the town of a Supercharger ("Bergstadt, Germany",
-    "Seestadt - Center, Germany") and the town after the comma of an address
-    ("Brunnenhausstr. 46, Neustadt"). They tell "Neustadt - KiK" (town first) from
-    "Hyper Charge - Musterstadt" (network first)."""
+    """Orte in deinen eigenen Standortnamen: der Ort eines Superchargers („Bergstadt, Germany“,
+    „Seestadt - Center, Germany“) und der Ort nach dem Komma einer Adresse
+    („Brunnenhausstr. 46, Neustadt“). Sie unterscheiden „Neustadt - KiK“ (Ort zuerst) von
+    „Hyper Charge - Musterstadt“ (Netz zuerst)."""
     places: set[str] = set()
     for site in sites:
         place, comma, tail = (site or "").strip().rpartition(",")
@@ -258,9 +258,9 @@ def place_names(sites) -> frozenset[str]:
 
 
 def operator_from_site(site: str | None, places: frozenset[str] = frozenset()) -> str | None:
-    """The network behind a third-party site: a known brand, otherwise the part before the dash
-    as Tesla writes MultiPass sites ("Hyper Charge - Musterstadt" → "Hyper Charge").
-    A part before the dash that is one of `places` is a town, not a network ("Neustadt - KiK")."""
+    """Das Netz hinter einem Fremdstandort: eine bekannte Marke, sonst der Teil vor dem Bindestrich,
+    wie Tesla MultiPass-Standorte schreibt („Hyper Charge - Musterstadt“ → „Hyper Charge“).
+    Ein Teil vor dem Bindestrich, der in `places` steht, ist ein Ort, kein Netz („Neustadt - KiK“)."""
     known = operator(site)
     if known:
         return known
@@ -283,17 +283,17 @@ def _records(raw: dict):
 
 
 def classify(raw: dict | None) -> tuple[str, str | None]:
-    """(network, reason) for one raw record of the Tesla charging history."""
+    """(Netz, Grund) für einen Roh-Datensatz der Tesla-Ladehistorie."""
     if not raw:
         return SUPERCHARGER, None
-    # The invoice number settles it, before any hint: a Supercharger on a supermarket car park
-    # stays a Supercharger, a MultiPass station with a plain address is still MultiPass.
+    # Die Rechnungsnummer entscheidet, vor jedem Hinweis: Ein Supercharger auf einem Supermarktparkplatz
+    # bleibt ein Supercharger, eine MultiPass-Station mit schlichter Adresse bleibt MultiPass.
     for inv in raw.get("invoices") or []:
         name = inv.get("fileName") if isinstance(inv, dict) else None
         network = _SERIES.get(invoice_series(name) or "")
         if network:
             return network, f"invoice {name}"
-    # A site the user assigned an operator to is a third-party station.
+    # Ein Standort, dem der Nutzer einen Betreiber zugeordnet hat, ist eine Fremdstation.
     if assigned_operator(raw.get("siteLocationName")):
         return MULTIPASS, "operator assigned in the settings"
     for record in _records(raw):

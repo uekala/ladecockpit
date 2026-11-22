@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Creates (or reuses) the Android upload key ON YOUR COMPUTER and stores it as
-# GitHub Actions secrets of one repository. Run it locally, never in CI.
+# Legt den Android-Upload-Schlüssel AUF DEINEM RECHNER an (oder nimmt einen vorhandenen) und
+# speichert ihn als Secrets von GitHub Actions eines Repositorys. Lokal ausführen, nie in der CI.
 #
-#   bash setup-android-signing.sh <owner/repo> [keystore-file] [alias]
+#   bash setup-android-signing.sh <owner/repo> [keystore-datei] [alias]
 #
-# Needs: keytool (from a JDK, e.g. Android Studio's), gh (logged in), base64.
-# On Windows use Git Bash or WSL.
+# Braucht: keytool (aus einem JDK, z. B. dem von Android Studio), gh (angemeldet), base64.
+# Unter Windows Git Bash oder WSL nutzen.
 #
-# The keystore and its password never leave your computer except as encrypted
-# GitHub secrets. Keep the keystore file and the password safe: without them no
-# further app updates are possible. The script refuses to replace an existing
-# key in the repository (that would break updates for installed apps).
+# Keystore und Passwort verlassen deinen Rechner nur als verschlüsselte GitHub-Secrets.
+# Keystore-Datei und Passwort sicher aufbewahren: Ohne sie sind keine weiteren
+# App-Updates möglich. Das Skript ersetzt keinen vorhandenen Schlüssel im Repository
+# (das würde Updates installierter Apps kaputt machen).
 set -euo pipefail
 
 REPO="${1:?Aufruf: setup-android-signing.sh <owner/repo> [keystore-datei] [alias]}"
@@ -62,7 +62,7 @@ FINGERPRINT="$(keytool -list -v -keystore "$KEYSTORE" -alias "$ALIAS" -storepass
 base64 < "$KEYSTORE" | tr -d '\r\n' | gh secret set ANDROID_KEYSTORE_BASE64 --repo "$REPO"
 printf '%s' "$STORE_PASS" | gh secret set ANDROID_KEYSTORE_PASSWORD --repo "$REPO"
 printf '%s' "$ALIAS" | gh secret set ANDROID_KEY_ALIAS --repo "$REPO"
-# PKCS12 keystores use one password for the store and the key.
+# PKCS12-Keystores nutzen ein Passwort für Speicher und Schlüssel.
 printf '%s' "$STORE_PASS" | gh secret set ANDROID_KEY_PASSWORD --repo "$REPO"
 gh variable set ANDROID_SIGNING_CERT_SHA256 --repo "$REPO" --body "$FINGERPRINT"
 unset STORE_PASS CONFIRM

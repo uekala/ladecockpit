@@ -15,7 +15,7 @@ def _client(settings, handler, **entities):
 
 
 def _clear_entities(settings):
-    """Only the entities a test sets itself."""
+    """Nur die Entitäten, die ein Test selbst setzt."""
     return {f.name: "" for f in dataclasses.fields(settings) if f.name.startswith("ent_")}
 
 
@@ -63,7 +63,7 @@ def test_live_reads_values_units_weather_and_missing(settings):
     live = asyncio.run(ha.live())
     assert live["available"] is True and live["error"] is None
     assert live["values"]["soc"] == 64.0
-    assert live["values"]["outside_temp"] == 4.5          # taken from the weather attribute
+    assert live["values"]["outside_temp"] == 4.5          # aus dem Wetter-Attribut übernommen
     assert live["units"] == {"soc": "%", "outside_temp": "°C"}
     assert live["raw"]["charging"] == "off" and live["values"]["charging"] is None
     assert live["missing"] == ["sensor.car_range"]

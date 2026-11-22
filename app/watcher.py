@@ -1,10 +1,10 @@
-"""Polls Home Assistant (local, free) for battery, range, odometer and charging state.
+"""Fragt Home Assistant (lokal, kostenlos) nach Akku, Reichweite, Kilometerstand und Ladezustand.
 
-* Stores readings so Ladecockpit has its own history – the last known battery level
-  survives when the car is offline (e.g. in an underground garage), and monthly
-  distance works without any helper in HA.
-* Detects the end of a charging session and starts a short burst of Tesla syncs,
-  so the invoice is picked up within minutes. No automation in HA needed for that.
+* Speichert Messwerte, damit Ladecockpit eine eigene Historie hat – der zuletzt bekannte Akkustand
+  bleibt, wenn das Auto offline ist (z. B. in einer Tiefgarage), und die Monatsstrecke
+  funktioniert ohne Helfer in HA.
+* Erkennt das Ende einer Ladung und startet eine kurze Folge von Tesla-Abgleichen,
+  damit die Rechnung innerhalb von Minuten da ist. Dafür ist keine Automation in HA nötig.
 """
 from __future__ import annotations
 
@@ -19,15 +19,15 @@ from .sync import SyncService
 
 log = logging.getLogger("ladecockpit.watcher")
 
-# Store a new reading when the value moved at least this much, or an hour passed.
+# Einen neuen Messwert speichern, wenn sich der Wert mindestens so weit bewegt hat oder eine Stunde vergangen ist.
 MIN_DELTA = {"soc": 1.0, "range": 2.0, "odometer": 0.5, "temp": 0.5, "fuel_cost": 0.01, "fuel_litres": 0.01,
              "fuel_price": 0.001}
 ROLE = {"soc": "soc", "range": "range", "odometer": "odometer", "temp": "outside_temp",
         "fuel_cost": "fuel_cost_total", "fuel_litres": "fuel_litres_total", "fuel_price": "fuel_price"}
 MAX_AGE = timedelta(hours=1)
-# The fuel totals only move when you fill up: one reading a day is plenty.
+# Die Tanksummen bewegen sich nur beim Tanken: ein Messwert am Tag reicht.
 MAX_AGE_FOR = {"fuel_cost": timedelta(days=1), "fuel_litres": timedelta(days=1)}
-# While the car charges, poll more often so the web app follows the battery closely.
+# Während das Auto lädt, öfter abfragen, damit die Web-App dem Akku eng folgt.
 FAST_POLL_SECONDS = 15
 HOME_MIN_STEP_KWH = 0.05
 HOME_MAX_STEP_KWH = 100.0
@@ -85,8 +85,8 @@ class Watcher:
         return live
 
     async def seed_from_history(self, now: datetime | None = None) -> int:
-        """Fresh install: take the last days from HA's own history, so the battery level,
-        the forecast and the distance show up right away instead of after the car was online."""
+        """Neuinstallation: die letzten Tage aus dem Verlauf von HA übernehmen, damit Akkustand,
+        Prognose und Strecke sofort erscheinen statt erst, wenn das Auto online war."""
         now = now or datetime.now(timezone.utc)
         roles = self.ha.entities()
         added = 0
@@ -106,8 +106,8 @@ class Watcher:
         return added
 
     def _track_home(self, values: dict, units: dict, now: datetime) -> None:
-        """Charging at home: store what the wallbox meter added since the last poll, with the
-        electricity price of that moment (so dynamic tariffs are priced correctly)."""
+        """Laden zu Hause: speichern, was der Wallbox-Zähler seit der letzten Abfrage dazugezählt hat, mit
+        dem Strompreis dieses Moments (damit dynamische Tarife richtig bewertet werden)."""
         meter = values.get("home_energy")
         if meter is None:
             return
@@ -119,7 +119,7 @@ class Watcher:
             return
         delta = meter - float(last)
         if delta < 0 or delta > HOME_MAX_STEP_KWH:
-            self.db.kv_set("home_meter", str(meter))  # meter replaced or reset: start again from here
+            self.db.kv_set("home_meter", str(meter))  # Zähler getauscht oder zurückgesetzt: ab hier neu beginnen
             return
         if delta < HOME_MIN_STEP_KWH:
             return  # keep the old mark, small steps add up
@@ -131,7 +131,7 @@ class Watcher:
 
     def _check_charging(self, state: str | None) -> None:
         if not state or state.lower() in INVALID_STATES:
-            return  # car offline: keep the last valid state, compare when it is back
+            return  # Auto offline: letzten gültigen Zustand behalten, vergleichen, wenn es zurück ist
         previous = self.db.kv_get("last_charging_state")
         charging = self.s.charging_value.lower()
         if previous is not None and previous.lower() == charging and state.lower() != charging:

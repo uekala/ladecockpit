@@ -24,7 +24,7 @@ void main() {
     final page = find.byKey(const ValueKey('page-0'));
     final before = tester.getRect(page).width;
 
-    // One finger: the list scrolls as before.
+    // Ein Finger: Die Liste scrollt wie bisher.
     await tester.drag(find.byType(ListView), const Offset(0, -300));
     await tester.pump();
     expect(scroll.offset, greaterThan(100));
@@ -69,7 +69,7 @@ void main() {
     await tester.pumpAndSettle();
     final zoomed = tester.getRect(page);
     expect(zoomed.width, closeTo(before.width * 2.5, 1));
-    // The tapped spot stays under the finger.
+    // Die angetippte Stelle bleibt unter dem Finger.
     expect(zoomed.center.dx, closeTo(spot.dx, 1));
 
     await tester.tapAt(spot);

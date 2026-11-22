@@ -1,4 +1,4 @@
-"""Backend integration checks for a live standalone instance without Home Assistant."""
+"""Backend-Integrationsprüfungen für eine eigenständige Live-Instanz ohne Home Assistant."""
 import asyncio
 import dataclasses
 
@@ -26,7 +26,7 @@ class _DisconnectedTesla:
 
 
 def test_live_dashboard_starts_and_serves_without_home_assistant(monkeypatch, tmp_path):
-    """A configured Tesla app with empty HA settings must use live mode, not demo mode."""
+    """Eine eingerichtete Tesla-App mit leeren HA-Einstellungen muss den Live-Modus nutzen, nicht den Demo-Modus."""
     settings = dataclasses.replace(
         load(),
         data_dir=tmp_path,
@@ -71,7 +71,7 @@ def test_live_dashboard_starts_and_serves_without_home_assistant(monkeypatch, tm
     assert main.ha.configured is False
 
     with TestClient(main.app) as client:
-        # /healthz is only open without a password from localhost (container health check).
+        # /healthz ist ohne Passwort nur von localhost aus offen (Zustandsprüfung des Containers).
         health = client.get("/healthz", auth=("test", "test-password"))
         assert health.status_code == 200
         assert health.json()["mode"] == "live"

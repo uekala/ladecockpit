@@ -1,12 +1,12 @@
 import 'l10n_en.dart';
 
-/// Language of the app: 'de' or 'en'. The texts in the code are German;
-/// English is looked up in [english]. The app follows the language of the
-/// Ladecockpit server (APP_LANG) once it has answered, and the phone's
-/// language before that.
+/// Sprache der App: 'de' oder 'en'. Die Texte im Code sind deutsch;
+/// Englisch wird in [english] nachgeschlagen. Die App folgt der Sprache des
+/// Ladecockpit-Servers (APP_LANG), sobald er geantwortet hat, und davor der
+/// Sprache des Handys.
 String appLanguage = 'de';
 
-/// 'en' for an English server or phone, 'de' for a German one, else null.
+/// 'en' für einen englischen Server oder ein englisches Handy, 'de' für ein deutsches, sonst null.
 String? languageFrom(dynamic value) {
   final text = value?.toString().toLowerCase() ?? '';
   if (text.startsWith('en')) return 'en';
@@ -14,10 +14,10 @@ String? languageFrom(dynamic value) {
   return null;
 }
 
-/// The text in the app's language.
+/// Der Text in der Sprache der App.
 String tr(String german) => appLanguage == 'en' ? (english[german] ?? german) : german;
 
-/// Like [tr] for a text with values: `{0}`, `{1}` … are replaced by [values].
+/// Wie [tr] für einen Text mit Werten: `{0}`, `{1}` … werden durch [values] ersetzt.
 String trf(String german, List<Object?> values) {
   final template = tr(german);
   return template.replaceAllMapped(RegExp(r'\{(\d+)\}'), (match) {

@@ -1,6 +1,6 @@
-# Ladecockpit section for a "sections" dashboard. Built-in cards only, no HACS needed.
-# Dashboard → Edit → Create section → ⋮ on the new section → Edit in YAML → paste this.
-# The entities are created by Ladecockpit itself (option publish_entities / PUBLISH_ENTITIES).
+# Ladecockpit-Abschnitt für ein Dashboard mit Abschnitten. Nur eingebaute Karten, kein HACS nötig.
+# Dashboard → Bearbeiten → Abschnitt erstellen → ⋮ am neuen Abschnitt → In YAML bearbeiten → dies einfügen.
+# Die Entitäten legt Ladecockpit selbst an (Option publish_entities / PUBLISH_ENTITIES).
 type: grid
 cards:
   - type: heading
@@ -19,7 +19,7 @@ cards:
           - condition: state
             entity: binary_sensor.ladecockpit_problem
             state: "on"
-  # Picture of the car, chosen in the web app (Customise). Remove if you do not want it.
+  # Bild des Autos, in der Web-App gewählt (Anpassen). Entfernen, wenn du es nicht willst.
   - type: markdown
     text_only: true
     content: >-
@@ -71,7 +71,7 @@ cards:
       {% set s = state_attr(m, 'savings') %}{% if s is number %}🌱 Saved vs. a combustion car: {{ s }} {{ state_attr(m, 'unit_of_measurement') }}
 
       {% endif %}💡 {{ states('sensor.ladecockpit_price_tip') }}
-  # Third-party stations where MultiPass has worked for you, with map links. Hidden until there is one.
+  # Fremdstationen, an denen MultiPass bei dir funktioniert hat, mit Kartenlinks. Ausgeblendet, bis es eine gibt.
   - type: markdown
     content: |
       **MultiPass** · {{ state_attr('sensor.ladecockpit_multipass', 'text') }}

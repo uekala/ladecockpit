@@ -1,4 +1,4 @@
-"""HTTP 429 from Tesla: wait as long as Tesla asks instead of asking again right away."""
+"""HTTP 429 von Tesla: so lange warten, wie Tesla verlangt, statt sofort erneut zu fragen."""
 import asyncio
 import dataclasses
 import time
@@ -50,7 +50,7 @@ def test_429_pauses_requests_until_retry_after(settings, db):
     retry_at = float(db.kv_get("tesla_retry_at"))
     assert 110 < retry_at - time.time() <= 120
 
-    with pytest.raises(RateLimited):                  # still inside the pause: Tesla is not asked
+    with pytest.raises(RateLimited):                  # noch in der Pause: Tesla wird nicht gefragt
         asyncio.run(client.invoice_pdf("invoice-1"))
     assert len(calls) == 1
 

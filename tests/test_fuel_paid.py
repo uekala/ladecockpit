@@ -13,7 +13,7 @@ def days_ago(n):
 
 
 def test_average_of_the_last_90_days():
-    # 120 days ago: 500 € for 280 L; now 945 € for 442 L → 445 € for 162 L in the window
+    # vor 120 Tagen: 500 € für 280 L; jetzt 945 € für 442 L → 445 € für 162 L im Zeitraum
     cost = [(days_ago(120), 500.0), (days_ago(30), 700.0)]
     litres = [(days_ago(120), 280.0), (days_ago(30), 380.0)]
     paid = paid_fuel_price(cost, litres, 945.0, 442.0, NOW)
@@ -36,7 +36,7 @@ def test_all_time_when_too_little_was_filled_in_the_window_or_totals_were_reset(
 
 def test_nothing_usable():
     assert paid_fuel_price([], [], None, 441.0, NOW) is None
-    assert paid_fuel_price([], [], 30.0, 12.0, NOW) is None          # fewer than 20 L so far
+    assert paid_fuel_price([], [], 30.0, 12.0, NOW) is None          # bisher weniger als 20 L
     assert paid_fuel_price([], [], 945.0, 4419.2, NOW) is None       # 0.21 €/L: wrong entity or unit
     assert paid_fuel_price([], [], 0.0, 0.0, NOW) is None
 

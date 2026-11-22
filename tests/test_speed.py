@@ -47,9 +47,9 @@ def test_full_battery_at_the_start_is_not_slow():
     soc = [(start_c - timedelta(minutes=40), 62.0)]
     speed = vehicle.charging_speed(BERGSTADT, soc)
     assert speed["c"]["start_soc"] == 62 and not speed["c"]["slow"] and speed["c"]["typical_kw"] == 123
-    # ... and still counts for what is usual at the site.
+    # ... und zählt trotzdem für das, was am Standort üblich ist.
     assert speed["a"]["typical_kw"] == 103
-    # A reading from long before the start says nothing about it.
+    # Ein Messwert lange vor dem Start sagt nichts darüber.
     speed = vehicle.charging_speed(BERGSTADT, [(start_c - timedelta(hours=5), 62.0)])
     assert speed["c"]["start_soc"] is None and speed["c"]["slow"]
 

@@ -1,10 +1,10 @@
-"""Invoice PDFs: fetched from Tesla once and kept, and what they tell about the network.
+"""Rechnungs-PDFs: einmal von Tesla geholt und aufbewahrt, und was sie über das Netz verraten.
 
-The charging history has no field that names the network, but the invoice does: Tesla bills
-third-party charging (MultiPass) as a mobility service provider, and those invoice numbers carry
-"MSP", e.g. 4020MSP0000019797. Supercharger invoices have a number without it. So a session's
-invoice settles whether it was a Supercharger or a MultiPass session, also at stations whose
-name gives nothing away ("Brunnenhausstr. 46, Neustadt").
+Die Ladehistorie hat kein Feld, das das Netz nennt, die Rechnung aber schon: Tesla rechnet
+Fremdladen (MultiPass) als Mobilitätsdienstleister ab, und diese Rechnungsnummern tragen „MSP“,
+z. B. 4020MSP0000019797. Supercharger-Rechnungen haben eine Nummer ohne. Die Rechnung einer
+Ladung entscheidet also, ob es eine Supercharger- oder eine MultiPass-Ladung war, auch an
+Stationen, deren Name nichts verrät („Brunnenhausstr. 46, Neustadt“).
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from .tesla import TeslaError
 
 log = logging.getLogger("ladecockpit.invoices")
 
-UNKNOWN = "unknown"  # checked, but the invoice did not tell
+UNKNOWN = "unknown"  # geprüft, aber die Rechnung hat es nicht verraten
 
 
 def cache_path(data_dir: Path, session_id: str) -> Path:
@@ -31,7 +31,7 @@ def cache_path(data_dir: Path, session_id: str) -> Path:
 
 
 def is_pdf(data: bytes) -> bool:
-    """Whether the bytes start like a PDF (the header may follow a few stray bytes)."""
+    """Ob die Bytes wie ein PDF beginnen (vor dem Kopf können ein paar verirrte Bytes stehen)."""
     return b"%PDF-" in data[:1024]
 
 
@@ -44,11 +44,11 @@ def _cached_pdf_ok(path: Path) -> bool:
 
 
 async def pdf_path(tesla, data_dir: Path, session: dict) -> Path:
-    """Path of the cached invoice PDF of a session (fetched from Tesla on first use).
+    """Pfad des zwischengespeicherten Rechnungs-PDFs einer Ladung (beim ersten Bedarf von Tesla geholt).
 
-    Only real PDFs are kept, and written in one step: an answer that is not a PDF, or a write that
-    was cut short, must not stay in the cache and break the month report and the invoice view for good.
-    A cached file that is not a PDF is fetched again."""
+    Nur echte PDFs werden behalten und in einem Schritt geschrieben: Eine Antwort, die kein PDF ist,
+    oder ein abgebrochenes Schreiben darf nicht im Cache bleiben und Monatsbericht und Rechnungsansicht
+    dauerhaft kaputt machen. Eine zwischengespeicherte Datei, die kein PDF ist, wird neu geholt."""
     path = cache_path(data_dir, session["session_id"])
     if path.exists() and not _cached_pdf_ok(path):
         log.warning("Cached invoice of session %s is not a PDF – fetching it again", session["session_id"])
@@ -64,7 +64,7 @@ async def pdf_path(tesla, data_dir: Path, session: dict) -> Path:
 
 
 def pdf_text(data: bytes) -> str:
-    """Text of the first pages of a PDF ("" when it cannot be read)."""
+    """Text der ersten Seiten eines PDFs ("", wenn es sich nicht lesen lässt)."""
     try:
         return "\n".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(data)).pages[:2])
     except Exception:  # noqa: BLE001 – a broken or unusual PDF just tells nothing
@@ -72,7 +72,7 @@ def pdf_text(data: bytes) -> str:
 
 
 def network_from_text(text: str) -> str:
-    """MULTIPASS or SUPERCHARGER from the text of an invoice, or UNKNOWN when it does not tell."""
+    """MULTIPASS oder SUPERCHARGER aus dem Text einer Rechnung, oder UNKNOWN, wenn sie es nicht verrät."""
     numbers = re.findall(r"(?:Rechnungsnummer|Invoice\s*(?:Number|No\.?))\s*:?\s*(\S+)", text, re.I)
     series = invoice_series(numbers[0] if numbers else text)
     if series == "MSP":
@@ -83,5 +83,5 @@ def network_from_text(text: str) -> str:
 
 
 def network_from_pdf(data: bytes) -> str:
-    """MULTIPASS or SUPERCHARGER from an invoice PDF, or UNKNOWN when it does not tell."""
+    """MULTIPASS oder SUPERCHARGER aus einem Rechnungs-PDF, oder UNKNOWN, wenn es nichts verrät."""
     return network_from_text(pdf_text(data))

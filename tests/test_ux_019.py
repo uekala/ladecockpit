@@ -14,7 +14,7 @@ def test_setup_hints_name_the_option(settings):
     assert set(ids) == {"fuel_daily", "fuel_no_consumption", "no_home"}
     assert "„Spritpreis als Tagesdurchschnitt“" in ids["fuel_daily"]["text"]
     assert ids["fuel_no_consumption"]["level"] == "missing"
-    # everything set: nothing to say; without Home Assistant: nothing at all
+    # alles gesetzt: nichts zu sagen; ohne Home Assistant: gar nichts
     full = dataclasses.replace(s, fuel_price_daily=True, fuel_consumption=7.5, ent_home_energy="sensor.wb")
     assert checks.hints(full, "de") == []
     assert checks.hints(dataclasses.replace(s, ha_url=""), "de") == []
@@ -29,7 +29,7 @@ def test_entity_report_finds_missing_text_and_wrong_units():
             "units": {"soc": "%", "odometer": "m", "range": "km"}}
     rows = {r["role"]: r for r in checks.entity_report(roles, live, "en")}
     assert rows["soc"]["ok"] and rows["soc"]["label"] == "Battery level"
-    assert rows["charging"]["ok"]                                    # text is fine for the charging state
+    assert rows["charging"]["ok"]                                    # Text ist für den Ladezustand in Ordnung
     assert rows["odometer"]["problem"] == "unexpected unit m"
     assert rows["fuel_price"]["problem"] == "unavailable right now"
     assert rows["range"]["problem"] == "does not deliver a number"
@@ -50,7 +50,7 @@ def test_radar_per_site_and_tips_with_a_target(settings):
     mainz = next(r for r in d["site_radar"] if r["site_name"] == "Mainz, Germany")
     assert mainz["sessions"] == 3 and len(mainz["slots"]) == 5
     assert sum(s["sessions"] for s in mainz["slots"]) == 3
-    assert all(r["sessions"] >= 3 for r in d["site_radar"])           # Bad Homburg has only 2
+    assert all(r["sessions"] >= 3 for r in d["site_radar"])           # Bad Homburg hat nur 2
     assert all("action" in i and i["action"]["go"] for i in d["insights"])
     m = next(m for m in d["monthly"] if m.get("fuel_per_100") is not None)
     assert m["fuel_per_100"] == 16.0
@@ -63,7 +63,7 @@ def test_setup_steps_name_the_next_thing_to_do(settings):
     assert steps["tesla_app"]["status"] == "done"
     assert steps["tesla_login"]["status"] == "todo" and steps["sync"]["status"] == "waiting"
     assert steps["ha"]["status"] == "optional" and not steps["ha"]["required"]
-    # signed in, synced, Home Assistant with one broken entity and a tip
+    # angemeldet, abgeglichen, Home Assistant mit einer kaputten Entität und einem Tipp
     s2 = dataclasses.replace(s, ha_url="http://ha", ha_token="t")
     ents = [{"ok": True}, {"ok": False}]
     done = {x["id"]: x for x in checks.steps(

@@ -17,11 +17,11 @@ def at(day, hour):
 
 
 def test_daily_average_is_weighted_by_how_long_a_price_was_shown():
-    # 19 Oct: 2.00 from midnight to 18 h, then 1.80 → (18 × 2.00 + 6 × 1.80) / 24
+    # 19. Okt.: 2,00 von Mitternacht bis 18 Uhr, dann 1,80 → (18 × 2,00 + 6 × 1,80) / 24
     points = [(at(19, 0), 2.00), (at(19, 18), 1.80), (at(20, 6), 1.90)]
     daily = daily_fuel_prices(points, TZ, NOW)
     assert daily[date(2026, 10, 19)] == round((18 * 2.00 + 6 * 1.80) / 24, 4)
-    # 20 Oct counts up to now (14 h local): 6 h of 1.80, 8 h of 1.90
+    # 20. Okt. zählt bis jetzt (14 Uhr Ortszeit): 6 h zu 1,80, 8 h zu 1,90
     assert daily[date(2026, 10, 20)] == round((6 * 1.80 + 8 * 1.90) / 14, 4)
 
 
@@ -34,7 +34,7 @@ def test_every_day_counts_with_its_own_kilometres():
     daily = {date(2026, 10, 18): 2.00, date(2026, 10, 19): 1.80}
     odo = [(at(18, 8), 1000.0), (at(18, 20), 1100.0), (at(19, 8), 1100.0), (at(19, 20), 1400.0)]
     assert distance_fuel_price(odo, daily, TZ) == {"price": round((100 * 2.00 + 300 * 1.80) / 400, 3), "days": 2}
-    # a day without a price takes the nearest one; far away from any price nothing is counted
+    # ein Tag ohne Preis nimmt den nächsten; weit weg von jedem Preis wird nichts gezählt
     odo2 = [(at(1, 8), 900.0), (at(1, 20), 950.0), (at(20, 8), 950.0), (at(20, 20), 1000.0)]
     assert distance_fuel_price(odo2, daily, TZ) == {"price": 1.80, "days": 0}
     assert distance_fuel_price(odo, {}, TZ) is None
@@ -62,11 +62,11 @@ def test_dashboard_uses_the_daily_average_when_switched_on(settings):
     assert m["fuel_price"] == fuel["price"]
     assert m["fuel_equivalent"] == round(8.0 * m["fuel_price"] * m["distance"] / 100, 2)
     assert any(i["kind"] == "fuel" and "Tagesdurchschnitt" in i["text"] for i in d["insights"])
-    # a month without price readings keeps the price paid
+    # ein Monat ohne Preis-Messwerte behält den bezahlten Preis
     old = next(x for x in d["monthly"] if x["key"] == "2026-08")
     assert "fuel_price" not in old
     assert old["fuel_equivalent"] == round(8.0 * 2.139 * old["distance"] / 100, 2)
-    # without price readings it stays with the price paid
+    # ohne Preis-Messwerte bleibt es beim bezahlten Preis
     readings["fuel_price"] = []
     assert dash(fuel_price_daily=True)["compare"]["fuel"]["source"] == "paid"
 

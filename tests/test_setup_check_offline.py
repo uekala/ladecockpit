@@ -1,4 +1,4 @@
-"""Setup check: an offline car is no setup problem, and tips can be hidden."""
+"""Einrichtungsprüfung: Ein Auto offline ist kein Einrichtungsproblem, und Tipps lassen sich ausblenden."""
 import asyncio
 import dataclasses
 
@@ -14,7 +14,7 @@ ROLES = {"soc": "sensor.tesla_battery", "range": "sensor.tesla_range", "odometer
 
 
 def _asleep(**raw) -> dict:
-    """Home Assistant right after a restart while the car is offline: every car value unknown."""
+    """Home Assistant direkt nach einem Neustart, während das Auto offline ist: jeder Wert des Autos unbekannt."""
     values = {"soc": "unknown", "range": "unknown", "odometer": "unknown", "charging": "unknown",
               "outside_temp": "unknown", "fuel_price": "1.79", "charge_power": "unavailable", **raw}
     return {"available": True, "raw": values, "values": {"fuel_price": 1.79},
@@ -44,16 +44,16 @@ def test_a_car_that_never_delivered_a_value_is_still_checked():
 
 
 def test_single_values_missing_while_the_car_is_online_are_problems():
-    # The odometer delivers, so the car is online: the battery without a value is a real problem.
+    # Der Kilometerstand liefert, das Auto ist also online: Der Akku ohne Wert ist ein echtes Problem.
     rows = {r["role"]: r for r in checks.entity_report(ROLES, _asleep(odometer="12345"), "en", seen_before=True)}
     assert rows["soc"]["ok"] is False and not rows["soc"]["offline"]
-    # An entity that does not exist at all is never explained away as an offline car.
+    # Eine Entität, die gar nicht existiert, wird nie als Auto offline wegerklärt.
     live = {**_asleep(), "missing": ["sensor.tesla_range"]}
     rows = {r["role"]: r for r in checks.entity_report(ROLES, live, "en", seen_before=True)}
     assert rows["range"]["problem"] == "entity not found" and rows["soc"]["ok"] is False
-    # Home Assistant down: nothing to judge, as before
+    # Home Assistant nicht erreichbar: nichts zu beurteilen, wie bisher
     assert all(r["ok"] is None for r in checks.entity_report(ROLES, {"available": False}, "en", seen_before=True))
-    # The weather station gone while the car is online: still a problem
+    # Die Wetterstation weg, während das Auto online ist: weiterhin ein Problem
     rows = {r["role"]: r for r in checks.entity_report(
         ROLES, _asleep(soc="40", range="230", odometer="12345", charging="stopped"), "en", seen_before=True)}
     assert rows["outside_temp"]["ok"] is False

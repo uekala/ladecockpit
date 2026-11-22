@@ -1,7 +1,7 @@
-"""Tesla Fleet API – sign-in, charging history and invoice PDF only.
+"""Tesla Fleet API – nur Anmeldung, Ladehistorie und Rechnungs-PDF.
 
-Ladecockpit is read-only. There is deliberately no code here that sends
-vehicle commands or wakes the car.
+Ladecockpit liest nur. Hier gibt es absichtlich keinen Code, der Befehle
+ans Fahrzeug sendet oder das Auto weckt.
 """
 from __future__ import annotations
 
@@ -27,9 +27,9 @@ HISTORY_PATH = "/api/1/dx/charging/history"
 INVOICE_PATH = "/api/1/dx/charging/invoice/{id}"
 PAGE_SIZE = 50
 MAX_PAGES = 20
-# Rejected token refreshes in a row before Ladecockpit asks you to sign in to Tesla again
+# Abgelehnte Token-Erneuerungen in Folge, bevor Ladecockpit um eine neue Anmeldung bei Tesla bittet
 REFRESH_FAILURES_FOR_SIGN_IN = 2
-# After HTTP 429 without a usable Retry-After, wait this long; never longer than a day
+# Nach HTTP 429 ohne brauchbares Retry-After so lange warten; nie länger als einen Tag
 RATE_LIMIT_DEFAULT_S = 300
 RATE_LIMIT_MAX_S = 86400
 
@@ -51,7 +51,7 @@ class RateLimited(TeslaError):
 
 
 def retry_after_seconds(value: str | None, now: float | None = None) -> float:
-    """Seconds to wait from a Retry-After header (seconds or an HTTP date)."""
+    """Sekunden Wartezeit aus einem Retry-After-Header (Sekunden oder ein HTTP-Datum)."""
     now = time.time() if now is None else now
     wait: float | None = None
     if value:
@@ -69,7 +69,7 @@ def retry_after_seconds(value: str | None, now: float | None = None) -> float:
 
 
 def pkce_challenge(verifier: str) -> str:
-    """The S256 code challenge that belongs to a PKCE code verifier."""
+    """Die S256-Code-Challenge zu einem PKCE-Code-Verifier."""
     digest = hashlib.sha256(verifier.encode("ascii")).digest()
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
 
@@ -96,8 +96,8 @@ class TeslaClient:
 
     # --- OAuth -----------------------------------------------------------------
     def authorize_url(self, state: str, code_verifier: str | None = None) -> str:
-        """Where the user signs in. With a code verifier the request is PKCE-protected, which is
-        how an app without a client secret proves that it started the sign-in."""
+        """Wo sich der Nutzer anmeldet. Mit einem Code-Verifier ist die Anfrage per PKCE geschützt; so
+        beweist eine App ohne Client-Secret, dass sie die Anmeldung begonnen hat."""
         params = {
             "response_type": "code",
             "client_id": self.s.tesla_client_id,
@@ -120,7 +120,7 @@ class TeslaClient:
             "audience": self.s.fleet_base,
             "redirect_uri": self.s.tesla_redirect_uri,
         }
-        # Developer apps prove themselves with their secret, open-source apps with the verifier.
+        # Entwickler-Apps weisen sich mit ihrem Secret aus, Open-Source-Apps mit dem Verifier.
         if self.s.tesla_client_secret:
             data["client_secret"] = self.s.tesla_client_secret
         if code_verifier:
@@ -136,7 +136,7 @@ class TeslaClient:
         if "access_token" not in tok:
             raise TeslaError("Tesla did not return an access token.")
         self.db.kv_set("tesla_access_token", tok["access_token"])
-        # Tesla refresh tokens are single-use – always keep the newest one.
+        # Tesla-Refresh-Tokens gelten nur einmal – immer den neuesten behalten.
         if tok.get("refresh_token"):
             self.db.kv_set("tesla_refresh_token", tok["refresh_token"])
         expires = time.time() + int(tok.get("expires_in", 28800)) - 120
@@ -163,8 +163,8 @@ class TeslaClient:
             })
             if r.status_code != 200:
                 msg = f"Token refresh failed (HTTP {r.status_code}). Please connect to Tesla again."
-                # One rejected refresh can be a hiccup at Tesla (seen at night, followed by normal
-                # syncs); only a second one in a row means the sign-in is gone and needs the user.
+                # Eine abgelehnte Erneuerung kann ein Aussetzer bei Tesla sein (nachts gesehen, danach normale
+                # Abgleiche); erst eine zweite in Folge heißt, dass die Anmeldung weg ist und der Nutzer gebraucht wird.
                 failures = int(self.db.kv_get("tesla_refresh_failures", "0") or 0) + 1
                 self.db.kv_set("tesla_refresh_failures", str(failures))
                 if 400 <= r.status_code < 500 and failures >= REFRESH_FAILURES_FOR_SIGN_IN:
@@ -181,7 +181,7 @@ class TeslaClient:
             )
         retry_at = float(self.db.kv_get("tesla_retry_at", "0") or 0)
         if time.time() < retry_at:
-            # Asking again while Tesla still limits us only costs requests and prolongs the limit.
+            # Erneut fragen, solange Tesla uns noch begrenzt, kostet nur Anfragen und verlängert die Grenze.
             raise RateLimited("Tesla asked to wait (HTTP 429) until "
                               f"{datetime.fromtimestamp(retry_at, timezone.utc).isoformat(timespec='seconds')}.")
         for attempt in (1, 2):
@@ -205,7 +205,7 @@ class TeslaClient:
         raise TeslaError("Tesla rejected the credentials.")
 
     async def charging_history(self, start_time: datetime | None = None) -> list[dict]:
-        """Fetch the Supercharger history. With start_time only the recent part."""
+        """Die Supercharger-Historie holen. Mit start_time nur den jüngsten Teil."""
         base: dict = {"pageSize": PAGE_SIZE}
         if self.s.tesla_vin:
             base["vin"] = self.s.tesla_vin
@@ -215,7 +215,7 @@ class TeslaClient:
         try:
             first = await self._get(HISTORY_PATH, base)
         except TeslaError as e:
-            # If Tesla rejects the time filter format, try once without it.
+            # Lehnt Tesla das Format des Zeitfilters ab, einmal ohne versuchen.
             if start_time and "HTTP 400" in str(e):
                 base.pop("startTime", None)
                 first = await self._get(HISTORY_PATH, base)
@@ -225,8 +225,8 @@ class TeslaClient:
         items, total = _unwrap(first)
         seen = {_sid(i) for i in items}
 
-        # Paging is only needed with many sessions. Whether Tesla counts pages from 0 or 1
-        # does not matter: duplicates are dropped and a short page ends the loop.
+        # Seiten sind nur bei vielen Ladungen nötig. Ob Tesla Seiten ab 0 oder 1 zählt, ist egal:
+        # Doppelte fallen weg, und eine kurze Seite beendet die Schleife.
         page = 1
         while len(items) < (total or 0) or (total is None and items and len(items) % PAGE_SIZE == 0):
             if page > MAX_PAGES:
@@ -287,7 +287,7 @@ def _iso(value) -> str | None:
 
 
 def parse_session(raw: dict) -> dict | None:
-    """Convert one entry of the Tesla charging history into our format."""
+    """Einen Eintrag der Tesla-Ladehistorie in unser Format umwandeln."""
     sid = _sid(raw)
     if not sid:
         return None

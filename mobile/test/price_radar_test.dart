@@ -67,7 +67,7 @@ void main() {
     expect(find.text('Mittags · Günstigste Zeit'), findsNothing);
     expect(find.text('6–11 Uhr · 1 Ladevorgang · noch wenig aussagekräftig'), findsOneWidget);
     expect(find.text('11–16 Uhr · 5 Ladevorgänge'), findsOneWidget);
-    // Two decimals, like every other price in the app.
+    // Zwei Nachkommastellen, wie jeder andere Preis in der App.
     expect(find.text('0,30 €/kWh'), findsWidgets);
     expect(find.text('0,38 €/kWh'), findsWidgets);
     expect(find.text('0,376 €/kWh'), findsNothing);

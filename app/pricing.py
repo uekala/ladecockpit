@@ -1,4 +1,4 @@
-"""Amounts of a session from the raw Tesla record: paid, list price, credits, net."""
+"""Beträge einer Ladung aus dem Roh-Datensatz von Tesla: bezahlt, Listenpreis, Gutschriften, netto."""
 from __future__ import annotations
 
 
@@ -22,17 +22,17 @@ def fee_total(fee: dict) -> float:
 
 
 def price_details(raw: dict | None) -> dict:
-    """List price, credits and net amount of one session.
+    """Listenpreis, Gutschriften und Nettobetrag einer Ladung.
 
-    totalDue is what was paid. When Tesla credits (e.g. free Supercharging that came with
-    the car) covered part of a session, the paid price per kWh says nothing about the
-    Supercharger, so price comparisons use the list rate (usage × rate per tier) instead.
-    netDue is the amount without VAT.
+    totalDue ist, was bezahlt wurde. Haben Tesla-Gutschriften (z. B. kostenloses Supercharging zum
+    Auto) einen Teil einer Ladung gedeckt, sagt der bezahlte Preis pro kWh nichts über den
+    Supercharger, Preisvergleiche nehmen deshalb den Listenpreis (Menge × Preis je Stufe).
+    netDue ist der Betrag ohne MwSt.
     """
     out = {"list_cost": None, "credit": 0.0, "credit_kwh": None, "net_total": None}
     if not raw:
         return out
-    # Tesla also names the free energy: "credit": {"energyApplied": 30, "distance": 150, ...}
+    # Tesla nennt auch die kostenlose Energie: "credit": {"energyApplied": 30, "distance": 150, ...}
     credit_info = raw.get("credit") if isinstance(raw.get("credit"), dict) else {}
     credit_kwh = _num(credit_info.get("energyApplied"))
     if credit_kwh:

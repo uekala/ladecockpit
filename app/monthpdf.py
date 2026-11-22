@@ -1,5 +1,5 @@
-"""One PDF per month for tax or an employer: a cover sheet with all sessions (net, VAT, gross,
-credits) followed by Tesla's invoices."""
+"""Ein PDF je Monat für das Finanzamt oder einen Arbeitgeber: ein Deckblatt mit allen Ladungen
+(netto, MwSt., brutto, Gutschriften), danach Teslas Rechnungen."""
 from __future__ import annotations
 
 import io
@@ -45,7 +45,7 @@ def _t(lang: str, key: str, **kw) -> str:
 
 
 def _latin(text: str) -> str:
-    """The built-in PDF fonts only know Latin-1."""
+    """Die eingebauten PDF-Schriften kennen nur Latin-1."""
     text = text.replace("€", "EUR").replace("–", "-").replace("−", "-").replace("’", "'")
     return text.encode("latin-1", "replace").decode("latin-1")
 

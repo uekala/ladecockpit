@@ -10,7 +10,7 @@ class CockpitException implements Exception {
   String toString() => message;
 }
 
-/// Validates the metadata response returned by the invoice and report page APIs.
+/// Prüft die Metadaten-Antwort der Seiten-APIs für Rechnungen und Berichte.
 Map<String, dynamic> parseDocumentPagesResponse(
   int statusCode,
   String body, {

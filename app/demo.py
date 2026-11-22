@@ -1,4 +1,4 @@
-"""Demo data: made-up but realistic sessions, so the app runs without any credentials."""
+"""Demodaten: erfundene, aber realistische Ladungen, damit die App ohne Zugangsdaten läuft."""
 from __future__ import annotations
 
 import dataclasses
@@ -9,18 +9,18 @@ from . import carimage, checks
 from .analytics import build_dashboard
 from .config import Settings
 
-# Price per time window and per-site surcharge (demo assumptions, not real Tesla prices)
+# Preis je Zeitfenster und Aufschlag je Standort (Annahmen der Demo, keine echten Tesla-Preise)
 _SLOT_PRICE = [(0, 6, 0.34), (6, 11, 0.45), (11, 16, 0.49), (16, 20, 0.53), (20, 24, 0.37)]
 _SITE_ADJ = {"Weiterstadt": 0.0, "Mainz": -0.02, "Frankfurt Flughafen": 0.03, "Wiesbaden": -0.01,
              "Bad Homburg": 0.02, "IONITY Weiskirchen": 0.10, "EnBW Ladepark Darmstadt": 0.12}
-# Sites that stand for a third-party charger paid with Tesla MultiPass (operator in the name,
-# as in Tesla's history)
+# Standorte für eine Fremdsäule, bezahlt mit Tesla MultiPass (Betreiber im Namen,
+# wie in Teslas Historie)
 _MULTIPASS = {"IONITY Weiskirchen", "EnBW Ladepark Darmstadt"}
 
 # (days ago, hour, minute, site, kWh, duration in min, idle fee)
 _PLAN = [
     (26, 19, 40, "Weiterstadt", 41.8, 31, 0.0),
-    (24, 19, 5, "Mainz", 33.0, 52, 0.0),        # after a long drive, battery not preconditioned: slow
+    (24, 19, 5, "Mainz", 33.0, 52, 0.0),        # nach langer Fahrt, Akku nicht vorkonditioniert: langsam
     (21, 12, 5, "Frankfurt Flughafen", 38.2, 28, 0.0),
     (19, 10, 30, "EnBW Ladepark Darmstadt", 27.3, 25, 0.0),
     (16, 21, 15, "Mainz", 44.6, 33, 0.0),
@@ -32,7 +32,7 @@ _PLAN = [
     (2, 18, 18, "Weiterstadt", 18.0, 14, 0.0),
 ]
 PACK_KWH = 75.0
-LONG_TRIPS = {24: 190.0}  # days ago: km driven in the hours before that day's session
+LONG_TRIPS = {24: 190.0}  # vor Tagen: gefahrene km in den Stunden vor der Ladung dieses Tages
 HOME_PRICE = 0.31
 KM_PER_DAY = 62.0
 
@@ -51,7 +51,7 @@ def demo_sessions(settings: Settings, now: datetime) -> list[dict]:
         stop = start + timedelta(minutes=dur)
         price = _price(hh, site)
         listed = round(kwh * price, 2)
-        credit = 10.0 if i == 0 else 0.0              # the first session was partly paid with a Tesla credit
+        credit = 10.0 if i == 0 else 0.0              # die erste Ladung wurde teils mit Tesla-Guthaben bezahlt
         charge = round(listed - credit, 2)
         start_utc = start.astimezone(timezone.utc)
         out.append({
@@ -82,15 +82,15 @@ def demo_sessions(settings: Settings, now: datetime) -> list[dict]:
 
 
 def _demo_temp(t: datetime, now: datetime) -> float:
-    """Autumn: from about 16 °C five weeks ago down to about 3 °C, warmer in the afternoon."""
+    """Herbst: von etwa 16 °C vor fünf Wochen bis auf etwa 3 °C, nachmittags wärmer."""
     days_ago = (now - t).total_seconds() / 86400
     daily = 3.0 + 13.0 * min(days_ago, 35) / 35 + 2.5 * math.sin(days_ago * 1.7)
     return round(daily + 3.0 * math.sin((t.hour - 9) / 24 * 2 * math.pi), 1)
 
 
 def demo_readings(settings: Settings, sessions: list[dict], now: datetime) -> dict:
-    """Simulates 35 days of battery, range, odometer and outside temperature: drives morning and
-    evening (more energy when it is cold), Supercharges up to 70 % and charges at home on Saturdays."""
+    """Simuliert 35 Tage Akku, Reichweite, Kilometerstand und Außentemperatur: fährt morgens und
+    abends (mehr Energie bei Kälte), lädt am Supercharger bis 70 % und samstags zu Hause."""
     tz = settings.tz
     start = (now - timedelta(days=35)).astimezone(tz).replace(hour=6, minute=0, second=0, microsecond=0)
     charges = sorted((datetime.fromisoformat(s["start_ts"]), s["kwh"]) for s in sessions)
@@ -99,7 +99,7 @@ def demo_readings(settings: Settings, sessions: list[dict], now: datetime) -> di
     soc, odo = 55.0, 4180.0
     soc_pts, odo_pts, range_pts, temp_pts, home = [], [], [], [], []
     t = start
-    end = now - timedelta(hours=15)  # afterwards the car is offline (parked without reception)
+    end = now - timedelta(hours=15)  # danach ist das Auto offline (geparkt ohne Empfang)
     while t < end:
         t += timedelta(hours=1)
         temp = _demo_temp(t, now)
@@ -151,8 +151,8 @@ def build_demo(settings: Settings) -> dict:
     inv_total = sum(s["total"] for s in sessions)
     inv_kwh = sum(s["kwh"] for s in sessions)
     demo_settings = dataclasses.replace(settings, ent_cost_total="demo", ent_kwh_total="demo")
-    # Right now the car charges at a Supercharger: it arrived with about 30 % less than the last
-    # reading (driven since), plugged in 12 minutes ago and gains about 2 % a minute.
+    # Gerade lädt das Auto an einem Supercharger: Es kam mit etwa 30 % weniger als beim letzten
+    # Messwert an (seitdem gefahren), steckt seit 12 Minuten und gewinnt etwa 2 % pro Minute.
     plugged = max(12, readings["soc_last"][1] - 30)
     rising = [(now - timedelta(minutes=12 - m), round(plugged + m * 1.9)) for m in range(0, 12, 2)]
     soc_now = round(plugged + 12 * 1.9)
@@ -199,7 +199,7 @@ def build_demo(settings: Settings) -> dict:
 
 
 def _demo_checks(settings: Settings, soc_now: float, now: datetime) -> dict:
-    """The setup check of the demo: every step done, one tip, the entities of the sample car."""
+    """Die Einrichtungsprüfung der Demo: jeder Schritt erledigt, ein Tipp, die Entitäten des Beispielautos."""
     lang = settings.lang if settings.lang in checks.TEXTS else "en"
     ents = checks.entity_report(
         {"soc": "sensor.my_tesla_battery_level", "range": "sensor.my_tesla_battery_range",

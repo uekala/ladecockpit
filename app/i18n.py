@@ -1,4 +1,4 @@
-"""Small translation helper for texts the backend generates (insights, forecast, HA event)."""
+"""Kleine Übersetzungshilfe für Texte, die das Backend erzeugt (Hinweise, Prognose, HA-Event)."""
 from __future__ import annotations
 
 MONTHS = {
@@ -13,7 +13,7 @@ WEEKDAYS = {
 }
 CURRENCY_SYMBOLS = {"EUR": "€", "USD": "$", "GBP": "£", "CAD": "CA$", "AUD": "A$", "JPY": "¥"}
 
-# Time windows for the price radar (start time of a session, local time)
+# Zeitfenster für das Preis-Radar (Startzeit einer Ladung, Ortszeit)
 SLOTS = {
     "de": [("Nachts", "0–6 Uhr"), ("Morgens", "6–11 Uhr"), ("Mittags", "11–16 Uhr"),
            ("Nachmittags", "16–20 Uhr"), ("Abends", "20–24 Uhr")],

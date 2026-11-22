@@ -9,7 +9,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-# The app module creates its database on import – keep that out of the repository.
+# Das App-Modul legt beim Import seine Datenbank an – diese aus dem Repository heraushalten.
 os.environ.setdefault("DATA_DIR", tempfile.mkdtemp(prefix="ladecockpit-test-"))
 os.environ.setdefault("APP_MODE", "demo")
 
@@ -20,7 +20,7 @@ from app.db import DB  # noqa: E402
 
 @pytest.fixture(autouse=True)
 def _no_map_requests(monkeypatch):
-    """Tests never ask OpenStreetMap; test_osm.py calls the real lookup with a mock transport."""
+    """Tests fragen nie OpenStreetMap; test_osm.py ruft die echte Suche mit einem Mock-Transport auf."""
     async def offline(self, station):
         raise osm.Unavailable("tests are offline")
     monkeypatch.setattr(osm.Lookup, "operator", offline)

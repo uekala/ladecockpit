@@ -12,9 +12,9 @@ import 'package:ladecockpit_mobile/main.dart';
 import 'package:ladecockpit_mobile/theme/app_theme.dart';
 import 'package:ladecockpit_mobile/update_check.dart';
 
-/// Renders every tab and every expandable card with the demo answer of the
-/// server and with each part of it missing. A build error shows up as a grey
-/// box in release builds; here it fails the test with the widget that threw.
+/// Rendert jeden Tab und jede aufklappbare Karte mit der Demo-Antwort des
+/// Servers und mit jedem fehlenden Teil davon. Ein Build-Fehler erscheint in Release-Builds
+/// als graues Feld; hier lässt er den Test mit dem auslösenden Widget scheitern.
 Map<String, dynamic> _demo() => jsonDecode(
       File('test/fixtures/dashboard_demo.json').readAsStringSync(),
     ) as Map<String, dynamic>;
@@ -213,7 +213,7 @@ void main() {
       'Connections', 'Your sessions', 'Cost development']) {
       expect(seen, contains(text), reason: 'missing "$text" in:\n${seen.join('\n')}');
     }
-    // No German may be left on any tab or in any opened card.
+    // Auf keinem Tab und in keiner geöffneten Karte darf Deutsch übrig sein.
     final german = RegExp(r'[äöüÄÖÜß]|\b(und|oder|nicht|keine|Ladevorg|Verbind|Rechnung|Kosten|Monat|Standort|Zeitraum|Preis|Uhr)');
     final leftovers = seen.where(german.hasMatch).toList();
     expect(leftovers, isEmpty, reason: leftovers.join('\n'));
@@ -225,7 +225,7 @@ void main() {
   });
 }
 
-/// Stands in for the file on the phone.
+/// Steht für die Datei auf dem Handy.
 class _MemoryCache extends DashboardCache {
   CachedDashboard? stored;
   int writes = 0;

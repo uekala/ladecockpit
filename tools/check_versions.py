@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that the application version, both changelogs and the integration stay in sync."""
+"""Prüfen, dass App-Version, beide Changelogs und die Integration übereinstimmen."""
 
 from __future__ import annotations
 

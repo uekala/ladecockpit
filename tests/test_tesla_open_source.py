@@ -1,4 +1,4 @@
-"""Sign-in for Tesla "Open Source Apps": a client ID without a secret, protected by PKCE."""
+"""Anmeldung für Tesla-„Open Source Apps“: eine Client-ID ohne Secret, geschützt durch PKCE."""
 import asyncio
 import base64
 import dataclasses
@@ -22,7 +22,7 @@ def configured(settings, tmp_path, **changes):
 
 
 def wire(monkeypatch, settings, tmp_path):
-    """Point the app at a mocked Tesla and return what it was asked."""
+    """Die App auf ein nachgebildetes Tesla zeigen lassen und zurückgeben, was es gefragt wurde."""
     database = DB(tmp_path / "open.db")
     posted = []
 
@@ -84,7 +84,7 @@ def test_sign_in_without_secret_uses_pkce(settings, tmp_path, monkeypatch):
     assert form["code"] == ["the-code"]
     assert "client_secret" not in form
     assert database.kv_get("tesla_refresh_token") == "refresh"
-    # The verifier is single-use.
+    # Der Verifier gilt nur einmal.
     assert database.kv_get("oauth_verifier") is None
     assert sync.woke == 1
 

@@ -1,4 +1,4 @@
-"""Ladecockpit sensors: next charge, month cost and energy, last charge, price tip and more."""
+"""Ladecockpit-Sensoren: nächste Ladung, Monatskosten und -energie, letzte Ladung, Preistipp und mehr."""
 from __future__ import annotations
 
 from datetime import date, datetime
@@ -62,7 +62,7 @@ class LadecockpitSensor(LadecockpitEntity, SensorEntity):
             except ValueError:
                 return None
         if self.native_unit_of_measurement or self.state_class or self.device_class:
-            # Decimal keeps the number as the app wrote it ("130.10", "74"), as before the integration.
+            # Decimal behält die Zahl, wie die App sie geschrieben hat ("130.10", "74"), wie vor der Integration.
             try:
                 value = Decimal(raw)
             except InvalidOperation:

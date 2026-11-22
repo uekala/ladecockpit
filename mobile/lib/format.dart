@@ -1,7 +1,7 @@
 import 'l10n.dart';
 
-/// Formats a number for the app's language. German: decimal comma and a dot
-/// between thousands ("1.234,5"). English: the other way round ("1,234.5").
+/// Formatiert eine Zahl für die Sprache der App. Deutsch: Dezimalkomma und Punkt
+/// zwischen Tausendern ("1.234,5"). Englisch: umgekehrt ("1,234.5").
 String formatNumber(num value, int digits) {
   if (value.isNaN || value.isInfinite) return '–';
   final english = appLanguage == 'en';

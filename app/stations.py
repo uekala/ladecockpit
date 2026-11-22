@@ -1,22 +1,22 @@
-"""Where a MultiPass session was, and who runs the station.
+"""Wo eine MultiPass-Ladung war und wer die Station betreibt.
 
-Tesla's charging history only has the site name the station operator gave ("Neustadt - KiK",
-"Brunnenhausstr. 46, Neustadt"). The invoice of a MultiPass session adds the address of the
-station, but it does not name the operator either:
+Teslas Ladehistorie hat nur den Standortnamen, den der Stationsbetreiber vergeben hat („Neustadt - KiK“,
+„Brunnenhausstr. 46, Neustadt“). Die Rechnung einer MultiPass-Ladung ergänzt die Adresse der Station,
+nennt den Betreiber aber auch nicht:
 
     Ladestation
     Brunnenhausstr. 46, Neustadt
     Brunnenhausstraße 46
     12301 Neustadt DE
 
-In Germany every public charge point must be registered with the Bundesnetzagentur, and its
-register (open data, updated monthly) lists the operator ("Betreiber") with the address. So for a
-German address Ladecockpit looks the station up there: same postcode, same street, and the same or
-the nearest house number. The register is about 50 MB; it is downloaded only when a station is not
-known yet (at most every REGISTER_MIN_GAP), read line by line, and only the rows of the needed
-postcodes are kept. Outside Germany, or when the register has no match, OpenStreetMap is asked
-(see osm.py); when that does not tell either, the operator comes from the site name (a known
-brand, or the part before the dash).
+In Deutschland muss jeder öffentliche Ladepunkt bei der Bundesnetzagentur gemeldet sein, und deren
+Register (offene Daten, monatlich aktualisiert) führt den Betreiber mit der Adresse. Für eine deutsche
+Adresse sucht Ladecockpit die Station deshalb dort: gleiche Postleitzahl, gleiche Straße und dieselbe
+oder die nächste Hausnummer. Das Register hat etwa 50 MB; es wird nur geladen, wenn eine Station noch
+nicht bekannt ist (höchstens alle REGISTER_MIN_GAP), Zeile für Zeile gelesen, und nur die Zeilen der
+gebrauchten Postleitzahlen bleiben. Außerhalb Deutschlands oder ohne Treffer im Register wird
+OpenStreetMap gefragt (siehe osm.py); verrät auch das nichts, kommt der Betreiber aus dem
+Standortnamen (eine bekannte Marke oder der Teil vor dem Bindestrich).
 """
 from __future__ import annotations
 
@@ -35,20 +35,20 @@ from . import networks, operators
 
 log = logging.getLogger("ladecockpit.stations")
 
-# Pages of the Bundesnetzagentur that link the current register (the file name has its date).
+# Seiten der Bundesnetzagentur, die das aktuelle Register verlinken (der Dateiname trägt sein Datum).
 REGISTER_PAGES = (
     "https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/start.html",
     "https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/DownloadundKontakt.html",
 )
 _REGISTER_LINK = re.compile(r"""(https?://data\.bundesnetzagentur\.de)?(/[^"'<>\s]*?Ladesaeulenregister[^"'<>\s]*?\.csv)""", re.I)
 REGISTER_HEADER = "Ladeeinrichtungs-ID"
-REGISTER_MIN_GAP = timedelta(hours=12)   # never download the register more often
-RETRY_UNMATCHED = timedelta(days=30)     # a station the register did not have: look again after this
-NEAR_NUMBER = 20                          # house numbers this close count as the same site
-STREET_LIKENESS = 0.9                     # street names this alike are the same street
-MATCH_VERSION = 2                         # stations matched by an older rule are looked up again
+REGISTER_MIN_GAP = timedelta(hours=12)   # das Register nie öfter laden
+RETRY_UNMATCHED = timedelta(days=30)     # eine Station, die das Register nicht hatte: danach erneut suchen
+NEAR_NUMBER = 20                          # so nahe Hausnummern zählen als derselbe Standort
+STREET_LIKENESS = 0.9                     # so ähnliche Straßennamen sind dieselbe Straße
+MATCH_VERSION = 2                         # nach einer älteren Regel zugeordnete Stationen werden neu gesucht
 
-# Labels of the station block in the invoice, by language.
+# Beschriftungen des Stationsblocks in der Rechnung, je Sprache.
 _STATION_LABELS = ("ladestation", "charging station", "station de recharge", "laadstation", "laadpaal",
                    "stazione di ricarica", "estación de carga", "ladestasjon", "laddstation", "ladestation:")
 _TABLE_START = re.compile(r"^(event-datum|event date|date|datum|beschreibung|description)\b", re.I)
@@ -58,10 +58,10 @@ _STREET_LINE = re.compile(r"^(?P<street>.*?\D)[\s,]+(?P<number>\d+\s?[a-zA-Z]?(?
 
 # --- the invoice ------------------------------------------------------------------------------------
 def station_from_text(text: str) -> dict | None:
-    """Name and address of the station from the text of a MultiPass invoice, or None.
+    """Name und Adresse der Station aus dem Text einer MultiPass-Rechnung, oder None.
 
-    {"name", "street", "number", "postcode", "city", "country"}; parts the invoice does not have
-    are left out."""
+    {"name", "street", "number", "postcode", "city", "country"}; Teile, die die Rechnung nicht hat,
+    fehlen."""
     lines = [" ".join(line.split()) for line in text.splitlines()]
     for i, line in enumerate(lines):
         if line.casefold().rstrip(":") not in _STATION_LABELS:
@@ -95,7 +95,7 @@ def station_from_text(text: str) -> dict | None:
 
 
 def address(station: dict | None) -> str | None:
-    """"Brunnenhausstraße 46, Neustadt" – street and town of a station, as far as known."""
+    """„Brunnenhausstraße 46, Neustadt“ – Straße und Ort einer Station, soweit bekannt."""
     if not station:
         return None
     street = " ".join(filter(None, (station.get("street"), station.get("number"))))
@@ -120,16 +120,16 @@ _LEGAL = re.compile(
 # Public bodies carry their legal form in words: "Sparkasse X Anstalt des öffentlichen Rechts …"
 _PUBLIC_BODY = re.compile(r"\s+(?:anstalt|körperschaft|zweckverband)\b", re.I)
 MAX_NAME = 40
-# Brands in a site name that host charging rather than run it: the register knows better who runs it
+# Marken in einem Standortnamen, die Laden beherbergen statt betreiben: Das Register weiß besser, wer betreibt
 HOST_BRANDS = {"Aldi", "Lidl", "Kaufland", "Stadtwerke", "Mobility+"}
-# Brands named in a site name that are too general to stand for the operator
+# In einem Standortnamen genannte Marken, die zu allgemein sind, um für den Betreiber zu stehen
 _GENERIC_BRANDS = {"Stadtwerke", "Mobility+"}
 
 
 def clean_operator(name: str | None) -> str | None:
-    """The operator as people call it: "SWN ENERGIE GmbH" → "SWN ENERGIE",
-    "EnBW mobility+ AG und Co.KG" → "EnBW", "Allego GmbH" → "Allego",
-    "Enel X Way Italia S.r.l." → "Enel X Way" (see operators.ALIASES)."""
+    """Der Betreiber, wie man ihn nennt: „SWN ENERGIE GmbH“ → „SWN ENERGIE“,
+    „EnBW mobility+ AG und Co.KG“ → „EnBW“, „Allego GmbH“ → „Allego“,
+    „Enel X Way Italia S.r.l.“ → „Enel X Way“ (siehe operators.ALIASES)."""
     name = " ".join((name or "").split())
     if not name:
         return None
@@ -153,10 +153,10 @@ def clean_operator(name: str | None) -> str | None:
 
 
 def registered_name(operator: str | None, shown: str | None) -> str | None:
-    """The register's name for an operator: its map name when that is the operator's short name
-    ("SEW" for "SEW Seestadt Energie und Wasser GmbH", "ALDI SÜD" for "ALDI SÜD Immobilien-
-    verwaltungs-GmbH & Co. oHG"), else the company name. A map name that names something else
-    (a car dealer and its town) is not used."""
+    """Der Name eines Betreibers im Register: sein Kartenname, wenn das der Kurzname des Betreibers ist
+    („SEW“ für „SEW Seestadt Energie und Wasser GmbH“, „ALDI SÜD“ für „ALDI SÜD Immobilien-
+    verwaltungs-GmbH & Co. oHG“), sonst der Firmenname. Ein Kartenname, der etwas anderes nennt
+    (ein Autohaus und seinen Ort), wird nicht genutzt."""
     operator, shown = (operator or "").strip(), (shown or "").strip()
     if shown and operator and shown.split()[0].casefold() in re.split(r"[\s&,/-]+", operator.casefold()):
         return shown
@@ -164,12 +164,12 @@ def registered_name(operator: str | None, shown: str | None) -> str | None:
 
 
 def operator_label(station: dict | None, site: str | None, places: frozenset[str] = frozenset()) -> str | None:
-    """Who runs a MultiPass station: from the register when it has the address, otherwise from the
-    site name. A brand in the site name that shares its first word with the registered operator
-    is more specific ("Aral pulse" rather than "Aral") and wins."""
+    """Wer eine MultiPass-Station betreibt: aus dem Register, wenn es die Adresse hat, sonst aus dem
+    Standortnamen. Eine Marke im Standortnamen, die ihr erstes Wort mit dem gemeldeten Betreiber teilt,
+    ist genauer („Aral pulse“ statt „Aral“) und gewinnt."""
     assigned = networks.assigned_operator(site, (station or {}).get("name"), full_address(station))
     if assigned:
-        return assigned  # what the user set by hand has the last word
+        return assigned  # was der Nutzer von Hand gesetzt hat, hat das letzte Wort
     from_site = networks.operator_from_site(site, places)
     registered = registered_name((station or {}).get("operator"), (station or {}).get("operator_shown"))
     brand = networks.operator(site)
@@ -184,7 +184,7 @@ def operator_label(station: dict | None, site: str | None, places: frozenset[str
 
 
 def describe(sessions: list[dict]) -> None:
-    """Set "_operator" and "_address" on the MultiPass sessions of a list (in place)."""
+    """"_operator" und "_address" an den MultiPass-Ladungen einer Liste setzen (direkt in der Liste)."""
     places = networks.place_names(x.get("site") for x in sessions)
     for x in sessions:
         if (x.get("network") or networks.SUPERCHARGER) == networks.MULTIPASS:
@@ -192,7 +192,7 @@ def describe(sessions: list[dict]) -> None:
             x["_address"] = address(x.get("station"))
 
 
-# --- the register of the Bundesnetzagentur ------------------------------------------------------
+# --- das Register der Bundesnetzagentur ---------------------------------------------------------
 def norm_street(street: str | None) -> str:
     s = (street or "").casefold().replace("ß", "ss")
     s = re.sub(r"str(?:asse|\.|\b)", "str", s)
@@ -220,10 +220,10 @@ def _street_likeness(a: str, b: str) -> float:
 
 
 def match_operator(station: dict, rows: list[dict]) -> dict | None:
-    """The register row for a station: same postcode and street (spelt alike: the register and the
-    invoice do not always agree on "Brunnenhausstr." and "Brunnenhaustraße"), then the same or the
-    nearest house number (within NEAR_NUMBER), then the closer spelling. None when the street is not
-    in the register."""
+    """Die Registerzeile zu einer Station: gleiche Postleitzahl und Straße (ähnlich geschrieben: Register und
+    Rechnung sind sich bei „Brunnenhausstr.“ und „Brunnenhaustraße“ nicht immer einig), dann dieselbe oder die
+    nächste Hausnummer (innerhalb von NEAR_NUMBER), dann die ähnlichere Schreibweise. None, wenn die Straße
+    nicht im Register steht."""
     street = norm_street(station.get("street"))
     if not street:
         return None
@@ -236,14 +236,14 @@ def match_operator(station: dict, rows: list[dict]) -> dict | None:
             continue
         d = _number_distance(station.get("number"), r["number"])
         if d is None:
-            d = NEAR_NUMBER  # no number on one side: only if nothing better is there
+            d = NEAR_NUMBER  # auf einer Seite keine Nummer: nur, wenn nichts Besseres da ist
         if d <= NEAR_NUMBER and (best is None or (d, -like) < best[0]):
             best = ((d, -like), r)
     return best[1] if best else None
 
 
 def find_register_url(pages: list[str]) -> str | None:
-    """Link to the newest register CSV on the pages of the Bundesnetzagentur."""
+    """Link zur neuesten Register-CSV auf den Seiten der Bundesnetzagentur."""
     found = []
     for html in pages:
         for host, path in _REGISTER_LINK.findall(html or ""):
@@ -254,7 +254,7 @@ def find_register_url(pages: list[str]) -> str | None:
 
 
 def read_register(path: Path, postcodes: set[str]) -> list[dict]:
-    """Rows of the register CSV for the given postcodes (operator, street, number, postcode, town)."""
+    """Zeilen der Register-CSV für die angegebenen Postleitzahlen (Betreiber, Straße, Nummer, PLZ, Ort)."""
     raw = path.read_bytes()[:200_000]
     try:
         raw.decode("utf-8")
@@ -291,7 +291,7 @@ def read_register(path: Path, postcodes: set[str]) -> list[dict]:
 
 
 class Register:
-    """Looks up the operators of German stations in the register of the Bundesnetzagentur."""
+    """Sucht die Betreiber deutscher Stationen im Register der Bundesnetzagentur."""
 
     def __init__(self, data_dir: Path, transport: httpx.AsyncBaseTransport | None = None):
         self.data_dir = data_dir
@@ -299,7 +299,7 @@ class Register:
         self.last_download: datetime | None = None
 
     async def rows_for(self, postcodes: set[str]) -> list[dict] | None:
-        """Register rows for some postcodes, or None when the register is not available now."""
+        """Registerzeilen für einige Postleitzahlen, oder None, wenn das Register gerade nicht verfügbar ist."""
         now = datetime.now(timezone.utc)
         if self.last_download and now - self.last_download < REGISTER_MIN_GAP:
             return None
@@ -344,7 +344,7 @@ class Register:
 
 
 def due_for_lookup(station: dict | None, now: datetime) -> bool:
-    """A German station whose operator has not been looked up, or not found 30 days ago."""
+    """Eine deutsche Station, deren Betreiber noch nicht gesucht oder vor 30 Tagen nicht gefunden wurde."""
     if not station or not station.get("postcode") or not station.get("street"):
         return False
     if (station.get("country") or "DE") != "DE":

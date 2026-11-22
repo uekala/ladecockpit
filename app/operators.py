@@ -1,11 +1,11 @@
-"""Charging networks in Europe by the name people know them.
+"""Ladenetze in Europa unter dem Namen, den man kennt.
 
-Registers and maps name the company that runs a station ("Enel X Way Italia S.r.l.", "The New
-Motion B.V."). People know the network by its brand. This table maps a company name, written in
-lower case and without its legal form, to the brand. Names that already start with a brand from
-`networks._OPERATOR_NAMES` ("Fastned Deutschland", "Allego GmbH") need no entry.
+Register und Karten nennen die Firma, die eine Station betreibt („Enel X Way Italia S.r.l.“, „The New
+Motion B.V.“). Bekannt ist das Netz aber unter seiner Marke. Diese Tabelle bildet einen Firmennamen,
+klein geschrieben und ohne Rechtsform, auf die Marke ab. Namen, die schon mit einer Marke aus
+`networks._OPERATOR_NAMES` beginnen („Fastned Deutschland“, „Allego GmbH“), brauchen keinen Eintrag.
 
-To add a network: one line, company name in lower case without legal form → brand.
+Ein Netz ergänzen: eine Zeile, Firmenname klein geschrieben ohne Rechtsform → Marke.
 """
 from __future__ import annotations
 
@@ -39,5 +39,5 @@ ALIASES = {
 
 
 def brand(name: str | None) -> str | None:
-    """The brand for a company name without its legal form, if the table has it."""
+    """Die Marke zu einem Firmennamen ohne Rechtsform, wenn die Tabelle sie kennt."""
     return ALIASES.get(" ".join((name or "").casefold().split()))

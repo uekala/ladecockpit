@@ -98,7 +98,7 @@ void main() {
   });
 }
 
-/// Keeps the on/off setting in memory instead of the secure storage plugin.
+/// Hält die An/Aus-Einstellung im Speicher statt im Plugin für sicheren Speicher.
 class _TestChecker extends UpdateChecker {
   _TestChecker(http.Client client, {required String version, required bool android})
       : super(httpClient: client, currentVersion: version, isAndroid: android);

@@ -1,4 +1,4 @@
-"""Config flow: one entry, nothing to enter – the app finds the integration by itself."""
+"""Config-Flow: ein Eintrag, nichts einzugeben – die App findet die Integration von selbst."""
 from __future__ import annotations
 
 from typing import Any

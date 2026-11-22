@@ -128,7 +128,7 @@ def test_seed_from_history_once(settings, db):
     now = datetime(2026, 10, 12, tzinfo=timezone.utc)
     assert asyncio.run(watcher.seed_from_history(now)) == 4      # duplicate 70 % dropped
     assert db.last_reading("soc")[1] == 64.0
-    assert asyncio.run(watcher.seed_from_history(now)) == 0      # already has readings
+    assert asyncio.run(watcher.seed_from_history(now)) == 0      # hat schon Messwerte
 
 
 # --- problem notifications ----------------------------------------------------------------------

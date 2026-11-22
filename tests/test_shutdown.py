@@ -16,7 +16,7 @@ def _free_port() -> int:
 
 
 def test_sigterm_ends_with_exit_code_0(tmp_path):
-    # Home Assistant stops an app with SIGTERM and warns when it ends with 143.
+    # Home Assistant stoppt eine App mit SIGTERM und warnt, wenn sie mit 143 endet.
     port = _free_port()
     env = {**os.environ, "DATA_DIR": str(tmp_path), "APP_MODE": "demo"}
     proc = subprocess.Popen(

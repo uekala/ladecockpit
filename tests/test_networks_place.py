@@ -25,11 +25,11 @@ def test_operators_assigned_by_hand():
         assert networks.assigned_operator("Hafenstadt Oost") == "Fastned"
         assert networks.assigned_operator("x", None, "PARKHAUS  MITTE 3") == "Stadtwerke"
         assert networks.assigned_operator("Bergstadt, Germany") is None
-        # The station counts as MultiPass, unless the invoice says Supercharger.
+        # Die Station zählt als MultiPass, außer die Rechnung sagt Supercharger.
         assert networks.classify({"siteLocationName": "Hafenstadt, Netherlands"})[0] == networks.MULTIPASS
         raw = {"siteLocationName": "Hafenstadt, Netherlands", "invoices": [{"fileName": "4020P0019025690_NL-NL.pdf"}]}
         assert networks.classify(raw)[0] == networks.SUPERCHARGER
-        # The assignment beats the register and the site name.
+        # Die Zuordnung schlägt Register und Standortnamen.
         station = {"name": "Laadplein", "street": "Havenweg", "number": "2", "city": "Hafenstadt", "operator": "Other B.V."}
         assert stations.operator_label(station, "Havenweg 2") == "Fastned"
         assert stations.operator_label(None, "IONITY Hafenstadt") == "Fastned"

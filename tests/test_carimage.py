@@ -38,13 +38,13 @@ def test_normalize_falls_back_and_keeps_paint():
     assert first == {"generation": "m3-2024", "trim": "rwd_lr", "paint": "PPSW", "wheel": "W38A", "view": "front"}
     junk = carimage.normalize({"generation": "nope", "trim": "x", "paint": "y", "wheel": "z", "view": "top"})
     assert junk == first
-    # Solid Black only exists with the 19" Nova wheels on this trim: the wheels follow the paint.
+    # Solid Black gibt es an dieser Ausstattung nur mit den 19"-Nova-Felgen: Die Felgen folgen dem Lack.
     black = carimage.normalize({"generation": "m3-2024", "trim": "rwd_lr", "paint": "PBSB"})
     assert black["wheel"] == "W39S" and black["paint"] == "PBSB"
-    # ...but chosen wheels win over the paint
+    # ...aber gewählte Felgen gehen dem Lack vor
     photon = carimage.normalize({"generation": "m3-2024", "trim": "rwd_lr", "paint": "PBSB", "wheel": "W38A"})
     assert photon["wheel"] == "W38A" and photon["paint"] == "PPSW"
-    # a view the old image service does not have
+    # eine Ansicht, die der alte Bilddienst nicht hat
     old = carimage.normalize({"generation": "ms-2012", "view": "rear"})
     assert old["view"] == "front" and old["trim"] == "any"
 

@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS api_calls (
 );
 """
 
-# Fields that may still change after the first fetch (Tesla may finalise billing later).
+# Felder, die sich nach dem ersten Abruf noch ändern können (Tesla rechnet eventuell später ab).
 _MUTABLE = ("site", "stop_ts", "unlatch_ts", "kwh", "charge_cost", "idle_fee",
             "other_fee", "total", "currency", "price", "invoices", "raw")
 
@@ -74,9 +74,9 @@ class DB:
             self._conn.execute("PRAGMA journal_mode=WAL")
             self._conn.executescript(SCHEMA)
             cols = {r["name"] for r in self._conn.execute("PRAGMA table_info(sessions)")}
-            if "invoice_network" not in cols:  # 0.11.1: the network as the invoice tells it
+            if "invoice_network" not in cols:  # 0.11.1: das Netz, wie die Rechnung es nennt
                 self._conn.execute("ALTER TABLE sessions ADD COLUMN invoice_network TEXT")
-            if "station" not in cols:  # 0.12: name, address and operator of a MultiPass station (JSON)
+            if "station" not in cols:  # 0.12: Name, Adresse und Betreiber einer MultiPass-Station (JSON)
                 self._conn.execute("ALTER TABLE sessions ADD COLUMN station TEXT")
             self._conn.commit()
 
@@ -100,21 +100,21 @@ class DB:
             self._conn.executemany("DELETE FROM kv WHERE key=?", [(k,) for k in keys])
             self._conn.commit()
 
-    # --- backup and restore ---------------------------------------------------
-    # The Tesla sign-in stays with the installation: it is neither written to a backup nor
-    # replaced by one.
+    # --- Sichern und Wiederherstellen -----------------------------------------
+    # Die Tesla-Anmeldung bleibt bei der Installation: Sie wird weder in eine Sicherung geschrieben
+    # noch durch eine ersetzt.
     _LOCAL_KV = "key LIKE 'tesla\\_%' ESCAPE '\\' OR key = 'oauth_state'"
     _TABLES = ("sessions", "readings", "api_calls")
 
     def snapshot(self, target: Path) -> dict:
-        """A consistent copy of the database without the Tesla sign-in. Returns row counts."""
+        """Eine stimmige Kopie der Datenbank ohne die Tesla-Anmeldung. Gibt die Zeilenzahlen zurück."""
         with self._lock:
             dest = sqlite3.connect(target)
             try:
                 self._conn.backup(dest)
                 dest.execute(f"DELETE FROM kv WHERE {self._LOCAL_KV}")
                 dest.commit()
-                dest.execute("PRAGMA journal_mode=DELETE")  # one plain file, no -wal beside it
+                dest.execute("PRAGMA journal_mode=DELETE")  # eine einfache Datei, kein -wal daneben
                 dest.execute("VACUUM")
                 counts = {t: dest.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in self._TABLES}
             finally:
@@ -122,8 +122,8 @@ class DB:
         return counts
 
     def restore_from(self, source: Path) -> dict:
-        """Replace sessions, readings, the API counter and the settings with those of a snapshot,
-        in one transaction. Raises sqlite3.Error when the snapshot is not a Ladecockpit database."""
+        """Ladungen, Messwerte, den API-Zähler und die Einstellungen durch die eines Abbilds ersetzen,
+        in einer Transaktion. Wirft sqlite3.Error, wenn das Abbild keine Ladecockpit-Datenbank ist."""
         src = sqlite3.connect(source)
         src.row_factory = sqlite3.Row
         try:
@@ -161,7 +161,7 @@ class DB:
 
     # --- charging sessions ---------------------------------------------------
     def upsert_session(self, s: dict, push_state: str) -> bool:
-        """Insert or update a session. Returns True if it was new."""
+        """Eine Ladung einfügen oder aktualisieren. Gibt True zurück, wenn sie neu war."""
         with self._lock:
             exists = self._conn.execute(
                 "SELECT 1 FROM sessions WHERE session_id=?", (s["session_id"],)
@@ -208,7 +208,7 @@ class DB:
         return [self._row(r) for r in rows]
 
     def sessions_to_check(self, since: str, limit: int) -> list[dict]:
-        """Sessions with an invoice whose network has not been read from the invoice yet."""
+        """Ladungen mit Rechnung, deren Netz noch nicht aus der Rechnung gelesen wurde."""
         with self._lock:
             rows = self._conn.execute(
                 "SELECT * FROM sessions WHERE invoice_network IS NULL AND invoices NOT IN ('', '[]') "
@@ -217,7 +217,7 @@ class DB:
         return [self._row(r) for r in rows]
 
     def sessions_without_station(self, since: str, limit: int) -> list[dict]:
-        """Sessions with an invoice whose station has not been read from it yet."""
+        """Ladungen mit Rechnung, deren Station noch nicht daraus gelesen wurde."""
         with self._lock:
             rows = self._conn.execute(
                 "SELECT * FROM sessions WHERE station IS NULL AND invoices NOT IN ('', '[]') "
@@ -269,7 +269,7 @@ class DB:
             except json.JSONDecodeError:
                 record = None
             d["network"], d["network_reason"] = networks.classify(record)
-            # The invoice has the last word: its number says MultiPass or Supercharger.
+            # Die Rechnung hat das letzte Wort: Ihre Nummer sagt MultiPass oder Supercharger.
             if d.get("invoice_network") in (networks.MULTIPASS, networks.SUPERCHARGER) and d["invoice_network"] != d["network"]:
                 d["network"], d["network_reason"] = d["invoice_network"], "invoice number"
             d.update(price_details(record))

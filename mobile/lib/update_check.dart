@@ -4,9 +4,9 @@ import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
-/// Version of this build. Release builds get it from the release tag
-/// (`--dart-define=LADECOCKPIT_VERSION=0.12.8`); test builds have none and
-/// never look for updates.
+/// Version dieses Builds. Release-Builds bekommen sie aus dem Release-Tag
+/// (`--dart-define=LADECOCKPIT_VERSION=0.12.8`); Test-Builds haben keine und
+/// suchen nie nach Updates.
 const appVersion = String.fromEnvironment('LADECOCKPIT_VERSION');
 
 const _latestReleaseUrl = 'https://api.github.com/repos/uekala/ladecockpit/releases/latest';
@@ -16,19 +16,19 @@ class UpdateInfo {
 
   final String version;
 
-  /// Direct link to the APK, or the release page when the release has no APK.
+  /// Direkter Link zur APK oder die Release-Seite, wenn das Release keine APK hat.
   final String downloadUrl;
   final String pageUrl;
 }
 
-/// Parses "0.12.7" or "v0.12.7" into numbers; null for anything else.
+/// Zerlegt "0.12.7" oder "v0.12.7" in Zahlen; null für alles andere.
 List<int>? parseVersion(String value) {
   final match = RegExp(r'^v?(\d+)\.(\d+)\.(\d+)$').firstMatch(value.trim());
   if (match == null) return null;
   return [for (var i = 1; i <= 3; i++) int.parse(match.group(i)!)];
 }
 
-/// True when [candidate] is a higher version than [current].
+/// True, wenn [candidate] eine höhere Version als [current] ist.
 bool isNewerVersion(String candidate, String current) {
   final a = parseVersion(candidate);
   final b = parseVersion(current);
@@ -39,9 +39,9 @@ bool isNewerVersion(String candidate, String current) {
   return false;
 }
 
-/// Asks GitHub once per app start whether a newer release exists.
-/// Only the public release information is fetched; nothing about the user,
-/// the car or the charging data leaves the phone.
+/// Fragt GitHub einmal pro App-Start, ob es ein neueres Release gibt.
+/// Abgerufen werden nur die öffentlichen Release-Informationen; nichts über den Nutzer,
+/// das Auto oder die Ladedaten verlässt das Handy.
 class UpdateChecker {
   UpdateChecker({
     http.Client? httpClient,
@@ -60,8 +60,8 @@ class UpdateChecker {
   final String _current;
   final bool _isAndroid;
 
-  /// Update checks only make sense for release builds on Android:
-  /// iOS has no APK, and test builds carry no version.
+  /// Update-Prüfungen ergeben nur für Release-Builds auf Android Sinn:
+  /// iOS hat keine APK, und Test-Builds tragen keine Version.
   bool get supported => _isAndroid && parseVersion(_current) != null;
 
   Future<bool> get enabled async => (await _storage.read(key: _enabledKey)) != 'off';
@@ -69,8 +69,8 @@ class UpdateChecker {
   Future<void> setEnabled(bool value) =>
       _storage.write(key: _enabledKey, value: value ? 'on' : 'off');
 
-  /// Returns the newer release, or null when there is none, the check is
-  /// switched off or not supported, or GitHub cannot be reached.
+  /// Gibt das neuere Release zurück, oder null, wenn es keines gibt, die Prüfung
+  /// abgeschaltet oder nicht unterstützt ist oder GitHub nicht erreichbar ist.
   Future<UpdateInfo?> check() async {
     if (!supported || !await enabled) return null;
     try {
@@ -86,7 +86,7 @@ class UpdateChecker {
   }
 }
 
-/// Picks the update out of GitHub's "latest release" answer.
+/// Sucht das Update aus GitHubs Antwort „latest release“ heraus.
 UpdateInfo? updateFromRelease(dynamic release, String currentVersion) {
   if (release is! Map) return null;
   final tag = release['tag_name'];

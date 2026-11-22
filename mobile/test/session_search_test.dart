@@ -50,7 +50,7 @@ void main() {
     expect(find.text('Moers'), findsNothing);
     expect(find.text('Mainz'), findsNothing);
 
-    // The country still finds the session, although the list shows only the place.
+    // Das Land findet die Ladung weiterhin, obwohl die Liste nur den Ort zeigt.
     await tester.enterText(find.byKey(const ValueKey('session-search')), 'moers germ');
     await _settle(tester);
     expect(find.text('Moers'), findsOneWidget);
