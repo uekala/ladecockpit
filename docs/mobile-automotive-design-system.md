@@ -1,77 +1,77 @@
-# Ladecockpit Mobile – Automotive Design System
+# Ladecockpit Mobil – Design-System im Fahrzeugstil
 
-Status: approved visual direction (2026-11-08)
+Stand: freigegebene Gestaltung (2026-11-08)
 
-The Home Assistant Ladecockpit dashboard screenshot approved on 2026-11-08 is the visual reference for the mobile app. This document translates that direction into implementation rules. It does not replace product behavior or remove existing features.
+Das am 2026-11-08 freigegebene Bildschirmfoto des Ladecockpit-Dashboards in Home Assistant ist die gestalterische Vorlage für die Handy-App. Dieses Dokument übersetzt diese Richtung in Regeln für die Umsetzung. Es ersetzt kein Produktverhalten und entfernt keine vorhandenen Funktionen.
 
-## Design principles
+## Grundsätze
 
-- Automotive instrument-cluster feeling: calm, precise, premium and immediately readable.
-- Dark-first interface with deep near-black surfaces and restrained emerald/teal highlights.
-- Vehicle and battery state are the visual focus; secondary analytics remain easy to scan.
-- Use clear German labels, explicit timestamps and honest freshness/offline states.
-- Mobile-first layouts with generous touch targets and no horizontal overflow.
+- Anmutung eines Kombiinstruments im Auto: ruhig, präzise, hochwertig und sofort lesbar.
+- Dunkle Oberfläche zuerst, mit tiefen, fast schwarzen Flächen und zurückhaltenden Akzenten in Smaragd und Petrol.
+- Fahrzeug und Akkustand stehen im Mittelpunkt; weitere Auswertungen bleiben leicht zu überblicken.
+- Klare deutsche Beschriftungen, ausdrückliche Zeitstempel und ehrliche Angaben zu Aktualität und Offline-Zustand.
+- Layouts zuerst fürs Handy, mit großzügigen Tippflächen und ohne seitliches Überlaufen.
 
-## Core color tokens
+## Grundfarben
 
-| Token | Value | Usage |
+| Wert | Farbe | Verwendung |
 |---|---|---|
-| Background | `#070B10` | Main app background |
-| Surface | `#111820` | Primary cards |
-| Surface elevated | `#182329` | Nested cards and controls |
-| Border | `#27333A` | Subtle card outlines |
-| Text primary | `#F2F6FA` | Main values and headings |
-| Text secondary | `#8D9AAF` | Metadata and supporting labels |
-| Accent green | `#39E6A5` | Live, connected, positive state |
-| Accent teal | `#22C9C3` | Battery gauge and interactive highlights |
-| Warning | `#F5B85B` | Stale data or attention required |
-| Error | `#FF6B70` | Failed operations and connection errors |
+| Hintergrund | `#070B10` | Haupthintergrund der App |
+| Fläche | `#111820` | Hauptkarten |
+| Fläche erhöht | `#182329` | Verschachtelte Karten und Bedienelemente |
+| Rahmen | `#27333A` | Dezente Kartenränder |
+| Text primär | `#F2F6FA` | Hauptwerte und Überschriften |
+| Text sekundär | `#8D9AAF` | Metadaten und ergänzende Beschriftungen |
+| Akzent Grün | `#39E6A5` | Live, verbunden, positiver Zustand |
+| Akzent Petrol | `#22C9C3` | Akkuanzeige und interaktive Hervorhebungen |
+| Warnung | `#F5B85B` | Veraltete Daten oder Handlungsbedarf |
+| Fehler | `#FF6B70` | Fehlgeschlagene Vorgänge und Verbindungsfehler |
 
-## Shape, depth and typography
+## Form, Tiefe und Schrift
 
-- Main cards: 24–30 px corner radius, subtle 1 px border and restrained dark gradient.
-- Secondary cards: 16–20 px corner radius.
-- Avoid heavy shadows and bright large-area fills; glow is reserved for live/active accents.
-- Headline values should be large and tabular where possible; metadata should remain legible.
-- Section labels use compact uppercase lettering with moderate tracking.
-- Keep spacing consistent in 4 px increments; primary card padding 20–24 px.
+- Hauptkarten: Eckenradius 24–30 px, dezenter Rahmen von 1 px und zurückhaltender dunkler Verlauf.
+- Nebenkarten: Eckenradius 16–20 px.
+- Keine schweren Schatten und keine großen hellen Flächen; Leuchten ist Live- und aktiven Akzenten vorbehalten.
+- Hauptwerte groß und möglichst mit Tabellenziffern; Metadaten bleiben gut lesbar.
+- Abschnittsbeschriftungen in kompakten Großbuchstaben mit mäßigem Zeichenabstand.
+- Abstände einheitlich in Schritten von 4 px; Innenabstand der Hauptkarten 20–24 px.
 
-## Dashboard hierarchy
+## Aufbau des Dashboards
 
-1. Header with app title, connection/live indicator and a clear refresh action.
-2. Vehicle hero card with vehicle name, model/configuration metadata and vehicle image when a valid asset is available.
-3. Large battery gauge as the dominant metric, with percentage and estimated range.
-4. Explicit data freshness label (live, last known, timestamp) and charging/offline state.
-5. Next charging recommendation / forecast.
-6. Monthly overview metrics.
-7. Last charging session, cost development, price radar, history and exports.
+1. Kopf mit App-Titel, Verbindungs- bzw. Live-Anzeige und einer klaren Aktualisieren-Aktion.
+2. Fahrzeugkarte mit Name des Fahrzeugs, Modell und Ausstattung und dem Bild des Fahrzeugs, wenn ein gültiges Bild vorliegt.
+3. Große Akkuanzeige als wichtigster Wert, mit Prozent und geschätzter Reichweite.
+4. Ausdrückliche Angabe zur Aktualität der Daten (live, zuletzt bekannt, Zeitstempel) und zum Lade- bzw. Offline-Zustand.
+5. Empfehlung bzw. Prognose für den nächsten Ladestopp.
+6. Kennzahlen des Monats.
+7. Letzte Ladung, Kostenentwicklung, Preis-Radar, Verlauf und Exporte.
 
-## Gauge and status behavior
+## Verhalten von Anzeige und Status
 
-- The battery gauge must show the actual state of charge; never use decorative sample values.
-- Keep the charging window or configured target visible when the API provides it.
-- Live data uses the green/teal accent; cached or stale data uses warning styling and a clear timestamp.
-- Offline is a connection/data freshness state, not a substitute for the last known battery value.
-- Missing values use a neutral placeholder; do not infer a range or percentage.
+- Die Akkuanzeige muss den tatsächlichen Ladestand zeigen; nie Beispielwerte zur Dekoration.
+- Ladefenster oder eingestelltes Ziel sichtbar lassen, wenn die API es liefert.
+- Live-Daten nutzen den grünen bzw. petrolfarbenen Akzent; zwischengespeicherte oder veraltete Daten die Warnfarbe und einen klaren Zeitstempel.
+- Offline ist ein Zustand der Verbindung bzw. der Aktualität, kein Ersatz für den zuletzt bekannten Akkustand.
+- Fehlende Werte bekommen einen neutralen Platzhalter; Reichweite oder Prozent nie erschließen.
 
-## Existing functionality must be preserved
+## Vorhandene Funktionen bleiben erhalten
 
-The redesign is presentation-only unless a separately reviewed change is explicitly required. Keep connection setup, secure password storage, Tailscale access, refresh, Tesla and optional Home Assistant status, charging history filters, price radar, cost development, invoice viewing, monthly reports, CSV export and ZIP sharing.
+Die Neugestaltung betrifft nur die Darstellung, außer eine eigens geprüfte Änderung ist ausdrücklich nötig. Erhalten bleiben: Einrichtung der Verbindung, sichere Speicherung des Passworts, Zugriff über Tailscale, Aktualisieren, Status von Tesla und dem optionalen Home Assistant, Filter der Ladehistorie, Preis-Radar, Kostenentwicklung, Rechnungsansicht, Monatsberichte, CSV-Export und Teilen als ZIP.
 
-## Accessibility and responsive behavior
+## Barrierefreiheit und Anpassung an die Bildschirmgröße
 
-- Maintain strong contrast on dark surfaces.
-- Do not communicate status by color alone; pair color with text and/or an icon.
-- Touch targets should be at least 44 px.
-- At narrow widths, stack content rather than compressing text or clipping values.
-- Respect system text scaling and avoid fixed-height content cards where text can grow.
+- Starken Kontrast auf dunklen Flächen halten.
+- Status nie allein über Farbe vermitteln; Farbe immer mit Text und/oder Symbol kombinieren.
+- Tippflächen mindestens 44 px groß.
+- Bei schmalen Bildschirmen Inhalte untereinander stapeln, statt Text zu stauchen oder Werte abzuschneiden.
+- Die Schriftgröße des Systems beachten und keine Karten mit fester Höhe, in denen Text wachsen kann.
 
-## Implementation sequence
+## Reihenfolge der Umsetzung
 
-1. Introduce centralized theme tokens and shared card styling.
-2. Rework the vehicle hero and battery gauge to match the approved reference.
-3. Apply the same card, spacing and typography rules to analytics, history and export sections.
-4. Verify loading, empty, offline, stale-data and error states.
-5. Run Flutter analyze, widget tests and Android release build before review.
+1. Zentrale Theme-Werte und gemeinsame Kartengestaltung einführen.
+2. Fahrzeugkarte und Akkuanzeige an die freigegebene Vorlage anpassen.
+3. Dieselben Regeln für Karten, Abstände und Schrift auf Auswertung, Verlauf und Exporte anwenden.
+4. Zustände für Laden, leer, offline, veraltete Daten und Fehler prüfen.
+5. Vor der Prüfung Flutter analyze, Widget-Tests und einen Android-Release-Build ausführen.
 
-No production deployment, live Home Assistant changes, credential changes or merge are part of this design foundation.
+Kein Ausrollen in Produktion, keine Änderungen am laufenden Home Assistant, keine Änderungen an Zugangsdaten und kein Merge gehören zu dieser Grundlage.

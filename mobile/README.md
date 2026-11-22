@@ -1,18 +1,18 @@
-# Ladecockpit Mobile (iOS + Android)
+# Ladecockpit Mobil (iOS + Android)
 
-Flutter client for the existing Ladecockpit FastAPI service.
+Flutter-App für den bestehenden FastAPI-Dienst von Ladecockpit.
 
-## Current scope
+## Umfang
 
-- Shared Flutter codebase for iOS and Android.
-- Reads the existing `GET /api/dashboard` endpoint.
-- Connection URL and app password are stored using the platform secure-storage plugin.
-- Intended for private access over an existing Tailscale connection; no public port forwarding is required.
-- Automotive dark design: central theme tokens in `lib/theme/app_theme.dart`, rules and colour table in [`docs/mobile-automotive-design-system.md`](../docs/mobile-automotive-design-system.md). The dashboard is split into three tabs (Cockpit, Ladevorgänge, Auswertung) with a bottom navigation bar.
+- Gemeinsamer Flutter-Code für iOS und Android.
+- Liest den bestehenden Endpunkt `GET /api/dashboard`.
+- Verbindungsadresse und App-Passwort liegen im sicheren Speicher der Plattform.
+- Gedacht für privaten Zugriff über eine bestehende Tailscale-Verbindung; eine öffentliche Portweiterleitung ist nicht nötig.
+- Dunkles Fahrzeug-Design: zentrale Theme-Werte in `lib/theme/app_theme.dart`, Regeln und Farbtabelle in [`docs/mobile-automotive-design-system.md`](../docs/mobile-automotive-design-system.md). Das Dashboard ist in drei Tabs aufgeteilt (Cockpit, Ladevorgänge, Auswertung) mit einer Navigationsleiste unten.
 
-## Local development
+## Lokale Entwicklung
 
-Install Flutter (stable), then:
+Flutter (stable) installieren, dann:
 
 ```sh
 cd mobile
@@ -21,35 +21,35 @@ flutter analyze
 flutter run
 ```
 
-## Connection setup
+## Verbindung einrichten
 
-In the app, enter the Ladecockpit URL reachable from the phone over Tailscale, for example:
+In der App die Adresse von Ladecockpit eintragen, die das Handy über Tailscale erreicht, zum Beispiel:
 
 ```
 http://100.x.y.z:8077
 ```
 
-Use the actual Tailscale IP or MagicDNS hostname and the port configured for the Ladecockpit service. Prefer HTTPS through Tailscale Serve or a reverse proxy. If you use plain HTTP, keep the endpoint reachable only inside your trusted Tailscale network; never expose it publicly.
+Die echte Tailscale-IP oder den MagicDNS-Namen und den Port des Ladecockpit-Dienstes verwenden. Besser ist HTTPS über Tailscale Serve oder einen Reverse-Proxy. Bei unverschlüsseltem HTTP den Endpunkt nur im vertrauenswürdigen Tailscale-Netz erreichbar halten und nie öffentlich freigeben.
 
-The app accepts plain HTTP only for addresses that do not cross the open internet: Tailscale (`100.64.0.0/10`, `*.ts.net`, `fd7a:115c:a1e0::/48`), private home networks (`10.x`, `172.16–31.x`, `192.168.x`, `fc00::/7`), and local names (`*.local`, `*.home.arpa`, `*.internal`, names without a dot). Every other address needs HTTPS.
+Unverschlüsseltes HTTP akzeptiert die App nur für Adressen, die nicht über das offene Internet laufen: Tailscale (`100.64.0.0/10`, `*.ts.net`, `fd7a:115c:a1e0::/48`), private Heimnetze (`10.x`, `172.16–31.x`, `192.168.x`, `fc00::/7`) und lokale Namen (`*.local`, `*.home.arpa`, `*.internal`, Namen ohne Punkt). Jede andere Adresse braucht HTTPS.
 
-For a live standalone/Docker installation, `APP_PASSWORD` is required by default. Enter the same password in the app; it is stored in platform secure storage, not in source code.
+Eine Live-Installation im Standalone- oder Docker-Betrieb verlangt standardmäßig `APP_PASSWORD`. Dasselbe Passwort in der App eintragen; es liegt im sicheren Speicher der Plattform, nicht im Quellcode.
 
-### Home Assistant add-on: secure direct access
+### Home-Assistant-App: sicherer direkter Zugriff
 
-Home Assistant Ingress is protected by Home Assistant authentication, but a separately exposed add-on port is a different entry point. The mobile app connects to that direct endpoint; it cannot use the browser's Ingress session.
+Ingress ist durch die Anmeldung von Home Assistant geschützt, ein eigens freigegebener Port der App ist aber ein anderer Zugang. Die Handy-App verbindet sich mit diesem direkten Endpunkt; die Ingress-Sitzung des Browsers kann sie nicht nutzen.
 
-For add-on versions that include the `mobile_app_password` option:
+Für Versionen der App mit der Option `mobile_app_password`:
 
-1. Open the Ladecockpit add-on configuration and set a strong, unique **Mobile App Password**.
-2. Save the configuration and restart the add-on so the password is applied.
-3. Only then enable the add-on's network mapping for `8077/tcp` (host port 8077, or another private host port if preferred).
-4. Keep that port reachable only on your trusted LAN/Tailscale network. Do not create a router port-forward or expose it to the public internet.
-5. In the mobile app, enter the Home Assistant host's Tailscale IP or MagicDNS name and the mapped port, plus the same Mobile App Password.
+1. In der Konfiguration der Ladecockpit-App ein starkes, einmaliges **Mobiles App-Passwort** setzen.
+2. Konfiguration speichern und die App neu starten, damit das Passwort gilt.
+3. Erst dann die Netzwerkfreigabe für `8077/tcp` einschalten (Host-Port 8077 oder ein anderer privater Host-Port).
+4. Den Port nur im vertrauenswürdigen LAN bzw. Tailscale-Netz erreichbar halten. Keine Portweiterleitung im Router anlegen und ihn nicht ins öffentliche Internet stellen.
+5. In der Handy-App die Tailscale-IP oder den MagicDNS-Namen des Home-Assistant-Hosts und den freigegebenen Port eintragen, dazu dasselbe Mobile App-Passwort.
 
-The port mapping is disabled by default. Do not enable it before setting the password. If the option is not visible in the add-on configuration, the installed add-on version does not yet contain this feature; do not work around this by exposing the port without authentication.
+Die Portfreigabe ist standardmäßig aus. Nicht einschalten, bevor das Passwort gesetzt ist. Fehlt die Option in der Konfiguration, enthält die installierte Version die Funktion noch nicht; dann den Port nicht ohne Anmeldung freigeben.
 
-## Build
+## Bauen
 
 ```sh
 flutter build apk --release
@@ -57,29 +57,29 @@ flutter build appbundle --release
 flutter build ios --release --no-codesign
 ```
 
-An iOS archive suitable for TestFlight/App Store distribution still requires Apple signing credentials and provisioning. Android Play distribution requires a separately configured signing key.
+Ein iOS-Archiv für TestFlight oder den App Store braucht weiterhin Signierdaten und ein Provisioning von Apple. Für den Play Store ist ein eigens eingerichteter Signierschlüssel nötig.
 
-## Android updates and signing
+## Android-Updates und Signierung
 
-Android only installs an update over an existing app when both are signed with the same key and the build number (`versionCode`) is higher. CI regenerates the Android project with `flutter create` on every run; without its own configuration Flutter signs release builds with the runner's random debug key. That is why a new APK could not be installed over an installed one.
+Android installiert ein Update über eine vorhandene App nur, wenn beide mit demselben Schlüssel signiert sind und die Build-Nummer (`versionCode`) höher ist. Die CI erzeugt das Android-Projekt bei jedem Lauf neu mit `flutter create`; ohne eigene Konfiguration signiert Flutter Release-Builds mit dem zufälligen Debug-Schlüssel des Runners. Deshalb ließ sich eine neue APK nicht über eine installierte installieren.
 
-How it works now:
+So funktioniert es jetzt:
 
-- `tool/configure-android-signing.py` signs release builds with a persistent upload key from GitHub Actions secrets. Passwords stay in environment variables; nothing is written to the repository. The keystore is deleted from the runner after the build.
-- The build number is the workflow run number + 1, so it rises with every build.
-- `tool/verify-apk-signature.sh` fails the build if a signed APK carries a debug key or, when the repository variable `ANDROID_SIGNING_CERT_SHA256` is set, any other certificate.
-- Without the secrets (for example in pull requests from a fork) the build still runs, carries the debug key and is marked as a test build that cannot be installed as an update. A manual run with **release** enabled fails instead.
+- `tool/configure-android-signing.py` signiert Release-Builds mit einem dauerhaften Upload-Schlüssel aus den Secrets von GitHub Actions. Passwörter bleiben in Umgebungsvariablen; ins Repository wird nichts geschrieben. Der Keystore wird nach dem Build vom Runner gelöscht.
+- Die Build-Nummer ist die Laufnummer des Workflows + 1 und steigt so mit jedem Build.
+- `tool/verify-apk-signature.sh` lässt den Build scheitern, wenn eine signierte APK einen Debug-Schlüssel trägt oder, falls die Repository-Variable `ANDROID_SIGNING_CERT_SHA256` gesetzt ist, ein anderes Zertifikat.
+- Ohne die Secrets (zum Beispiel bei Pull Requests aus einem Fork) läuft der Build trotzdem, trägt den Debug-Schlüssel und ist als Test-Build gekennzeichnet, der sich nicht als Update installieren lässt. Ein Lauf von Hand mit **release** schlägt dagegen fehl.
 
-One-time setup and verification (by the repository owner; never commit the key or paste it into a chat):
+Einmalige Einrichtung und Prüfung (durch den Besitzer des Repositorys; den Schlüssel nie committen oder irgendwo einfügen):
 
-1. **Create the key and the secrets on your own computer** (Linux, macOS, or Git Bash/WSL on Windows; needs `keytool` from a JDK and a logged-in `gh`):
+1. **Schlüssel und Secrets auf dem eigenen Rechner anlegen** (Linux, macOS oder Git Bash/WSL unter Windows; braucht `keytool` aus einem JDK und ein angemeldetes `gh`):
    `bash mobile/tool/setup-android-signing.sh uekala/ladecockpit`
-   The script asks for a password, creates `ladecockpit-upload.jks` (or reuses an existing one), sets the four secrets and the variable `ANDROID_SIGNING_CERT_SHA256`. It refuses to run if the repository already has a key, because a second key would break updates.
-2. **Back up** the keystore file and the password (password manager plus an offline copy). Without them no further updates are possible.
-3. **First signed build:** `gh workflow run "Mobile app builds" --repo uekala/ladecockpit --ref main -f release=true`. In the run summary, the section "Android-Signatur" must show the certificate and "Abgleich mit `ANDROID_SIGNING_CERT_SHA256`: ok".
-4. Download the APK (`gh run download <run-id> --repo uekala/ladecockpit -n ladecockpit-android-apk`), uninstall the currently installed app once, then `adb install app-release.apk`.
-5. **Update test:** start the workflow a second time, download the new APK and run `adb install -r app-release.apk`. It must report `Success`; `adb shell dumpsys package io.github.uekala.ladecockpit | grep versionCode` shows the higher build number. Only then is the signing fix verified.
+   Das Skript fragt nach einem Passwort, legt `ladecockpit-upload.jks` an (oder nimmt eine vorhandene Datei), setzt die vier Secrets und die Variable `ANDROID_SIGNING_CERT_SHA256`. Hat das Repository schon einen Schlüssel, bricht es ab, weil ein zweiter Schlüssel die Updates kaputt machen würde.
+2. Keystore-Datei und Passwort **sichern** (Passwortmanager und eine Offline-Kopie). Ohne sie sind keine weiteren Updates möglich.
+3. **Erster signierter Build:** `gh workflow run "Mobile app builds" --repo uekala/ladecockpit --ref main -f release=true`. In der Zusammenfassung des Laufs muss der Abschnitt „Android-Signatur“ das Zertifikat zeigen und „Abgleich mit `ANDROID_SIGNING_CERT_SHA256`: ok“.
+4. Die APK herunterladen (`gh run download <run-id> --repo uekala/ladecockpit -n ladecockpit-android-apk`), die installierte App einmal deinstallieren, dann `adb install app-release.apk`.
+5. **Update-Test:** den Workflow ein zweites Mal starten, die neue APK herunterladen und `adb install -r app-release.apk` ausführen. Es muss `Success` melden; `adb shell dumpsys package io.github.uekala.ladecockpit | grep versionCode` zeigt die höhere Build-Nummer. Erst dann ist die Signierung bestätigt.
 
-**Releases:** when a release is published on GitHub, the workflow builds the APK with the release key (it stops if the key is missing), names it after the release (`ladecockpit-0.12.7.apk`, version name taken from the tag) and attaches it together with its SHA-256 checksum to the release. Release builds also carry the version (`--dart-define=LADECOCKPIT_VERSION`); with it, the Android app asks `api.github.com` once per start for the latest release and shows a banner with a download button when it is newer. Test builds have no version and never check. Users can switch the check off in the connection settings.
+**Releases:** Wird auf GitHub ein Release veröffentlicht, baut der Workflow die APK mit dem Release-Schlüssel (fehlt er, bricht er ab), benennt sie nach dem Release (`ladecockpit-0.12.7.apk`, Versionsname aus dem Tag) und hängt sie mit ihrer SHA-256-Prüfsumme an das Release. Release-Builds tragen außerdem die Version (`--dart-define=LADECOCKPIT_VERSION`); damit fragt die Android-App einmal pro Start bei `api.github.com` nach dem neuesten Release und zeigt ein Banner mit Download-Knopf, wenn es neuer ist. Test-Builds haben keine Version und prüfen nie. In den Verbindungseinstellungen lässt sich die Prüfung abschalten.
 
-Note: the Android application ID and the iOS bundle identifier are `io.github.uekala.ladecockpit` (set with `--org io.github.uekala` in `flutter create`; CI checks both). The ID must not change any more: a build with another ID installs as a second app instead of an update. If you still have a build with the old ID `com.example.ladecockpit` on your phone, uninstall it once.
+Hinweis: Die Android-App-ID und die iOS-Bundle-ID sind `io.github.uekala.ladecockpit` (gesetzt mit `--org io.github.uekala` in `flutter create`; die CI prüft beide). Die ID darf sich nicht mehr ändern: Ein Build mit anderer ID installiert sich als zweite App statt als Update. Ist noch ein Build mit der alten ID `com.example.ladecockpit` auf dem Handy, diesen einmal deinstallieren.

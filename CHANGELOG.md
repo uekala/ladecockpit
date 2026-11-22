@@ -2,344 +2,343 @@
 
 ## 0.23.4 – 2026-11-22
 
-- **An offline car is no setup problem.** When the car is asleep or has no reception and Home Assistant restarts, the car integration has no values until the car is back online – the setup check then reported battery level, range, odometer and charging state as "unavailable right now" and asked to check the setup. Now, when every entity the car delivers exists but has no value, and Ladecockpit has kept values of the car before, the setup check says "Car offline – values from the last reading 21.11. 21:12" and shows no warning. A single entity without a value while the car is online, an entity that does not exist, and a car that never delivered a value are still marked. New field `offline` in `setup.checks` (time of the last reading), `offline` per entity.
-- **Tips can be hidden.** A tip of the setup check ("Do you charge at home too? …") can be hidden with × in the web app and the mobile app; *Show hidden tips again* brings them back. A feature that is half set up (e.g. a comparison with a combustion car without a fuel price) stays until it is fixed. Hidden tips are kept on the server and go into the backup. API: `PUT /api/hint` (`{"id": "no_home", "hidden": true}`), `DELETE /api/hints/hidden`; new fields `dismissable` per hint and `hidden` (number of hidden tips) in `setup.checks`.
-- Mobile app: the cockpit says "Car offline" instead of an orange "Charging state not available" while it shows the last known values; × next to each tip, and *Show hidden tips again* in the setup check.
+- **Ein Auto ohne Verbindung ist kein Einrichtungsproblem.** Schläft das Auto oder hat es keinen Empfang und Home Assistant startet neu, hat die Auto-Integration keine Werte, bis das Auto wieder online ist. Die Einrichtungsprüfung meldete dann Akkustand, Reichweite, Kilometerstand und Ladestatus als „gerade nicht verfügbar“ und bat, die Einrichtung zu prüfen. Wenn jetzt jede Entität des Autos existiert, aber keinen Wert hat, und Ladecockpit schon Werte des Autos gespeichert hat, sagt die Einrichtungsprüfung „Auto offline – Werte vom letzten Stand 21.11. 21:12“ und zeigt keine Warnung. Eine einzelne Entität ohne Wert bei verbundenem Auto, eine Entität, die es nicht gibt, und ein Auto, das noch nie einen Wert geliefert hat, werden weiter markiert. Neues Feld `offline` in `setup.checks` (Zeitpunkt des letzten Stands), `offline` je Entität.
+- **Tipps lassen sich ausblenden.** Einen Tipp der Einrichtungsprüfung („Lädst du auch zu Hause? …“) blendest du in der Web-App und in der Handy-App mit × aus; *Ausgeblendete Tipps wieder zeigen* holt sie zurück. Eine halb eingerichtete Funktion (z. B. ein Verbrenner-Vergleich ohne Spritpreis) bleibt stehen, bis sie behoben ist. Ausgeblendete Tipps werden auf dem Server gespeichert und kommen mit in die Datensicherung. API: `PUT /api/hint` (`{"id": "no_home", "hidden": true}`), `DELETE /api/hints/hidden`; neue Felder `dismissable` je Hinweis und `hidden` (Zahl der ausgeblendeten Tipps) in `setup.checks`.
+- Handy-App: Das Cockpit sagt „Auto offline“ statt eines orangen „Ladestatus nicht verfügbar“, solange es die letzten bekannten Werte zeigt; × neben jedem Tipp und *Ausgeblendete Tipps wieder zeigen* in der Einrichtungsprüfung.
 
 ## 0.23.3 – 2026-11-21
 
-- Web app on the phone: the map pin next to a MultiPass station is now a 44 × 44 px button instead of a 16 px wide icon, so it is easy to tap – in both looks, also in the Home Assistant app.
-- The mobile app is unchanged.
+- Web-App auf dem Handy: Der Kartenpunkt neben einer MultiPass-Station ist jetzt ein Knopf mit 44 × 44 px statt eines 16 px breiten Symbols und lässt sich leicht antippen – in beiden Designs, auch in der Home-Assistant-App.
+- Die Handy-App ist unverändert.
 
 ## 0.23.2 – 2026-11-21
 
-- More tests for the connection to Tesla: an expired access token, the time filter, paging through many sessions and the monthly request budget. Nothing changes in use.
-- The mobile app is unchanged.
+- Mehr Tests für die Verbindung zu Tesla: ein abgelaufenes Zugriffstoken, der Zeitfilter, das Blättern durch viele Ladungen und das monatliche Abfrage-Budget. Im Gebrauch ändert sich nichts.
+- Die Handy-App ist unverändert.
 
 ## 0.23.1 – 2026-11-21
 
-- **Fewer Tesla requests when Tesla asks to slow down.** If the Fleet API answers *Too many requests* (HTTP 429), Ladecockpit now waits as long as Tesla says (`Retry-After`, otherwise 5 minutes) before it asks again – also during the quick syncs after charging – instead of repeating the request and using up the monthly request budget. The log shows one line instead of an error with traceback; after three failed syncs in a row the problem notification appears as before.
-- The mobile app is unchanged.
+- **Weniger Tesla-Abfragen, wenn Tesla um Geduld bittet.** Antwortet die Fleet API mit *Too many requests* (HTTP 429), wartet Ladecockpit jetzt so lange, wie Tesla sagt (`Retry-After`, sonst 5 Minuten), bevor es wieder fragt – auch bei den schnellen Abgleichen nach dem Laden –, statt die Anfrage zu wiederholen und das monatliche Abfrage-Budget aufzubrauchen. Im Log steht eine Zeile statt eines Fehlers mit Traceback; nach drei fehlgeschlagenen Abgleichen in Folge erscheint wie bisher die Problem-Benachrichtigung.
+- Die Handy-App ist unverändert.
 
 ## 0.23.0 – 2026-11-21
 
-- **New price at a site.** When a site's price changed, Ladecockpit says so: "New price in Willich: since 20.11. a kWh costs €0.40 instead of €0.37 (+€0.03/kWh)." The sites table shows the price now next to the average, which still includes the older sessions. A change is only taken when the sessions before and after it each have one price, at least 0.02 apart, and some of them were charged at the same time of day – so a price by time of day, or a site with an off-peak price, never passes for a change. The tip shows for 60 days. New field `price_changes` in `/api/dashboard`, `price_now` and `price_since` in `sites`.
-- **Long-term statistics in Home Assistant.** `sensor.ladecockpit_month_cost` now has `state_class: total` with the start of the month as `last_reset`, so Home Assistant keeps the monthly totals for good instead of about ten days. New sensor `sensor.ladecockpit_month_energy`: the kWh charged this month (invoices plus charging at home), also with long-term statistics – it can go into the energy dashboard.
-- **Home Assistant integration (optional).** `custom_components/ladecockpit`, installable through HACS as a custom repository, turns Ladecockpit's entities into real ones: with a unique ID and a device, renamable, assignable to an area and restored right after a restart. The entity IDs stay the same; the integration takes over the states the app wrote before. There is nothing to set: within five minutes the app finds the loaded integration (`/api/config`) and sends each value as a `ladecockpit_state` event instead of writing states, all of them again once an hour. Without the integration nothing changes.
-- Tests of the integration against Home Assistant itself (`tests_ha`, own CI job); `httpx2` for the test client, so the tests no longer warn.
-- Mobile app: own icon for the new-price tip.
+- **Neuer Preis an einem Standort.** Hat sich der Preis eines Standorts geändert, sagt Ladecockpit das: „Neuer Preis in Willich: seit 20.11. kostet eine kWh 0,40 € statt 0,37 € (+0,03 €/kWh).“ Die Standort-Tabelle zeigt den aktuellen Preis jetzt neben dem Durchschnitt, der die älteren Ladungen weiter enthält. Eine Änderung zählt nur, wenn die Ladungen davor und danach jeweils einen einheitlichen Preis haben, die Preise mindestens 0,02 auseinanderliegen und einige Ladungen zur gleichen Tageszeit stattfanden – ein Preis nach Tageszeit oder ein Standort mit günstigem Nachtpreis gilt also nie als Änderung. Der Tipp bleibt 60 Tage stehen. Neues Feld `price_changes` in `/api/dashboard`, `price_now` und `price_since` in `sites`.
+- **Langzeitstatistik in Home Assistant.** `sensor.ladecockpit_month_cost` hat jetzt `state_class: total` mit dem Monatsanfang als `last_reset`. Home Assistant behält die Monatssummen damit dauerhaft statt etwa zehn Tage. Neuer Sensor `sensor.ladecockpit_month_energy`: die in diesem Monat geladenen kWh (Rechnungen plus Laden zu Hause), ebenfalls mit Langzeitstatistik – er kann ins Energie-Dashboard.
+- **Home-Assistant-Integration (optional).** `custom_components/ladecockpit`, über HACS als benutzerdefiniertes Repository installierbar, macht aus den Entitäten von Ladecockpit echte: mit eindeutiger ID und Gerät, umbenennbar, einem Bereich zuordenbar und gleich nach einem Neustart wiederhergestellt. Die Entitäts-IDs bleiben gleich; die Integration übernimmt die Zustände, die die App vorher geschrieben hat. Einzustellen gibt es nichts: Innerhalb von fünf Minuten findet die App die geladene Integration (`/api/config`) und schickt jeden Wert als Event `ladecockpit_state`, statt Zustände zu schreiben, einmal pro Stunde alle erneut. Ohne die Integration ändert sich nichts.
+- Tests der Integration gegen Home Assistant selbst (`tests_ha`, eigener CI-Job); `httpx2` für den Testclient, damit die Tests nicht mehr warnen.
+- Handy-App: eigenes Symbol für den Tipp zum neuen Preis.
 
 ## 0.22.0 – 2026-11-21
 
-- **Reference price from your invoices.** Without a reference price of your own, Ladecockpit now takes the day price of your sites from the invoices: sessions at night or early in the morning at a site with a cheaper off-peak price count at that site's day price, all others at their own price. The month card shows "At the day price of your sites", the invoices and what charging off-peak saved, and a tip says it ("Charging at night and early in the morning saved you €9.00 this month …"). Only listed prices are compared, so a price change, a dear site or a Tesla credit never counts as a saving; the comparison shows once the saving is at least 0.50. A *Reference price entity* or *Reference price per kWh* still has the last word, and `0` turns the comparison off. New fields `reference_source`, `reference_saving` and `reference_off_kwh` in `compare` of `/api/dashboard`.
-- The demo shows the new comparison instead of a fixed reference price.
-- The mobile app is unchanged; it shows the new tip with the others.
+- **Referenzpreis aus deinen Rechnungen.** Ohne eigenen Referenzpreis nimmt Ladecockpit jetzt den Tagespreis deiner Standorte aus den Rechnungen: Ladungen nachts oder früh am Morgen an einem Standort mit günstigerem Nachtpreis zählen zum Tagespreis dieses Standorts, alle anderen zu ihrem eigenen Preis. Die Monatskarte zeigt „Zum Tagespreis deiner Standorte“, die Rechnungen und was das Laden zur günstigen Zeit gespart hat, und ein Tipp sagt es dazu („Laden nachts und früh am Morgen hat dir diesen Monat 9,00 € gespart …“). Verglichen werden nur ausgewiesene Preise, eine Preisänderung, ein teurer Standort oder eine Gutschrift von Tesla zählt also nie als Ersparnis; der Vergleich erscheint ab einer Ersparnis von 0,50. Eine *Entität Referenzpreis* oder ein *Referenzpreis pro kWh* hat weiter das letzte Wort, und `0` schaltet den Vergleich ab. Neue Felder `reference_source`, `reference_saving` und `reference_off_kwh` in `compare` von `/api/dashboard`.
+- Die Demo zeigt den neuen Vergleich statt eines festen Referenzpreises.
+- Die Handy-App ist unverändert; sie zeigt den neuen Tipp zusammen mit den anderen.
 
 ## 0.21.1 – 2026-11-21
 
-- Dependencies updated: FastAPI 0.165.0, pypdf 7.1.1.
-- Blueprint *Book invoice*: the session text is cut to the maximum length of the *Last session text* entity (100 characters by default), so a long MultiPass operator name no longer makes Home Assistant reject it and skip the extra actions.
-- More tests for the connection to Home Assistant (states, history, events, errors).
-- The mobile app is unchanged.
+- Abhängigkeiten aktualisiert: FastAPI 0.165.0, pypdf 7.1.1.
+- Blueprint *Rechnung buchen*: Der Text der Ladung wird auf die Höchstlänge der Entität *Text der letzten Ladung* gekürzt (standardmäßig 100 Zeichen). Ein langer MultiPass-Betreibername lässt Home Assistant den Text also nicht mehr ablehnen und die weiteren Aktionen überspringen.
+- Mehr Tests für die Verbindung zu Home Assistant (Zustände, Verlauf, Events, Fehler).
+- Die Handy-App ist unverändert.
 
 ## 0.21.0 – 2026-11-21
 
-- **Notifications on the phone without Home Assistant.** New options *Push to the phone (ntfy topic)* (`NTFY_URL`) and *ntfy access token* (`NTFY_TOKEN`): Ladecockpit sends every new invoice ("⚡ New invoice · Moers" – kWh, amount, price per kWh), problems with the Tesla sign-in or the sync (and when they are solved) and the monthly report to an ntfy topic – ntfy.sh or your own server. Subscribe to the same topic in the ntfy app (Android, iOS) and the messages arrive even when the phone is not in your home network and without the Home Assistant blueprint. Only sessions that start after the option was set are sent, each once. *Send test message* under *Operation* in the web app checks the setup (`POST /api/push/test`). The monthly report now also runs for installations without Home Assistant. On ntfy.sh the topic name is the secret: make it long and random.
-- The comparison with a combustion car takes what the distance really cost: the *Tesla* line now matches the invoices to the cent (it was worked back from the rounded cost per 100 km and could be a few cents off), and the savings with it. New field `distance_cost` in `month` and `monthly`.
-- The mobile app is unchanged.
+- **Benachrichtigungen aufs Handy ohne Home Assistant.** Neue Optionen *Push aufs Handy (ntfy-Thema)* (`NTFY_URL`) und *ntfy-Zugangstoken* (`NTFY_TOKEN`): Ladecockpit schickt jede neue Rechnung („⚡ Neue Rechnung · Moers“ – kWh, Betrag, Preis pro kWh), Probleme mit der Tesla-Anmeldung oder dem Abgleich (und wenn sie gelöst sind) und den Monatsbericht an ein ntfy-Thema – auf ntfy.sh oder deinem eigenen Server. Abonnierst du dasselbe Thema in der ntfy-App (Android, iOS), kommen die Nachrichten auch an, wenn das Handy nicht im Heimnetz ist, und ohne den Home-Assistant-Blueprint. Gesendet werden nur Ladungen, die nach dem Setzen der Option beginnen, jede einmal. *Testnachricht senden* unter *Betrieb* in der Web-App prüft die Einrichtung (`POST /api/push/test`). Der Monatsbericht läuft jetzt auch bei Installationen ohne Home Assistant. Auf ntfy.sh ist der Name des Themas das Geheimnis: lang und zufällig wählen.
+- Der Vergleich mit einem Verbrenner nimmt, was die Strecke wirklich gekostet hat: Die Zeile *Tesla* passt jetzt centgenau zu den Rechnungen (vorher wurde sie aus den gerundeten Kosten pro 100 km zurückgerechnet und konnte ein paar Cent abweichen), die Ersparnis damit auch. Neues Feld `distance_cost` in `month` und `monthly`.
+- Die Handy-App ist unverändert.
 
 ## 0.20.0 – 2026-11-21
 
-- **Setup step by step.** Until Ladecockpit runs, the web app shows the setup as a checked list instead of a static guide: Tesla developer app → sign in with Tesla → first sync, then (optional) Home Assistant, its entities and further options. Every step says what Ladecockpit sees right now ("Client ID is set.", "12 sessions fetched, last 21.11. 09:14", "1 of 5 entities does not deliver a fitting value", an expired Tesla sign-in with Tesla's message); the next step to do is marked and opens its instructions – the Tesla guide, the sign-in, or *Sync now*. *Check again* reads everything anew. Once all required steps are done, the list moves into the folded *Setup check*. `setup.checks.steps` in `/api/dashboard`, also without Home Assistant.
-- The setup check no longer warns about *Time to full* or *Charging power* being unavailable while the car is not charging – those entities only have a value while charging ("only while charging").
-- Mobile app: the setup card names the next step ("Next step: Sign in with Tesla") and lists the steps that are open or have a problem.
+- **Einrichtung Schritt für Schritt.** Bis Ladecockpit läuft, zeigt die Web-App die Einrichtung als geprüfte Liste statt als feste Anleitung: Tesla-Entwickler-App → bei Tesla anmelden → erster Abgleich, danach (optional) Home Assistant, seine Entitäten und weitere Optionen. Jeder Schritt sagt, was Ladecockpit gerade sieht („Client ID ist gesetzt.“, „12 Ladungen abgerufen, letzte 21.11. 09:14“, „1 von 5 Entitäten liefert keinen passenden Wert“, eine abgelaufene Tesla-Anmeldung mit der Meldung von Tesla); der nächste offene Schritt ist markiert und öffnet seine Anleitung – die Tesla-Anleitung, die Anmeldung oder *Jetzt abgleichen*. *Erneut prüfen* liest alles neu ein. Sind alle nötigen Schritte erledigt, wandert die Liste in die eingeklappte *Einrichtungsprüfung*. `setup.checks.steps` in `/api/dashboard`, auch ohne Home Assistant.
+- Die Einrichtungsprüfung warnt nicht mehr, dass *Zeit bis voll* oder *Ladeleistung* nicht verfügbar sind, solange das Auto nicht lädt – diese Entitäten haben nur beim Laden einen Wert („nur beim Laden“).
+- Handy-App: Die Einrichtungskarte nennt den nächsten Schritt („Nächster Schritt: Bei Tesla anmelden“) und listet die Schritte, die offen sind oder ein Problem haben.
 
 ## 0.19.0 – 2026-11-21
 
-- **Tips as cards.** What Ladecockpit notices – the cheapest time and site, off-peak prices, MultiPass, idle fees, slow sessions, credits – now stands as cards near the top of the web app and in *Auswertung* of the mobile app, each with a way to what it is about: "Radar for Mainz", "To the sessions" (the mobile app fills the search with the site), "To this month".
-- **Price radar per site.** Chips above the radar switch from all sites to one of your frequent sites (from 3 sessions there), so the time windows no longer mix the prices of different sites. `site_radar` in `/api/dashboard`.
-- **Setup check.** The web app and the mobile app say which options would add something ("You have a fuel price sensor – with *Fuel price as a daily average* …", "Without *Odometer entity* there is no distance …") and show every entity from Home Assistant with its current value and unit – an entity that is missing, unavailable, not a number or in an unexpected unit is marked. In the Home Assistant app a note says how to show options the configuration hides. `setup.checks` in `/api/dashboard`.
-- **Cost per 100 km next to the combustion car.** The monthly chart of the web app switches between cost, kWh and cost per 100 km, the latter with the combustion car beside the Tesla for every month (`fuel_per_100` in `monthly`). The mobile app has the same comparison as its own chart.
-- **Mobile app: comparison with a combustion car.** The cockpit shows the month as the web app does: combustion car (with the price per litre – daily average, paid or fixed), Tesla and what you saved.
-- **Exports in one place.** The web app gathers the CSV, the backup (download and restore), the year overviews and the monthly reports with their invoices in one panel *Exports and backup*. The mobile app can now share or save the backup as well.
-- **Mobile app: accessibility.** Figures, the radar rows, the comparison and the charts are read out as one sentence each, headings are marked as headings, and with large system text the figures of the month stand one per row.
+- **Tipps als Karten.** Was Ladecockpit auffällt – die günstigste Zeit und der günstigste Standort, Nachtpreise, MultiPass, Blockiergebühren, langsame Ladungen, Gutschriften – steht jetzt als Karten weit oben in der Web-App und unter *Auswertung* in der Handy-App, jede mit einem Weg dorthin, worum es geht: „Radar für Mainz“, „Zu den Ladungen“ (die Handy-App füllt die Suche mit dem Standort), „Zu diesem Monat“.
+- **Preis-Radar je Standort.** Chips über dem Radar wechseln von allen Standorten zu einem deiner häufigen Standorte (ab 3 Ladungen dort). Die Zeitfenster vermischen so nicht mehr die Preise verschiedener Standorte. `site_radar` in `/api/dashboard`.
+- **Einrichtungsprüfung.** Web-App und Handy-App sagen, welche Optionen noch etwas bringen würden („Du hast einen Spritpreis-Sensor – mit *Spritpreis als Tagesdurchschnitt* …“, „Ohne *Entität Kilometerstand* gibt es keine Strecke …“), und zeigen jede Entität aus Home Assistant mit aktuellem Wert und Einheit – eine Entität, die fehlt, nicht verfügbar ist, keine Zahl liefert oder eine unerwartete Einheit hat, wird markiert. In der Home-Assistant-App sagt ein Hinweis, wie man Optionen einblendet, die die Konfiguration versteckt. `setup.checks` in `/api/dashboard`.
+- **Kosten pro 100 km neben dem Verbrenner.** Das Monatsdiagramm der Web-App wechselt zwischen Kosten, kWh und Kosten pro 100 km, letztere für jeden Monat mit dem Verbrenner neben dem Tesla (`fuel_per_100` in `monthly`). Die Handy-App hat denselben Vergleich als eigenes Diagramm.
+- **Handy-App: Vergleich mit einem Verbrenner.** Das Cockpit zeigt den Monat wie die Web-App: Verbrenner (mit dem Literpreis – Tagesdurchschnitt, bezahlt oder fest), Tesla und was du gespart hast.
+- **Exporte an einem Ort.** Die Web-App sammelt CSV, Datensicherung (herunterladen und einspielen), Jahresübersichten und Monatsberichte mit ihren Rechnungen in einem Bereich *Exporte und Datensicherung*. Die Handy-App kann die Datensicherung jetzt auch teilen oder speichern.
+- **Handy-App: Barrierefreiheit.** Zahlen, die Zeilen des Radars, der Vergleich und die Diagramme werden jeweils als ein Satz vorgelesen, Überschriften sind als Überschriften ausgezeichnet, und bei großer Systemschrift stehen die Zahlen des Monats einzeln untereinander.
 
 ## 0.18.0 – 2026-11-21
 
-- **Fuel price as a daily average.** New option *Fuel price as a daily average* (`FUEL_PRICE_DAILY`, off by default): the comparison with a combustion car prices every day's distance at that day's average of *Fuel price from an entity* – e.g. the cheapest E10 price near you, which changes many times a day – instead of the price per litre you paid. Each price counts for as long as it was shown. The web app shows the average over the month, weighted by the kilometres of each day ("Verbrenner (8,3 L/100 km · Ø 1,92 €/L je Tag)"); the monthly history, the monthly report and the projection follow. A day without a price takes the nearest day with one (up to 7 days away). Ladecockpit now keeps the readings of the fuel price entity itself and takes the last 10 days from Home Assistant on the first start; months before that keep the price you paid.
-- The mobile app is unchanged.
+- **Spritpreis als Tagesdurchschnitt.** Neue Option *Spritpreis als Tagesdurchschnitt* (`FUEL_PRICE_DAILY`, standardmäßig aus): Der Vergleich mit einem Verbrenner berechnet die Strecke jedes Tages mit dem Tagesdurchschnitt von *Spritpreis aus Entität* – z. B. dem günstigsten E10-Preis in deiner Nähe, der sich viele Male am Tag ändert – statt mit dem Literpreis, den du bezahlt hast. Jeder Preis zählt so lange, wie er angezeigt wurde. Die Web-App zeigt den Durchschnitt über den Monat, gewichtet nach den Kilometern jedes Tages („Verbrenner (8,3 L/100 km · Ø 1,92 €/L je Tag)“); Monatsverlauf, Monatsbericht und Hochrechnung folgen. Ein Tag ohne Preis nimmt den nächstgelegenen Tag mit Preis (bis zu 7 Tage entfernt). Ladecockpit speichert die Werte der Spritpreis-Entität jetzt selbst und holt beim ersten Start die letzten 10 Tage aus Home Assistant; Monate davor behalten den bezahlten Preis.
+- Die Handy-App ist unverändert.
 
 ## 0.17.0 – 2026-11-15
 
-- **Off-peak and peak price per site.** Many Superchargers cost less at night and early in the morning than during the day. Ladecockpit now finds both prices in your own invoices and shows them under the price radar, in the web app and the mobile app: "Moers · off-peak 0,28 € · peak 0,46 €", with the times you charged off-peak and what your peak-time kWh at those sites would have cost less. A site only gets two prices when they are at least 0,06 €/kWh apart, every cheaper session started before 10 or from 20 o'clock and a dearer one during the day – otherwise a price change could pass for a tariff. Until you have charged at a site both ways, the section says how it fills. New tip in the insights; `tariffs` in `/api/dashboard`.
+- **Nacht- und Tagpreis je Standort.** Viele Supercharger sind nachts und früh am Morgen günstiger als tagsüber. Ladecockpit findet jetzt beide Preise in deinen eigenen Rechnungen und zeigt sie unter dem Preis-Radar, in der Web-App und in der Handy-App: „Moers · Nacht 0,28 € · Tag 0,46 €“, mit den Zeiten, zu denen du günstig geladen hast, und wie viel weniger deine teuren kWh an diesen Standorten gekostet hätten. Zwei Preise bekommt ein Standort nur, wenn sie mindestens 0,06 €/kWh auseinanderliegen, jede günstigere Ladung vor 10 oder ab 20 Uhr begann und eine teurere tagsüber – sonst könnte eine Preisänderung als Tarif durchgehen. Bis du an einem Standort zu beiden Zeiten geladen hast, sagt der Abschnitt, wie er sich füllt. Neuer Tipp in den Auswertungen; `tariffs` in `/api/dashboard`.
 
 ## 0.16.1 – 2026-11-15
 
-- The log says what the lookup on OpenStreetMap found for each station and why it left one without an operator: "OpenStreetMap, station in Hafenstadt: several operators nearby (Fastned 30 m, Allego 45 m)", "the address was not found on the map", "no charging station within 400 m on the map". Only the town is named. Stations that got no operator so far are asked once more, so the reason shows up after the update.
-- The mobile app is unchanged.
+- Das Log sagt, was die Suche bei OpenStreetMap für jede Station gefunden hat und warum sie eine ohne Betreiber gelassen hat: „OpenStreetMap, Station in Hafenstadt: mehrere Betreiber in der Nähe (Fastned 30 m, Allego 45 m)“, „die Adresse wurde auf der Karte nicht gefunden“, „keine Ladestation im Umkreis von 400 m auf der Karte“. Genannt wird nur der Ort. Stationen, die bisher keinen Betreiber bekommen haben, werden noch einmal gefragt, damit der Grund nach dem Update erscheint.
+- Die Handy-App ist unverändert.
 
 ## 0.16.0 – 2026-11-15
 
-- **Operators all over Europe.** Until now Ladecockpit only knew who runs a MultiPass station in Germany (from the register of the Bundesnetzagentur); abroad it showed the site name or an address. Now it asks OpenStreetMap for every station the register does not have: the address from the invoice becomes a coordinate, and the charging stations around it tell the operator. It is only taken when the map leaves no doubt – all stations within 400 m belong to one operator, or one is within 50 m and the next operator at least 50 m farther; otherwise the station stays as it was rather than getting a wrong name. Each address is asked once, at most 8 per sync; only the station's address is sent (to nominatim.openstreetmap.org and overpass-api.de). New option *Look up operators on OpenStreetMap* (`MAP_LOOKUP`, on by default). Map data © OpenStreetMap contributors.
-- Company names from the register and the map are shown as the brand people know: "Enel X Way Italia S.r.l." → "Enel X Way", "The New Motion B.V." → "Shell Recharge", "Aral AG" → "Aral pulse". The table (`app/operators.py`) starts with about 50 names of European networks and will grow.
-- What you assign yourself, in the app or under *Assign operators yourself*, still has the last word.
+- **Betreiber in ganz Europa.** Bisher wusste Ladecockpit nur in Deutschland, wer eine MultiPass-Station betreibt (aus dem Register der Bundesnetzagentur); im Ausland zeigte es den Standortnamen oder eine Adresse. Jetzt fragt es für jede Station, die das Register nicht kennt, OpenStreetMap: Die Adresse aus der Rechnung wird zu einer Koordinate, und die Ladestationen drumherum verraten den Betreiber. Übernommen wird er nur, wenn die Karte keinen Zweifel lässt – alle Stationen im Umkreis von 400 m gehören einem Betreiber, oder eine liegt höchstens 50 m entfernt und der nächste andere Betreiber mindestens 50 m weiter; sonst bleibt die Station, wie sie war, statt einen falschen Namen zu bekommen. Jede Adresse wird einmal gefragt, höchstens 8 pro Abgleich; gesendet wird nur die Adresse der Station (an nominatim.openstreetmap.org und overpass-api.de). Neue Option *Betreiber über OpenStreetMap suchen* (`MAP_LOOKUP`, standardmäßig an). Kartendaten © OpenStreetMap-Mitwirkende.
+- Firmennamen aus dem Register und der Karte erscheinen als die Marke, die man kennt: „Enel X Way Italia S.r.l.“ → „Enel X Way“, „The New Motion B.V.“ → „Shell Recharge“, „Aral AG“ → „Aral pulse“. Die Tabelle (`app/operators.py`) beginnt mit etwa 50 Namen europäischer Netze und wächst weiter.
+- Was du selbst zuordnest, in der App oder unter *Betreiber selbst zuordnen*, hat weiter das letzte Wort.
 
 ## 0.15.0 – 2026-11-15
 
-- **Assign the operator of a station in the app.** For third-party (MultiPass) stations whose operator Ladecockpit does not know: *Assign operator* under *Sites* in the web app, or in the details of a session in the mobile app. Choose from the known operators or type a name. It applies to every session at that station at once – past and future – without a restart, and is part of the backup. The option `SITE_OPERATORS` stays for whole groups of stations. API: `GET /api/operators`, `PUT /api/operator`.
-- **Mobile app: filters as chips.** *Zeitraum*, *Netzwerk* and *Standort* sit as chips under the search field instead of in a folded card; an active filter shows its value and is removed with a tap on its ✕. A line underneath sums up what is shown: "12 Ladevorgänge · 384,0 kWh · 142,10 €".
-- **Mobile app: price per kWh in every session.** With a dot that tells a cheap session (green) from a dear one (orange), compared with your own average.
-- Mobile app: invoices can be shared or saved as PDF, and a double tap zooms in on the tapped spot and back out.
-- Mobile app: an empty result says why ("Keine Ladevorgänge für „…“ gefunden") and offers to reset the filters.
-- MultiPass is explained where it appears: "charged at another operator, billed through Tesla". The credit line reads *Gutschrift von Tesla*.
+- **Den Betreiber einer Station in der App zuordnen.** Für Fremdstationen (MultiPass), deren Betreiber Ladecockpit nicht kennt: *Betreiber zuordnen* unter *Standorte* in der Web-App oder in den Details einer Ladung in der Handy-App. Aus den bekannten Betreibern wählen oder einen Namen eintippen. Das gilt sofort für jede Ladung an dieser Station – vergangene und künftige – ohne Neustart und ist Teil der Datensicherung. Die Option `SITE_OPERATORS` bleibt für ganze Gruppen von Stationen. API: `GET /api/operators`, `PUT /api/operator`.
+- **Handy-App: Filter als Chips.** *Zeitraum*, *Netzwerk* und *Standort* stehen als Chips unter dem Suchfeld statt in einer eingeklappten Karte; ein aktiver Filter zeigt seinen Wert und verschwindet mit einem Tipp auf sein ✕. Eine Zeile darunter fasst zusammen, was zu sehen ist: „12 Ladevorgänge · 384,0 kWh · 142,10 €“.
+- **Handy-App: Preis pro kWh bei jeder Ladung.** Mit einem Punkt, der eine günstige Ladung (grün) von einer teuren (orange) unterscheidet, gemessen an deinem eigenen Durchschnitt.
+- Handy-App: Rechnungen lassen sich als PDF teilen oder speichern, und ein Doppeltipp vergrößert die angetippte Stelle und wieder zurück.
+- Handy-App: Ein leeres Ergebnis sagt, warum („Keine Ladevorgänge für „…“ gefunden“), und bietet an, die Filter zurückzusetzen.
+- MultiPass wird erklärt, wo es auftaucht: „bei einem anderen Betreiber geladen, über Tesla abgerechnet“. Die Zeile der Gutschrift heißt *Gutschrift von Tesla*.
 
 ## 0.14.6 – 2026-11-15
 
-- **Tesla open-source apps (experimental).** With a client ID and no client secret, Ladecockpit signs in with PKCE, the way Tesla intends for "Open Source Apps". Tesla limits such apps to its discovery tier; whether charging history and invoices are available there has to show in use. Installations with a client secret work as before.
-- Updated packages: FastAPI 0.163.0, pypdf 7.1.0.
+- **Open-Source-Apps von Tesla (experimentell).** Mit einer Client ID und ohne Client Secret meldet sich Ladecockpit per PKCE an, so wie Tesla es für „Open Source Apps“ vorsieht. Tesla beschränkt solche Apps auf seine Discovery-Stufe; ob Ladehistorie und Rechnungen dort verfügbar sind, muss sich im Gebrauch zeigen. Installationen mit Client Secret funktionieren wie bisher.
+- Pakete aktualisiert: FastAPI 0.163.0, pypdf 7.1.0.
 
 ## 0.14.5 – 2026-11-14
 
-- Mobile app: invoices, monthly reports and the year overview can be enlarged with two fingers. Before, the pages could only be read at the width of the screen.
-- **Assign operators yourself.** Outside Germany Ladecockpit often cannot tell who runs a MultiPass station. New option *Assign operators yourself* (`SITE_OPERATORS`): a text from the site name or address, an equals sign and the operator, several separated by semicolons – `Hafenstadt=Fastned; Parkhaus Mitte=Stadtwerke`. What you set there has the last word, and the station counts as MultiPass.
+- Handy-App: Rechnungen, Monatsberichte und die Jahresübersicht lassen sich mit zwei Fingern vergrößern. Vorher waren die Seiten nur in Bildschirmbreite lesbar.
+- **Betreiber selbst zuordnen.** Außerhalb Deutschlands kann Ladecockpit oft nicht sagen, wer eine MultiPass-Station betreibt. Neue Option *Betreiber selbst zuordnen* (`SITE_OPERATORS`): ein Text aus Standortname oder Adresse, ein Gleichheitszeichen und der Betreiber, mehrere durch Semikolon getrennt – `Hafenstadt=Fastned; Parkhaus Mitte=Stadtwerke`. Was du dort setzt, hat das letzte Wort, und die Station zählt als MultiPass.
 
 ## 0.14.4 – 2026-11-14
 
-- **Price radar: the lowest price is the cheapest again.** 0.14.2 skipped time windows and sites with only a session or two, so a more expensive one could be labelled "cheapest" right next to a lower price. Now the lowest price always gets the label, and when little stands behind it, the app says so: "cheapest · only 1 session". Applies to the mobile app, the web app and the tip under the radar.
+- **Preis-Radar: Der niedrigste Preis ist wieder der günstigste.** 0.14.2 übersprang Zeitfenster und Standorte mit nur ein oder zwei Ladungen, sodass direkt neben einem niedrigeren Preis ein teurerer als „am günstigsten“ beschriftet sein konnte. Jetzt bekommt immer der niedrigste Preis die Beschriftung, und wenn wenig dahintersteht, sagt die App das: „am günstigsten · nur 1 Ladung“. Gilt für die Handy-App, die Web-App und den Tipp unter dem Radar.
 
 ## 0.14.3 – 2026-11-14
 
-- Same content as 0.14.2, published again: the Docker image and the APK of 0.14.2 were not built from the right state. If you installed the APK 0.14.2, install 0.14.3.
+- Gleicher Inhalt wie 0.14.2, erneut veröffentlicht: Das Docker-Image und die APK von 0.14.2 waren nicht aus dem richtigen Stand gebaut. Wer die APK 0.14.2 installiert hat, installiert 0.14.3.
 
 ## 0.14.2 – 2026-11-14
 
-- **Price radar: one session no longer makes a time of day or a site the cheapest.** A time window needs three sessions and a site two before it is named the cheapest; until then it is shown as "too few to tell". Applies to the mobile app, the web app and the tip under the radar.
-- Mobile app: the summary card of the price radar now says what each price belongs to – cheapest time of day and cheapest site, each with its own price – instead of mixing both under one heading.
-- Mobile app: prices in the price radar have two decimals like everywhere else, "1 Ladevorgang" is no longer written as a plural, and the lines under the time windows lost their stray "€/kWh".
-- `solid` in `slots` of `/api/dashboard` tells whether a time window has enough sessions.
+- **Preis-Radar: Eine einzelne Ladung macht keine Tageszeit und keinen Standort mehr zum günstigsten.** Ein Zeitfenster braucht drei Ladungen und ein Standort zwei, bevor es als günstigstes genannt wird; bis dahin heißt es „zu wenige für eine Aussage“. Gilt für die Handy-App, die Web-App und den Tipp unter dem Radar.
+- Handy-App: Die Übersichtskarte des Preis-Radars sagt jetzt, wozu jeder Preis gehört – günstigste Tageszeit und günstigster Standort, jeweils mit eigenem Preis –, statt beides unter einer Überschrift zu vermischen.
+- Handy-App: Preise im Preis-Radar haben wie überall zwei Nachkommastellen, „1 Ladevorgang“ steht nicht mehr in der Mehrzahl, und die Zeilen unter den Zeitfenstern haben ihr überflüssiges „€/kWh“ verloren.
+- `solid` in `slots` von `/api/dashboard` sagt, ob ein Zeitfenster genug Ladungen hat.
 
 ## 0.14.1 – 2026-11-12
 
-- Mobile app: built with Flutter 3.50 and the standalone `material_ui` package, which replaces the Material library that Flutter 3.50 deprecates. Nothing changes in use.
-- The web app, the Home Assistant app and the Docker image are unchanged.
+- Handy-App: gebaut mit Flutter 3.50 und dem eigenständigen Paket `material_ui`, das die Material-Bibliothek ersetzt, die Flutter 3.50 abkündigt. Im Gebrauch ändert sich nichts.
+- Web-App, Home-Assistant-App und Docker-Image sind unverändert.
 
 ## 0.14.0 – 2026-11-12
 
-- **Mobile app: search the sessions.** A search field above the list finds sessions by place, operator or address, in addition to the three filters. The list now covers up to 400 sessions instead of 40.
-- **Mobile app: optional lock.** *App sperren* in the connection settings asks for fingerprint, face or the phone's PIN when the app opens and after a minute in the background. Off by default; a phone without a screen lock never locks the app.
-- **Shorter place names.** Sessions in your own country are listed by place – *Moers* instead of *Moers, Germany*. Sessions abroad keep the country. `place` in `/api/dashboard` carries the name.
-- **Notification for every new invoice.** A second Home Assistant blueprint (`notify_invoice.yaml`) sends place, kWh, amount and price to the Home Assistant app on your phone, optionally only for sessions that charged much slower than usual. It needs no helpers.
+- **Handy-App: Ladungen durchsuchen.** Ein Suchfeld über der Liste findet Ladungen nach Ort, Betreiber oder Adresse, zusätzlich zu den drei Filtern. Die Liste umfasst jetzt bis zu 400 Ladungen statt 40.
+- **Handy-App: optionale Sperre.** *App sperren* in den Verbindungseinstellungen fragt beim Öffnen und nach einer Minute im Hintergrund nach Fingerabdruck, Gesicht oder der PIN des Handys. Standardmäßig aus; ein Handy ohne Displaysperre sperrt die App nie.
+- **Kürzere Ortsnamen.** Ladungen im eigenen Land stehen mit dem Ort in der Liste – *Moers* statt *Moers, Germany*. Ladungen im Ausland behalten das Land. `place` in `/api/dashboard` enthält den Namen.
+- **Benachrichtigung bei jeder neuen Rechnung.** Ein zweiter Home-Assistant-Blueprint (`notify_invoice.yaml`) schickt Ort, kWh, Betrag und Preis an die Home-Assistant-App auf deinem Handy, auf Wunsch nur für Ladungen, die deutlich langsamer als üblich waren. Er braucht keine Helfer.
 
 ## 0.13.1 – 2026-11-12
 
-- Mobile app: in the filter of the charging sessions, the label *Zeitraum* was cut off at the top; the fields have more room now.
-- The web app, the Home Assistant app and the Docker image are unchanged.
+- Handy-App: Im Filter der Ladevorgänge war die Beschriftung *Zeitraum* oben abgeschnitten; die Felder haben jetzt mehr Platz.
+- Web-App, Home-Assistant-App und Docker-Image sind unverändert.
 
 ## 0.13.0 – 2026-11-12
 
-- **Backup and restore.** In the web app under *Connections & API costs*: download charging history, readings and invoices as one file and restore them, for example on another device. The Tesla sign-in is left out on purpose. A file is checked before anything changes; sessions already reported to Home Assistant are not booked twice. Also as `GET /api/backup.zip` and `POST /api/restore`.
-- **Year overview.** One PDF page per year with a line per month – sessions, kWh, net, VAT, gross and credits – plus the total, the MultiPass share and charging at home. Under *Export* in the web app, in the reports of the mobile app and as `/api/year/2026.pdf`. `years` in `/api/dashboard` lists the years with sessions.
-- **Guided setup.** Without Tesla access, the web app walks through the Tesla developer app in five steps, with the redirect address ready to copy. The demo offers the same guide.
-- **Mobile app in English.** The app follows the language of the server (`APP_LANG`) and, before it has connected, the language of the phone. Numbers and dates follow as well.
-- **Mobile app without a connection.** When the server cannot be reached, the app shows the last figures the phone has kept, with date and time.
+- **Datensicherung und Wiederherstellung.** In der Web-App unter *Verbindungen & API-Kosten*: Ladehistorie, Messwerte und Rechnungen als eine Datei herunterladen und wieder einspielen, zum Beispiel auf einem anderen Gerät. Die Tesla-Anmeldung bleibt bewusst außen vor. Eine Datei wird geprüft, bevor sich etwas ändert; Ladungen, die schon an Home Assistant gemeldet wurden, werden nicht doppelt gebucht. Auch als `GET /api/backup.zip` und `POST /api/restore`.
+- **Jahresübersicht.** Eine PDF-Seite je Jahr mit einer Zeile pro Monat – Ladungen, kWh, netto, MwSt., brutto und Gutschriften – dazu die Summe, der MultiPass-Anteil und das Laden zu Hause. Unter *Export* in der Web-App, in den Berichten der Handy-App und als `/api/year/2026.pdf`. `years` in `/api/dashboard` listet die Jahre mit Ladungen.
+- **Geführte Einrichtung.** Ohne Tesla-Zugang führt die Web-App in fünf Schritten durch die Tesla-Entwickler-App, mit der Weiterleitungsadresse zum Kopieren. Die Demo bietet dieselbe Anleitung.
+- **Handy-App auf Englisch.** Die App folgt der Sprache des Servers (`APP_LANG`) und vor der ersten Verbindung der Sprache des Handys. Zahlen und Datum folgen ebenfalls.
+- **Handy-App ohne Verbindung.** Ist der Server nicht erreichbar, zeigt die App die letzten Zahlen, die das Handy gespeichert hat, mit Datum und Uhrzeit.
 
 ## 0.12.10 – 2026-11-12
 
-- **Mobile app: German number format.** Amounts and figures use a decimal comma and a dot between thousands: `65,10 €`, `0,40 €/kWh`, `1.234,5 kWh`.
-- **Mobile app: clearer cards in the cockpit.** *Letzter Ladevorgang* shows site, date and amount under its title instead of an internal ID, *Gesamt* shows sessions, energy and costs, *Ladeprognose* the forecast and *Fahrzeug* model, paint and wheels. Opened, the cards list only what means something: no internal IDs or image addresses, and fees and credits only when there are any. The network reads Supercharger or MultiPass.
-- Mobile app: the forecast text was replaced by a dash when it contained a capital T; fixed.
-- Mobile app: the hints under the server address and the password are no longer cut off.
-- The web app, the Home Assistant app and the Docker image are unchanged.
+- **Handy-App: deutsches Zahlenformat.** Beträge und Zahlen haben ein Dezimalkomma und einen Punkt zwischen den Tausendern: `65,10 €`, `0,40 €/kWh`, `1.234,5 kWh`.
+- **Handy-App: klarere Karten im Cockpit.** *Letzter Ladevorgang* zeigt unter dem Titel Standort, Datum und Betrag statt einer internen ID, *Gesamt* Ladungen, Energie und Kosten, *Ladeprognose* die Prognose und *Fahrzeug* Modell, Lack und Felgen. Aufgeklappt listen die Karten nur, was etwas bedeutet: keine internen IDs oder Bildadressen, Gebühren und Gutschriften nur, wenn es welche gibt. Als Netz steht Supercharger oder MultiPass da.
+- Handy-App: Der Prognosetext wurde durch einen Strich ersetzt, wenn er ein großes T enthielt; behoben.
+- Handy-App: Die Hinweise unter Serveradresse und Passwort werden nicht mehr abgeschnitten.
+- Web-App, Home-Assistant-App und Docker-Image sind unverändert.
 
 ## 0.12.9 – 2026-11-12
 
-- **Mobile app: no more grey boxes.** The expandable cards (connections, last session, totals, charging forecast, vehicle, filters, sites, months) showed up as grey boxes and loaded nothing. They read their open/closed state from the same storage slot as the scroll position of the page and broke on it. Each card now has its own slot.
-- Mobile app: the figures in the month overview shrink instead of being cut off when a title takes two lines.
-- New tests render every tab and every card of the mobile app with demo data and with each part of the data missing.
-- The web app, the Home Assistant app and the Docker image are unchanged.
+- **Handy-App: keine grauen Kästen mehr.** Die aufklappbaren Karten (Verbindungen, letzte Ladung, Summen, Ladeprognose, Fahrzeug, Filter, Standorte, Monate) erschienen als graue Kästen und luden nichts. Sie lasen ihren Auf-/Zu-Zustand aus demselben Speicherplatz wie die Scrollposition der Seite und scheiterten daran. Jede Karte hat jetzt ihren eigenen Platz.
+- Handy-App: Die Zahlen in der Monatsübersicht werden kleiner, statt abgeschnitten zu werden, wenn ein Titel zwei Zeilen braucht.
+- Neue Tests zeichnen jeden Tab und jede Karte der Handy-App mit Demo-Daten und mit jeweils einem fehlenden Teil der Daten.
+- Web-App, Home-Assistant-App und Docker-Image sind unverändert.
 
 ## 0.12.8 – 2026-11-12
 
-- **Mobile app tells you about updates.** On Android, the app asks GitHub once per start whether a newer release exists and shows a banner with *Update laden*; Android then offers to install the APK over the installed app. Only the public release information is fetched, no charging data is sent. The check can be switched off in the connection settings (*Nach Updates suchen*). Test builds and iOS never check.
-- The web app, the Home Assistant app and the Docker image are unchanged.
+- **Die Handy-App meldet Updates.** Unter Android fragt die App einmal pro Start bei GitHub, ob es ein neueres Release gibt, und zeigt ein Banner mit *Update laden*; Android bietet dann an, die APK über die installierte App zu installieren. Abgerufen werden nur die öffentlichen Release-Angaben, Ladedaten werden nicht gesendet. Die Prüfung lässt sich in den Verbindungseinstellungen abschalten (*Nach Updates suchen*). Test-Builds und iOS prüfen nie.
+- Web-App, Home-Assistant-App und Docker-Image sind unverändert.
 
 ## 0.12.7 – 2026-11-12
 
-- **Android app to download.** Every release now has a signed APK attached (`ladecockpit-<version>.apk` with its SHA-256 checksum). It installs as an update over the previous one, no GitHub account needed.
-- Mobile app: the app ID is now `io.github.uekala.ladecockpit` for Android and iOS. A test build with the old ID `com.example.ladecockpit` has to be uninstalled once.
-- Mobile app: the month overview shows costs and the average price with two decimals.
-- `mobile/tool/setup-android-signing.sh` stopped with a syntax error; fixed and covered by tests.
-- New screenshots in the README.
-- The web app, the Home Assistant app and the Docker image are unchanged.
+- **Android-App zum Herunterladen.** Jedes Release hat jetzt eine signierte APK im Anhang (`ladecockpit-<version>.apk` mit ihrer SHA-256-Prüfsumme). Sie installiert sich als Update über die vorige, ein GitHub-Konto ist nicht nötig.
+- Handy-App: Die App-ID ist jetzt `io.github.uekala.ladecockpit` für Android und iOS. Ein Test-Build mit der alten ID `com.example.ladecockpit` muss einmal deinstalliert werden.
+- Handy-App: Die Monatsübersicht zeigt Kosten und Durchschnittspreis mit zwei Nachkommastellen.
+- `mobile/tool/setup-android-signing.sh` brach mit einem Syntaxfehler ab; behoben und mit Tests abgedeckt.
+- Neue Bildschirmfotos im README.
+- Web-App, Home-Assistant-App und Docker-Image sind unverändert.
 
 ## 0.12.6 – 2026-11-11
 
-- **Mobile app in a new look.** Dark cockpit design with the car and battery in focus, larger figures and clearer cards. Functions are unchanged.
-- Android signing: a script sets up the signing key on your own computer (`mobile/tool/setup-android-signing.sh`); `mobile/README.md` describes how to verify a signed update.
-- The web app, the Home Assistant app and the Docker image are unchanged.
+- **Handy-App im neuen Design.** Dunkles Cockpit-Design mit Auto und Akku im Mittelpunkt, größeren Zahlen und klareren Karten. Die Funktionen sind unverändert.
+- Android-Signierung: Ein Skript richtet den Signierschlüssel auf dem eigenen Rechner ein (`mobile/tool/setup-android-signing.sh`); `mobile/README.md` beschreibt, wie man ein signiertes Update prüft.
+- Web-App, Home-Assistant-App und Docker-Image sind unverändert.
 
 ## 0.12.5 – 2026-11-11
 
-- **Mobile app connects to any Ladecockpit in your own network.** Plain HTTP is accepted for Tailscale addresses (`100.64.0.0/10`, `*.ts.net`), home networks (`10.x`, `172.16–31.x`, `192.168.x`, `fc00::/7`) and local names (`*.local`, `*.home.arpa`, `*.internal`, names without a dot). Every other address needs HTTPS. Before, plain HTTP was only accepted for one fixed address.
-- **Docker without Home Assistant, documented.** The README walks through the standalone setup; Home Assistant stays optional throughout. Note for Docker users: since 0.12.3 a live installation needs `APP_PASSWORD` (HTTP Basic Auth) to start. Demo mode does not.
-- Mobile app: an unknown connection error shows its diagnosis on a line of its own.
-- Android builds are signed with a persistent key once it is set up in the repository, so a new APK installs as an update.
-- Bug reports and ideas have their own issue forms.
-- Dependencies updated: fastapi 0.161.1 → 0.162.4, fpdf2 2.8.9 → 2.9.0, pypdf 6.21.4 → 7.0.1, pypdfium2 5.14.0 → 5.15.2, tzdata ≥ 2026.6. GitHub Actions moved to versions that run on Node 24.
+- **Die Handy-App verbindet sich mit jedem Ladecockpit im eigenen Netz.** Unverschlüsseltes HTTP wird für Tailscale-Adressen (`100.64.0.0/10`, `*.ts.net`), Heimnetze (`10.x`, `172.16–31.x`, `192.168.x`, `fc00::/7`) und lokale Namen (`*.local`, `*.home.arpa`, `*.internal`, Namen ohne Punkt) akzeptiert. Jede andere Adresse braucht HTTPS. Vorher war unverschlüsseltes HTTP nur für eine feste Adresse erlaubt.
+- **Docker ohne Home Assistant, beschrieben.** Das README führt durch die eigenständige Einrichtung; Home Assistant bleibt durchgehend optional. Hinweis für Docker-Nutzer: Seit 0.12.3 braucht eine Live-Installation `APP_PASSWORD` (HTTP Basic Auth), um zu starten. Der Demo-Modus nicht.
+- Handy-App: Ein unbekannter Verbindungsfehler zeigt seine Diagnose in einer eigenen Zeile.
+- Android-Builds werden mit einem dauerhaften Schlüssel signiert, sobald er im Repository eingerichtet ist, sodass sich eine neue APK als Update installiert.
+- Fehlermeldungen und Ideen haben eigene Issue-Formulare.
+- Abhängigkeiten aktualisiert: fastapi 0.161.1 → 0.162.4, fpdf2 2.8.9 → 2.9.0, pypdf 6.21.4 → 7.0.1, pypdfium2 5.14.0 → 5.15.2, tzdata ≥ 2026.6. GitHub Actions auf Versionen umgestellt, die unter Node 24 laufen.
 
 ## 0.12.4 – 2026-11-09
 
-- **Month report and invoice view no longer get stuck on a broken invoice file.** A download that is not a PDF, or one that was cut short, is no longer kept; Ladecockpit fetches the invoice again the next time it is needed.
-- Dependencies updated: pypdf 6.21.2 → 6.21.4 (security fixes).
+- **Monatsbericht und Rechnungsansicht bleiben nicht mehr an einer kaputten Rechnungsdatei hängen.** Ein Download, der kein PDF ist oder abgebrochen wurde, wird nicht mehr behalten; Ladecockpit holt die Rechnung beim nächsten Bedarf erneut.
+- Abhängigkeiten aktualisiert: pypdf 6.21.2 → 6.21.4 (Sicherheitskorrekturen).
 
 ## 0.12.3 – 2026-11-08
 
-- **Secure mobile app access.** Optional add-on setting *Mobile app password* protects direct access on port 8077 with HTTP Basic Auth. Direct access stays disabled until a password is configured; Home Assistant Ingress continues to use Home Assistant authentication.
-- The direct port is optional and must only be used on a trusted private network or VPN. Never expose it publicly.
-
+- **Sicherer Zugang für die Handy-App.** Die optionale Einstellung *Mobiles App-Passwort* schützt den direkten Zugriff auf Port 8077 mit HTTP Basic Auth. Der direkte Zugriff bleibt gesperrt, bis ein Passwort gesetzt ist; Ingress nutzt weiter die Anmeldung von Home Assistant.
+- Der direkte Port ist optional und darf nur in einem vertrauenswürdigen privaten Netz oder VPN genutzt werden. Nie öffentlich freigeben.
 
 ## 0.12.2 – 2026-11-07
 
-- **Charging stations grouped by their invoice address.** When Tesla uses the same generic site name for different stations, Ladecockpit now keeps those locations separate in the MultiPass overview and site statistics if their invoice-derived addresses differ. This fixes cases such as two ALDI stations in Krefeld appearing as one location.
+- **Ladestationen nach ihrer Rechnungsadresse getrennt.** Verwendet Tesla für verschiedene Stationen denselben allgemeinen Standortnamen, hält Ladecockpit diese Orte in der MultiPass-Übersicht und der Standort-Statistik jetzt auseinander, wenn sich ihre Adressen aus den Rechnungen unterscheiden. Das behebt Fälle wie zwei ALDI-Stationen in Krefeld, die als ein Ort erschienen.
 
 ## 0.12.1 – 2026-11-02
 
-- **Closer match in the charging station register.** The invoice and the register do not always spell a street the same way ("Brunnenhaustraße" and "Brunnenhausstr."). Streets spelt almost alike now count as the same street, and the same house number wins over a near one – before, a station could get the operator of a neighbouring site further along the street. Stations matched by the old rule are looked up again once.
-- **The charging network named in the site name wins.** "Aral pulse Brassertstraße 124" shows *Aral pulse*, not the company behind it in the register (BP Europa). Where the site name only names a host – a supermarket like Aldi, Lidl or Kaufland, or "Stadtwerke" – the register still says who runs the station.
+- **Genauere Treffer im Ladesäulenregister.** Rechnung und Register schreiben eine Straße nicht immer gleich („Brunnenhaustraße“ und „Brunnenhausstr.“). Fast gleich geschriebene Straßen zählen jetzt als dieselbe Straße, und dieselbe Hausnummer geht vor einer nahen – vorher konnte eine Station den Betreiber eines Nachbarstandorts weiter die Straße hinunter bekommen. Stationen, die nach der alten Regel zugeordnet wurden, werden einmal neu nachgeschlagen.
+- **Das im Standortnamen genannte Ladenetz hat Vorrang.** „Aral pulse Brassertstraße 124“ zeigt *Aral pulse*, nicht die Firma dahinter im Register (BP Europa). Nennt der Standortname nur einen Gastgeber – einen Supermarkt wie Aldi, Lidl oder Kaufland oder „Stadtwerke“ –, sagt weiter das Register, wer die Station betreibt.
 
 ## 0.12.0 – 2026-11-02
 
-- **Operators instead of addresses.** MultiPass stations are now shown by the company that runs them, with the address underneath – "SEW · Brunnenhausstraße 46, Neustadt" instead of "Brunnenhausstr. 46, Neustadt", "Electra" instead of "Neustadt - KiK". Ladecockpit fetches the invoice of each MultiPass session once, reads the station's address, and for stations in Germany looks it up in the public charging station register of the Bundesnetzagentur (same postcode and street, the same or nearest house number). The register is downloaded only when a new station comes up, at most every 12 hours, read line by line and not kept. Outside Germany, or when the register has no match, the operator still comes from the site name. New option *Look up operators in the charging station register* (`OPERATOR_LOOKUP`, on by default).
-- The operator and the address show in the session list, the sites table, the MultiPass card (its map link now searches the address), the last-session card, `sensor.ladecockpit_multipass` and `sensor.ladecockpit_last_charge` (`operator`, `address`), the event to Home Assistant (`operator`, `address`, and the operator in `text`), the CSV export (two new columns at the end) and the month PDF. The price tip names them too ("SEW (Brunnenhausstraße 46, Neustadt)").
-- The register's short name is used when it names the operator ("SEW" rather than "SEW Seestadt Energie und Wasser"); long legal names are cut to what people call them.
-- **The invoice number decides the network.** Tesla writes the invoice number into the file name of the invoice: series "P" for Supercharger, "MSP" for MultiPass. That now settles the network before every other hint – without downloading the PDF – so a Supercharger on a supermarket car park stays a Supercharger. Supercharger invoices are no longer downloaded just to check the network.
-- **Sign-in to Tesla kept after a hiccup.** A single rejected token refresh no longer marks the Tesla sign-in as expired (and no longer sends the problem notification); only a second one in a row does.
-- The charging station register is read in the background, so the web app stays responsive meanwhile.
+- **Betreiber statt Adressen.** MultiPass-Stationen erscheinen jetzt mit der Firma, die sie betreibt, und der Adresse darunter – „SEW · Brunnenhausstraße 46, Neustadt“ statt „Brunnenhausstr. 46, Neustadt“, „Electra“ statt „Neustadt - KiK“. Ladecockpit holt die Rechnung jeder MultiPass-Ladung einmal, liest die Adresse der Station und schlägt Stationen in Deutschland im öffentlichen Ladesäulenregister der Bundesnetzagentur nach (gleiche Postleitzahl und Straße, gleiche oder nächste Hausnummer). Das Register wird nur heruntergeladen, wenn eine neue Station dazukommt, höchstens alle 12 Stunden, Zeile für Zeile gelesen und nicht aufbewahrt. Außerhalb Deutschlands oder ohne Treffer im Register kommt der Betreiber weiter aus dem Standortnamen. Neue Option *Betreiber im Ladesäulenregister nachschlagen* (`OPERATOR_LOOKUP`, standardmäßig an).
+- Betreiber und Adresse stehen in der Liste der Ladungen, der Standort-Tabelle, der MultiPass-Karte (ihr Kartenlink sucht jetzt die Adresse), der Karte der letzten Ladung, `sensor.ladecockpit_multipass` und `sensor.ladecockpit_last_charge` (`operator`, `address`), dem Event an Home Assistant (`operator`, `address` und der Betreiber in `text`), dem CSV-Export (zwei neue Spalten am Ende) und dem Monats-PDF. Der Preistipp nennt sie auch („SEW (Brunnenhausstraße 46, Neustadt)“).
+- Der Kurzname aus dem Register wird genommen, wenn er den Betreiber nennt („SEW“ statt „SEW Seestadt Energie und Wasser“); lange Firmennamen werden auf das gekürzt, wie man sie nennt.
+- **Die Rechnungsnummer entscheidet über das Netz.** Tesla schreibt die Rechnungsnummer in den Dateinamen der Rechnung: Reihe „P“ für Supercharger, „MSP“ für MultiPass. Das legt das Netz jetzt vor jedem anderen Hinweis fest – ohne das PDF herunterzuladen –, sodass ein Supercharger auf einem Supermarktparkplatz ein Supercharger bleibt. Supercharger-Rechnungen werden nicht mehr nur zur Prüfung des Netzes heruntergeladen.
+- **Die Tesla-Anmeldung bleibt nach einem Aussetzer bestehen.** Eine einzelne abgelehnte Token-Erneuerung markiert die Tesla-Anmeldung nicht mehr als abgelaufen (und schickt keine Problem-Benachrichtigung mehr); erst eine zweite in Folge.
+- Das Ladesäulenregister wird im Hintergrund gelesen, die Web-App reagiert dabei weiter.
 
 ## 0.11.3 – 2026-11-02
 
-- **Clean stop.** When Home Assistant stops or updates the app, Ladecockpit now ends with exit code 0 after shutting down, instead of 143. Home Assistant no longer warns that the app "did not handle SIGTERM". Background tasks finish their cleanup before the process ends.
-- **Shell stations recognised.** "OBN 0317 - Shell Diessemer Bruch" now shows the operator *Shell Recharge* instead of the station number "OBN 0317": Shell counts as a known network, and a station number before the dash is never taken for the operator.
+- **Sauberes Beenden.** Wenn Home Assistant die App stoppt oder aktualisiert, endet Ladecockpit nach dem Herunterfahren jetzt mit Exitcode 0 statt 143. Home Assistant warnt nicht mehr, die App habe „SIGTERM nicht behandelt“. Hintergrundaufgaben räumen auf, bevor der Prozess endet.
+- **Shell-Stationen erkannt.** „OBN 0317 - Shell Diessemer Bruch“ zeigt jetzt den Betreiber *Shell Recharge* statt der Stationsnummer „OBN 0317“: Shell gilt als bekanntes Netz, und eine Stationsnummer vor dem Bindestrich wird nie als Betreiber genommen.
 
 ## 0.11.2 – 2026-11-01
 
-- **MultiPass by price.** Until the invoice has been checked, a session whose site name does not have the form Tesla gives its Superchargers ("Place, Country", e.g. "Bergstadt, Germany") and that cost more than 0.50 €/kWh counts as MultiPass, even when the operator is not a known brand. Superchargers that are dear at peak hours stay Superchargers. New setting `MULTIPASS_MIN_PRICE` (option *MultiPass above price* in the Home Assistant app), 0 turns the rule off.
-- The operator of a MultiPass station is now also taken from the part of the site name before the dash ("Green Energy Nord - AC E5" → "Green Energy Nord"), so `operators` in `sensor.ladecockpit_multipass` also lists networks that are not on the brand list. A town is not taken for a network: when the part before the dash is a town from your own site names ("Neustadt - KiK", with Neustadt from "Brunnenhausstr. 46, Neustadt" or a Supercharger like "Bergstadt, Germany"), the operator stays empty.
-- Both were listed under 0.11.1 but were not in its image.
+- **MultiPass nach Preis.** Bis die Rechnung geprüft ist, zählt eine Ladung als MultiPass, deren Standortname nicht die Form hat, die Tesla seinen Superchargern gibt („Ort, Land“, z. B. „Bergstadt, Germany“), und die mehr als 0,50 €/kWh gekostet hat – auch wenn der Betreiber keine bekannte Marke ist. Supercharger, die zu Spitzenzeiten teuer sind, bleiben Supercharger. Neue Einstellung `MULTIPASS_MIN_PRICE` (Option *MultiPass ab Preis* in der Home-Assistant-App), 0 schaltet die Regel ab.
+- Der Betreiber einer MultiPass-Station wird jetzt auch aus dem Teil des Standortnamens vor dem Bindestrich genommen („Green Energy Nord - AC E5“ → „Green Energy Nord“), sodass `operators` in `sensor.ladecockpit_multipass` auch Netze listet, die nicht auf der Markenliste stehen. Ein Ort wird nicht für ein Netz gehalten: Ist der Teil vor dem Bindestrich ein Ort aus deinen eigenen Standortnamen („Neustadt - KiK“, mit Neustadt aus „Brunnenhausstr. 46, Neustadt“ oder einem Supercharger wie „Bergstadt, Germany“), bleibt der Betreiber leer.
+- Beides stand schon unter 0.11.1, war aber nicht in dessen Image.
 
 ## 0.11.1 – 2026-11-01
 
-- **MultiPass recognised by the invoice.** MultiPass sessions at stations whose name gives nothing away (e.g. "Brunnenhausstr. 46, Neustadt" or "Green Energy Nord - AC E5") were counted as Supercharger sessions. Ladecockpit now reads the network from the invoice: MultiPass invoices have a number with "MSP" (Tesla as mobility service provider), Supercharger invoices do not. The invoice of each new session is fetched once, before the session goes to Home Assistant, and kept – viewing it or the month report then needs no further request. After the update, the sessions of the last 120 days are checked, at most 25 per sync. The invoice has the last word, also over the operator name: a Supercharger on a supermarket car park stays a Supercharger.
-- Downloaded MultiPass invoices are called `multipass-….pdf`.
-- Tests no longer fail on the first day of a month.
+- **MultiPass an der Rechnung erkannt.** MultiPass-Ladungen an Stationen, deren Name nichts verrät (z. B. „Brunnenhausstr. 46, Neustadt“ oder „Green Energy Nord - AC E5“), wurden als Supercharger-Ladungen gezählt. Ladecockpit liest das Netz jetzt aus der Rechnung: MultiPass-Rechnungen haben eine Nummer mit „MSP“ (Tesla als Mobilitätsanbieter), Supercharger-Rechnungen nicht. Die Rechnung jeder neuen Ladung wird einmal geholt, bevor die Ladung an Home Assistant geht, und aufbewahrt – sie oder den Monatsbericht anzusehen braucht dann keine weitere Abfrage. Nach dem Update werden die Ladungen der letzten 120 Tage geprüft, höchstens 25 pro Abgleich. Die Rechnung hat das letzte Wort, auch gegenüber dem Betreibernamen: Ein Supercharger auf einem Supermarktparkplatz bleibt ein Supercharger.
+- Heruntergeladene MultiPass-Rechnungen heißen `multipass-….pdf`.
+- Die Tests schlagen am Monatsersten nicht mehr fehl.
 
 ## 0.11.0 – 2026-10-27
 
-- **New look: Dynamic.** It replaces *Modern* (whoever used Modern gets Dynamic). A cockpit at night, always dark: the battery is a glowing ring with ticks, the floor and the charge limit, next to the picture of your car. When the page opens, the tiles rise one after the other, the ring draws itself, figures count up and bars grow. The light of the page follows the battery – green, amber when it gets low, red below the floor, cyan while charging – and the time of day. The price radar marks the time slot you are in right now; tap a slot for sessions, kWh and how far it is from your average. Tap or point at a month in the history for its figures. The session list shows the newest six and opens the rest on request. Figures in Saira, text in Geist (both SIL Open Font License, shipped with the app). *Classic* stays as it was and stays the default.
-- **Live while charging.** While the car charges, the web app shows *Charging* with the power, when the charge limit is reached and how long that takes, counting down every second. Ladecockpit asks Home Assistant every 15 seconds instead of every minute while the car charges, and the web app refreshes as often. Two new optional entities: *Charging power* (e.g. `sensor.my_tesla_charger_power`) and *Time to full* (e.g. `sensor.my_tesla_time_to_full_charge`, a timestamp or a duration). Without them the finish time is estimated from the power and the kWh one percent takes, or from how fast the battery level rises.
-- While the car charges, the next charging stop is counted from the charge limit.
-- The demo now shows a car charging at a Supercharger.
-- `status` in `/api/dashboard` has `charging`, `power`, `rate` (% per hour) and `finish`. `PUT /api/look` takes `classic` or `dynamic` (`modern` still works and means `dynamic`).
+- **Neues Design: Dynamisch.** Es ersetzt *Modern* (wer Modern genutzt hat, bekommt Dynamisch). Ein Cockpit bei Nacht, immer dunkel: Der Akku ist ein leuchtender Ring mit Strichen, Untergrenze und Ladelimit, neben dem Bild deines Autos. Beim Öffnen der Seite steigen die Kacheln nacheinander auf, der Ring zeichnet sich, Zahlen zählen hoch und Balken wachsen. Das Licht der Seite folgt dem Akku – grün, bernsteinfarben, wenn er knapp wird, rot unter der Untergrenze, cyan beim Laden – und der Tageszeit. Das Preis-Radar markiert das Zeitfenster, in dem du gerade bist; ein Tipp auf ein Fenster zeigt Ladungen, kWh und den Abstand zu deinem Durchschnitt. Ein Tipp oder Zeigen auf einen Monat im Verlauf zeigt seine Zahlen. Die Liste der Ladungen zeigt die neuesten sechs und öffnet den Rest auf Wunsch. Zahlen in Saira, Text in Geist (beide SIL Open Font License, mit der App ausgeliefert). *Klassisch* bleibt, wie es war, und bleibt der Standard.
+- **Live beim Laden.** Während das Auto lädt, zeigt die Web-App *Lädt* mit der Leistung, wann das Ladelimit erreicht ist und wie lange das dauert, sekündlich heruntergezählt. Ladecockpit fragt Home Assistant beim Laden alle 15 Sekunden statt jede Minute, und die Web-App aktualisiert sich genauso oft. Zwei neue optionale Entitäten: *Entität Ladeleistung* (z. B. `sensor.my_tesla_charger_power`) und *Entität Zeit bis voll* (z. B. `sensor.my_tesla_time_to_full_charge`, ein Zeitstempel oder eine Dauer). Ohne sie wird das Ende aus der Leistung und den kWh pro Prozent geschätzt oder daraus, wie schnell der Akkustand steigt.
+- Während das Auto lädt, wird der nächste Ladestopp vom Ladelimit aus berechnet.
+- Die Demo zeigt jetzt ein Auto, das an einem Supercharger lädt.
+- `status` in `/api/dashboard` hat `charging`, `power`, `rate` (% pro Stunde) und `finish`. `PUT /api/look` nimmt `classic` oder `dynamic` (`modern` funktioniert weiter und bedeutet `dynamic`).
 
 ## 0.10.0 – 2026-10-27
 
-- **The fuel price you actually paid.** The combustion-car comparison can use what you really paid per litre instead of a fixed price or a station's current price. Set two new options, *Fuel cost total* and *Litres filled total* – two entities that grow with each fill-up, e.g. the helpers of a fuel log in Home Assistant. Ladecockpit keeps a daily reading of both and uses the average of the last 90 days; until it has 90 days, or after the totals were reset, it uses everything the totals hold. The paid price wins over *Fuel price from an entity* and the fixed fuel price; the month card says "… €/L paid", and a tip shows how many litres the average is based on.
-- `compare.fuel` in `/api/dashboard` has `source` (`paid`, `entity` or `fixed`), `paid_days` and `paid_litres`.
+- **Der Spritpreis, den du wirklich bezahlt hast.** Der Verbrenner-Vergleich kann statt eines festen Preises oder des aktuellen Preises einer Tankstelle nehmen, was du wirklich pro Liter bezahlt hast. Dafür gibt es zwei neue Optionen, *Tankkosten gesamt* und *Getankte Liter gesamt* – zwei Entitäten, die mit jedem Tanken wachsen, z. B. die Helfer eines Tankbuchs in Home Assistant. Ladecockpit speichert täglich beide Werte und nimmt den Durchschnitt der letzten 90 Tage; bis 90 Tage beisammen sind oder nachdem die Summen zurückgesetzt wurden, nimmt es alles, was die Summen enthalten. Der bezahlte Preis geht vor *Spritpreis aus Entität* und dem festen Spritpreis; die Monatskarte sagt „… €/L bezahlt“, und ein Tipp zeigt, auf wie vielen Litern der Durchschnitt beruht.
+- `compare.fuel` in `/api/dashboard` hat `source` (`paid`, `entity` oder `fixed`), `paid_days` und `paid_litres`.
 
 ## 0.9.0 – 2026-10-27
 
-- **Pick the look: classic or modern.** At the bottom of the web app, *Look* switches between two looks. *Classic* is the look of 0.8, calm and close to the car's own app. *Modern* is new: prices carry the colours of the energy label, from dark green (cheaper than your average) to red (dearer) – the price radar becomes arrows on that scale, sites and sessions show their price colour, and a small scale explains it. Everything else is ink on paper: Bricolage Grotesque with condensed bold figures, a battery bar in 20 segments like a car's display, outlined buttons, tiles with a hairline frame. Dark and light mode follow the device in both looks.
-- The choice is saved in Ladecockpit, so every phone and computer shows the same. Classic stays the default.
-- Both looks bring their typefaces along (Geist; Bricolage Grotesque). A browser only loads the files of the look in use.
-- New API: `PUT /api/look` with `{"look": "classic"}` or `{"look": "modern"}`; `GET /api/dashboard` has `look`.
+- **Design wählen: klassisch oder modern.** Ganz unten in der Web-App wechselt *Design* zwischen zwei Designs. *Klassisch* ist das Design von 0.8, ruhig und nah an der App des Autos. *Modern* ist neu: Preise tragen die Farben des Energielabels, von Dunkelgrün (günstiger als dein Durchschnitt) bis Rot (teurer) – das Preis-Radar wird zu Pfeilen auf dieser Skala, Standorte und Ladungen zeigen ihre Preisfarbe, und eine kleine Skala erklärt sie. Alles andere ist Tinte auf Papier: Bricolage Grotesque mit schmalen fetten Zahlen, ein Akkubalken aus 20 Segmenten wie im Display eines Autos, umrandete Knöpfe, Kacheln mit Haarlinie. Dunkel- und Hellmodus folgen in beiden Designs dem Gerät.
+- Die Wahl wird in Ladecockpit gespeichert, jedes Handy und jeder Rechner zeigt also dasselbe. Klassisch bleibt der Standard.
+- Beide Designs bringen ihre Schriften mit (Geist; Bricolage Grotesque). Ein Browser lädt nur die Dateien des genutzten Designs.
+- Neue API: `PUT /api/look` mit `{"look": "classic"}` oder `{"look": "modern"}`; `GET /api/dashboard` hat `look`.
 
 ## 0.8.0 – 2026-10-27
 
-- **New look, calmer and closer to the car's own app.** The car and the battery open the page without a frame: the picture of your car, the battery in large light figures and a slim green battery bar with the charge window marked. Below, flat tiles without borders or shadows, rows with thin separators instead of dotted leaders, plain tabular figures instead of a typewriter face, labels in sentence case. Black in dark mode, white in light mode, blue for actions and bars, green for the battery and the cheapest time slot.
-- The month card spans the full width: the total and figures on the left, the comparison lines on the right.
-- The typeface (Geist, SIL Open Font License) ships with Ladecockpit, so the page no longer loads fonts from Google.
-- On phones the header takes one line less, and the car's name and *Customise* sit side by side.
+- **Neues Design, ruhiger und näher an der App des Autos.** Auto und Akku eröffnen die Seite ohne Rahmen: das Bild deines Autos, der Akkustand in großen hellen Zahlen und ein schmaler grüner Akkubalken mit markiertem Ladefenster. Darunter flache Kacheln ohne Rahmen und Schatten, Zeilen mit dünnen Trennlinien statt gepunkteter Führungslinien, schlichte Tabellenziffern statt einer Schreibmaschinenschrift, Beschriftungen in normaler Schreibweise. Schwarz im Dunkelmodus, Weiß im Hellmodus, Blau für Aktionen und Balken, Grün für den Akku und das günstigste Zeitfenster.
+- Die Monatskarte nimmt die volle Breite ein: Summe und Zahlen links, die Vergleichszeilen rechts.
+- Die Schrift (Geist, SIL Open Font License) kommt mit Ladecockpit, die Seite lädt also keine Schriften mehr von Google.
+- Auf Handys braucht der Kopf eine Zeile weniger, und der Name des Autos und *Anpassen* stehen nebeneinander.
 
 ## 0.7.1 – 2026-10-26
 
-- **Clearer month card.** The lines under the month total are grouped, most useful first: what the total is made of (only with more than one part), the comparison with a combustion car, the check against your reference price, and the fuel of another car – each group separated by a line.
-- The combustion-car comparison now says which distance it uses (e.g. "604 km since 16.10." when odometer readings start mid-month) and shows the Tesla cost for that same distance, so *combustion car − Tesla = saved* adds up on the card. Before, the combustion figure could look smaller than the month total although money was saved.
+- **Übersichtlichere Monatskarte.** Die Zeilen unter der Monatssumme sind gruppiert, das Nützlichste zuerst: woraus sich die Summe zusammensetzt (nur bei mehr als einem Teil), der Vergleich mit einem Verbrenner, der Abgleich mit deinem Referenzpreis und der Sprit eines anderen Autos – jede Gruppe durch eine Linie getrennt.
+- Der Verbrenner-Vergleich sagt jetzt, welche Strecke er nimmt (z. B. „604 km seit 16.10.“, wenn die Kilometerstände mitten im Monat beginnen), und zeigt die Tesla-Kosten für genau diese Strecke, sodass *Verbrenner − Tesla = gespart* auf der Karte aufgeht. Vorher konnte die Verbrenner-Zahl kleiner wirken als die Monatssumme, obwohl Geld gespart wurde.
 
 ## 0.7.0 – 2026-10-25
 
-- **Slow sessions.** Each session's average power is compared with what your car usually gets at the same Supercharger (the median of your other sessions there with at least 20 kWh). A session with less than 60 % of that is marked in the session list (with the usual value) and on the last-charge card, and a tip names the most recent one with the common reasons: a cold battery without preconditioning, or a shared or throttled stall. Short sessions and sessions that started above 50 % battery are never called slow, because they charge slower on purpose.
-- The event `ladecockpit_invoice`, the blueprint and `sensor.ladecockpit_last_charge` carry `avg_power_kw`, `typical_power_kw` and `slow` (the sensor also `start_soc`), e.g. to mention a slow session in the notification.
-- The demo has a slow session after a long drive.
+- **Langsame Ladungen.** Die mittlere Leistung jeder Ladung wird mit dem verglichen, was dein Auto am selben Supercharger üblicherweise bekommt (der Median deiner anderen Ladungen dort mit mindestens 20 kWh). Eine Ladung mit weniger als 60 % davon wird in der Liste der Ladungen (mit dem üblichen Wert) und auf der Karte der letzten Ladung markiert, und ein Tipp nennt die jüngste mit den häufigen Gründen: ein kalter Akku ohne Vorkonditionierung oder eine geteilte oder gedrosselte Ladesäule. Kurze Ladungen und Ladungen, die über 50 % Akku begonnen haben, gelten nie als langsam, weil sie absichtlich langsamer laden.
+- Das Event `ladecockpit_invoice`, der Blueprint und `sensor.ladecockpit_last_charge` enthalten `avg_power_kw`, `typical_power_kw` und `slow` (der Sensor auch `start_soc`), z. B. um eine langsame Ladung in der Benachrichtigung zu erwähnen.
+- Die Demo hat eine langsame Ladung nach einer langen Fahrt.
 
 ## 0.6.2 – 2026-10-25
 
-- **Invoices in the Home Assistant app.** In the Home Assistant companion app on a phone, the PDF links did nothing or ended on a sign-in error: the app has no PDF viewer, and links that open a new window leave the Home Assistant sign-in behind. In the app, *Invoice (PDF)* and the monthly report now open a view inside Ladecockpit with the pages as pictures (tap a page to zoom, back closes it), with a *Download* button that saves the PDF to the phone. The ZIP and CSV exports download the same way. In a normal browser nothing changes.
-- New API: `GET /api/invoice/<id>/pages`, `GET /api/invoice/<id>/page/<n>.png` and the same for `/api/report/<YYYY-MM>`. Invoice pages are rendered once and cached next to the PDF.
+- **Rechnungen in der Home-Assistant-App.** In der Companion-App von Home Assistant auf dem Handy taten die PDF-Links nichts oder endeten in einem Anmeldefehler: Die App hat keinen PDF-Betrachter, und Links, die ein neues Fenster öffnen, lassen die Anmeldung von Home Assistant zurück. In der App öffnen *Rechnung (PDF)* und der Monatsbericht jetzt eine Ansicht innerhalb von Ladecockpit mit den Seiten als Bilder (Tipp auf eine Seite vergrößert, Zurück schließt), mit einem Knopf *Herunterladen*, der das PDF aufs Handy speichert. ZIP- und CSV-Export laden genauso herunter. In einem normalen Browser ändert sich nichts.
+- Neue API: `GET /api/invoice/<id>/pages`, `GET /api/invoice/<id>/page/<n>.png` und dasselbe für `/api/report/<JJJJ-MM>`. Rechnungsseiten werden einmal gezeichnet und neben dem PDF zwischengespeichert.
 
 ## 0.6.1 – 2026-10-25
 
-- **Quieter log.** Ladecockpit no longer logs every request to Home Assistant and Tesla (about a dozen lines a minute) or the health check. Warnings and errors still show up, so real problems are easy to spot again.
+- **Ruhigeres Log.** Ladecockpit schreibt nicht mehr jede Anfrage an Home Assistant und Tesla (etwa ein Dutzend Zeilen pro Minute) und die Zustandsprüfung ins Log. Warnungen und Fehler erscheinen weiter, echte Probleme fallen also wieder leicht auf.
 
 ## 0.6.0 – 2026-10-24
 
-- **Where MultiPass has worked.** A new list of every third-party station where a MultiPass session is on your invoices: operator, sessions, average price, last use and a link that searches the station on Google Maps. The operators are shown as chips, so you see which networks already took MultiPass from you. It only regroups invoices Ladecockpit already has – no extra Tesla requests.
-- New entity `sensor.ladecockpit_multipass`: number of those stations as state, the list as attribute `stations` (with `map_url`), plus `operators` and a ready `text`. The ready-made dashboard section shows it once there is a station.
-- The demo has a second MultiPass station.
+- **Wo MultiPass funktioniert hat.** Eine neue Liste aller Fremdstationen, an denen eine MultiPass-Ladung auf deinen Rechnungen steht: Betreiber, Ladungen, Durchschnittspreis, letzte Nutzung und ein Link, der die Station in Google Maps sucht. Die Betreiber erscheinen als Chips, du siehst also, welche Netze MultiPass bei dir schon angenommen haben. Die Liste ordnet nur Rechnungen neu, die Ladecockpit schon hat – keine zusätzlichen Tesla-Abfragen.
+- Neue Entität `sensor.ladecockpit_multipass`: die Zahl dieser Stationen als Zustand, die Liste als Attribut `stations` (mit `map_url`), dazu `operators` und ein fertiger `text`. Der fertige Dashboard-Abschnitt zeigt sie, sobald es eine Station gibt.
+- Die Demo hat eine zweite MultiPass-Station.
 
 ## 0.5.0 – 2026-10-24
 
-- **Picture of your car.** The web app shows your Tesla, rendered by Tesla's own configurator. Pick model and generation (Model S, 3, X and Y since 2012, Cybertruck), trim (e.g. Performance or Plaid), wheels, paint and view under **Customise**. Only combinations Tesla can render are offered. Without a choice, model and generation are recognised from the VIN.
-- New entity `sensor.ladecockpit_car`: the car's name as state, its picture as entity picture, plus `image`, `image_front`, `image_side` and `image_rear` for dashboards. The ready-made dashboard section shows it.
-- New API: `GET /api/car`, `POST /api/car/preview`, `PUT /api/car`, `DELETE /api/car`.
+- **Bild deines Autos.** Die Web-App zeigt deinen Tesla, gezeichnet von Teslas eigenem Konfigurator. Modell und Generation (Model S, 3, X und Y seit 2012, Cybertruck), Ausstattung (z. B. Performance oder Plaid), Felgen, Lack und Ansicht wählst du unter **Anpassen**. Angeboten werden nur Kombinationen, die Tesla zeichnen kann. Ohne Auswahl werden Modell und Generation an der VIN erkannt.
+- Neue Entität `sensor.ladecockpit_car`: der Name des Autos als Zustand, sein Bild als Entitätsbild, dazu `image`, `image_front`, `image_side` und `image_rear` für Dashboards. Der fertige Dashboard-Abschnitt zeigt es.
+- Neue API: `GET /api/car`, `POST /api/car/preview`, `PUT /api/car`, `DELETE /api/car`.
 
 ## 0.4.1 – 2026-10-23
 
-- New entities `sensor.ladecockpit_range_at_100` (with long-term statistics, for a graph of the battery health over months) and `sensor.ladecockpit_consumption` (billed kWh per 100 km/mi this month, plus the consumption by outside temperature as attribute `by_temperature`).
+- Neue Entitäten `sensor.ladecockpit_range_at_100` (mit Langzeitstatistik, für einen Verlauf der Akkugesundheit über Monate) und `sensor.ladecockpit_consumption` (abgerechnete kWh pro 100 km/mi in diesem Monat, dazu der Verbrauch nach Außentemperatur als Attribut `by_temperature`).
 
 ## 0.4.0 – 2026-10-23
 
-- **MultiPass**: sessions at third-party chargers paid through Tesla MultiPass are recognised in the Tesla charging history and shown separately (session list, sites, month, price comparison). The event `ladecockpit_invoice`, the blueprint and `sensor.ladecockpit_last_charge` carry `network` (`supercharger` or `multipass`); `sensor.ladecockpit_month_cost` has `multipass_cost` and `multipass_sessions`. The CSV export has a new last column.
-- **Savings vs. a combustion car**: with a consumption and a fuel price (fixed or from entities), the month shows what the distance would have cost with petrol or diesel and what you saved. New options `fuel_consumption`, `entity_fuel_consumption`, `fuel_price`, `entity_fuel_price`.
-- **Projection**: cost and distance per year from the last 90 days, with the savings vs. the combustion car.
-- **Charging plan**: the next-stop card tells you when and where to charge before the battery reaches the floor – the cheapest Supercharger and time window from your own invoices, with the expected saving (`plan` on `sensor.ladecockpit_next_charge`).
-- **Monthly report**: on the first of the month the event `ladecockpit_month_report` with last month's figures and a ready text, plus a notification in Home Assistant (option `month_report`).
-- **Tesla credits**: sessions partly paid with Tesla credits (e.g. free Supercharging with a new car) now show the list price and the credit. Price radar, sites, charging plan and MultiPass comparison use the list price, so a credit no longer makes a Supercharger look cheap. Paid amounts are unchanged. The CSV export has list price, credit and net amount.
-- **Charging at home**: optional wallbox energy meter and electricity price (fixed or an entity, priced at the time of charging). Included in the month, cost per 100 km/mi, savings and projection (`entity_home_energy`, `home_price`, `entity_home_price`). `sensor.ladecockpit_month_cost` is now the total incl. charging at home (`invoice_cost`, `home_cost` as attributes).
-- **Battery health**: range at 100 % over time and the Supercharger share of the charged energy (`range_at_100` on `sensor.ladecockpit_battery`).
-- **Consumption by outside temperature** (`entity_outside_temp`, sensor or weather entity).
-- **Monthly PDF** `/api/report/<YYYY-MM>.pdf`: cover sheet with net, VAT, gross and credits, followed by all invoices of the month.
-- The log notes fields in Tesla's charging history that Ladecockpit does not know yet.
-- Price tips only appear for differences of at least €0.03/kWh.
-- Fix: the web app no longer scrolls sideways on narrow phones.
+- **MultiPass**: Ladungen an Fremdsäulen, die über Tesla MultiPass bezahlt werden, werden in der Tesla-Ladehistorie erkannt und getrennt gezeigt (Liste der Ladungen, Standorte, Monat, Preisvergleich). Das Event `ladecockpit_invoice`, der Blueprint und `sensor.ladecockpit_last_charge` enthalten `network` (`supercharger` oder `multipass`); `sensor.ladecockpit_month_cost` hat `multipass_cost` und `multipass_sessions`. Der CSV-Export hat eine neue letzte Spalte.
+- **Ersparnis gegenüber einem Verbrenner**: Mit einem Verbrauch und einem Spritpreis (fest oder aus Entitäten) zeigt der Monat, was die Strecke mit Benzin oder Diesel gekostet hätte und was du gespart hast. Neue Optionen `fuel_consumption`, `entity_fuel_consumption`, `fuel_price`, `entity_fuel_price`.
+- **Hochrechnung**: Kosten und Strecke pro Jahr aus den letzten 90 Tagen, mit der Ersparnis gegenüber dem Verbrenner.
+- **Ladeplan**: Die Karte zum nächsten Stopp sagt, wann und wo du laden solltest, bevor der Akku die Untergrenze erreicht – der günstigste Supercharger und das günstigste Zeitfenster aus deinen eigenen Rechnungen, mit der erwarteten Ersparnis (`plan` an `sensor.ladecockpit_next_charge`).
+- **Monatsbericht**: Am Monatsersten das Event `ladecockpit_month_report` mit den Zahlen des Vormonats und einem fertigen Text, dazu eine Benachrichtigung in Home Assistant (Option `month_report`).
+- **Tesla-Gutschriften**: Ladungen, die teilweise mit Tesla-Guthaben bezahlt wurden (z. B. kostenloses Supercharging bei einem Neuwagen), zeigen jetzt Listenpreis und Gutschrift. Preis-Radar, Standorte, Ladeplan und MultiPass-Vergleich nutzen den Listenpreis, eine Gutschrift lässt einen Supercharger also nicht mehr günstig aussehen. Bezahlte Beträge sind unverändert. Der CSV-Export hat Listenpreis, Gutschrift und Nettobetrag.
+- **Laden zu Hause**: optionaler Wallbox-Zähler und Strompreis (fest oder als Entität, bewertet zum Zeitpunkt des Ladens). Fließt in Monat, Kosten pro 100 km/mi, Ersparnis und Hochrechnung ein (`entity_home_energy`, `home_price`, `entity_home_price`). `sensor.ladecockpit_month_cost` ist jetzt die Summe inklusive Laden zu Hause (`invoice_cost`, `home_cost` als Attribute).
+- **Akkugesundheit**: Reichweite bei 100 % im Zeitverlauf und der Supercharger-Anteil an der geladenen Energie (`range_at_100` an `sensor.ladecockpit_battery`).
+- **Verbrauch nach Außentemperatur** (`entity_outside_temp`, Sensor oder Wetter-Entität).
+- **Monats-PDF** `/api/report/<JJJJ-MM>.pdf`: Deckblatt mit netto, MwSt., brutto und Gutschriften, danach alle Rechnungen des Monats.
+- Das Log nennt Felder in Teslas Ladehistorie, die Ladecockpit noch nicht kennt.
+- Preistipps erscheinen nur bei Unterschieden ab 0,03 €/kWh.
+- Behoben: Die Web-App scrollt auf schmalen Handys nicht mehr seitwärts.
 
 ## 0.3.0 – 2026-10-23
 
-- **Sensors in Home Assistant**: Ladecockpit now creates `sensor.ladecockpit_next_charge`, `sensor.ladecockpit_battery`, `sensor.ladecockpit_month_cost`, `sensor.ladecockpit_last_charge`, `sensor.ladecockpit_price_tip` and `binary_sensor.ladecockpit_problem` itself. No YAML needed. Option `publish_entities` / `PUBLISH_ENTITIES`.
-- Ready-made dashboard section with built-in cards: `homeassistant/dashboard_card.yaml`.
-- The REST sensors in `homeassistant/ladecockpit_package.yaml` are gone. If you copied them, remove them, they would clash with the new entities.
+- **Sensoren in Home Assistant**: Ladecockpit legt `sensor.ladecockpit_next_charge`, `sensor.ladecockpit_battery`, `sensor.ladecockpit_month_cost`, `sensor.ladecockpit_last_charge`, `sensor.ladecockpit_price_tip` und `binary_sensor.ladecockpit_problem` jetzt selbst an. Kein YAML nötig. Option `publish_entities` / `PUBLISH_ENTITIES`.
+- Fertiger Dashboard-Abschnitt mit eingebauten Karten: `homeassistant/dashboard_card.yaml`.
+- Die REST-Sensoren in `homeassistant/ladecockpit_package.yaml` sind entfallen. Wer sie kopiert hat, entfernt sie, sonst kollidieren sie mit den neuen Entitäten.
 
 ## 0.2.1 – 2026-10-23
 
-- Fix: on a fresh install the battery level, range and odometer were not taken from the Home Assistant history (only the first of the ten days was requested). They now show up right away, also while the car is asleep and its entities are `unknown`.
+- Behoben: Bei einer Neuinstallation wurden Akkustand, Reichweite und Kilometerstand nicht aus dem Verlauf von Home Assistant übernommen (abgefragt wurde nur der erste der zehn Tage). Sie erscheinen jetzt sofort, auch wenn das Auto schläft und seine Entitäten `unknown` sind.
 
 ## 0.2.0 – 2026-10-23
 
-- **Runs as a Home Assistant app**: install it from this repository in Home Assistant, the web app opens from the sidebar. No separate server or PC needed.
-- Charging power (average kW) per session and per site.
-- kWh per 100 km/mi (billed energy incl. charging losses) per month.
-- Export: all sessions as CSV, all invoices of a month as a ZIP file.
-- Notification in Home Assistant when the Tesla sign-in expired or syncing keeps failing (event `ladecockpit_problem`).
-- On a fresh install the battery level, range and odometer are taken from the Home Assistant history, so they show up right away.
-- The web app can be added to a phone's home screen with its own icon.
-- The container now runs as root (needed for the Home Assistant app).
+- **Läuft als Home-Assistant-App**: aus diesem Repository in Home Assistant installieren, die Web-App öffnet sich über die Seitenleiste. Kein eigener Server oder PC nötig.
+- Ladeleistung (mittlere kW) je Ladung und je Standort.
+- kWh pro 100 km/mi (abgerechnete Energie inklusive Ladeverlusten) je Monat.
+- Export: alle Ladungen als CSV, alle Rechnungen eines Monats als ZIP-Datei.
+- Benachrichtigung in Home Assistant, wenn die Tesla-Anmeldung abgelaufen ist oder der Abgleich wiederholt fehlschlägt (Event `ladecockpit_problem`).
+- Bei einer Neuinstallation werden Akkustand, Reichweite und Kilometerstand aus dem Verlauf von Home Assistant übernommen und erscheinen sofort.
+- Die Web-App lässt sich mit eigenem Symbol auf den Startbildschirm eines Handys legen.
+- Der Container läuft jetzt als root (nötig für die Home-Assistant-App).
 
 ## 0.1.0 – 2026-10-23
 
-First public version.
+Erste öffentliche Version.
 
-- Fetches Supercharger invoices from the Tesla Fleet API (read-only) and sends each one once to Home Assistant as the event `ladecockpit_invoice`.
-- Blueprint to book invoices into your own `input_number` / `input_text` helpers.
-- Detects the end of a charging session from a Home Assistant entity and looks for the invoice right away.
-- Web app (English/German) with last invoice, monthly cost, cost per 100 km/mi, price radar by time of day and site, next charging stop forecast, reconciliation with Home Assistant totals, Tesla API usage.
-- Keeps its own history of battery level and odometer, so the last value stays visible while the car is offline.
-- Demo mode without credentials.
+- Holt Supercharger-Rechnungen über die Tesla Fleet API (nur lesend) und schickt jede einmal als Event `ladecockpit_invoice` an Home Assistant.
+- Blueprint, um Rechnungen in eigene `input_number`- und `input_text`-Helfer zu buchen.
+- Erkennt das Ende einer Ladung an einer Entität in Home Assistant und sucht sofort nach der Rechnung.
+- Web-App (Englisch/Deutsch) mit letzter Rechnung, Monatskosten, Kosten pro 100 km/mi, Preis-Radar nach Tageszeit und Standort, Prognose für den nächsten Ladestopp, Abgleich mit den Summen in Home Assistant und Verbrauch der Tesla-API.
+- Führt eine eigene Historie von Akkustand und Kilometerstand, damit der letzte Wert sichtbar bleibt, während das Auto offline ist.
+- Demo-Modus ohne Zugangsdaten.
