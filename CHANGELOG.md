@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.5 – 2026-11-22
+
+- Mobile app: the buttons on the tips under *What stands out* that lead to the price radar (*To the price radar*, *Radar for …*) did nothing when the radar was further down the page – the list had not built it yet. They now scroll down to the radar and, for a site, choose that site.
+- The server is unchanged.
+
 ## 0.23.4 – 2026-11-22
 
 - **An offline car is no setup problem.** When the car is asleep or has no reception and Home Assistant restarts, the car integration has no values until the car is back online – the setup check then reported battery level, range, odometer and charging state as "unavailable right now" and asked to check the setup. Now, when every entity the car delivers exists but has no value, and Ladecockpit has kept values of the car before, the setup check says "Car offline – values from the last reading 21.11. 21:12" and shows no warning. A single entity without a value while the car is online, an entity that does not exist, and a car that never delivered a value are still marked. New field `offline` in `setup.checks` (time of the last reading), `offline` per entity.
