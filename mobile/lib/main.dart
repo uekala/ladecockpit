@@ -183,6 +183,22 @@ class CockpitClient {
     }
   }
 
+  /// Hides a tip of the setup check; without an id every hidden tip shows again.
+  Future<void> hideHint(String? id) async {
+    final uri = await _endpoint(id == null ? '/api/hints/hidden' : '/api/hint');
+    final headers = {...await _headers(json: true), 'Content-Type': 'application/json'};
+    final response = await (id == null
+            ? _http.delete(uri, headers: headers)
+            : _http.put(uri, headers: headers, body: jsonEncode({'id': id, 'hidden': true})))
+        .timeout(Duration(seconds: 30));
+    if (response.statusCode == 401) {
+      throw CockpitException(tr('Anmeldung fehlgeschlagen. Bitte App-Passwort prüfen.'));
+    }
+    if (response.statusCode != 200) {
+      throw CockpitException(trf('Konnte nicht gespeichert werden (HTTP {0}).', [response.statusCode]));
+    }
+  }
+
   Future<String> csvExport() async {
     final uri = await _endpoint('/api/export.csv');
     final response = await _http.get(uri, headers: await _headers())
@@ -1449,6 +1465,20 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  /// Hides a tip of the setup check (id null: shows the hidden tips again) and reloads.
+  Future<void> _hideHint(String? id) async {
+    try {
+      await _client.hideHint(id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(id == null ? tr('Tipps werden wieder gezeigt') : tr('Tipp ausgeblendet'))));
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
   Future<void> _showSessionDetails(Map<String, dynamic> session) async {
     final site = session['site']?.toString() ?? tr('Unbekannter Standort');
     final currency = session['currency']?.toString() ?? 'EUR';
@@ -1719,6 +1749,8 @@ class _DashboardPageState extends State<DashboardPage> {
     final openSteps = steps.where((step) =>
         step['status'] == 'todo' || step['status'] == 'problem' || step['status'] == 'waiting').toList();
     final requiredOpen = openSteps.where((step) => step['required'] == true).toList();
+    // Tips the user has hidden (servers before 0.23.4 send none)
+    final hidden = checks['hidden'] is num ? (checks['hidden'] as num).toInt() : 0;
     if (hints.isEmpty && bad.isEmpty && openSteps.isEmpty) return SizedBox.shrink();
     final muted = Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary, height: 1.35);
     return Card(
@@ -1782,11 +1814,28 @@ class _DashboardPageState extends State<DashboardPage> {
                       color: hint['level'] == 'missing' ? AppTheme.warning : AppTheme.accentTeal, size: 18),
                     SizedBox(width: 8),
                     Expanded(child: Text(hint['text']?.toString() ?? '', style: muted)),
+                    if (hint['dismissable'] == true && hint['id'] != null)
+                      IconButton(
+                        key: ValueKey('hint-hide-${hint['id']}'),
+                        onPressed: () => _hideHint(hint['id'].toString()),
+                        icon: Icon(Icons.close_rounded, size: 18, color: AppTheme.textSecondary),
+                        tooltip: tr('Tipp ausblenden'),
+                        visualDensity: VisualDensity.compact,
+                        constraints: BoxConstraints(minWidth: 44, minHeight: 44),
+                        padding: EdgeInsets.zero,
+                      ),
                   ],
                 ),
               ),
-            if (checks['hidden_note'] is String)
+            if (checks['hidden_note'] is String && hints.isNotEmpty)
               Text(checks['hidden_note'] as String, style: muted),
+            if (hidden > 0)
+              TextButton(
+                key: ValueKey('hints-show'),
+                onPressed: () => _hideHint(null),
+                style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size(0, 44)),
+                child: Text(trf('Ausgeblendete Tipps wieder zeigen ({0})', [hidden])),
+              ),
           ],
         ),
       ),
@@ -3158,11 +3207,15 @@ class _DashboardPageState extends State<DashboardPage> {
     final readingColor = socSource == 'last'
         ? AppTheme.warning
         : socSource == 'live' ? AppTheme.accentGreen : AppTheme.textSecondary;
+    // No charging state while the figures are the last known ones: the car is offline (asleep or
+    // without reception), which is normal and no fault.
+    final carOffline = charging == null && socSource == 'last';
     final chargingText = charging == true ? tr('Wird geladen')
-        : charging == false ? tr('Lädt derzeit nicht') : tr('Ladestatus nicht verfügbar');
+        : charging == false ? tr('Lädt derzeit nicht')
+        : carOffline ? tr('Auto offline') : tr('Ladestatus nicht verfügbar');
     final chargingColor = charging == true
         ? AppTheme.accentGreen
-        : charging == false ? AppTheme.textSecondary : AppTheme.warning;
+        : charging == false || carOffline ? AppTheme.textSecondary : AppTheme.warning;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -3337,7 +3390,8 @@ class _DashboardPageState extends State<DashboardPage> {
             Row(
               children: [
                 Icon(
-                  charging == true ? Icons.ev_station_rounded : Icons.power_rounded,
+                  charging == true ? Icons.ev_station_rounded
+                      : carOffline ? Icons.cloud_off_rounded : Icons.power_rounded,
                   color: chargingColor, size: 19),
                 SizedBox(width: 9),
                 Expanded(

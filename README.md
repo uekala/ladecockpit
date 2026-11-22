@@ -291,6 +291,7 @@ If a MultiPass session is shown as Supercharger (or the other way round), please
 | `GET /api/invoice/<id>/page/<n>.png`, `GET /api/report/<YYYY-MM>/page/<n>.png` | One page as a picture |
 | `GET /api/export.csv` | All sessions as CSV |
 | `PUT /api/look` | Look of the web app: `{"look": "classic"}` or `{"look": "dynamic"}` |
+| `PUT /api/hint` / `DELETE /api/hints/hidden` | Hide a tip of the setup check (`{"id": "no_home", "hidden": true}`) / show all hidden tips again |
 | `GET /api/car` | Picture of the car with everything that can be chosen |
 | `POST /api/car/preview` | Picture for a choice, nothing is saved |
 | `PUT /api/car` / `DELETE /api/car` | Save the choice / recognise the car from the VIN again |
