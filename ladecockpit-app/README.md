@@ -1,5 +1,5 @@
-# Ladecockpit – Home Assistant app
+# Ladecockpit – Home-Assistant-App
 
-Your real Tesla Supercharger invoices in Home Assistant: exact kWh, price and idle fees for every session, a price radar by time of day and site, the next charging stop and a small web app in the sidebar.
+Deine echten Tesla-Supercharger-Rechnungen in Home Assistant: genaue kWh, Preis und Blockiergebühr jeder Ladung, ein Preis-Radar nach Tageszeit und Standort, der nächste Ladestopp und eine kleine Web-App in der Seitenleiste.
 
-See the documentation tab for setup, and the [project page](https://github.com/uekala/ladecockpit) for details.
+Die Einrichtung steht im Tab „Dokumentation“, Einzelheiten auf der [Projektseite](https://github.com/uekala/ladecockpit).

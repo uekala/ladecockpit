@@ -1,76 +1,76 @@
 # Ladecockpit
 
-Ladecockpit fetches your real Supercharger invoices from the Tesla Fleet API and reports each new one to Home Assistant as the event `ladecockpit_invoice`. The web app opens from the sidebar.
+Ladecockpit holt deine echten Supercharger-Rechnungen über die Tesla Fleet API und meldet jede neue als Event `ladecockpit_invoice` an Home Assistant. Die Web-App öffnest du über die Seitenleiste.
 
-## Before you start
+## Bevor du anfängst
 
-- You need a Tesla developer app with Fleet API access. If you use the Tesla Fleet integration, you can reuse its app.
-- In that app on developer.tesla.com, add `http://localhost:8077/auth/callback` to **Allowed Redirect URIs** and enable the scope **Vehicle Charging Management**.
-- **Run only one Ladecockpit.** If it already runs elsewhere (Docker on a PC or server), stop it first. Two instances would report every invoice twice.
+- Du brauchst eine Tesla-Entwickler-App mit Zugriff auf die Fleet API. Nutzt du die Integration Tesla Fleet, kannst du deren App weiterverwenden.
+- Trage in dieser App auf developer.tesla.com `http://localhost:8077/auth/callback` unter **Allowed Redirect URIs** ein und aktiviere den Scope **Vehicle Charging Management**.
+- **Nur ein Ladecockpit betreiben.** Läuft es schon woanders (Docker auf einem PC oder Server), dort zuerst stoppen. Zwei Instanzen würden jede Rechnung doppelt melden.
 
-## Configuration
+## Konfiguration
 
-1. Enter **Tesla client ID** and **Tesla client secret**.
-2. Enter the entities of your car. They are all optional, and each one unlocks a feature:
-   - **Battery level**, e.g. `sensor.my_tesla_battery_level`: battery card and charging forecast.
-   - **Range**: shown next to the battery level.
-   - **Odometer**: distance, cost and kWh per 100 km/mi.
-   - **Charging state**, e.g. `sensor.my_tesla_charging`: the invoice is fetched right after a session ends.
-   - **Charging power** and **Time to full**, e.g. `sensor.my_tesla_charger_power` and `sensor.my_tesla_time_to_full_charge`: while the car charges, the web app shows the power and when the charge limit is reached.
-3. Optional: the two `input_number` helpers the blueprint books into. They enable the "HA vs. invoices" check.
-4. Start the app and open **Ladecockpit** in the sidebar.
+1. **Tesla Client ID** und **Tesla Client Secret** eintragen.
+2. Die Entitäten deines Autos eintragen. Alle sind optional, und jede schaltet eine Funktion frei:
+   - **Entität Akkustand**, z. B. `sensor.my_tesla_battery_level`: Akku-Karte und Ladeprognose.
+   - **Entität Reichweite**: steht neben dem Akkustand.
+   - **Entität Kilometerstand**: Strecke sowie Kosten und kWh pro 100 km/mi.
+   - **Entität Ladestatus**, z. B. `sensor.my_tesla_charging`: Die Rechnung wird gleich nach dem Ende einer Ladung abgerufen.
+   - **Entität Ladeleistung** und **Entität Zeit bis voll**, z. B. `sensor.my_tesla_charger_power` und `sensor.my_tesla_time_to_full_charge`: Während das Auto lädt, zeigt die Web-App die Leistung und wann das Ladelimit erreicht ist.
+3. Optional: die beiden `input_number`-Helfer, in die der Blueprint bucht. Sie schalten den Abgleich „HA gegen Rechnungen“ frei.
+4. Die App starten und in der Seitenleiste **Ladecockpit** öffnen.
 
-## Connect to Tesla
+## Mit Tesla verbinden
 
-1. Click **Sign in with Tesla**. Tesla opens in a new tab.
-2. After signing in, Tesla redirects to `http://localhost:8077/auth/callback?code=…`. That page does not load, which is expected.
-3. Copy the full address from the browser bar of that tab and paste it into the field in Ladecockpit.
+1. **Bei Tesla anmelden** anklicken. Tesla öffnet sich in einem neuen Tab.
+2. Nach der Anmeldung leitet Tesla auf `http://localhost:8077/auth/callback?code=…` weiter. Diese Seite lädt nicht, das ist so gewollt.
+3. Die vollständige Adresse aus der Adresszeile dieses Tabs kopieren und in das Feld in Ladecockpit einfügen.
 
-The first sync starts right away. Invoices from before are only imported and **not** reported, so totals you already keep are not counted twice.
+Der erste Abgleich startet sofort. Ältere Rechnungen werden nur übernommen und **nicht** gemeldet, damit Summen, die du schon führst, nicht doppelt gezählt werden.
 
-## Booking invoices
+## Rechnungen buchen
 
-Import the blueprint `blueprints/automation/ladecockpit/book_invoice.yaml` from the repository. It adds every invoice to your helpers and can send a notification. If you only want the notification, import `blueprints/automation/ladecockpit/notify_invoice.yaml` instead or in addition; it needs no helpers.
+Den Blueprint `blueprints/automation/ladecockpit/book_invoice.yaml` aus dem Repository importieren. Er addiert jede Rechnung zu deinen Helfern und kann eine Benachrichtigung schicken. Willst du nur die Benachrichtigung, stattdessen oder zusätzlich `blueprints/automation/ladecockpit/notify_invoice.yaml` importieren; der braucht keine Helfer.
 
-## Comparison with a combustion car
+## Vergleich mit einem Verbrenner
 
-Enter the consumption (L/100 km) and fuel price of a comparison car, either as fixed values or as entities (e.g. the average consumption of your other car and a fuel price sensor). Ladecockpit then shows what the same distance would have cost and what you saved, per month and projected for a year.
+Verbrauch (L/100 km) und Spritpreis eines Vergleichsautos eintragen, entweder als feste Werte oder als Entitäten (z. B. der Durchschnittsverbrauch deines anderen Autos und ein Spritpreis-Sensor). Ladecockpit zeigt dann, was dieselbe Strecke gekostet hätte und was du gespart hast, pro Monat und hochgerechnet aufs Jahr.
 
-With *Fuel price as a daily average* (`FUEL_PRICE_DAILY`) every day's distance is priced at that day's average of the fuel price entity, e.g. the cheapest E10 price near you, which changes many times a day. The comparison then shows the average over the month, weighted by the distance of each day.
+Mit *Spritpreis als Tagesdurchschnitt* (`FUEL_PRICE_DAILY`) wird die Strecke jedes Tages mit dem Tagesdurchschnitt der Spritpreis-Entität berechnet, z. B. dem günstigsten E10-Preis in deiner Nähe, der sich viele Male am Tag ändert. Der Vergleich zeigt dann den Durchschnitt über den Monat, gewichtet nach der Strecke jedes Tages.
 
-## Charging off-peak and the reference price
+## Günstig laden und der Referenzpreis
 
-Many Superchargers cost less at night and early in the morning. Once Ladecockpit has seen both prices at a site in your invoices, the month card shows what charging there off-peak saved this month: those sessions at the site's day price, all others at their own price. A price change or a dear site never counts as a saving, and Tesla credits stay out of it.
+Viele Supercharger sind nachts und früh am Morgen günstiger. Sobald Ladecockpit an einem Standort beide Preise in deinen Rechnungen gesehen hat, zeigt die Monatskarte, was das Laden dort zur günstigen Zeit in diesem Monat gespart hat: diese Ladungen zum Tagespreis des Standorts, alle anderen zu ihrem eigenen Preis. Eine Preisänderung oder ein teurer Standort zählt nie als Ersparnis, und Gutschriften von Tesla bleiben außen vor.
 
-If you would rather compare with a price of your own, e.g. the one you used to estimate costs before, enter it under *Reference price entity* or *Reference price per kWh*. `0` turns the comparison off.
+Möchtest du lieber mit einem eigenen Preis vergleichen, z. B. dem, mit dem du die Kosten früher geschätzt hast, trag ihn unter *Entität Referenzpreis* oder *Referenzpreis pro kWh* ein. `0` schaltet den Vergleich ab.
 
-## Notifications on the phone without Home Assistant
+## Benachrichtigungen aufs Handy ohne Home Assistant
 
-Install the ntfy app (F-Droid, Google Play, App Store) and subscribe to a topic with a long, random name, e.g. `ladecockpit-7f3k9q`. Enter its full address under *Push to the phone (ntfy topic)*, e.g. `https://ntfy.sh/ladecockpit-7f3k9q`, or the address of your own ntfy server (with an access token if it needs one). Ladecockpit then sends every new invoice, problems with the Tesla sign-in or the sync, and the monthly report. *Send test message* under *Operation* in the web app checks the setup. On ntfy.sh anyone who knows the topic name can read the messages – they contain the place, kWh and amount of a charge, nothing else.
+Die App ntfy installieren (F-Droid, Google Play, App Store) und ein Thema mit langem, zufälligem Namen abonnieren, z. B. `ladecockpit-7f3k9q`. Die vollständige Adresse unter *Push aufs Handy (ntfy-Thema)* eintragen, z. B. `https://ntfy.sh/ladecockpit-7f3k9q`, oder die Adresse deines eigenen ntfy-Servers (mit Zugangstoken, falls er eines verlangt). Ladecockpit schickt dann jede neue Rechnung, Probleme mit der Tesla-Anmeldung oder dem Abgleich und den Monatsbericht. *Testnachricht senden* unter *Betrieb* in der Web-App prüft die Einrichtung. Auf ntfy.sh kann jeder die Nachrichten lesen, der den Namen des Themas kennt – sie enthalten Ort, kWh und Betrag einer Ladung, sonst nichts.
 
-## More options
+## Weitere Optionen
 
-- **Charging at home**: the energy meter of your wallbox (kWh, only increasing) and your electricity price, fixed or from an entity such as a dynamic tariff. The price at the time of charging is used.
-- **Outside temperature**: a sensor or a weather entity, for the consumption by temperature.
+- **Laden zu Hause**: der Zähler deiner Wallbox (kWh, nur steigend) und dein Strompreis, fest oder aus einer Entität wie einem dynamischen Tarif. Verwendet wird der Preis zum Zeitpunkt des Ladens.
+- **Außentemperatur**: ein Sensor oder eine Wetter-Entität, für den Verbrauch nach Temperatur.
 
-## Backup and year overview
+## Datensicherung und Jahresübersicht
 
-In the web app, **Connections & API costs** has **Download backup** and **Restore backup**: charging history, readings and invoices in one file, without the Tesla sign-in. Restoring replaces the charging history; sessions already reported to Home Assistant are not booked twice. After moving to another Home Assistant, sign in with Tesla once.
+In der Web-App gibt es unter **Verbindungen & API-Kosten** die Knöpfe **Sicherung herunterladen** und **Sicherung einspielen**: Ladehistorie, Messwerte und Rechnungen in einer Datei, ohne die Tesla-Anmeldung. Das Einspielen ersetzt die Ladehistorie; Ladungen, die schon an Home Assistant gemeldet wurden, werden nicht doppelt gebucht. Nach einem Umzug auf ein anderes Home Assistant einmal bei Tesla anmelden.
 
-Under **Export** you find a **year overview** as PDF for every year with sessions: one line per month with sessions, kWh, net, VAT, gross and credits.
+Unter **Export** steht für jedes Jahr mit Ladungen eine **Jahresübersicht** als PDF: eine Zeile pro Monat mit Ladungen, kWh, netto, MwSt., brutto und Gutschriften.
 
-## Sensors
+## Sensoren
 
-Ladecockpit creates its own entities: `sensor.ladecockpit_next_charge`, `sensor.ladecockpit_battery`, `sensor.ladecockpit_month_cost`, `sensor.ladecockpit_month_energy` (kWh this month, for the energy dashboard), `sensor.ladecockpit_last_charge`, `sensor.ladecockpit_price_tip`, `sensor.ladecockpit_range_at_100`, `sensor.ladecockpit_consumption`, `sensor.ladecockpit_car` (a picture of your car, chosen in the web app with **Customise**), `sensor.ladecockpit_multipass` (third-party stations where MultiPass has worked for you, with map links) and `binary_sensor.ladecockpit_problem`. Use them in dashboards and automations. A ready-made dashboard section is in `homeassistant/dashboard_card.yaml` in the repository. Turn this off with **Create sensors in Home Assistant**.
+Ladecockpit legt eigene Entitäten an: `sensor.ladecockpit_next_charge`, `sensor.ladecockpit_battery`, `sensor.ladecockpit_month_cost`, `sensor.ladecockpit_month_energy` (kWh in diesem Monat, für das Energie-Dashboard), `sensor.ladecockpit_last_charge`, `sensor.ladecockpit_price_tip`, `sensor.ladecockpit_range_at_100`, `sensor.ladecockpit_consumption`, `sensor.ladecockpit_car` (ein Bild deines Autos, ausgewählt in der Web-App unter **Anpassen**), `sensor.ladecockpit_multipass` (Fremdstationen, an denen MultiPass bei dir funktioniert hat, mit Kartenlinks) und `binary_sensor.ladecockpit_problem`. Du kannst sie in Dashboards und Automationen nutzen. Einen fertigen Dashboard-Abschnitt findest du im Repository unter `homeassistant/dashboard_card.yaml`. Abschalten lässt sich das mit **Sensoren in Home Assistant anlegen**.
 
-Month cost and month energy keep long-term statistics, with a new sum each month.
+Monatskosten und Monatsenergie führen Langzeitstatistiken, mit einer neuen Summe in jedem Monat.
 
-These entities have no unique ID, so they cannot be renamed in the UI, and after a Home Assistant restart they are missing for a few minutes. The optional **Ladecockpit integration** turns them into real entities with the same IDs, a device and restore after a restart: add `https://github.com/uekala/ladecockpit` in HACS as a custom repository of type *Integration*, download *Ladecockpit*, restart Home Assistant and add the integration under *Settings → Devices & services*. The app finds it within five minutes; there is nothing to set.
+Diese Entitäten haben keine eindeutige ID. Man kann sie deshalb in der Oberfläche nicht umbenennen, und nach einem Neustart von Home Assistant fehlen sie ein paar Minuten. Die optionale **Ladecockpit-Integration** macht daraus echte Entitäten mit denselben IDs, einem Gerät und Wiederherstellung nach einem Neustart: in HACS `https://github.com/uekala/ladecockpit` als benutzerdefiniertes Repository vom Typ *Integration* hinzufügen, *Ladecockpit* herunterladen, Home Assistant neu starten und die Integration unter *Einstellungen → Geräte & Dienste* hinzufügen. Die App findet sie innerhalb von fünf Minuten; einzustellen gibt es nichts.
 
-## Problems
+## Probleme
 
-If the Tesla sign-in expires or syncing keeps failing, Ladecockpit creates a notification in Home Assistant and fires the event `ladecockpit_problem`. You can turn this off with **Notify about problems**.
+Läuft die Tesla-Anmeldung ab oder schlägt der Abgleich wiederholt fehl, legt Ladecockpit eine Benachrichtigung in Home Assistant an und löst das Event `ladecockpit_problem` aus. Abschalten kannst du das mit **Bei Problemen benachrichtigen**.
 
-## Network access and security
+## Netzwerkzugriff und Sicherheit
 
-The sidebar uses Home Assistant Ingress and is authenticated by Home Assistant. The optional `8077/tcp` port bypasses Ingress; leave it disabled unless you need direct access, for example for the [mobile app](https://github.com/uekala/ladecockpit/blob/main/mobile/README.md). Direct access stays locked until you set **Mobile app password**: set it first, restart the app, and only then map the port. The mobile app signs in with this password. Restrict the port to a trusted private network or VPN such as Tailscale, or put it behind a reverse proxy that requires authentication and HTTPS. Do not publish it directly to the internet. The standalone `APP_PASSWORD` requirement does not apply to the Ingress-only Home Assistant app.
+Die Seitenleiste nutzt Ingress von Home Assistant und wird von Home Assistant angemeldet. Der optionale Port `8077/tcp` umgeht Ingress; lass ihn abgeschaltet, solange du keinen direkten Zugriff brauchst, zum Beispiel für die [Handy-App](https://github.com/uekala/ladecockpit/blob/main/mobile/README.md). Der direkte Zugriff bleibt gesperrt, bis du ein **Mobiles App-Passwort** setzt: zuerst setzen, die App neu starten und erst dann den Port freigeben. Die Handy-App meldet sich mit diesem Passwort an. Beschränke den Port auf ein vertrauenswürdiges privates Netz oder ein VPN wie Tailscale, oder stell ihn hinter einen Reverse-Proxy, der Anmeldung und HTTPS verlangt. Gib ihn nicht direkt ins Internet frei. Die Pflicht zu `APP_PASSWORD` aus dem Standalone-Betrieb gilt nicht für die Home-Assistant-App, die nur über Ingress läuft.
