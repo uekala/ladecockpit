@@ -234,6 +234,15 @@ In der Web-App unter **Verbindungen & API-Kosten** gibt es **Sicherung herunterl
 - Bereits an Home Assistant gemeldete Ladungen bleiben als gemeldet markiert und werden nicht doppelt gebucht.
 - Für Skripte: `GET /api/backup.zip` liefert die Datei, `POST /api/restore` spielt sie ein (Inhalt: die ZIP-Datei, `Content-Type: application/zip`).
 
+**Von der Home-Assistant-App zu Docker umziehen**
+
+1. In der Home-Assistant-App die Sicherung herunterladen (oben). Ohne Sicherung holt die neue Installation Ladehistorie und Rechnungen erneut von Tesla; verloren gehen dann nur Angaben, die du selbst gepflegt hast, etwa zugeordnete Betreiber.
+2. Die Optionen der App als Umgebungsvariablen übernehmen (Abschnitt *Konfigurieren*). `APP_PASSWORD` ist Pflicht; nimmst du das bisherige *Mobile App-Passwort*, ändert sich in der Handy-App nur die Adresse. Für `HA_URL` und `HA_TOKEN` ein langlebiges Zugriffstoken anlegen.
+3. Die Home-Assistant-App stoppen, erst dann den Container starten. Beide nutzen denselben Tesla-Zugang und dasselbe Abfrage-Kontingent und dürfen nicht gleichzeitig laufen.
+4. Im Container einmal neu bei Tesla anmelden und, falls vorhanden, die Sicherung einspielen.
+5. In Home Assistant bleiben Integration, Blueprint, Sensoren und Entitäts-IDs unverändert. Dashboard-Karten, die die Web-App über die Seitenleiste öffnen (`navigation_path: /app/<Kennung>_ladecockpit`), zeigen danach ins Leere: auf die Adresse des Containers umstellen (`action: url`, z. B. `http://<IP des Servers>:8077`).
+6. Erst wenn alles läuft, die Home-Assistant-App deinstallieren.
+
 ### Jahresübersicht
 
 Unter **Export** steht je Jahr mit Ladungen eine **Jahresübersicht** als PDF (`/api/year/2026.pdf`): eine Zeile pro Monat mit Ladungen, kWh, netto, MwSt., brutto und Gutschriften, darunter die Summe, der MultiPass-Anteil und das Laden zu Hause. Die Rechnungen selbst hängen an den Monatsberichten.
