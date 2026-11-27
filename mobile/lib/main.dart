@@ -3789,243 +3789,243 @@ class _DashboardPageState extends State<DashboardPage> {
         if (!didPop) setState(() => _selectedTab = 0);
       },
       child: Scaffold(
-      appBar: AppBar(
-        title: Text(tr(tabTitles[_selectedTab]),
-          style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            onPressed: _loading ? null : _load,
-            tooltip: _loading ? tr('Wird aktualisiert') : tr('Aktualisieren'),
-            icon: _loading
-                ? SizedBox(
-                    width: 19,
-                    height: 19,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Icon(Icons.refresh),
-          ),
-          IconButton(onPressed: _settings, tooltip: tr('Verbindung'),
-            icon: Icon(Icons.settings_outlined)),
-        ],
-      ),
-      body: ColoredBox(
-        color: AppTheme.background,
-        child: RefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-          key: PageStorageKey('ladecockpit-tab-$_selectedTab'),
-          physics: AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 32),
-          children: [
-            if (_data != null)
-              Padding(
-                padding: EdgeInsets.fromLTRB(4, 0, 4, 10),
-                child: Row(
-                  children: [
-                    if (_loading) ...[
-                      SizedBox(
-                        width: 13,
-                        height: 13,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      SizedBox(width: 8),
-                      Text(tr('Daten werden aktualisiert'),
-                        style: TextStyle(color: AppTheme.accentTeal, fontSize: 11,
-                          fontWeight: FontWeight.w600)),
-                    ] else ...[
-                      Icon(_fromCache ? Icons.history_rounded : Icons.check_circle_outline,
-                        color: _fromCache ? AppTheme.warning : AppTheme.accentGreen, size: 14),
-                      SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          _lastSuccessfulFetch == null
-                              ? tr('Daten geladen')
-                              : _fromCache
-                                  ? trf('Letzter Stand · {0}', [_fetchTimeLabel(_lastSuccessfulFetch)])
-                                  : trf('Aktualisiert · {0}', [_fetchTimeLabel(_lastSuccessfulFetch)]),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: AppTheme.textSecondary, fontSize: 11),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            if (_error != null)
-              _loadStatePanel(
-                icon: Icons.cloud_off_rounded,
-                title: _data == null ? tr('Verbindung nicht möglich')
-                    : _fromCache ? tr('Keine Verbindung zum Server') : tr('Aktualisierung fehlgeschlagen'),
-                message: _data == null
-                    ? _error!
-                    : _fromCache
-                        ? trf('Du siehst den letzten Stand, den dein Handy gespeichert hat. {0}', [_error])
-                        : trf('Die zuletzt geladenen Daten bleiben sichtbar. {0}', [_error]),
-                color: AppTheme.warning,
-                action: Wrap(spacing: 8, runSpacing: 8, children: [
-                  FilledButton.icon(
-                    onPressed: _loading ? null : _load,
-                    icon: Icon(Icons.refresh),
-                    label: Text(tr('Erneut versuchen')),
-                  ),
-                  if (_data == null)
-                    OutlinedButton.icon(
-                      onPressed: _settings,
-                      icon: Icon(Icons.settings_outlined),
-                      label: Text(tr('Verbindung einrichten')),
-                    ),
-                ]),
-              ),
-            if (_data == null && _loading && _error == null)
-              _loadStatePanel(
-                icon: Icons.electric_car_rounded,
-                title: tr('Lade dein Cockpit'),
-                message: tr('Fahrzeug- und Ladedaten werden sicher vom Server abgerufen.'),
-                color: AppTheme.accentGreen,
-                action: LinearProgressIndicator(minHeight: 3),
-              ),
-            if (_data != null && _selectedTab == 0) ...[
-              _vehicleHero(_map(_data?['status']), _map(_data?['car'])),
-              _connectionStatus(),
-              _setupCheck(_map(_data?['setup'])),
-              Padding(
-                padding: EdgeInsets.fromLTRB(4, 2, 4, 9),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(tr('MONATSÜBERBLICK'),
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppTheme.accentGreen,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.2)),
-                    SizedBox(height: 3),
-                    Text(tr('Ladeaktivität und Kosten auf einen Blick'),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textSecondary)),
-                  ],
-                ),
-              ),
-              if (overviewMetrics.isNotEmpty)
-                // Große Systemschrift: eine Kachel je Zeile, höher, damit nichts abgeschnitten wird.
-                Builder(builder: (context) {
-                  final scale = MediaQuery.textScalerOf(context).scale(10) / 10;
-                  final large = scale > 1.3;
-                  return GridView.count(
-                    crossAxisCount: large ? 1 : 2,
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 9,
-                    mainAxisSpacing: 9,
-                    childAspectRatio: large ? (3.6 / scale).clamp(1.4, 3.6).toDouble() : 1.85,
-                    children: overviewMetrics,
-                  );
-                })
-              else
-                Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(14),
-                    child: Text(tr('Für diesen Monat liegen noch keine Kennzahlen vor.'),
-                      style: TextStyle(color: AppTheme.textSecondary)),
-                  ),
-                ),
-              _homeChargingSummary(_map(month?['home'])),
-              _fuelCompare(_map(_data?['compare']), month),
-              _section('Letzter Ladevorgang', last,
-                keys: ['site', 'network', 'operator', 'start', 'end', 'duration_min',
-                  'kwh', 'price', 'cost', 'idle', 'credit', 'avg_kw'],
-                summary: _summaryLine([
-                  last?['place'] ?? last?['site'], _shortDateLabel(last?['start']), money(last?['cost']),
-                ])),
-              _section('Gesamt', totals,
-                keys: ['sessions', 'kwh', 'cost', 'charge_cost', 'idle', 'credit',
-                  'avg_price', 'since'],
-                summary: _summaryLine([
-                  count(totals?['sessions'], tr('Ladevorgänge')),
-                  totals?['kwh'] is num ? trf('{0} kWh', [formatNumber(totals?['kwh'] as num, 1)]) : null,
-                  money(totals?['cost']),
-                ])),
-              _section('Ladeprognose', forecast,
-                keys: ['text', 'days_to_floor', 'rate_pct_day', 'dist_day'],
-                summary: _summaryLine([forecast?['text']])),
-              _section('Fahrzeug', vehicleInfo,
-                summary: _summaryLine([car?['name'], carLabels?['paint'], carLabels?['wheel']])),
-              SizedBox(height: 12),
-              Text(tr('Die Daten kommen direkt von deinem eigenen Ladecockpit.'),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondary)),
-            ],
-            if (_data != null && _selectedTab == 1) ...[
-              _tabIntro(
-                tr('Ladeaktivität'),
-                tr('Deine Ladevorgänge'),
-                tr('Finde frühere Ladungen und filtere nach Zeitraum, Ladenetz oder Standort.'),
-                Icons.ev_station_rounded,
-              ),
-              _sessions(_data?['sessions']),
-              if (_data?['sessions'] is! List || (_data?['sessions'] as List).isEmpty)
-                _loadStatePanel(
-                  icon: Icons.history_rounded,
-                  title: tr('Noch keine Ladevorgänge'),
-                  message: tr('Sobald dein Ladecockpit Ladevorgänge erfasst hat, erscheinen sie hier.'),
-                  color: AppTheme.textSecondary,
-                ),
-            ],
-            if (_data != null && _selectedTab == 2) ...[
-              _tabIntro(
-                tr('Kosten & Überblick'),
-                tr('Deine Auswertungen'),
-                tr('Behalte Ladepreise, Kostenentwicklung und deine Monatsberichte im Blick.'),
-                Icons.insights_rounded,
-              ),
-              _insightCards(_data?['insights']),
-              _priceRadar(_data?['slots'], _data?['sites'], _data?['tariffs'], _data?['site_radar']),
-              _costDevelopment(_data?['monthly']),
-              _per100Chart(_data?['monthly']),
-              _exports(_data?['monthly'], _data?['years']),
-            ],
-            if (_data == null && !_loading && _error == null)
-              _loadStatePanel(
-                icon: Icons.directions_car_outlined,
-                title: tr('Noch nicht verbunden'),
-                message: tr('Richte die Verbindung zu deinem Ladecockpit ein, um Fahrzeugstatus, Ladevorgänge und Kosten hier zu sehen.'),
-                color: AppTheme.textSecondary,
-                action: OutlinedButton.icon(
-                  onPressed: _settings,
-                  icon: Icon(Icons.settings_outlined),
-                  label: Text(tr('Verbindung einrichten')),
-                ),
-              ),
+        appBar: AppBar(
+          title: Text(tr(tabTitles[_selectedTab]),
+            style: TextStyle(fontWeight: FontWeight.bold)),
+          actions: [
+            IconButton(
+              onPressed: _loading ? null : _load,
+              tooltip: _loading ? tr('Wird aktualisiert') : tr('Aktualisieren'),
+              icon: _loading
+                  ? SizedBox(
+                      width: 19,
+                      height: 19,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(Icons.refresh),
+            ),
+            IconButton(onPressed: _settings, tooltip: tr('Verbindung'),
+              icon: Icon(Icons.settings_outlined)),
           ],
+        ),
+        body: ColoredBox(
+          color: AppTheme.background,
+          child: RefreshIndicator(
+            onRefresh: _load,
+            child: ListView(
+            key: PageStorageKey('ladecockpit-tab-$_selectedTab'),
+            physics: AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 32),
+            children: [
+              if (_data != null)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(4, 0, 4, 10),
+                  child: Row(
+                    children: [
+                      if (_loading) ...[
+                        SizedBox(
+                          width: 13,
+                          height: 13,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 8),
+                        Text(tr('Daten werden aktualisiert'),
+                          style: TextStyle(color: AppTheme.accentTeal, fontSize: 11,
+                            fontWeight: FontWeight.w600)),
+                      ] else ...[
+                        Icon(_fromCache ? Icons.history_rounded : Icons.check_circle_outline,
+                          color: _fromCache ? AppTheme.warning : AppTheme.accentGreen, size: 14),
+                        SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _lastSuccessfulFetch == null
+                                ? tr('Daten geladen')
+                                : _fromCache
+                                    ? trf('Letzter Stand · {0}', [_fetchTimeLabel(_lastSuccessfulFetch)])
+                                    : trf('Aktualisiert · {0}', [_fetchTimeLabel(_lastSuccessfulFetch)]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              if (_error != null)
+                _loadStatePanel(
+                  icon: Icons.cloud_off_rounded,
+                  title: _data == null ? tr('Verbindung nicht möglich')
+                      : _fromCache ? tr('Keine Verbindung zum Server') : tr('Aktualisierung fehlgeschlagen'),
+                  message: _data == null
+                      ? _error!
+                      : _fromCache
+                          ? trf('Du siehst den letzten Stand, den dein Handy gespeichert hat. {0}', [_error])
+                          : trf('Die zuletzt geladenen Daten bleiben sichtbar. {0}', [_error]),
+                  color: AppTheme.warning,
+                  action: Wrap(spacing: 8, runSpacing: 8, children: [
+                    FilledButton.icon(
+                      onPressed: _loading ? null : _load,
+                      icon: Icon(Icons.refresh),
+                      label: Text(tr('Erneut versuchen')),
+                    ),
+                    if (_data == null)
+                      OutlinedButton.icon(
+                        onPressed: _settings,
+                        icon: Icon(Icons.settings_outlined),
+                        label: Text(tr('Verbindung einrichten')),
+                      ),
+                  ]),
+                ),
+              if (_data == null && _loading && _error == null)
+                _loadStatePanel(
+                  icon: Icons.electric_car_rounded,
+                  title: tr('Lade dein Cockpit'),
+                  message: tr('Fahrzeug- und Ladedaten werden sicher vom Server abgerufen.'),
+                  color: AppTheme.accentGreen,
+                  action: LinearProgressIndicator(minHeight: 3),
+                ),
+              if (_data != null && _selectedTab == 0) ...[
+                _vehicleHero(_map(_data?['status']), _map(_data?['car'])),
+                _connectionStatus(),
+                _setupCheck(_map(_data?['setup'])),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(4, 2, 4, 9),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(tr('MONATSÜBERBLICK'),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppTheme.accentGreen,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2)),
+                      SizedBox(height: 3),
+                      Text(tr('Ladeaktivität und Kosten auf einen Blick'),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondary)),
+                    ],
+                  ),
+                ),
+                if (overviewMetrics.isNotEmpty)
+                  // Große Systemschrift: eine Kachel je Zeile, höher, damit nichts abgeschnitten wird.
+                  Builder(builder: (context) {
+                    final scale = MediaQuery.textScalerOf(context).scale(10) / 10;
+                    final large = scale > 1.3;
+                    return GridView.count(
+                      crossAxisCount: large ? 1 : 2,
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 9,
+                      mainAxisSpacing: 9,
+                      childAspectRatio: large ? (3.6 / scale).clamp(1.4, 3.6).toDouble() : 1.85,
+                      children: overviewMetrics,
+                    );
+                  })
+                else
+                  Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(14),
+                      child: Text(tr('Für diesen Monat liegen noch keine Kennzahlen vor.'),
+                        style: TextStyle(color: AppTheme.textSecondary)),
+                    ),
+                  ),
+                _homeChargingSummary(_map(month?['home'])),
+                _fuelCompare(_map(_data?['compare']), month),
+                _section('Letzter Ladevorgang', last,
+                  keys: ['site', 'network', 'operator', 'start', 'end', 'duration_min',
+                    'kwh', 'price', 'cost', 'idle', 'credit', 'avg_kw'],
+                  summary: _summaryLine([
+                    last?['place'] ?? last?['site'], _shortDateLabel(last?['start']), money(last?['cost']),
+                  ])),
+                _section('Gesamt', totals,
+                  keys: ['sessions', 'kwh', 'cost', 'charge_cost', 'idle', 'credit',
+                    'avg_price', 'since'],
+                  summary: _summaryLine([
+                    count(totals?['sessions'], tr('Ladevorgänge')),
+                    totals?['kwh'] is num ? trf('{0} kWh', [formatNumber(totals?['kwh'] as num, 1)]) : null,
+                    money(totals?['cost']),
+                  ])),
+                _section('Ladeprognose', forecast,
+                  keys: ['text', 'days_to_floor', 'rate_pct_day', 'dist_day'],
+                  summary: _summaryLine([forecast?['text']])),
+                _section('Fahrzeug', vehicleInfo,
+                  summary: _summaryLine([car?['name'], carLabels?['paint'], carLabels?['wheel']])),
+                SizedBox(height: 12),
+                Text(tr('Die Daten kommen direkt von deinem eigenen Ladecockpit.'),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.textSecondary)),
+              ],
+              if (_data != null && _selectedTab == 1) ...[
+                _tabIntro(
+                  tr('Ladeaktivität'),
+                  tr('Deine Ladevorgänge'),
+                  tr('Finde frühere Ladungen und filtere nach Zeitraum, Ladenetz oder Standort.'),
+                  Icons.ev_station_rounded,
+                ),
+                _sessions(_data?['sessions']),
+                if (_data?['sessions'] is! List || (_data?['sessions'] as List).isEmpty)
+                  _loadStatePanel(
+                    icon: Icons.history_rounded,
+                    title: tr('Noch keine Ladevorgänge'),
+                    message: tr('Sobald dein Ladecockpit Ladevorgänge erfasst hat, erscheinen sie hier.'),
+                    color: AppTheme.textSecondary,
+                  ),
+              ],
+              if (_data != null && _selectedTab == 2) ...[
+                _tabIntro(
+                  tr('Kosten & Überblick'),
+                  tr('Deine Auswertungen'),
+                  tr('Behalte Ladepreise, Kostenentwicklung und deine Monatsberichte im Blick.'),
+                  Icons.insights_rounded,
+                ),
+                _insightCards(_data?['insights']),
+                _priceRadar(_data?['slots'], _data?['sites'], _data?['tariffs'], _data?['site_radar']),
+                _costDevelopment(_data?['monthly']),
+                _per100Chart(_data?['monthly']),
+                _exports(_data?['monthly'], _data?['years']),
+              ],
+              if (_data == null && !_loading && _error == null)
+                _loadStatePanel(
+                  icon: Icons.directions_car_outlined,
+                  title: tr('Noch nicht verbunden'),
+                  message: tr('Richte die Verbindung zu deinem Ladecockpit ein, um Fahrzeugstatus, Ladevorgänge und Kosten hier zu sehen.'),
+                  color: AppTheme.textSecondary,
+                  action: OutlinedButton.icon(
+                    onPressed: _settings,
+                    icon: Icon(Icons.settings_outlined),
+                    label: Text(tr('Verbindung einrichten')),
+                  ),
+                ),
+            ],
+            ),
           ),
         ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        height: 72,
-        elevation: 8,
-        backgroundColor: AppTheme.surface,
-        indicatorColor: AppTheme.accentGreen.withValues(alpha: 0.16),
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        selectedIndex: _selectedTab,
-        onDestinationSelected: (index) => setState(() => _selectedTab = index),
-        destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.directions_car_outlined),
-            selectedIcon: Icon(Icons.directions_car),
-            label: tr('Cockpit'),
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.ev_station_outlined),
-            selectedIcon: Icon(Icons.ev_station),
-            label: tr('Ladevorgänge'),
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights),
-            label: tr('Auswertung'),
-          ),
-        ],
-      ),
+        bottomNavigationBar: NavigationBar(
+          height: 72,
+          elevation: 8,
+          backgroundColor: AppTheme.surface,
+          indicatorColor: AppTheme.accentGreen.withValues(alpha: 0.16),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          selectedIndex: _selectedTab,
+          onDestinationSelected: (index) => setState(() => _selectedTab = index),
+          destinations: [
+            NavigationDestination(
+              icon: Icon(Icons.directions_car_outlined),
+              selectedIcon: Icon(Icons.directions_car),
+              label: tr('Cockpit'),
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.ev_station_outlined),
+              selectedIcon: Icon(Icons.ev_station),
+              label: tr('Ladevorgänge'),
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.insights_outlined),
+              selectedIcon: Icon(Icons.insights),
+              label: tr('Auswertung'),
+            ),
+          ],
+        ),
       ),
     );
   }
