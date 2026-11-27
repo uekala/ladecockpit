@@ -1852,6 +1852,23 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  /// Scrollt die Liste, in der [from] steht, bis das Widget mit [key] zu sehen ist. Die Liste baut
+  /// nur, was nahe am Bildschirm liegt; ein Ziel weiter unten gibt es also noch nicht: Bildschirm
+  /// für Bildschirm nach unten, bis es gebaut ist, dann ins Bild holen.
+  Future<void> _scrollToKey(BuildContext from, GlobalKey key) async {
+    final position = Scrollable.maybeOf(from)?.position;
+    for (var step = 0; step < 60 && key.currentContext == null && position != null; step++) {
+      if (position.pixels >= position.maxScrollExtent) break;
+      position.jumpTo((position.pixels + position.viewportDimension * 0.8)
+          .clamp(position.minScrollExtent, position.maxScrollExtent).toDouble());
+      await WidgetsBinding.instance.endOfFrame;
+    }
+    final target = key.currentContext;
+    if (target != null && target.mounted) {
+      await Scrollable.ensureVisible(target, duration: Duration(milliseconds: 350), curve: Curves.easeOutCubic);
+    }
+  }
+
   /// Die Tipps des Servers als Karten; jede führt zu dem, worum es geht.
   Widget _insightCards(dynamic raw) {
     final tips = raw is List
@@ -1886,15 +1903,14 @@ class _DashboardPageState extends State<DashboardPage> {
         final label = known.isNotEmpty
             ? trf('Radar für {0}', [known.first['site'] ?? site])
             : tr('Zum Preisradar');
-        return TextButton(
-          onPressed: () {
-            setState(() => _radarSite = known.isNotEmpty ? site : null);
-            final target = _radarKey.currentContext;
-            if (target != null) {
-              Scrollable.ensureVisible(target, duration: Duration(milliseconds: 350));
-            }
-          },
-          child: Text(label),
+        return Builder(
+          builder: (buttonContext) => TextButton(
+            onPressed: () {
+              setState(() => _radarSite = known.isNotEmpty ? site : null);
+              _scrollToKey(buttonContext, _radarKey);
+            },
+            child: Text(label),
+          ),
         );
       }
       if (go == 'sessions') {
