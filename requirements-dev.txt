@@ -1,4 +1,4 @@
 pytest>=9.2.0
-pyyaml>=6.0.3
+pyyaml>=6.0.4
 # starlette.testclient uses httpx2; without it the tests warn that httpx is deprecated there
 httpx2>=2.16.2
