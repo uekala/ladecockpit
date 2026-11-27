@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.2.2
-  flutter_secure_storage: ^9.2.2
+  flutter_secure_storage: ^10.3.4
   path_provider: ^2.1.5
   share_plus: ^10.1.4
   url_launcher: ^6.3.1
