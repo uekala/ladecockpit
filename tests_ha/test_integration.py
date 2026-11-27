@@ -58,7 +58,10 @@ async def test_takes_over_the_app_states_with_the_same_ids(hass: HomeAssistant):
     assert hass.states.get("binary_sensor.ladecockpit_problem").state == "off"
     assert hass.states.get("sensor.ladecockpit_battery").state == "unknown"   # nothing sent yet
 
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    devices = [d for d in dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
+               if (DOMAIN, entry.entry_id) in d.identifiers]
+    assert len(devices) == 1
+    device = devices[0]
     assert device.name == "Ladecockpit"
     assert all(e.device_id == device.id for e in er.async_entries_for_config_entry(registry, entry.entry_id))
 
