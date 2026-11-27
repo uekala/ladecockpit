@@ -2063,9 +2063,11 @@ class _DashboardPageState extends State<DashboardPage> {
       final file = File('${directory.path}/ladecockpit-sicherung-$stamp.zip');
       await file.writeAsBytes(bytes, flush: true);
       if (!mounted) return;
-      await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'application/zip')],
-        subject: tr('Ladecockpit Datensicherung'),
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/zip')],
+          subject: tr('Ladecockpit Datensicherung'),
+        ),
       );
     } catch (error) {
       if (!mounted) return;
@@ -2439,9 +2441,11 @@ class _DashboardPageState extends State<DashboardPage> {
       final file = File('${directory.path}/ladecockpit-rechnung-$name.pdf');
       await file.writeAsBytes(bytes, flush: true);
       if (!mounted) return;
-      await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'application/pdf')],
-        subject: trf('Rechnung · {0}', [site]),
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/pdf')],
+          subject: trf('Rechnung · {0}', [site]),
+        ),
       );
     } catch (error) {
       if (!mounted) return;
@@ -2458,10 +2462,12 @@ class _DashboardPageState extends State<DashboardPage> {
       final file = File('${directory.path}/ladecockpit-rechnungen-$month.zip');
       await file.writeAsBytes(bytes, flush: true);
       if (!mounted) return;
-      await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'application/zip')],
-        text: trf('Ladecockpit – Rechnungen {0}', [month]),
-        subject: trf('Ladecockpit Rechnungen {0}', [month]),
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/zip')],
+          text: trf('Ladecockpit – Rechnungen {0}', [month]),
+          subject: trf('Ladecockpit Rechnungen {0}', [month]),
+        ),
       );
     } catch (error) {
       if (!mounted) return;
@@ -2619,10 +2625,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 await file.writeAsString(csv, encoding: utf8, flush: true);
                 if (!dialogContext.mounted) return;
                 Navigator.pop(dialogContext);
-                await Share.shareXFiles(
-                  [XFile(file.path, mimeType: 'text/csv')],
-                  text: tr('Ladecockpit – Ladevorgänge als CSV'),
-                  subject: tr('Ladecockpit CSV-Export'),
+                await SharePlus.instance.share(
+                  ShareParams(
+                    files: [XFile(file.path, mimeType: 'text/csv')],
+                    text: tr('Ladecockpit – Ladevorgänge als CSV'),
+                    subject: tr('Ladecockpit CSV-Export'),
+                  ),
                 );
               },
               icon: Icon(Icons.copy),
