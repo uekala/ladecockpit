@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.24.0 – 2026-11-28
+
+- **Winter gegen Sommer.** Neuer Bereich *Winterzeit und Sommerzeit* in der Web-App: Strecke, Verbrauch (kWh pro 100 km) und Kosten pro 100 km der letzten zwölf Monate, geteilt nach der Zeitumstellung der eingestellten Zeitzone (ohne Zeitumstellung April bis September als Sommer). Energie und Kosten kommen aus den Rechnungen plus Laden zu Hause, Ladeverluste zählen also mit. Eine Jahreszeit mit weniger als 300 km zeigt „Noch zu wenig Strecke“. Liegen beide vor und unterscheiden sie sich um mindestens 5 %, gibt es einen Tipp („In der Winterzeit braucht dein Tesla … – rund 25 % mehr Strom im Winter“). Neues Feld `seasons` im Dashboard-JSON; der Sensor `sensor.ladecockpit_consumption` hat neue Attribute `winter_kwh_per_100`, `summer_kwh_per_100`, `winter_cost_per_100`, `summer_cost_per_100`, `winter_distance`, `summer_distance`, `winter_price_per_kwh`, `summer_price_per_kwh`, `season_now`, `winter_more_kwh_pct`, `winter_more_cost_pct` und `season_tip`.
+- Handy-App: Fehlermeldungen beim Teilen, Exportieren und bei Tipps sind verständlich formuliert statt roher Ausnahmetexte („Exception: …“); Netzwerkfehler klingen wie beim Laden des Cockpits.
+- Handy-App: Die Zurück-Taste führt aus „Ladevorgänge“ und „Auswertung“ erst zum Cockpit, statt die App zu schließen.
+- Handy-App: Die Knöpfe an den Tipps unter *Was auffällt*, die zum Preisradar führen (*Zum Preisradar*, *Radar für …*), taten nichts, wenn der Preisradar weiter unten auf der Seite lag – die Liste hatte ihn noch nicht gebaut. Jetzt scrollen sie zum Preisradar und wählen bei einem Standort diesen aus.
+
 ## 0.23.4 – 2026-11-22
 
 - **Ein Auto ohne Verbindung ist kein Einrichtungsproblem.** Schläft das Auto oder hat es keinen Empfang und Home Assistant startet neu, hat die Auto-Integration keine Werte, bis das Auto wieder online ist. Die Einrichtungsprüfung meldete dann Akkustand, Reichweite, Kilometerstand und Ladestatus als „gerade nicht verfügbar“ und bat, die Einrichtung zu prüfen. Wenn jetzt jede Entität des Autos existiert, aber keinen Wert hat, und Ladecockpit schon Werte des Autos gespeichert hat, sagt die Einrichtungsprüfung „Auto offline – Werte vom letzten Stand 21.11. 21:12“ und zeigt keine Warnung. Eine einzelne Entität ohne Wert bei verbundenem Auto, eine Entität, die es nicht gibt, und ein Auto, das noch nie einen Wert geliefert hat, werden weiter markiert. Neues Feld `offline` in `setup.checks` (Zeitpunkt des letzten Stands), `offline` je Entität.
