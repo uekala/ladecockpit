@@ -1,5 +1,10 @@
 # Changelog
 
+## Unveröffentlicht
+
+- Handy-App: Fehlermeldungen beim Teilen, Exportieren und bei Tipps sind verständlich formuliert statt roher Ausnahmetexte („Exception: …“); Netzwerkfehler klingen wie beim Laden des Cockpits.
+- Handy-App: Die Zurück-Taste führt aus „Ladevorgänge“ und „Auswertung“ erst zum Cockpit, statt die App zu schließen.
+
 ## 0.23.4 – 2026-11-22
 
 - **Ein Auto ohne Verbindung ist kein Einrichtungsproblem.** Schläft das Auto oder hat es keinen Empfang und Home Assistant startet neu, hat die Auto-Integration keine Werte, bis das Auto wieder online ist. Die Einrichtungsprüfung meldete dann Akkustand, Reichweite, Kilometerstand und Ladestatus als „gerade nicht verfügbar“ und bat, die Einrichtung zu prüfen. Wenn jetzt jede Entität des Autos existiert, aber keinen Wert hat, und Ladecockpit schon Werte des Autos gespeichert hat, sagt die Einrichtungsprüfung „Auto offline – Werte vom letzten Stand 21.11. 21:12“ und zeigt keine Warnung. Eine einzelne Entität ohne Wert bei verbundenem Auto, eine Entität, die es nicht gibt, und ein Auto, das noch nie einen Wert geliefert hat, werden weiter markiert. Neues Feld `offline` in `setup.checks` (Zeitpunkt des letzten Stands), `offline` je Entität.

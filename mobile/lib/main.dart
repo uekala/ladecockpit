@@ -335,6 +335,16 @@ if (error is FormatException) {
 return trf('Verbindung fehlgeschlagen.\nDiagnose: {0} · {1}', [error.runtimeType, error]);
 }
 
+/// Fehlertext für Meldungen: Netzwerkfehler wie beim Laden, sonst ohne „Exception:“-Vorsatz.
+String friendlyError(Object error) {
+  if (error is CockpitException || error is TimeoutException || error is SocketException ||
+      error is HandshakeException || error is HttpException || error is FormatException) {
+    return connectionErrorMessage(error);
+  }
+  final text = error.toString().replaceFirst(RegExp(r'^[A-Za-z]*Exception[:(]?\s*'), '').trim();
+  return text.isEmpty ? tr('Das hat nicht geklappt.') : trf('Das hat nicht geklappt: {0}', [text]);
+}
+
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key, this.client, this.updates, this.cache, this.lock});
 
@@ -1460,7 +1470,7 @@ class _DashboardPageState extends State<DashboardPage> {
       return true;
     } catch (error) {
       if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyError(error))));
       return false;
     }
   }
@@ -1475,7 +1485,7 @@ class _DashboardPageState extends State<DashboardPage> {
       await _load();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyError(error))));
     }
   }
 
@@ -2059,7 +2069,7 @@ class _DashboardPageState extends State<DashboardPage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
+        SnackBar(content: Text(friendlyError(error))),
       );
     }
   }
@@ -2435,7 +2445,7 @@ class _DashboardPageState extends State<DashboardPage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
+        SnackBar(content: Text(friendlyError(error))),
       );
     }
   }
@@ -2455,7 +2465,7 @@ class _DashboardPageState extends State<DashboardPage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
+        SnackBar(content: Text(friendlyError(error))),
       );
     }
   }
@@ -2572,7 +2582,7 @@ class _DashboardPageState extends State<DashboardPage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
+        SnackBar(content: Text(friendlyError(error))),
       );
     }
   }
@@ -2623,7 +2633,7 @@ class _DashboardPageState extends State<DashboardPage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
+        SnackBar(content: Text(friendlyError(error))),
       );
     }
   }
@@ -3160,7 +3170,7 @@ class _DashboardPageState extends State<DashboardPage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
+        SnackBar(content: Text(friendlyError(error))),
       );
     }
   }
@@ -3772,7 +3782,13 @@ class _DashboardPageState extends State<DashboardPage> {
     ];
     const tabTitles = ['Cockpit', 'Ladevorgänge', 'Auswertungen'];
 
-    return Scaffold(
+    // Zurück-Taste: erst zum Cockpit, dann wie gewohnt aus der App.
+    return PopScope(
+      canPop: _selectedTab == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _selectedTab = 0);
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Text(tr(tabTitles[_selectedTab]),
           style: TextStyle(fontWeight: FontWeight.bold)),
@@ -4009,6 +4025,7 @@ class _DashboardPageState extends State<DashboardPage> {
             label: tr('Auswertung'),
           ),
         ],
+      ),
       ),
     );
   }
