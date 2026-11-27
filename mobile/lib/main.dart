@@ -1873,6 +1873,7 @@ class _DashboardPageState extends State<DashboardPage> {
           'reference' => Icons.sell_outlined,
           'price' => Icons.price_change_outlined,
           'climate' => Icons.thermostat_outlined,
+          'season' => Icons.wb_sunny_outlined,
           _ => Icons.bolt,
         };
     Widget? actionOf(Map<String, dynamic> tip) {
