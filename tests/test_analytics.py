@@ -280,3 +280,41 @@ def test_no_price_change_tip_when_too_old_or_too_few_sessions(settings):
     assert len(old["price_changes"]) == 1 and not [i for i in old["insights"] if i["kind"] == "price"]
     few = _tariff_dashboard(settings, rows[1:], now=_NOVEMBER)
     assert few["price_changes"] == []
+
+
+def _season_readings(points):
+    return {"soc": [], "soc_last": None, "range_last": None, "odometer": points}
+
+
+def test_winter_and_summer_time_compare_consumption_and_cost(settings):
+    settings = dataclasses.replace(settings, lang="de")
+    now = datetime(2026, 11, 25, 12, tzinfo=timezone.utc)
+    utc = lambda *a: datetime(*a, tzinfo=timezone.utc)  # noqa: E731
+    sessions = [
+        _session("s1", utc(2026, 6, 10, 18), 50, 20.0),    # Sommerzeit
+        _session("s2", utc(2026, 7, 20, 18), 50, 20.0),
+        _session("w1", utc(2026, 11, 5, 18), 60, 27.0),    # Winterzeit
+        _session("w2", utc(2026, 11, 20, 18), 60, 27.0),
+    ]
+    odo = [(utc(2026, 6, 1), 10000.0), (utc(2026, 8, 1), 10625.0),     # 625 km Sommerzeit
+           (utc(2026, 11, 1), 10625.0), (utc(2026, 11, 25), 11225.0)]  # 600 km Winterzeit
+    d = build_dashboard(sessions=sessions, live={"values": {}, "units": {"odometer": "km"}},
+                        readings=_season_readings(odo), settings=settings, meta={}, now=now)
+    s = d["seasons"]
+    winter, summer = s["seasons"]
+    assert s["current"] == "winter"
+    assert (summer["distance"], summer["kwh_per_100"], summer["per_100"]) == (625, 16.0, 6.4)
+    assert winter["distance"] == 600 and winter["kwh_per_100"] == 20.0 and winter["per_100"] == 9.0
+    assert s["kwh_diff_pct"] == 25 and s["cost_diff_pct"] == 41
+    tip = next(i for i in d["insights"] if i["kind"] == "season")
+    assert "25 % mehr Strom im Winter" in tip["text"] and tip["action"] == {"go": "season"}
+
+
+def test_no_season_comparison_with_too_little_distance(settings):
+    now = datetime(2026, 11, 25, 12, tzinfo=timezone.utc)
+    sessions = [_session("w1", datetime(2026, 11, 20, 18, tzinfo=timezone.utc), 30, 12.0)]
+    odo = [(datetime(2026, 11, 10, tzinfo=timezone.utc), 100.0), (datetime(2026, 11, 25, tzinfo=timezone.utc), 250.0)]
+    d = build_dashboard(sessions=sessions, live={"values": {}, "units": {"odometer": "km"}},
+                        readings=_season_readings(odo), settings=settings, meta={}, now=now)
+    assert d["seasons"] is None
+    assert not any(i["kind"] == "season" for i in d["insights"])

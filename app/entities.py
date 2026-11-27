@@ -49,6 +49,23 @@ ENTITY_IDS = (
 )
 
 
+def _season_attrs(seasons: dict | None, lang: str, insights: list[dict]) -> dict:
+    """Winter- und Sommerzeit der letzten zwölf Monate als Attribute des Verbrauchssensors."""
+    by_id = {s["id"]: s for s in (seasons or {}).get("seasons") or []}
+    out = {}
+    for sid in ("winter", "summer"):
+        s = by_id.get(sid) or {}
+        out[f"{sid}_kwh_per_100"] = s.get("kwh_per_100")
+        out[f"{sid}_cost_per_100"] = s.get("per_100")
+        out[f"{sid}_distance"] = s.get("distance")
+        out[f"{sid}_price_per_kwh"] = _round(s.get("avg_price"), 4)
+    out["season_now"] = i18n.t(lang, f"season_{seasons['current']}") if seasons else None
+    out["winter_more_kwh_pct"] = (seasons or {}).get("kwh_diff_pct")
+    out["winter_more_cost_pct"] = (seasons or {}).get("cost_diff_pct")
+    out["season_tip"] = next((i["text"] for i in insights if i.get("kind") == "season"), None)
+    return out
+
+
 def _round(value, digits: int):
     return None if value is None else round(value, digits)
 
@@ -209,6 +226,7 @@ def build_states(d: dict, lang: str) -> dict[str, tuple[str, dict]]:
         "friendly_name": name("consumption"), "unit_of_measurement": f"kWh/100 {unit}",
         "state_class": "measurement", "icon": "mdi:thermometer-lines",
         "note": i18n.t(lang, "ent_consumption_note"), "by_temperature": bands, "temperature_tip": tip,
+        **_season_attrs(d.get("seasons"), lang, insights),
     })
 
     # --- Bild des Autos (Konfigurator-Bild von Tesla, in der Web-App gewählt) ------------------------

@@ -55,6 +55,8 @@ TEXTS = {
         "report_home": "Zu Hause geladen: {kwh} kWh für {cost}.",
         "report_home_kwh": "Zu Hause geladen: {kwh} kWh.",
         "report_idle": "Blockiergebühren: {cost}.",
+        "in_season_more": "In der Winterzeit braucht dein Tesla {w_kwh} kWh und kostet {w_cost} pro 100 {unit}, in der Sommerzeit {s_kwh} kWh und {s_cost} – rund {pct} % mehr Strom im Winter.",
+        "in_season_less": "In der Winterzeit braucht dein Tesla {w_kwh} kWh und kostet {w_cost} pro 100 {unit}, in der Sommerzeit {s_kwh} kWh und {s_cost} – rund {pct} % weniger Strom im Winter.",
         "in_climate": "Bei {cold} braucht dein Tesla rund {more} % mehr Akku pro 100 {unit} als bei {warm}.",
         "in_slow_one": "Am {day} in {site} hast du nur mit Ø {kw} kW geladen, sonst bekommst du dort rund {typical} kW. "
                        "Häufige Gründe: ein kalter Akku (den Supercharger vorher als Navi-Ziel eingeben, dann heizt das Auto vor) "
@@ -94,6 +96,8 @@ TEXTS = {
         "mp_none": "Noch keine MultiPass-Ladung in deinen Rechnungen.",
         "unknown_station": "Unbekannte Station",
         "ent_consumption_note": "Abgerechnete kWh pro 100 km diesen Monat, inklusive Ladeverlusten.",
+        "season_winter": "Winterzeit",
+        "season_summer": "Sommerzeit",
         "csv_header": "Datum;Start;Ende;Standort;kWh;Preis pro kWh;Ladekosten;Blockiergebühr;Summe;Währung;Ø kW;Ladung-ID;Netz;Listenpreis pro kWh;Gutschrift;Netto;Betreiber;Adresse",
     },
     "en": {
@@ -129,6 +133,8 @@ TEXTS = {
         "report_home": "Charged at home: {kwh} kWh for {cost}.",
         "report_home_kwh": "Charged at home: {kwh} kWh.",
         "report_idle": "Idle fees: {cost}.",
+        "in_season_more": "In winter time your Tesla uses {w_kwh} kWh and {w_cost} per 100 {unit}, in summer time {s_kwh} kWh and {s_cost} – about {pct} % more energy in winter.",
+        "in_season_less": "In winter time your Tesla uses {w_kwh} kWh and {w_cost} per 100 {unit}, in summer time {s_kwh} kWh and {s_cost} – about {pct} % less energy in winter.",
         "in_climate": "At {cold} your Tesla uses about {more} % more battery per 100 {unit} than at {warm}.",
         "in_slow_one": "On {day} at {site} you only charged at {kw} kW on average, where you usually get about {typical} kW. "
                        "Common reasons: a cold battery (set the Supercharger as navigation destination so the car "
@@ -168,6 +174,8 @@ TEXTS = {
         "mp_none": "No MultiPass session in your invoices yet.",
         "unknown_station": "Unknown station",
         "ent_consumption_note": "Billed kWh per 100 km/mi this month, including charging losses.",
+        "season_winter": "Winter time",
+        "season_summer": "Summer time",
         "csv_header": "Date,Start,End,Site,kWh,Price per kWh,Charging cost,Idle fee,Total,Currency,Avg kW,Session ID,Network,List price per kWh,Credit,Net,Operator,Address",
     },
 }

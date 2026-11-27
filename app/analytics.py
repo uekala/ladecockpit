@@ -94,6 +94,68 @@ def _distance(odo: list[tuple[datetime, float]], items: list[dict], home: list |
     return out
 
 
+SEASON_DAYS = 365          # Sommer- und Winterzeit aus den letzten zwölf Monaten
+SEASON_MIN_DISTANCE = 300  # weniger Strecke ergibt keinen belastbaren Verbrauch
+SEASON_MAX_STEP = 3000     # größere Sprünge im Kilometerstand sind Messfehler
+SEASON_MIN_GAP = 5         # ab so viel Prozent Unterschied gibt es einen Tipp
+
+
+def _is_summer(ts: datetime, tz) -> bool:
+    """Sommerzeit nach der Zeitzone der Einstellungen; ohne Zeitumstellung April bis September."""
+    local = ts.astimezone(tz)
+    jan = datetime(local.year, 1, 15, 12, tzinfo=tz).utcoffset()
+    jul = datetime(local.year, 7, 15, 12, tzinfo=tz).utcoffset()
+    if jan != jul:
+        return bool(local.dst())
+    return 4 <= local.month <= 9
+
+
+def _seasons(odo: list[tuple[datetime, float]], priced: list[dict], home: list, tz,
+             now_utc: datetime) -> dict | None:
+    """Verbrauch und Kosten pro 100 km in der Winter- und der Sommerzeit der letzten zwölf Monate:
+    Strecke aus dem Kilometerstand, Energie und Kosten aus den Rechnungen plus Laden zu Hause."""
+    since = now_utc - timedelta(days=SEASON_DAYS)
+    acc = {sid: {"distance": 0.0, "kwh": 0.0, "cost": 0.0, "sessions": 0} for sid in ("winter", "summer")}
+
+    def bucket(ts: datetime) -> dict:
+        return acc["summer" if _is_summer(ts, tz) else "winter"]
+
+    points = [p for p in odo if p[0] >= since]
+    for (_, a), (t2, b) in zip(points, points[1:]):
+        if 0 < b - a < SEASON_MAX_STEP:
+            bucket(t2)["distance"] += b - a
+    for x in priced:
+        if x["_local"] >= since:
+            s = bucket(x["_local"])
+            s["kwh"] += x["kwh"]
+            s["cost"] += x["total"]
+            s["sessions"] += 1
+    for ts, kwh, cost in home:
+        if ts >= since:
+            s = bucket(ts)
+            s["kwh"] += kwh
+            s["cost"] += cost or 0.0
+
+    out = []
+    for sid, s in acc.items():
+        solid = s["distance"] >= SEASON_MIN_DISTANCE and s["kwh"] > 0
+        out.append({"id": sid, "distance": round(s["distance"]), "kwh": round(s["kwh"], 1),
+                    "cost": round(s["cost"], 2), "sessions": s["sessions"],
+                    "kwh_per_100": round(s["kwh"] / s["distance"] * 100, 1) if solid else None,
+                    "per_100": round(s["cost"] / s["distance"] * 100, 2) if solid else None,
+                    "avg_price": round(s["cost"] / s["kwh"], 4) if s["kwh"] else None})
+    if not any(s["kwh_per_100"] for s in out):
+        return None
+    winter, summer = out
+    result = {"seasons": out, "current": "summer" if _is_summer(now_utc, tz) else "winter",
+              "kwh_diff_pct": None, "cost_diff_pct": None}
+    if winter["kwh_per_100"] and summer["kwh_per_100"]:
+        result["kwh_diff_pct"] = round((winter["kwh_per_100"] / summer["kwh_per_100"] - 1) * 100)
+        if summer["per_100"]:
+            result["cost_diff_pct"] = round((winter["per_100"] / summer["per_100"] - 1) * 100)
+    return result
+
+
 def _month_bounds(key: str, tz) -> tuple[datetime, datetime]:
     y, m = (int(v) for v in key.split("-"))
     start = datetime(y, m, 1, tzinfo=tz)
@@ -830,9 +892,19 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
                 lang, "in_climate", cold=i18n.temp_band(lang, cold["from"], cold["to"]),
                 warm=i18n.temp_band(lang, warm["from"], warm["to"]), more=round(more), unit=unit)})
 
+    seasons = _seasons(odo_all, priced, home, tz, now_utc)
+    if seasons and seasons["kwh_diff_pct"] is not None and abs(seasons["kwh_diff_pct"]) >= SEASON_MIN_GAP:
+        w, s = seasons["seasons"]
+        insights.append({"kind": "season", "text": i18n.t(
+            lang, "in_season_more" if seasons["kwh_diff_pct"] > 0 else "in_season_less",
+            w_kwh=i18n.num(lang, w["kwh_per_100"], 1), s_kwh=i18n.num(lang, s["kwh_per_100"], 1),
+            w_cost=money(w["per_100"]), s_cost=money(s["per_100"]),
+            pct=abs(seasons["kwh_diff_pct"]), unit=unit)})
+
     # Wohin jeder Tipp in den Apps führt: ein Bereich oder die Ladungen mit einer Suche.
     goes = {"slot": "radar", "tariff": "radar", "site": "radar", "network": "sessions", "credit": "sessions",
-            "idle": "sessions", "speed": "sessions", "reference": "month", "fuel": "month", "climate": "climate"}
+            "idle": "sessions", "speed": "sessions", "reference": "month", "fuel": "month", "climate": "climate",
+            "season": "season"}
     for i in insights:
         i.setdefault("action", {"go": goes.get(i["kind"], "month")})
 
@@ -890,6 +962,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
         "projection": projection,
         "battery_health": health,
         "climate": climate,
+        "seasons": seasons,
         "reconcile": reconcile,
         "totals": totals,
         "sessions": [_session_view(x, tz, lang, home_country) for x in sessions[:400]],
