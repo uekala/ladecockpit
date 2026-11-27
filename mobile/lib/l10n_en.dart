@@ -1,6 +1,10 @@
 // Englische Texte der App, mit dem deutschen Text im Code als Schlüssel.
 // Ein Text, der hier fehlt, bleibt deutsch.
 const Map<String, String> english = {
+  'Das hat nicht geklappt.':
+      'That did not work.',
+  'Das hat nicht geklappt: {0}':
+      'That did not work: {0}',
   'Ladecockpit':
       'Ladecockpit',
   'Bitte zuerst die Serveradresse einrichten.':
