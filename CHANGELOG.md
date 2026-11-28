@@ -2,6 +2,9 @@
 
 ## Unveröffentlicht
 
+- Weboberfläche, helles Design: Blaue Textknöpfe („Zum Preisradar →“) und grüne Beträge sind etwas dunkler und haben jetzt mindestens 4,5:1 Kontrast, auch auf grauen Karten. Die Füllfarbe der Knöpfe bleibt.
+- Die waagrecht scrollenden Tabellen (Verbrauch nach Temperatur, Jahreszeiten u. a.) lassen sich mit Tab erreichen und mit den Pfeiltasten scrollen.
+- Screenreader: Der Inhalt steht in `<main>`, die Kartenlinks nennen „Karte – Ort“, der ausgegraute PDF-Knopf in der Vorschau ist als nicht verfügbar markiert.
 - Weboberfläche: Antwortet Teslas Bilddienst nicht, steht statt einer großen leeren Fläche nur eine schmale Zeile mit Autosymbol und „Erneut laden“. Die Ladeanzeige rückt nach oben.
 - Handy-App intern: Server-Anbindung und Fehlertexte liegen in `cockpit_client.dart` statt in `main.dart` (keine Änderung in der Bedienung).
 

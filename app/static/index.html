@@ -29,11 +29,12 @@
   --ink: #171a20;
   --ink-2: #393c41;
   --mute: #5c5e62;
-  --accent: #3e6ae1;
+  /* Textfarbe etwas dunkler als die Füllfarbe: 4,5:1 auch auf grauen Karten */
+  --accent: #2a55c8;
   --accent-fill: #3e6ae1;
   --accent-soft: #e3e9fb;
   --on-accent: #ffffff;
-  --good: #1f8f4e;
+  --good: #16733e;
   --good-soft: #dcf1e3;
   --battery: #2fb35a;
   --warn: #a35f00;
@@ -381,7 +382,7 @@ td .when-sub { display: block; color: var(--mute); font-size: .78rem; }
 .tariff-site { display: flex; flex-direction: column; min-width: 0; }
 .tariff-site b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tariff-price { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
-.tariff-price small { display: block; font-weight: 400; font-size: .72rem; color: var(--muted, inherit); opacity: .8; }
+.tariff-price small { display: block; font-weight: 400; font-size: .72rem; color: var(--mute, inherit); }
 .tariff-price.off { color: var(--good, var(--accent)); }
 .tariff-sum { margin: 10px 0 0; font-size: .88rem; }
 .op-dialog { border: 1px solid var(--line); border-radius: 16px; background: var(--panel, var(--sunk)); color: var(--ink); padding: 20px; width: min(420px, calc(100vw - 32px)); }
@@ -1102,6 +1103,8 @@ footer .look-pick button[aria-pressed="true"] { background: var(--accent-fill); 
 }
 </style>
 <style>
+/* Nur für Screenreader */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 /* --- PDF-Ansicht (nur Home-Assistant-App: Sie hat keinen PDF-Betrachter) ---------------------------- */
 .pdf-view {
   position: fixed; inset: 0; z-index: 35; display: flex; flex-direction: column;
@@ -1219,7 +1222,7 @@ try {
     <div class="top-actions" id="top-actions"></div>
   </header>
   <div id="banners"></div>
-  <div id="content"><p class="skeleton">…</p></div>
+  <main id="content"><p class="skeleton">…</p></main>
   <footer id="footer"></footer>
 </div>
 <div class="tt" id="tt" hidden></div>
@@ -1634,6 +1637,21 @@ try {
     bindActions();
     bindCar();
     dynAfterRender();
+    labelScrollers();
+  }
+
+  // Waagrecht scrollende Tabellen per Tastatur erreichbar machen (Pfeiltasten scrollen, sobald fokussiert).
+  function labelScrollers() {
+    document.querySelectorAll("#content .scroll").forEach((el) => {
+      const section = el.closest("section");
+      const head = section?.querySelector("h2");
+      const all = section ? [...section.querySelectorAll(".scroll")] : [el];
+      const word = lang() === "de" ? "Tabelle" : "table";
+      el.tabIndex = 0;
+      el.setAttribute("role", "region");
+      // Eigener Name, damit er sich vom Abschnitt (gleiche Überschrift) und von Nachbartabellen unterscheidet.
+      if (head) el.setAttribute("aria-label", `${head.textContent.trim()} – ${word}${all.length > 1 ? ` ${all.indexOf(el) + 1}` : ""}`);
+    });
   }
 
   const offline = () => state.preview || state.data?.mode === "demo";
@@ -2076,7 +2094,7 @@ try {
         ${line(T("total"), money(c.cost), "total")}
       </div>
       <div class="receipt-actions">
-        ${canPdf ? `<a class="btn" href="api/invoice/${encodeURIComponent(c.id)}" data-view="api/invoice/${encodeURIComponent(c.id)}" data-title="${esc(c.site + " · " + dShort(c.start))}" target="_blank" rel="noopener">${T("invoicePdf")}</a>` : `<span class="btn is-disabled" title="${T("notInPreview")}">${T("invoicePdf")}</span>`}
+        ${canPdf ? `<a class="btn" href="api/invoice/${encodeURIComponent(c.id)}" data-view="api/invoice/${encodeURIComponent(c.id)}" data-title="${esc(c.site + " · " + dShort(c.start))}" target="_blank" rel="noopener">${T("invoicePdf")}</a>` : `<span class="btn is-disabled" aria-disabled="true" title="${T("notInPreview")}">${T("invoicePdf")}</span>`}
         ${d.setup?.ha_configured ? pushChip(c.push_state) : ""}
       </div>
     </section>`;
@@ -2530,7 +2548,7 @@ try {
       <ul class="mp-list">${list.map((s) => `<li>
         <div class="who"><b>${esc(s.operator || s.site)}</b><span>${esc([s.address || (s.operator ? s.site : ""), sessionsText(s.sessions)].filter(Boolean).join(" · "))}</span></div>
         <div class="mp-val">${s.avg_price == null ? "–" : ppk(s.avg_price)}<small>${esc(T("mpLast"))} ${day(s.last)}</small></div>
-        <a class="map-link" href="${esc(s.map_url)}" target="_blank" rel="noopener noreferrer" title="${esc(T("mpMapTitle", { site: s.address || s.site }))}" aria-label="${esc(T("mpMapTitle", { site: s.address || s.site }))}">${ico.pin}<span>${T("mpMap")}</span></a>
+        <a class="map-link" href="${esc(s.map_url)}" target="_blank" rel="noopener noreferrer" title="${esc(T("mpMapTitle", { site: s.address || s.site }))}">${ico.pin}<span>${T("mpMap")}</span><span class="sr-only"> – ${esc(s.address || s.site)}</span></a>
       </li>`).join("")}</ul>
       <p class="sub">${T("mpNote")}</p>
     </section>`;
