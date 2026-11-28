@@ -1,5 +1,10 @@
 # Changelog
 
+## Unveröffentlicht
+
+- Weboberfläche: Antwortet Teslas Bilddienst nicht, steht statt einer großen leeren Fläche nur eine schmale Zeile mit Autosymbol und „Erneut laden“. Die Ladeanzeige rückt nach oben.
+- Handy-App intern: Server-Anbindung und Fehlertexte liegen in `cockpit_client.dart` statt in `main.dart` (keine Änderung in der Bedienung).
+
 ## 0.25.1 – 2026-11-28
 
 - **Weniger bezahlte Tesla-Anfragen bei dauerhaften Fehlern.** Lehnt Tesla die Abfrage selbst ab (etwa wegen fehlender Berechtigung oder falscher Region), fragte Ladecockpit alle 30 Minuten erneut – und auch jede Ablehnung zählt bei Tesla als bezahlte Anfrage. Jetzt verdoppelt sich die Pause mit jeder Ablehnung in Folge (30 Minuten, 1, 2, 4 Stunden …) bis zum normalen Takt. Nach Netz- oder Serverstörungen versucht Ladecockpit es weiter nach 30 Minuten erneut, und die Problem-Benachrichtigung kommt wie bisher nach drei Fehlschlägen.
