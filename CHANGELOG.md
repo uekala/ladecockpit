@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.25.1 – 2026-11-28
+
+- **Weniger bezahlte Tesla-Anfragen bei dauerhaften Fehlern.** Lehnt Tesla die Abfrage selbst ab (etwa wegen fehlender Berechtigung oder falscher Region), fragte Ladecockpit alle 30 Minuten erneut – und auch jede Ablehnung zählt bei Tesla als bezahlte Anfrage. Jetzt verdoppelt sich die Pause mit jeder Ablehnung in Folge (30 Minuten, 1, 2, 4 Stunden …) bis zum normalen Takt. Nach Netz- oder Serverstörungen versucht Ladecockpit es weiter nach 30 Minuten erneut, und die Problem-Benachrichtigung kommt wie bisher nach drei Fehlschlägen.
+- Der deutsche Monatsbericht nennt die Strecke in Meilen, wenn der Kilometerzähler des Autos Meilen liefert, statt immer „km“.
+- Die Anleitung zur Integration nennt den Marketplace, der ab Home Assistant 2026.11 HACS ablöst. Wer die Integration schon über HACS hat, muss nichts tun.
+- Die Optionen *Bezeichnung für Spritkosten*, *Ladelimit*, *Regelmäßiger Abgleich* und *Monatslimit Tesla-Abfragen* haben jetzt eine Beschreibung.
+- Abhängigkeiten aktualisiert: httpx 0.29.0, pypdf 7.2.0.
+- Die Handy-App ist unverändert.
+
 ## 0.25.0 – 2026-11-28
 
 - **Vier Jahreszeiten.** Der Bereich *Winterzeit und Sommerzeit* in der Web-App hat eine zweite Tabelle *Nach Jahreszeit*: Strecke, Verbrauch (kWh pro 100 km) und Kosten pro 100 km der letzten zwölf Monate für Winter (Dezember–Februar), Frühling (März–Mai), Sommer (Juni–August) und Herbst (September–November). Auf der Südhalbkugel – erkannt an einer Zeitzone mit Sommerzeit im Januar – sind die Jahreszeiten um ein halbes Jahr versetzt. Wie bei Winter- und Sommerzeit zeigt eine Jahreszeit mit weniger als 300 km „Noch zu wenig Strecke“, und die aktuelle ist mit *jetzt* markiert. Neue Felder `quarters` und `current_quarter` in `seasons` im Dashboard-JSON; der Sensor `sensor.ladecockpit_consumption` hat die neuen Attribute `by_season` (je Jahreszeit `id`, `label`, `current`, `distance`, `kwh_per_100`, `cost_per_100`, `price_per_kwh`) und `quarter_now`.

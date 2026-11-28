@@ -49,7 +49,7 @@ TEXTS = {
         "tomorrow": "morgen",
         "report_title": "Ladecockpit · {month}",
         "report_text": "{sessions} Ladungen, {kwh} kWh, {cost} (Ø {price}/kWh).",
-        "report_distance": "{dist} km gefahren, {per100} pro 100 km.",
+        "report_distance": "{dist} {unit} gefahren, {per100} pro 100 {unit}.",
         "report_fuel": "Mit dem Verbrenner wären es etwa {fuel} gewesen – gespart: {saved}.",
         "report_multipass": "Davon MultiPass: {cost}.",
         "report_home": "Zu Hause geladen: {kwh} kWh für {cost}.",

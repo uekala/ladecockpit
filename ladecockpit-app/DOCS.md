@@ -65,7 +65,7 @@ Ladecockpit legt eigene Entitäten an: `sensor.ladecockpit_next_charge`, `sensor
 
 Monatskosten und Monatsenergie führen Langzeitstatistiken, mit einer neuen Summe in jedem Monat.
 
-Diese Entitäten haben keine eindeutige ID. Man kann sie deshalb in der Oberfläche nicht umbenennen, und nach einem Neustart von Home Assistant fehlen sie ein paar Minuten. Die optionale **Ladecockpit-Integration** macht daraus echte Entitäten mit denselben IDs, einem Gerät und Wiederherstellung nach einem Neustart: in HACS `https://github.com/uekala/ladecockpit` als benutzerdefiniertes Repository vom Typ *Integration* hinzufügen, *Ladecockpit* herunterladen, Home Assistant neu starten und die Integration unter *Einstellungen → Geräte & Dienste* hinzufügen. Die App findet sie innerhalb von fünf Minuten; einzustellen gibt es nichts.
+Diese Entitäten haben keine eindeutige ID. Man kann sie deshalb in der Oberfläche nicht umbenennen, und nach einem Neustart von Home Assistant fehlen sie ein paar Minuten. Die optionale **Ladecockpit-Integration** macht daraus echte Entitäten mit denselben IDs, einem Gerät und Wiederherstellung nach einem Neustart: im Marketplace (vor Home Assistant 2026.11 in HACS) `https://github.com/uekala/ladecockpit` als benutzerdefiniertes Repository hinzufügen (in HACS Typ *Integration*), *Ladecockpit* herunterladen, Home Assistant neu starten und die Integration unter *Einstellungen → Geräte & Dienste* hinzufügen. Die App findet sie innerhalb von fünf Minuten; einzustellen gibt es nichts.
 
 ## Probleme
 

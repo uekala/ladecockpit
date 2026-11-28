@@ -19,13 +19,14 @@ from .config import Settings
 from .db import DB, utcnow_iso
 from .homeassistant import HAClient
 from .push import Ntfy, mark_sent, pending
-from .tesla import BudgetExceeded, NotConnected, RateLimited, TeslaClient, parse_session
+from .tesla import BudgetExceeded, NotConnected, RateLimited, Rejected, TeslaClient, parse_session
 
 log = logging.getLogger("ladecockpit.sync")
 
 BURST_START_DELAY_S = 5
 PROBLEM_ID = "ladecockpit_problem"
 FAILURES_BEFORE_ALERT = 3
+RETRY_AFTER_FAILURE_S = 1800
 # Je Abgleich auf das Netz hin gelesene Rechnungen und wie weit zurück (jede ist eine Tesla-Anfrage, einmalig).
 CHECK_PER_SYNC = 25
 CHECK_DAYS = 120
@@ -45,6 +46,7 @@ class SyncService:
         self.last_error: str | None = None
         self.next_sync: str | None = None
         self.failures = 0
+        self.rejected = 0  # Abgleiche in Folge, deren Anfrage Tesla abgelehnt hat (HTTP 4xx)
         self.register = stations.Register(settings.data_dir)
         self.map = osm.Lookup()
 
@@ -66,13 +68,21 @@ class SyncService:
             await self.tick()
             wait_s = self.s.burst_interval_min * 60 if self.bursting else self.s.sync_interval_h * 3600
             if self.failures and not self.bursting:
-                wait_s = min(wait_s, 1800)  # nach einem Fehler früher erneut versuchen
+                wait_s = self.retry_wait(wait_s)
             self.next_sync = datetime.fromtimestamp(time.time() + wait_s, timezone.utc).isoformat(timespec="seconds")
             try:
                 await asyncio.wait_for(self._wake.wait(), timeout=wait_s)
             except asyncio.TimeoutError:
                 pass
             self._wake.clear()
+
+    def retry_wait(self, normal_s: float) -> float:
+        """Pause nach einem fehlgeschlagenen Abgleich, nie länger als der normale Takt. Netz- und
+        Serverstörungen gehen oft schnell vorbei: nach 30 Minuten erneut. Lehnt Tesla die Anfrage selbst ab
+        (etwa fehlende Berechtigung oder falsche Region), hilft schnelles Wiederholen selten, und jede
+        Wiederholung ist eine bezahlte Anfrage: Die Pause verdoppelt sich dann mit jeder Ablehnung."""
+        doublings = min(max(self.rejected - 1, 0), 10)
+        return min(normal_s, RETRY_AFTER_FAILURE_S * 2 ** doublings)
 
     async def tick(self) -> None:
         """Eine Runde: abgleichen, wenn möglich, und die Problem-Benachrichtigung aktuell halten."""
@@ -98,16 +108,17 @@ class SyncService:
             if self.failures >= FAILURES_BEFORE_ALERT:
                 await self.report("sync", str(e))
             return
-        except Exception as e:  # noqa: BLE001 – keep the service running
+        except Exception as e:  # noqa: BLE001 – der Dienst läuft weiter
             log.exception("Sync failed")
             self.last_error = str(e)
             self.failures += 1
+            self.rejected = self.rejected + 1 if isinstance(e, Rejected) else 0
             if self.tesla.auth_error:
                 await self.report("auth")
             elif self.failures >= FAILURES_BEFORE_ALERT:
                 await self.report("sync", str(e))
             return
-        self.failures = 0
+        self.failures = self.rejected = 0
         await self.report(None)
         if new and self.bursting:
             self.burst_until = 0.0  # Rechnung da – zurück zum normalen Takt

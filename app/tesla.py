@@ -50,6 +50,10 @@ class RateLimited(TeslaError):
     pass
 
 
+class Rejected(TeslaError):
+    """Tesla hat eine Datenanfrage selbst abgelehnt (HTTP 4xx). Auch die Ablehnung zählt als bezahlte Anfrage."""
+
+
 def retry_after_seconds(value: str | None, now: float | None = None) -> float:
     """Sekunden Wartezeit aus einem Retry-After-Header (Sekunden oder ein HTTP-Datum)."""
     now = time.time() if now is None else now
@@ -63,7 +67,7 @@ def retry_after_seconds(value: str | None, now: float | None = None) -> float:
                 wait = parsedate_to_datetime(value).timestamp() - now
             except (TypeError, ValueError):
                 wait = None
-    if wait is None or wait != wait:  # missing, unreadable or NaN
+    if wait is None or wait != wait:  # fehlt, unlesbar oder NaN
         wait = RATE_LIMIT_DEFAULT_S
     return min(max(wait, 0.0), RATE_LIMIT_MAX_S)
 
@@ -200,7 +204,8 @@ class TeslaClient:
                 log.warning("Tesla limits requests (HTTP 429) – pausing for %d s", round(wait))
                 raise RateLimited(f"Tesla {path}: HTTP 429 – too many requests, waiting {round(wait)} s.")
             if r.status_code >= 400:
-                raise TeslaError(f"Tesla {path}: HTTP {r.status_code} – {r.text[:200]}")
+                error = Rejected if r.status_code < 500 else TeslaError
+                raise error(f"Tesla {path}: HTTP {r.status_code} – {r.text[:200]}")
             return r.content if raw else r.json()
         raise TeslaError("Tesla rejected the credentials.")
 
