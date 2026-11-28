@@ -67,7 +67,7 @@ def pdf_text(data: bytes) -> str:
     """Text der ersten Seiten eines PDFs ("", wenn es sich nicht lesen lässt)."""
     try:
         return "\n".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(data)).pages[:2])
-    except Exception:
+    except Exception:  # a broken or unusual PDF just tells nothing
         return ""
 
 

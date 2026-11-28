@@ -51,7 +51,7 @@ class Watcher:
         while True:
             try:
                 await self.poll_once()
-            except Exception:
+            except Exception:  # keep polling
                 log.exception("Polling Home Assistant failed")
             await asyncio.sleep(self.interval())
 

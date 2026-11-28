@@ -201,7 +201,7 @@ jobs:
         run: python3 tool/configure-android-signing.py $REQUIRED
       - run: flutter pub get
       - run: dart run flutter_launcher_icons
-      - run: flutter analyze
+      - run: flutter analyze --fatal-infos
       - run: flutter test
       - name: Build Android APK (retry transient Gradle download failures)
         shell: bash
@@ -334,7 +334,7 @@ jobs:
         run: /usr/libexec/PlistBuddy -c "Add :NSFaceIDUsageDescription string 'Unlocks Ladecockpit when the app lock is on.'" ios/Runner/Info.plist
       - run: flutter pub get
       - run: dart run flutter_launcher_icons
-      - run: flutter analyze
+      - run: flutter analyze --fatal-infos
       - run: flutter build ios --release --no-codesign
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

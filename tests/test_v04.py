@@ -92,6 +92,14 @@ def test_report_text(settings):
     assert build_report(d, "2026-08", "de") is None
 
 
+def test_report_distance_uses_the_unit_of_the_odometer():
+    d = {"distance_unit": "mi", "monthly": [{"key": "2026-10", "sessions": 2, "kwh": 60.0, "cost": 24.0,
+                                             "avg_price": 0.4, "distance": 400, "per_100": 6.0}]}
+    for lang, driven in (("de", "400 mi gefahren"), ("en", "400 mi driven")):
+        text = build_report(d, "2026-10", lang)["text"]
+        assert driven in text and "100 mi" in text and "km" not in text
+
+
 class EventHA:
     def __init__(self, ok=True):
         self.ok, self.events, self.calls = ok, [], []

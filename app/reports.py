@@ -81,7 +81,7 @@ class MonthReporter:
         while True:
             try:
                 await self.check()
-            except Exception:
+            except Exception:  # try again later
                 log.exception("Monthly report failed")
             await asyncio.sleep(CHECK_EVERY_S)
 

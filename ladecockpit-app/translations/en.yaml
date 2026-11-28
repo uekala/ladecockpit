@@ -61,6 +61,7 @@ configuration:
     description: Fuel cost of another car, shown next to the charging cost.
   fuel_label:
     name: Label for fuel cost
+    description: What the monthly fuel cost is called in the web app, e.g. "Diesel this month". Left empty it is "Fuel this month".
   fuel_consumption:
     name: Consumption of a comparison car (L/100 km)
     description: For the comparison "what the distance would have cost with a combustion car". Fixed value, e.g. 7.5.
@@ -105,6 +106,7 @@ configuration:
     description: The forecast says when this level is reached.
   soc_target:
     name: Charge limit (%)
+    description: The level you usually charge to. While the car charges, the countdown and the forecast of the next charging stop use it.
   notify_problems:
     name: Notify about problems
     description: Notification in Home Assistant when the Tesla sign-in expired or syncing fails.
@@ -128,7 +130,9 @@ configuration:
     description: 'For stations whose operator Ladecockpit does not know (mostly abroad). Write a text from the site name or address, an equals sign and the operator; separate several with semicolons, e.g. "Hafenstadt=Fastned; Parkhaus Mitte=Stadtwerke". Upper and lower case do not matter. A station assigned this way counts as MultiPass.'
   sync_interval_hours:
     name: Regular sync (hours)
+    description: How often Ladecockpit asks Tesla for new invoices (default 6). After a charging session it asks more often until the invoice is there.
   api_budget_requests:
     name: Monthly limit of Tesla requests
+    description: Fixed upper limit of Tesla requests per month (default 1500). When it is reached, syncing pauses until the next month.
 network:
   8077/tcp: Web app outside Home Assistant (optional)
