@@ -1,6 +1,5 @@
 # Changelog
 
-
 ## Unveröffentlicht
 
 - Weboberfläche: Antwortet Teslas Bilddienst nicht, steht statt einer großen leeren Fläche nur eine schmale Zeile mit Autosymbol und „Erneut laden“. Die Ladeanzeige rückt nach oben.
