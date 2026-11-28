@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.25.0 – 2026-11-28
+
+- **Vier Jahreszeiten.** Der Bereich *Winterzeit und Sommerzeit* in der Web-App hat eine zweite Tabelle *Nach Jahreszeit*: Strecke, Verbrauch (kWh pro 100 km) und Kosten pro 100 km der letzten zwölf Monate für Winter (Dezember–Februar), Frühling (März–Mai), Sommer (Juni–August) und Herbst (September–November). Auf der Südhalbkugel – erkannt an einer Zeitzone mit Sommerzeit im Januar – sind die Jahreszeiten um ein halbes Jahr versetzt. Wie bei Winter- und Sommerzeit zeigt eine Jahreszeit mit weniger als 300 km „Noch zu wenig Strecke“, und die aktuelle ist mit *jetzt* markiert. Neue Felder `quarters` und `current_quarter` in `seasons` im Dashboard-JSON; der Sensor `sensor.ladecockpit_consumption` hat die neuen Attribute `by_season` (je Jahreszeit `id`, `label`, `current`, `distance`, `kwh_per_100`, `cost_per_100`, `price_per_kwh`) und `quarter_now`.
+- Die Handy-App ist unverändert.
+
 ## 0.24.0 – 2026-11-28
 
 - **Winter gegen Sommer.** Neuer Bereich *Winterzeit und Sommerzeit* in der Web-App: Strecke, Verbrauch (kWh pro 100 km) und Kosten pro 100 km der letzten zwölf Monate, geteilt nach der Zeitumstellung der eingestellten Zeitzone (ohne Zeitumstellung April bis September als Sommer). Energie und Kosten kommen aus den Rechnungen plus Laden zu Hause, Ladeverluste zählen also mit. Eine Jahreszeit mit weniger als 300 km zeigt „Noch zu wenig Strecke“. Liegen beide vor und unterscheiden sie sich um mindestens 5 %, gibt es einen Tipp („In der Winterzeit braucht dein Tesla … – rund 25 % mehr Strom im Winter“). Neues Feld `seasons` im Dashboard-JSON; der Sensor `sensor.ladecockpit_consumption` hat neue Attribute `winter_kwh_per_100`, `summer_kwh_per_100`, `winter_cost_per_100`, `summer_cost_per_100`, `winter_distance`, `summer_distance`, `winter_price_per_kwh`, `summer_price_per_kwh`, `season_now`, `winter_more_kwh_pct`, `winter_more_cost_pct` und `season_tip`.

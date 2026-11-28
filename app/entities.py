@@ -50,7 +50,7 @@ ENTITY_IDS = (
 
 
 def _season_attrs(seasons: dict | None, lang: str, insights: list[dict]) -> dict:
-    """Winter- und Sommerzeit der letzten zwölf Monate als Attribute des Verbrauchssensors."""
+    """Winter- und Sommerzeit und die vier Jahreszeiten der letzten zwölf Monate als Attribute des Verbrauchssensors."""
     by_id = {s["id"]: s for s in (seasons or {}).get("seasons") or []}
     out = {}
     for sid in ("winter", "summer"):
@@ -63,6 +63,12 @@ def _season_attrs(seasons: dict | None, lang: str, insights: list[dict]) -> dict
     out["winter_more_kwh_pct"] = (seasons or {}).get("kwh_diff_pct")
     out["winter_more_cost_pct"] = (seasons or {}).get("cost_diff_pct")
     out["season_tip"] = next((i["text"] for i in insights if i.get("kind") == "season"), None)
+    current = (seasons or {}).get("current_quarter")
+    out["by_season"] = [{"id": q["id"], "label": i18n.t(lang, f"quarter_{q['id']}"), "current": q["id"] == current,
+                         "distance": q["distance"], "kwh_per_100": q["kwh_per_100"], "cost_per_100": q["per_100"],
+                         "price_per_kwh": _round(q["avg_price"], 4)}
+                        for q in (seasons or {}).get("quarters") or []]
+    out["quarter_now"] = i18n.t(lang, f"quarter_{current}") if current else None
     return out
 
 
