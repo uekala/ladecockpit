@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: "3.13"
+          python-version: "3.14"
       # Feste Version, damit neue Regeln nicht unbemerkt die CI rot machen; Dependabot hebt sie nicht an,
       # das geschieht bewusst in der Pflege.
       - run: pip install ruff==0.16.9
