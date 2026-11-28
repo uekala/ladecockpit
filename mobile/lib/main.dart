@@ -2194,7 +2194,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ? await _client.yearReportPages(month)
           : await _client.monthReportPages(month);
       final pages = metadata['pages'] as int;
-      final headers = await _client._headers();
+      final headers = await _client.requestHeaders();
       if (!mounted) return;
       await showDialog<void>(
         context: context,
@@ -2775,7 +2775,7 @@ class _DashboardPageState extends State<DashboardPage> {
     try {
       final metadata = await _client.invoicePages(sessionId);
       final pages = metadata['pages'] as int;
-      final headers = await _client._headers();
+      final headers = await _client.requestHeaders();
       if (!mounted) return;
       await showDialog<void>(
         context: context,

@@ -44,6 +44,9 @@ class CockpitClient {
     return cockpitRequestHeaders(await password, json: json);
   }
 
+  /// Kopfzeilen für Anfragen, die die Oberfläche selbst stellt (z. B. Seitenbilder der Rechnungs-PDFs).
+  Future<Map<String, String>> requestHeaders() => _headers();
+
   /// Unverschlüsseltes HTTP ist nur zu Adressen erlaubt, die nicht über das
   /// offene Internet laufen: Tailscale (100.64.0.0/10, *.ts.net,
   /// fd7a:115c:a1e0::/48), private Heimnetze (10/8, 172.16/12, 192.168/16,
