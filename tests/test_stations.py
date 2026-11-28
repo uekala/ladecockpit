@@ -1,4 +1,5 @@
 import asyncio
+from datetime import UTC
 
 import httpx
 
@@ -138,8 +139,8 @@ def test_register_download(tmp_path):
 
 
 def test_due_for_lookup():
-    from datetime import datetime, timedelta, timezone
-    now = datetime(2026, 11, 2, tzinfo=timezone.utc)
+    from datetime import datetime, timedelta
+    now = datetime(2026, 11, 2, tzinfo=UTC)
     base = {"street": "Hauptstraße", "postcode": "12309", "country": "DE"}
     assert stations.due_for_lookup(base, now)
     assert not stations.due_for_lookup({**base, "country": "NL"}, now)

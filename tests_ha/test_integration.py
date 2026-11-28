@@ -1,7 +1,6 @@
 """Die Ladecockpit-Integration: übernimmt die Zustände der App, folgt ihren Events, stellt sich selbst wieder her."""
 from datetime import date, datetime
 
-from homeassistant import config_entries
 from homeassistant.core import HomeAssistant, State
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import device_registry as dr
@@ -9,6 +8,7 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry, mock_restore_cache
 
 from custom_components.ladecockpit.const import BINARY_SENSORS, DOMAIN, SENSORS, STATE_EVENT
+from homeassistant import config_entries
 
 MONTH = {"unit_of_measurement": "EUR", "device_class": "monetary", "state_class": "total",
          "last_reset": "2026-11-01T00:00:00+01:00", "icon": "mdi:cash-multiple",

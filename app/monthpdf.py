@@ -73,7 +73,7 @@ def cover(month_key: str, sessions: list[dict], *, lang: str, tz, currency: str,
     heads = [_t(lang, k) for k in ("date", "site", "kwh", "price", "net", "vat", "gross", "credit")]
     pdf.set_font("Helvetica", "B", 8.5)
     pdf.set_fill_color(235, 238, 240)
-    for i, (w, h) in enumerate(zip(widths, heads)):
+    for i, (w, h) in enumerate(zip(widths, heads, strict=False)):
         pdf.cell(w, 7, _latin(h), border="B", align="L" if i < 2 else "R", fill=True)
     pdf.ln()
     pdf.set_font("Helvetica", "", 8.5)
@@ -91,7 +91,7 @@ def cover(month_key: str, sessions: list[dict], *, lang: str, tz, currency: str,
         row = [start.strftime("%d.%m.%Y" if lang == "de" else "%Y-%m-%d") if start else "", site[:34],
                num(s.get("kwh")), money(s.get("price")), money(net), money(vat), money(gross),
                money(s.get("credit")) if s.get("credit") else ""]
-        for i, (w, v) in enumerate(zip(widths, row)):
+        for i, (w, v) in enumerate(zip(widths, row, strict=False)):
             pdf.cell(w, 6, _latin(v), border="B", align="L" if i < 2 else "R")
         pdf.ln()
         sums["kwh"] += s.get("kwh") or 0.0
@@ -104,7 +104,7 @@ def cover(month_key: str, sessions: list[dict], *, lang: str, tz, currency: str,
     total_row = [_t(lang, "total"), "", num(sums["kwh"]), "",
                  "" if missing_net else money(sums["net"]), "" if missing_net else money(sums["vat"]),
                  money(sums["gross"]), money(sums["credit"]) if sums["credit"] else ""]
-    for i, (w, v) in enumerate(zip(widths, total_row)):
+    for i, (w, v) in enumerate(zip(widths, total_row, strict=False)):
         pdf.cell(w, 7, _latin(v), align="L" if i < 2 else "R")
     pdf.ln(10)
 

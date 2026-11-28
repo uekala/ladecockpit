@@ -2,7 +2,7 @@
 import asyncio
 import dataclasses
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
@@ -27,8 +27,8 @@ def test_as_float_accepts_comma_and_drops_invalid_states():
 
 
 def test_parse_dt_handles_z_naive_and_garbage():
-    assert parse_dt("2026-11-21T10:00:00Z") == datetime(2026, 11, 21, 10, tzinfo=timezone.utc)
-    assert parse_dt("2026-11-21T10:00:00").tzinfo == timezone.utc
+    assert parse_dt("2026-11-21T10:00:00Z") == datetime(2026, 11, 21, 10, tzinfo=UTC)
+    assert parse_dt("2026-11-21T10:00:00").tzinfo == UTC
     assert parse_dt("") is None
     assert parse_dt("yesterday") is None
 
@@ -37,7 +37,7 @@ def test_not_configured_does_nothing(settings):
     ha = HAClient(dataclasses.replace(settings, ha_url="", ha_token=""))
     assert not ha.configured
     assert asyncio.run(ha.state("sensor.x")) is None
-    assert asyncio.run(ha.history("sensor.x", datetime.now(timezone.utc))) == []
+    assert asyncio.run(ha.history("sensor.x", datetime.now(UTC))) == []
     assert asyncio.run(ha.fire_event("ev", {})) is False
     assert asyncio.run(ha.call_service("notify", "x", {})) is False
     assert asyncio.run(ha.set_state("sensor.x", "1", {})) is False
@@ -105,11 +105,11 @@ def test_history_sorts_and_skips_bad_rows_and_errors(settings):
         {"state": "69", "last_changed": "not a date"},
     ]]
     ha = _client(settings, lambda request: httpx.Response(200, json=rows))
-    points = asyncio.run(ha.history("sensor.car_battery", datetime(2026, 11, 19, tzinfo=timezone.utc)))
+    points = asyncio.run(ha.history("sensor.car_battery", datetime(2026, 11, 19, tzinfo=UTC)))
     assert [v for _, v in points] == [68.0, 70.0]
 
     ha = _client(settings, lambda request: httpx.Response(500))
-    assert asyncio.run(ha.history("sensor.car_battery", datetime(2026, 11, 19, tzinfo=timezone.utc))) == []
+    assert asyncio.run(ha.history("sensor.car_battery", datetime(2026, 11, 19, tzinfo=UTC))) == []
 
 
 def test_fire_event_posts_data_and_reports_rejection(settings):

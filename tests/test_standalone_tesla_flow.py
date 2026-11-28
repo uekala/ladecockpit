@@ -8,14 +8,13 @@ from pathlib import Path
 
 import httpx
 from fpdf import FPDF
+from test_networks import SUPERCHARGER_RAW
 
 from app import main
 from app.db import DB
 from app.homeassistant import HAClient
 from app.sync import SyncService
 from app.tesla import TeslaClient
-
-from test_networks import SUPERCHARGER_RAW
 
 
 def invoice_pdf() -> bytes:

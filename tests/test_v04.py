@@ -1,12 +1,12 @@
 import asyncio
 import dataclasses
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.analytics import build_dashboard
 from app.entities import build_states
 from app.reports import EVENT, MonthReporter, build_report
 
-NOW = datetime(2026, 10, 23, 12, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 23, 12, tzinfo=UTC)
 
 
 def _s(sid, start, kwh, price, site="Bad Homburg, Germany", minutes=30):
@@ -18,7 +18,7 @@ def _s(sid, start, kwh, price, site="Bad Homburg, Germany", minutes=30):
 
 
 def _sessions():
-    utc = timezone.utc
+    utc = UTC
     return [
         _s("1", datetime(2026, 10, 22, 20, 7, tzinfo=utc), 40.0, 0.22),            # 22:07 local, cheap
         _s("2", datetime(2026, 10, 20, 14, 33, tzinfo=utc), 50.0, 0.37, "Mainz, Germany"),
@@ -30,7 +30,7 @@ def _sessions():
 
 def _readings():
     soc = [(NOW - timedelta(days=6 - i), 90.0 - 10 * i) for i in range(7)]   # 10 % per day
-    odo = [(datetime(2026, 9, 28, 8, tzinfo=timezone.utc) + timedelta(days=i), 1000.0 + 50 * i) for i in range(26)]
+    odo = [(datetime(2026, 9, 28, 8, tzinfo=UTC) + timedelta(days=i), 1000.0 + 50 * i) for i in range(26)]
     return {"soc": soc, "soc_last": soc[-1], "range_last": None, "odometer": odo}
 
 
@@ -122,7 +122,7 @@ def test_reporter_once_per_month(settings, db):
 
     ha = EventHA()
     rep = MonthReporter(dataclasses.replace(settings, lang="de"), db, ha, build)
-    nov = datetime(2026, 11, 1, 9, tzinfo=timezone.utc)
+    nov = datetime(2026, 11, 1, 9, tzinfo=UTC)
 
     async def go():
         assert await rep.check(NOW) is None and ha.events == []        # fresh install: only remembers
@@ -147,7 +147,7 @@ def test_reporter_retries_when_ha_is_away(settings, db):
     ha = EventHA(ok=False)
     rep = MonthReporter(dataclasses.replace(settings, month_report=False), db, ha, build)
     db.kv_set("report_month", "2026-10")
-    nov = datetime(2026, 11, 1, 9, tzinfo=timezone.utc)
+    nov = datetime(2026, 11, 1, 9, tzinfo=UTC)
     assert asyncio.run(rep.check(nov)) is None and db.kv_get("report_month") == "2026-10"
     ha.ok = True
     assert asyncio.run(rep.check(nov))["month"] == "2026-10"

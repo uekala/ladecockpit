@@ -1,7 +1,7 @@
 import asyncio
 import dataclasses
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 
@@ -9,7 +9,7 @@ from app.push import KV_SINCE, Ntfy, mark_sent, pending, split_url
 from app.reports import MonthReporter
 from app.sync import SyncService
 
-NOW = datetime(2026, 11, 21, 12, tzinfo=timezone.utc)
+NOW = datetime(2026, 11, 21, 12, tzinfo=UTC)
 
 
 def test_topic_address():
@@ -63,9 +63,9 @@ def test_sync_sends_new_invoices_and_problems_to_the_phone(settings, db):
     seen = []
     push = _ntfy(settings, seen)
     service = SyncService(dataclasses.replace(settings, lang="de", notify_problems=True), db, None, _NoHA(), push)
-    db.kv_set(KV_SINCE, (datetime.now(timezone.utc) - timedelta(days=1)).isoformat())
+    db.kv_set(KV_SINCE, (datetime.now(UTC) - timedelta(days=1)).isoformat())
     service.event_payload = lambda s: {"site": "Moers, Germany", "text": "30,0 kWh · 12,00 €", "slow": False}
-    db.sessions = lambda: [{**_session("a", 0), "start_ts": (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()}]
+    db.sessions = lambda: [{**_session("a", 0), "start_ts": (datetime.now(UTC) - timedelta(hours=2)).isoformat()}]
     assert asyncio.run(service.push_phone()) == 1
     assert seen[-1][2]["title"] == "⚡ Neue Rechnung · Moers, Germany"
     assert asyncio.run(service.push_phone()) == 0
@@ -85,5 +85,5 @@ def test_monthly_report_goes_to_the_phone_without_home_assistant(settings, db):
 
     reporter = MonthReporter(dataclasses.replace(settings, lang="de", month_report=True), db, _NoHA(), build, push)
     db.kv_set("report_month", "2026-10")
-    report = asyncio.run(reporter.check(now=datetime(2026, 11, 1, 9, tzinfo=timezone.utc)))
+    report = asyncio.run(reporter.check(now=datetime(2026, 11, 1, 9, tzinfo=UTC)))
     assert report and seen and seen[-1][2]["title"] == report["title"]

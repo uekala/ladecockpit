@@ -13,24 +13,38 @@ import tempfile
 import time
 import zipfile
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
-from starlette.background import BackgroundTask
 from pydantic import BaseModel
+from starlette.background import BackgroundTask
 
-from . import __version__, analytics, backup, carimage, checks, demo, i18n, invoices, monthpdf, networks, pdfview, stations, yearpdf
+from . import (
+    __version__,
+    analytics,
+    backup,
+    carimage,
+    checks,
+    demo,
+    i18n,
+    invoices,
+    monthpdf,
+    networks,
+    pdfview,
+    stations,
+    yearpdf,
+)
 from .analytics import build_dashboard
-from .export import sessions_csv
 from .config import settings
 from .db import DB
 from .entities import EntityPublisher
+from .export import sessions_csv
 from .homeassistant import HAClient
-from .reports import MonthReporter
 from .push import Ntfy
+from .reports import MonthReporter
 from .sync import SyncService
 from .tesla import TeslaClient, TeslaError
 from .watcher import Watcher
@@ -141,7 +155,7 @@ async def basic_auth(request: Request, call_next):
             try:
                 _, _, pw = base64.b64decode(header[6:]).decode().partition(":")
                 ok = secrets.compare_digest(pw, settings.app_password)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 ok = False
         if not ok:
             return Response(status_code=401, headers={"WWW-Authenticate": 'Basic realm="Ladecockpit"'})
@@ -235,9 +249,9 @@ def _when(iso: str | None) -> str:
 @app.get("/api/dashboard")
 async def dashboard():
     if settings.demo:
-        years = yearpdf.years(demo.demo_sessions(settings, datetime.now(timezone.utc)), settings.tz)
+        years = yearpdf.years(demo.demo_sessions(settings, datetime.now(UTC)), settings.tz)
         return {**demo.build_demo(settings), "car": _car(), "look": _look(), "years": years}
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     live = await _live() if ha.configured else {"available": False, "values": {}, "units": {}}
     meta = {
         "mode": "live",
@@ -486,7 +500,7 @@ async def sync_now():
     except TeslaError as e:
         sync.last_error = str(e)
         raise HTTPException(502, str(e)) from e
-    except asyncio.TimeoutError as e:
+    except TimeoutError as e:
         raise HTTPException(504, "Tesla did not answer in time.") from e
     return {"ok": True, "new": new}
 
@@ -616,7 +630,7 @@ async def month_report_page(month: str, page: int):
 async def _month_report(month: str) -> tuple[bytes, str]:
     if not re.fullmatch(r"\d{4}-\d{2}", month):
         raise HTTPException(400, "Use the format YYYY-MM.")
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     sessions = demo.demo_sessions(settings, now) if settings.demo else db.sessions()
     chosen = sorted((s for s in sessions if s.get("start_ts") and s.get("total") is not None
                      and datetime.fromisoformat(s["start_ts"]).astimezone(settings.tz).strftime("%Y-%m") == month),
@@ -645,7 +659,7 @@ async def _month_report(month: str) -> tuple[bytes, str]:
 def _year_report(year: int) -> tuple[bytes, str]:
     if not 2000 <= year <= 2100:
         raise HTTPException(400, "Use a four-digit year.")
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     sessions = demo.demo_sessions(settings, now) if settings.demo else db.sessions()
     if not any(yearpdf.in_year(s, year, settings.tz) for s in sessions):
         raise HTTPException(404, "No sessions in this year.")
@@ -730,7 +744,7 @@ async def backup_restore(request: Request):
 
 @app.get("/api/export.csv")
 async def export_csv():
-    sessions = demo.demo_sessions(settings, datetime.now(timezone.utc)) if settings.demo else db.sessions()
+    sessions = demo.demo_sessions(settings, datetime.now(UTC)) if settings.demo else db.sessions()
     return Response(sessions_csv(sessions, settings), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": 'attachment; filename="ladecockpit-sessions.csv"'})
 

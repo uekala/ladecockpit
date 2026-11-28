@@ -12,8 +12,8 @@ from pathlib import Path
 
 os.environ.setdefault("APP_MODE", "demo")
 
-from app.config import load  # noqa: E402
-from app.demo import build_demo  # noqa: E402
+from app.config import load
+from app.demo import build_demo
 
 PLACEHOLDER = '<script type="application/json" id="preview-data"></script>'
 

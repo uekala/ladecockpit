@@ -10,9 +10,10 @@ So bleibt es bei einigen Dutzend Tesla-Anfragen im Monat.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from . import i18n, invoices, networks, osm, stations, vehicle
 from .config import Settings
@@ -69,11 +70,9 @@ class SyncService:
             wait_s = self.s.burst_interval_min * 60 if self.bursting else self.s.sync_interval_h * 3600
             if self.failures and not self.bursting:
                 wait_s = self.retry_wait(wait_s)
-            self.next_sync = datetime.fromtimestamp(time.time() + wait_s, timezone.utc).isoformat(timespec="seconds")
-            try:
+            self.next_sync = datetime.fromtimestamp(time.time() + wait_s, UTC).isoformat(timespec="seconds")
+            with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(self._wake.wait(), timeout=wait_s)
-            except asyncio.TimeoutError:
-                pass
             self._wake.clear()
 
     def retry_wait(self, normal_s: float) -> float:
@@ -108,7 +107,7 @@ class SyncService:
             if self.failures >= FAILURES_BEFORE_ALERT:
                 await self.report("sync", str(e))
             return
-        except Exception as e:  # noqa: BLE001 – der Dienst läuft weiter
+        except Exception as e:  # der Dienst läuft weiter
             log.exception("Sync failed")
             self.last_error = str(e)
             self.failures += 1
@@ -189,7 +188,7 @@ class SyncService:
         MultiPass); nur wenn nicht, wird das PDF geholt. MultiPass-Rechnungen werden für die Adresse
         der Station geholt. PDFs bleiben gespeichert, Ansicht und Monatsbericht brauchen also keine
         weitere Anfrage. Gibt die Zahl gelesener Rechnungen zurück."""
-        now = now or datetime.now(timezone.utc)
+        now = now or datetime.now(UTC)
         since = (now - timedelta(days=CHECK_DAYS)).isoformat(timespec="seconds")
         read = 0
         for s in self.db.sessions_to_check(since, CHECK_PER_SYNC * 4):
@@ -224,7 +223,7 @@ class SyncService:
     async def _invoice_text(self, s: dict) -> str | None:
         try:
             path = await invoices.pdf_path(self.tesla, self.s.data_dir, s)
-        except Exception as e:  # noqa: BLE001 – beim nächsten Abgleich erneut versuchen
+        except Exception as e:  # beim nächsten Abgleich erneut versuchen
             log.warning("Could not fetch the invoice of session %s: %s", s["session_id"], e)
             return None
         return invoices.pdf_text(path.read_bytes())
@@ -234,13 +233,13 @@ class SyncService:
         Gibt die Zahl gefundener Stationen zurück."""
         if not self.s.operator_lookup:
             return 0
-        now = now or datetime.now(timezone.utc)
+        now = now or datetime.now(UTC)
         due = [s for s in self.db.sessions_with_station() if stations.due_for_lookup(s["station"], now)]
         if not due:
             return 0
         try:
             rows = await self.register.rows_for({s["station"]["postcode"] for s in due})
-        except Exception:  # noqa: BLE001 – der Betreiber ist eine Zugabe, nie deswegen einen Abgleich abbrechen
+        except Exception:  # der Betreiber ist eine Zugabe, nie deswegen einen Abgleich abbrechen
             log.exception("Charging station register lookup failed")
             return 0
         if rows is None:
@@ -268,7 +267,7 @@ class SyncService:
         ihre Ladungen genutzt. Gibt die Zahl der Ladungen zurück, die einen Betreiber bekamen."""
         if not self.s.map_lookup:
             return 0
-        now = now or datetime.now(timezone.utc)
+        now = now or datetime.now(UTC)
         answered: dict[tuple, dict] = {}
         waiting: dict[tuple, list[dict]] = {}
         for s in self.db.sessions_with_station():
@@ -295,7 +294,7 @@ class SyncService:
                 except osm.Unavailable as e:
                     log.warning("OpenStreetMap lookup not available now (%s); trying again with the next sync", e)
                     break
-                except Exception:  # noqa: BLE001 – der Betreiber ist eine Zugabe, nie deswegen einen Abgleich abbrechen
+                except Exception:  # der Betreiber ist eine Zugabe, nie deswegen einen Abgleich abbrechen
                     log.exception("OpenStreetMap lookup failed")
                     break
                 result = {"map_checked": now.isoformat(timespec="seconds"), "map_v": osm.VERSION}
@@ -328,7 +327,7 @@ class SyncService:
             return 0
         pushed = 0
         max_age = timedelta(hours=self.s.push_max_age_h)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for s in self.db.sessions_to_push():
             if s["kwh"] is None or s["total"] is None:
                 continue  # Abrechnung noch nicht endgültig – beim nächsten Abgleich erneut
@@ -346,7 +345,7 @@ class SyncService:
         if not (self.push and self.push.configured):
             return 0
         sent = 0
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for s in pending(self.db, self.db.sessions(), now, timedelta(hours=self.s.push_max_age_h)):
             p = self.event_payload(s)
             title = i18n.t(self.s.lang, "push_invoice_title", site=p["site"])

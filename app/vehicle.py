@@ -5,8 +5,9 @@ Kilometerstand und, falls eingerichtet, die Außentemperatur), brauchen also kei
 """
 from __future__ import annotations
 
+import itertools
 from bisect import bisect_left
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from statistics import median
 
 PAIR_WINDOW = timedelta(minutes=15)   # Akkustand und Reichweite müssen so nah beieinander liegen
@@ -99,10 +100,10 @@ def consumption_by_temperature(soc: list[tuple[datetime, float]], odo: list[tupl
     def day(ts):
         return days.setdefault(ts.astimezone(tz).date(), {"drop": 0.0, "dist": 0.0, "temps": []})
 
-    for (_, a), (t2, b) in zip(soc, soc[1:]):
+    for (_, a), (t2, b) in itertools.pairwise(soc):
         if 0 < a - b < 40:
             day(t2)["drop"] += a - b
-    for (_, a), (t2, b) in zip(odo, odo[1:]):
+    for (_, a), (t2, b) in itertools.pairwise(odo):
         if 0 < b - a < 1500:
             day(t2)["dist"] += b - a
     for ts, value in temp:
@@ -235,7 +236,7 @@ def daily_fuel_prices(points: list[tuple[datetime, float]], tz, now: datetime) -
         while cur < end:
             local = cur.astimezone(tz)
             midnight = (local.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1))
-            seg_end = min(end, midnight.astimezone(timezone.utc))
+            seg_end = min(end, midnight.astimezone(UTC))
             secs = (seg_end - cur).total_seconds()
             if secs <= 0:
                 break
@@ -257,7 +258,7 @@ def distance_fuel_price(odo: list[tuple[datetime, float]], daily: dict[date, flo
     known = sorted(daily)
     km = cost = 0.0
     own: set[date] = set()
-    for (t0, v0), (t1, v1) in zip(odo, odo[1:]):
+    for (t0, v0), (t1, v1) in itertools.pairwise(odo):
         step = v1 - v0
         if step <= 0:
             continue

@@ -1,5 +1,5 @@
 import dataclasses
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app import i18n
 from app.analytics import build_dashboard
@@ -34,15 +34,15 @@ def _session(sid, start, kwh, total):
 
 
 def test_cost_per_100_only_counts_sessions_after_first_odometer_reading(settings):
-    now = datetime(2026, 10, 20, 12, tzinfo=timezone.utc)
+    now = datetime(2026, 10, 20, 12, tzinfo=UTC)
     sessions = [
-        _session("a", datetime(2026, 10, 3, 18, tzinfo=timezone.utc), 40, 20.0),   # before tracking
-        _session("b", datetime(2026, 10, 15, 18, tzinfo=timezone.utc), 30, 12.0),  # after tracking
+        _session("a", datetime(2026, 10, 3, 18, tzinfo=UTC), 40, 20.0),   # before tracking
+        _session("b", datetime(2026, 10, 15, 18, tzinfo=UTC), 30, 12.0),  # after tracking
     ]
     readings = {
         "soc": [], "soc_last": None, "range_last": None,
-        "odometer": [(datetime(2026, 10, 10, tzinfo=timezone.utc), 1000.0),
-                     (datetime(2026, 10, 20, tzinfo=timezone.utc), 1200.0)],
+        "odometer": [(datetime(2026, 10, 10, tzinfo=UTC), 1000.0),
+                     (datetime(2026, 10, 20, tzinfo=UTC), 1200.0)],
     }
     d = build_dashboard(sessions=sessions, live={"values": {}, "units": {"odometer": "km"}},
                         readings=readings, settings=settings, meta={}, now=now)
@@ -53,7 +53,7 @@ def test_cost_per_100_only_counts_sessions_after_first_odometer_reading(settings
 
 
 def test_same_tesla_site_label_keeps_different_invoice_addresses_separate(settings):
-    now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
+    now = datetime(2026, 11, 7, 12, tzinfo=UTC)
     sessions = [
         {
             **_session("aldi-kleinewefers", now - timedelta(days=2), 20, 8.0),
@@ -85,7 +85,7 @@ def test_same_tesla_site_label_keeps_different_invoice_addresses_separate(settin
 
 
 def test_forecast_from_readings(settings):
-    now = datetime(2026, 10, 20, 12, tzinfo=timezone.utc)
+    now = datetime(2026, 10, 20, 12, tzinfo=UTC)
     soc = [(now - timedelta(days=4 - i), 70 - 8 * i) for i in range(5)]   # 8 %/day over 4 days
     readings = {"soc": soc, "soc_last": soc[-1], "range_last": None, "odometer": []}
     d = build_dashboard(sessions=[], live={"values": {}}, readings=readings,
@@ -99,10 +99,10 @@ def test_forecast_from_readings(settings):
 def test_the_cheapest_slot_says_when_it_rests_on_one_session(settings):
     from zoneinfo import ZoneInfo
     settings = dataclasses.replace(settings, lang="de", tz=ZoneInfo("Europe/Berlin"))
-    now = datetime(2026, 11, 1, 12, tzinfo=timezone.utc)
+    now = datetime(2026, 11, 1, 12, tzinfo=UTC)
 
     def session(day, hour_utc, price):
-        return _session(f"s{day}-{hour_utc}", datetime(2026, 10, day, hour_utc, tzinfo=timezone.utc), 40, 40 * price)
+        return _session(f"s{day}-{hour_utc}", datetime(2026, 10, day, hour_utc, tzinfo=UTC), 40, 40 * price)
 
     # 6 UTC = 8:00 in Berlin in October (one cheap morning session), 11 UTC = 13:00, 16 UTC = 18:00.
     sessions = ([session(1, 6, 0.30)] + [session(d, 11, 0.38) for d in range(2, 6)]
@@ -122,13 +122,13 @@ def _tariff_dashboard(settings, rows, lang="de", now=None, values=None, **option
     from zoneinfo import ZoneInfo
     sessions = []
     for n, (site, day, hour, kwh, price) in enumerate(rows):
-        s = _session(f"t{n}", datetime(2026, 10, day, hour, tzinfo=timezone.utc), kwh, round(kwh * price, 2))
+        s = _session(f"t{n}", datetime(2026, 10, day, hour, tzinfo=UTC), kwh, round(kwh * price, 2))
         s["site"] = site
         sessions.append(s)
     return build_dashboard(sessions=sessions, live={"values": values or {}, "units": {}},
                            readings={"soc": [], "soc_last": None, "range_last": None, "odometer": []},
                            settings=dataclasses.replace(settings, lang=lang, tz=ZoneInfo("Europe/Berlin"), **options),
-                           meta={}, now=now or datetime(2026, 11, 1, 12, tzinfo=timezone.utc))
+                           meta={}, now=now or datetime(2026, 11, 1, 12, tzinfo=UTC))
 
 
 def test_tariffs_per_site(settings):
@@ -167,7 +167,7 @@ _DAY_PRICE_ROWS = [
     ("Moers, Germany", 3, 11, 40, 0.46), ("Moers, Germany", 4, 15, 10, 0.46),
     ("Willich, Germany", 5, 2, 30, 0.40), ("Willich, Germany", 6, 16, 30, 0.40),
 ]
-_OCTOBER = datetime(2026, 10, 30, 12, tzinfo=timezone.utc)
+_OCTOBER = datetime(2026, 10, 30, 12, tzinfo=UTC)
 
 
 def test_reference_price_from_the_invoices_is_the_day_price_of_the_sites(settings):
@@ -227,7 +227,7 @@ def test_reference_price_zero_or_an_unavailable_entity_turns_the_comparison_off(
 
 
 # --- price changes per site -------------------------------------------------------------------
-_NOVEMBER = datetime(2026, 11, 1, 12, tzinfo=timezone.utc)
+_NOVEMBER = datetime(2026, 11, 1, 12, tzinfo=UTC)
 
 
 def test_price_change_per_site(settings):
@@ -276,7 +276,7 @@ def test_no_price_change_from_a_different_time_of_day(settings):
 def test_no_price_change_tip_when_too_old_or_too_few_sessions(settings):
     rows = [("Willich, Germany", 2, 12, 40, 0.37), ("Willich, Germany", 3, 13, 30, 0.37),
             ("Willich, Germany", 5, 12, 20, 0.40)]
-    old = _tariff_dashboard(settings, rows, now=datetime(2027, 1, 15, 12, tzinfo=timezone.utc))
+    old = _tariff_dashboard(settings, rows, now=datetime(2027, 1, 15, 12, tzinfo=UTC))
     assert len(old["price_changes"]) == 1 and not [i for i in old["insights"] if i["kind"] == "price"]
     few = _tariff_dashboard(settings, rows[1:], now=_NOVEMBER)
     assert few["price_changes"] == []
@@ -288,8 +288,8 @@ def _season_readings(points):
 
 def test_winter_and_summer_time_compare_consumption_and_cost(settings):
     settings = dataclasses.replace(settings, lang="de")
-    now = datetime(2026, 11, 25, 12, tzinfo=timezone.utc)
-    utc = lambda *a: datetime(*a, tzinfo=timezone.utc)  # noqa: E731
+    now = datetime(2026, 11, 25, 12, tzinfo=UTC)
+    utc = lambda *a: datetime(*a, tzinfo=UTC)  # noqa: E731
     sessions = [
         _session("s1", utc(2026, 6, 10, 18), 50, 20.0),    # Sommerzeit
         _session("s2", utc(2026, 7, 20, 18), 50, 20.0),
@@ -311,9 +311,9 @@ def test_winter_and_summer_time_compare_consumption_and_cost(settings):
 
 
 def test_no_season_comparison_with_too_little_distance(settings):
-    now = datetime(2026, 11, 25, 12, tzinfo=timezone.utc)
-    sessions = [_session("w1", datetime(2026, 11, 20, 18, tzinfo=timezone.utc), 30, 12.0)]
-    odo = [(datetime(2026, 11, 10, tzinfo=timezone.utc), 100.0), (datetime(2026, 11, 25, tzinfo=timezone.utc), 250.0)]
+    now = datetime(2026, 11, 25, 12, tzinfo=UTC)
+    sessions = [_session("w1", datetime(2026, 11, 20, 18, tzinfo=UTC), 30, 12.0)]
+    odo = [(datetime(2026, 11, 10, tzinfo=UTC), 100.0), (datetime(2026, 11, 25, tzinfo=UTC), 250.0)]
     d = build_dashboard(sessions=sessions, live={"values": {}, "units": {"odometer": "km"}},
                         readings=_season_readings(odo), settings=settings, meta={}, now=now)
     assert d["seasons"] is None
@@ -321,8 +321,8 @@ def test_no_season_comparison_with_too_little_distance(settings):
 
 
 def test_four_seasons_split_consumption_by_meteorological_season(settings):
-    now = datetime(2026, 11, 25, 12, tzinfo=timezone.utc)
-    utc = lambda *a: datetime(*a, tzinfo=timezone.utc)  # noqa: E731
+    now = datetime(2026, 11, 25, 12, tzinfo=UTC)
+    utc = lambda *a: datetime(*a, tzinfo=UTC)  # noqa: E731
     sessions = [
         _session("s1", utc(2026, 7, 10, 18), 50, 20.0),    # Sommer
         _session("a1", utc(2026, 10, 5, 18), 60, 27.0),    # Herbst
@@ -343,15 +343,16 @@ def test_four_seasons_split_consumption_by_meteorological_season(settings):
 
 def test_quarter_follows_hemisphere():
     from zoneinfo import ZoneInfo
+
     from app.analytics import _quarter
     berlin, sydney = ZoneInfo("Europe/Berlin"), ZoneInfo("Australia/Sydney")
-    jan = datetime(2026, 1, 15, 12, tzinfo=timezone.utc)
-    jul = datetime(2026, 7, 15, 12, tzinfo=timezone.utc)
+    jan = datetime(2026, 1, 15, 12, tzinfo=UTC)
+    jul = datetime(2026, 7, 15, 12, tzinfo=UTC)
     assert (_quarter(jan, berlin), _quarter(jul, berlin)) == ("winter", "summer")
     assert (_quarter(jan, sydney), _quarter(jul, sydney)) == ("summer", "winter")
-    assert _quarter(datetime(2026, 12, 1, 12, tzinfo=timezone.utc), berlin) == "winter"
-    assert _quarter(datetime(2026, 3, 1, 12, tzinfo=timezone.utc), berlin) == "spring"
-    assert _quarter(datetime(2026, 9, 1, 12, tzinfo=timezone.utc), berlin) == "autumn"
+    assert _quarter(datetime(2026, 12, 1, 12, tzinfo=UTC), berlin) == "winter"
+    assert _quarter(datetime(2026, 3, 1, 12, tzinfo=UTC), berlin) == "spring"
+    assert _quarter(datetime(2026, 9, 1, 12, tzinfo=UTC), berlin) == "autumn"
 
 
 def test_consumption_sensor_lists_the_four_seasons():

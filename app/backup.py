@@ -11,7 +11,7 @@ import re
 import sqlite3
 import tempfile
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .db import DB
@@ -38,7 +38,7 @@ def create(db: DB, data_dir: Path, version: str, target: Path) -> dict:
         counts = db.snapshot(snapshot)
         invoices = sorted((data_dir / "invoices").glob("*.pdf")) if (data_dir / "invoices").is_dir() else []
         manifest = {"app": "ladecockpit", "format": FORMAT, "version": version,
-                    "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                    "created": datetime.now(UTC).isoformat(timespec="seconds"),
                     "sessions": counts["sessions"], "readings": counts["readings"], "invoices": len(invoices)}
         with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zf:
             zf.writestr(MANIFEST, json.dumps(manifest, indent=2))

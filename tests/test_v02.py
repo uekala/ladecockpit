@@ -1,7 +1,7 @@
 import asyncio
 import dataclasses
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import yaml
@@ -59,12 +59,12 @@ def _session(sid, start, minutes, kwh, total):
 
 
 def test_power_and_kwh_per_100(settings):
-    now = datetime(2026, 10, 20, 12, tzinfo=timezone.utc)
-    sessions = [_session("a", datetime(2026, 10, 15, 17, tzinfo=timezone.utc), 30, 50.0, 18.5),
-                _session("b", datetime(2026, 10, 18, 17, tzinfo=timezone.utc), 15, 15.0, 5.55)]
+    now = datetime(2026, 10, 20, 12, tzinfo=UTC)
+    sessions = [_session("a", datetime(2026, 10, 15, 17, tzinfo=UTC), 30, 50.0, 18.5),
+                _session("b", datetime(2026, 10, 18, 17, tzinfo=UTC), 15, 15.0, 5.55)]
     readings = {"soc": [], "soc_last": None, "range_last": None,
-                "odometer": [(datetime(2026, 10, 1, 8, tzinfo=timezone.utc), 1000.0),
-                             (datetime(2026, 10, 20, 8, tzinfo=timezone.utc), 1400.0)]}
+                "odometer": [(datetime(2026, 10, 1, 8, tzinfo=UTC), 1000.0),
+                             (datetime(2026, 10, 20, 8, tzinfo=UTC), 1400.0)]}
     d = build_dashboard(sessions=sessions, live={"values": {}, "units": {"odometer": "km"}},
                         readings=readings, settings=settings, meta={}, now=now)
     assert d["sessions"][0]["avg_kw"] == 60 or d["sessions"][1]["avg_kw"] == 60
@@ -77,7 +77,7 @@ def test_power_and_kwh_per_100(settings):
 
 # --- export ----------------------------------------------------------------------------------
 def test_csv_en_and_de(settings):
-    s = _session("x", datetime(2026, 10, 15, 17, tzinfo=timezone.utc), 30, 50.0, 18.5)
+    s = _session("x", datetime(2026, 10, 15, 17, tzinfo=UTC), 30, 50.0, 18.5)
     en = sessions_csv([s], settings).lstrip("﻿").splitlines()
     assert en[0].startswith("Date,Start,End,Site,kWh")
     assert en[1].split(",")[4] == "50.000" and en[1].split(",")[10] == "100"
@@ -92,15 +92,16 @@ class HistoryHA:
         return {"soc": "sensor.battery", "odometer": "sensor.odometer"}
 
     async def history(self, entity, start):
-        base = datetime(2026, 10, 10, tzinfo=timezone.utc)
+        base = datetime(2026, 10, 10, tzinfo=UTC)
         if entity == "sensor.battery":
             return [(base, 70.0), (base + timedelta(minutes=5), 70.0), (base + timedelta(hours=2), 64.0)]
         return [(base, 1000.0), (base + timedelta(hours=3), 1040.0)]
 
 
 def test_history_asks_until_now(settings):
-    from app.homeassistant import HAClient
     import httpx
+
+    from app.homeassistant import HAClient
 
     seen = {}
 
@@ -114,7 +115,7 @@ def test_history_asks_until_now(settings):
 
     s = dataclasses.replace(settings, ha_url="http://ha.test", ha_token="t")
     ha = HAClient(s, transport=httpx.MockTransport(handler))
-    start = datetime.now(timezone.utc) - timedelta(days=10)
+    start = datetime.now(UTC) - timedelta(days=10)
     points = asyncio.run(ha.history("sensor.battery", start))
     assert [v for _, v in points] == [66.0, 64.5]
     assert seen["path"].startswith("/api/history/period/")
@@ -125,7 +126,7 @@ def test_history_asks_until_now(settings):
 
 def test_seed_from_history_once(settings, db):
     watcher = Watcher(settings, db, HistoryHA(), sync=None)
-    now = datetime(2026, 10, 12, tzinfo=timezone.utc)
+    now = datetime(2026, 10, 12, tzinfo=UTC)
     assert asyncio.run(watcher.seed_from_history(now)) == 4      # duplicate 70 % dropped
     assert db.last_reading("soc")[1] == 64.0
     assert asyncio.run(watcher.seed_from_history(now)) == 0      # hat schon Messwerte

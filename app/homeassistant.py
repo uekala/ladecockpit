@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import quote
 
 import httpx
@@ -32,7 +32,7 @@ def parse_dt(value) -> datetime | None:
         dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except ValueError:
         return None
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
 class HAClient:
@@ -92,7 +92,7 @@ class HAClient:
         self.last_error = None
         results = await asyncio.gather(*(self.state(eid) for eid in roles.values()))
         values, raw, units, missing = {}, {}, {}, []
-        for (role, eid), item in zip(roles.items(), results):
+        for (role, eid), item in zip(roles.items(), results, strict=False):
             if not item:
                 missing.append(eid)
                 continue
@@ -112,9 +112,9 @@ class HAClient:
         """Zahlenverlauf einer Entität seit start (HA hält standardmäßig etwa 10 Tage)."""
         if not self._http or not entity_id:
             return []
-        ts = quote(start.astimezone(timezone.utc).isoformat(timespec="seconds"), safe="")
+        ts = quote(start.astimezone(UTC).isoformat(timespec="seconds"), safe="")
         # Ohne end_time liefert Home Assistant nur den ersten Tag nach start.
-        end = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        end = datetime.now(UTC).isoformat(timespec="seconds")
         try:
             r = await self._http.get(
                 f"/api/history/period/{ts}",

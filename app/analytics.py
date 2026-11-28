@@ -1,8 +1,9 @@
 """Turns invoices + readings + Home Assistant values into the dashboard JSON."""
 from __future__ import annotations
 
+import itertools
 from collections import Counter
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from urllib.parse import quote
 
 from . import i18n, networks, stations, vehicle
@@ -153,7 +154,7 @@ def _seasons(odo: list[tuple[datetime, float]], priced: list[dict], home: list, 
         return halves["summer" if _is_summer(ts, tz) else "winter"], quarters[_quarter(ts, tz)]
 
     points = [p for p in odo if p[0] >= since]
-    for (_, a), (t2, b) in zip(points, points[1:]):
+    for (_, a), (t2, b) in itertools.pairwise(points):
         if 0 < b - a < SEASON_MAX_STEP:
             for s in buckets(t2):
                 s["distance"] += b - a
@@ -214,7 +215,7 @@ def _forecast(lang, history, soc, floor, now_utc, tz, odometer_14d) -> dict:
         return out
 
     span_days = (now_utc - history[0][0]).total_seconds() / 86400
-    drops = sum(prev - cur for (_, prev), (_, cur) in zip(history, history[1:]) if 0 < prev - cur < 40)
+    drops = sum(prev - cur for (_, prev), (_, cur) in itertools.pairwise(history) if 0 < prev - cur < 40)
     out["basis_days"] = round(span_days, 1)
     if span_days < 1:
         out["text"] = i18n.t(lang, "fc_too_little")
@@ -574,7 +575,7 @@ def _by_network(items: list[dict]) -> dict:
 def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, settings: Settings,
                     meta: dict, now: datetime | None = None) -> dict:
     tz, lang = settings.tz, settings.lang
-    now_utc = now or datetime.now(timezone.utc)
+    now_utc = now or datetime.now(UTC)
     now_local = now_utc.astimezone(tz)
     values = live.get("values", {})
     units = live.get("units", {})
@@ -728,7 +729,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     # --- price radar ----------------------------------------------------------------------
     overall = _stats(priced)
     slots = []
-    for (sid, a, b), (label, rng) in zip(SLOT_HOURS, i18n.SLOTS.get(lang, i18n.SLOTS["en"])):
+    for (sid, a, b), (label, rng) in zip(SLOT_HOURS, i18n.SLOTS.get(lang, i18n.SLOTS["en"]), strict=False):
         st = _stats([x for x in priced if a <= x["_local"].hour < b])
         slots.append({"id": sid, "label": label, "range": rng,
                       "avg_price": st["list_price"], "sessions": st["sessions"], "kwh": st["kwh"],
@@ -758,7 +759,7 @@ def build_dashboard(*, sessions: list[dict], live: dict, readings: dict, setting
     # Das Radar je Standort: die Zeitfenster eines einzelnen Standorts, für Standorte mit einigen Ladungen.
     def _slots(items: list[dict]) -> list[dict]:
         out = []
-        for (sid, a, b), (label, rng) in zip(SLOT_HOURS, i18n.SLOTS.get(lang, i18n.SLOTS["en"])):
+        for (sid, a, b), (label, rng) in zip(SLOT_HOURS, i18n.SLOTS.get(lang, i18n.SLOTS["en"]), strict=False):
             st = _stats([x for x in items if a <= x["_local"].hour < b])
             out.append({"id": sid, "label": label, "range": rng, "avg_price": st["list_price"],
                         "sessions": st["sessions"], "kwh": st["kwh"], "solid": st["sessions"] >= MIN_SLOT_SESSIONS})

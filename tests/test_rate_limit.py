@@ -2,7 +2,7 @@
 import asyncio
 import dataclasses
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import format_datetime
 
 import httpx
@@ -10,8 +10,14 @@ import pytest
 
 from app.homeassistant import HAClient
 from app.sync import SyncService
-from app.tesla import (HISTORY_PATH, RATE_LIMIT_DEFAULT_S, RATE_LIMIT_MAX_S, RateLimited, TeslaClient,
-                       retry_after_seconds)
+from app.tesla import (
+    HISTORY_PATH,
+    RATE_LIMIT_DEFAULT_S,
+    RATE_LIMIT_MAX_S,
+    RateLimited,
+    TeslaClient,
+    retry_after_seconds,
+)
 
 
 def _tesla(settings, db, handler):
@@ -23,10 +29,10 @@ def _tesla(settings, db, handler):
 
 
 def test_retry_after_in_seconds_or_as_date():
-    now = datetime(2026, 11, 21, 12, tzinfo=timezone.utc).timestamp()
+    now = datetime(2026, 11, 21, 12, tzinfo=UTC).timestamp()
     assert retry_after_seconds("120", now) == 120
     assert retry_after_seconds(" 30 ", now) == 30
-    assert retry_after_seconds(format_datetime(datetime(2026, 11, 21, 12, 10, tzinfo=timezone.utc), usegmt=True),
+    assert retry_after_seconds(format_datetime(datetime(2026, 11, 21, 12, 10, tzinfo=UTC), usegmt=True),
                                now) == 600
     assert retry_after_seconds("Fri, 20 Nov 2026 12:00:00 GMT", now) == 0        # already over
     for missing in (None, "", "soon", "nan"):

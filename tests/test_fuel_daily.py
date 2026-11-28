@@ -1,6 +1,6 @@
 import asyncio
 import dataclasses
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from app.analytics import build_dashboard
@@ -9,11 +9,11 @@ from app.watcher import Watcher
 from tests.test_v04 import _s
 
 TZ = ZoneInfo("Europe/Berlin")
-NOW = datetime(2026, 10, 20, 12, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 20, 12, tzinfo=UTC)
 
 
 def at(day, hour):
-    return datetime(2026, 10, day, hour, tzinfo=TZ).astimezone(timezone.utc)
+    return datetime(2026, 10, day, hour, tzinfo=TZ).astimezone(UTC)
 
 
 def test_daily_average_is_weighted_by_how_long_a_price_was_shown():

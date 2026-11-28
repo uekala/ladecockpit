@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from app.analytics import build_dashboard
@@ -7,7 +7,7 @@ from app.vehicle import battery_health, consumption_by_temperature, kwh_per_perc
 from app.watcher import Watcher
 
 TZ = ZoneInfo("Europe/Berlin")
-T0 = datetime(2026, 8, 1, 6, tzinfo=timezone.utc)
+T0 = datetime(2026, 8, 1, 6, tzinfo=UTC)
 
 
 def test_battery_health_trend():
@@ -39,10 +39,13 @@ def _day_series(days, temp_of, pct_per_km):
     for d in range(days):
         start = T0 + timedelta(days=d, hours=5)
         t = temp_of(d)
-        soc.append((start, level)); odo.append((start, km)); temp.append((start, t))
+        soc.append((start, level))
+        odo.append((start, km))
+        temp.append((start, t))
         km += 50
         level -= 50 * pct_per_km(t)
-        soc.append((start + timedelta(hours=3), level)); odo.append((start + timedelta(hours=3), km))
+        soc.append((start + timedelta(hours=3), level))
+        odo.append((start + timedelta(hours=3), km))
         temp.append((start + timedelta(hours=3), t))
         level = 80.0                                                            # charged overnight
     return soc, odo, temp
@@ -111,10 +114,10 @@ def test_home_meter_steps_with_price_of_the_moment(settings, db):
 
 
 def test_home_charging_in_month_and_per_100(settings):
-    now = datetime(2026, 10, 20, 12, tzinfo=timezone.utc)
-    odo = [(datetime(2026, 10, 1, 8, tzinfo=timezone.utc), 1000.0), (datetime(2026, 10, 20, 8, tzinfo=timezone.utc), 2000.0)]
-    home = [(datetime(2026, 10, 5, 20, tzinfo=timezone.utc), 50.0, 15.0),
-            (datetime(2026, 10, 12, 20, tzinfo=timezone.utc), 50.0, 15.0)]
+    now = datetime(2026, 10, 20, 12, tzinfo=UTC)
+    odo = [(datetime(2026, 10, 1, 8, tzinfo=UTC), 1000.0), (datetime(2026, 10, 20, 8, tzinfo=UTC), 2000.0)]
+    home = [(datetime(2026, 10, 5, 20, tzinfo=UTC), 50.0, 15.0),
+            (datetime(2026, 10, 12, 20, tzinfo=UTC), 50.0, 15.0)]
     session = {"session_id": "a", "site": "S", "start_ts": "2026-10-10T17:00:00+00:00", "stop_ts": "2026-10-10T17:30:00+00:00",
                "kwh": 40.0, "charge_cost": 20.0, "idle_fee": 0.0, "total": 20.0, "currency": "EUR", "price": 0.5,
                "invoices": [], "push_state": "pushed"}

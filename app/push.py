@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlsplit
 
 import httpx
@@ -92,7 +92,7 @@ def pending(db: DB, sessions: list[dict], now: datetime, max_age: timedelta) -> 
             continue
         started = datetime.fromisoformat(s["start_ts"])
         if started.tzinfo is None:
-            started = started.replace(tzinfo=timezone.utc)
+            started = started.replace(tzinfo=UTC)
         if started < datetime.fromisoformat(since) or now - started > max_age:
             continue
         out.append(s)
