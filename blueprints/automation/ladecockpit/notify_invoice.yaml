@@ -6,7 +6,7 @@ blueprint:
     your phone: "18.0 kWh · €6.66 · €0.37/kWh · Oct 21, 18:18".
     Ladecockpit sends each invoice exactly once.
   domain: automation
-  author: Ladecockpit contributors
+  author: uekala
   source_url: https://github.com/uekala/ladecockpit/blob/main/blueprints/automation/ladecockpit/notify_invoice.yaml
   homeassistant:
     min_version: "2024.10.0"
