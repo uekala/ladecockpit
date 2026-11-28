@@ -110,45 +110,73 @@ def _is_summer(ts: datetime, tz) -> bool:
     return 4 <= local.month <= 9
 
 
+QUARTERS = ("winter", "spring", "summer", "autumn")
+
+
+def _southern(year: int, tz) -> bool:
+    """Südhalbkugel: Die Zeitzone hat im Januar Sommerzeit, im Juli nicht."""
+    jan = datetime(year, 1, 15, 12, tzinfo=tz)
+    jul = datetime(year, 7, 15, 12, tzinfo=tz)
+    return bool(jan.dst()) and not jul.dst()
+
+
+def _quarter(ts: datetime, tz) -> str:
+    """Meteorologische Jahreszeit: Dezember–Februar Winter, März–Mai Frühling, Juni–August Sommer,
+    September–November Herbst; auf der Südhalbkugel um ein halbes Jahr versetzt."""
+    local = ts.astimezone(tz)
+    month = local.month
+    if _southern(local.year, tz):
+        month = (month + 5) % 12 + 1
+    return QUARTERS[(month % 12) // 3]
+
+
+def _season_row(sid: str, s: dict) -> dict:
+    solid = s["distance"] >= SEASON_MIN_DISTANCE and s["kwh"] > 0
+    return {"id": sid, "distance": round(s["distance"]), "kwh": round(s["kwh"], 1),
+            "cost": round(s["cost"], 2), "sessions": s["sessions"],
+            "kwh_per_100": round(s["kwh"] / s["distance"] * 100, 1) if solid else None,
+            "per_100": round(s["cost"] / s["distance"] * 100, 2) if solid else None,
+            "avg_price": round(s["cost"] / s["kwh"], 4) if s["kwh"] else None}
+
+
 def _seasons(odo: list[tuple[datetime, float]], priced: list[dict], home: list, tz,
              now_utc: datetime) -> dict | None:
-    """Verbrauch und Kosten pro 100 km in der Winter- und der Sommerzeit der letzten zwölf Monate:
-    Strecke aus dem Kilometerstand, Energie und Kosten aus den Rechnungen plus Laden zu Hause."""
+    """Verbrauch und Kosten pro 100 km der letzten zwölf Monate, einmal geteilt in Winter- und Sommerzeit
+    und einmal in die vier meteorologischen Jahreszeiten: Strecke aus dem Kilometerstand, Energie und
+    Kosten aus den Rechnungen plus Laden zu Hause."""
     since = now_utc - timedelta(days=SEASON_DAYS)
-    acc = {sid: {"distance": 0.0, "kwh": 0.0, "cost": 0.0, "sessions": 0} for sid in ("winter", "summer")}
+    empty = lambda: {"distance": 0.0, "kwh": 0.0, "cost": 0.0, "sessions": 0}  # noqa: E731
+    halves = {sid: empty() for sid in ("winter", "summer")}
+    quarters = {sid: empty() for sid in QUARTERS}
 
-    def bucket(ts: datetime) -> dict:
-        return acc["summer" if _is_summer(ts, tz) else "winter"]
+    def buckets(ts: datetime) -> tuple[dict, dict]:
+        return halves["summer" if _is_summer(ts, tz) else "winter"], quarters[_quarter(ts, tz)]
 
     points = [p for p in odo if p[0] >= since]
     for (_, a), (t2, b) in zip(points, points[1:]):
         if 0 < b - a < SEASON_MAX_STEP:
-            bucket(t2)["distance"] += b - a
+            for s in buckets(t2):
+                s["distance"] += b - a
     for x in priced:
         if x["_local"] >= since:
-            s = bucket(x["_local"])
-            s["kwh"] += x["kwh"]
-            s["cost"] += x["total"]
-            s["sessions"] += 1
+            for s in buckets(x["_local"]):
+                s["kwh"] += x["kwh"]
+                s["cost"] += x["total"]
+                s["sessions"] += 1
     for ts, kwh, cost in home:
         if ts >= since:
-            s = bucket(ts)
-            s["kwh"] += kwh
-            s["cost"] += cost or 0.0
+            for s in buckets(ts):
+                s["kwh"] += kwh
+                s["cost"] += cost or 0.0
 
-    out = []
-    for sid, s in acc.items():
-        solid = s["distance"] >= SEASON_MIN_DISTANCE and s["kwh"] > 0
-        out.append({"id": sid, "distance": round(s["distance"]), "kwh": round(s["kwh"], 1),
-                    "cost": round(s["cost"], 2), "sessions": s["sessions"],
-                    "kwh_per_100": round(s["kwh"] / s["distance"] * 100, 1) if solid else None,
-                    "per_100": round(s["cost"] / s["distance"] * 100, 2) if solid else None,
-                    "avg_price": round(s["cost"] / s["kwh"], 4) if s["kwh"] else None})
-    if not any(s["kwh_per_100"] for s in out):
+    out = [_season_row(sid, s) for sid, s in halves.items()]
+    by_quarter = [_season_row(sid, s) for sid, s in quarters.items()]
+    if not any(s["kwh_per_100"] for s in out + by_quarter):
         return None
     winter, summer = out
     result = {"seasons": out, "current": "summer" if _is_summer(now_utc, tz) else "winter",
-              "kwh_diff_pct": None, "cost_diff_pct": None}
+              "kwh_diff_pct": None, "cost_diff_pct": None,
+              "quarters": by_quarter, "current_quarter": _quarter(now_utc, tz)}
     if winter["kwh_per_100"] and summer["kwh_per_100"]:
         result["kwh_diff_pct"] = round((winter["kwh_per_100"] / summer["kwh_per_100"] - 1) * 100)
         if summer["per_100"]:

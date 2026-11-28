@@ -318,3 +318,50 @@ def test_no_season_comparison_with_too_little_distance(settings):
                         readings=_season_readings(odo), settings=settings, meta={}, now=now)
     assert d["seasons"] is None
     assert not any(i["kind"] == "season" for i in d["insights"])
+
+
+def test_four_seasons_split_consumption_by_meteorological_season(settings):
+    now = datetime(2026, 11, 25, 12, tzinfo=timezone.utc)
+    utc = lambda *a: datetime(*a, tzinfo=timezone.utc)  # noqa: E731
+    sessions = [
+        _session("s1", utc(2026, 7, 10, 18), 50, 20.0),    # Sommer
+        _session("a1", utc(2026, 10, 5, 18), 60, 27.0),    # Herbst
+        _session("a2", utc(2026, 11, 20, 18), 60, 27.0),
+    ]
+    odo = [(utc(2026, 7, 1), 10000.0), (utc(2026, 8, 1), 10400.0),     # 400 km Sommer
+           (utc(2026, 9, 2), 10400.0), (utc(2026, 11, 25), 11000.0)]   # 600 km Herbst
+    d = build_dashboard(sessions=sessions, live={"values": {}, "units": {"odometer": "km"}},
+                        readings=_season_readings(odo), settings=settings, meta={}, now=now)
+    s = d["seasons"]
+    q = {x["id"]: x for x in s["quarters"]}
+    assert [x["id"] for x in s["quarters"]] == ["winter", "spring", "summer", "autumn"]
+    assert s["current_quarter"] == "autumn"
+    assert (q["summer"]["distance"], q["summer"]["kwh_per_100"]) == (400, 12.5)
+    assert (q["autumn"]["distance"], q["autumn"]["kwh_per_100"], q["autumn"]["per_100"]) == (600, 20.0, 9.0)
+    assert q["winter"]["kwh_per_100"] is None and q["spring"]["distance"] == 0
+
+
+def test_quarter_follows_hemisphere():
+    from zoneinfo import ZoneInfo
+    from app.analytics import _quarter
+    berlin, sydney = ZoneInfo("Europe/Berlin"), ZoneInfo("Australia/Sydney")
+    jan = datetime(2026, 1, 15, 12, tzinfo=timezone.utc)
+    jul = datetime(2026, 7, 15, 12, tzinfo=timezone.utc)
+    assert (_quarter(jan, berlin), _quarter(jul, berlin)) == ("winter", "summer")
+    assert (_quarter(jan, sydney), _quarter(jul, sydney)) == ("summer", "winter")
+    assert _quarter(datetime(2026, 12, 1, 12, tzinfo=timezone.utc), berlin) == "winter"
+    assert _quarter(datetime(2026, 3, 1, 12, tzinfo=timezone.utc), berlin) == "spring"
+    assert _quarter(datetime(2026, 9, 1, 12, tzinfo=timezone.utc), berlin) == "autumn"
+
+
+def test_consumption_sensor_lists_the_four_seasons():
+    from app.entities import _season_attrs
+    seasons = {"seasons": [], "current": "winter", "kwh_diff_pct": None, "cost_diff_pct": None,
+               "current_quarter": "autumn",
+               "quarters": [{"id": "winter", "distance": 0, "kwh_per_100": None, "per_100": None, "avg_price": None},
+                            {"id": "autumn", "distance": 600, "kwh_per_100": 20.0, "per_100": 9.0, "avg_price": 0.45}]}
+    attrs = _season_attrs(seasons, "de", [])
+    assert attrs["quarter_now"] == "Herbst"
+    assert attrs["by_season"][1] == {"id": "autumn", "label": "Herbst", "current": True, "distance": 600,
+                                     "kwh_per_100": 20.0, "cost_per_100": 9.0, "price_per_kwh": 0.45}
+    assert _season_attrs(None, "de", [])["by_season"] == []

@@ -1277,6 +1277,8 @@ try {
       season: "Winter vs. summer", seasonTitle: "Winter and summer time", thSeason: "Period", thCost100: "Cost",
       seasonWinter: "Winter time", seasonSummer: "Summer time", seasonNow: "now", seasonWait: "Not enough distance yet",
       seasonMore: "Winter: {kwh} % more energy and {cost} % higher cost per 100 {unit}", seasonLess: "Winter: {kwh} % less energy and {cost} % lower cost per 100 {unit}",
+      quarterTitle: "By season", thQuarter: "Season", quarterWinter: "Winter", quarterSpring: "Spring", quarterSummer: "Summer", quarterAutumn: "Autumn",
+      quarterSub: "Meteorological seasons: December–February winter, March–May spring, June–August summer, September–November autumn (shifted by half a year in the southern hemisphere).",
       seasonSub: "Last 12 months, split by daylight saving time. kWh and cost per 100 {unit}: billed kWh and cost (including charging at home) over the distance driven, so charging losses count.",
       goSeason: "To winter vs. summer",
       bandBelow: "below {hi} °C", bandAbove: "above {lo} °C", bandRange: "{lo} to {hi} °C",
@@ -1400,6 +1402,8 @@ try {
       season: "Winter gegen Sommer", seasonTitle: "Winterzeit und Sommerzeit", thSeason: "Zeitraum", thCost100: "Kosten",
       seasonWinter: "Winterzeit", seasonSummer: "Sommerzeit", seasonNow: "jetzt", seasonWait: "Noch zu wenig Strecke",
       seasonMore: "Winter: {kwh} % mehr Strom und {cost} % höhere Kosten pro 100 {unit}", seasonLess: "Winter: {kwh} % weniger Strom und {cost} % niedrigere Kosten pro 100 {unit}",
+      quarterTitle: "Nach Jahreszeit", thQuarter: "Jahreszeit", quarterWinter: "Winter", quarterSpring: "Frühling", quarterSummer: "Sommer", quarterAutumn: "Herbst",
+      quarterSub: "Meteorologische Jahreszeiten: Dezember–Februar Winter, März–Mai Frühling, Juni–August Sommer, September–November Herbst (auf der Südhalbkugel um ein halbes Jahr versetzt).",
       seasonSub: "Letzte 12 Monate, geteilt nach Sommer- und Winterzeit. kWh und Kosten pro 100 {unit}: abgerechnete kWh und Kosten (inklusive Laden zu Hause) über die gefahrene Strecke, Ladeverluste zählen also mit.",
       goSeason: "Zu Winter gegen Sommer",
       bandBelow: "unter {hi} °C", bandAbove: "über {lo} °C", bandRange: "{lo} bis {hi} °C",
@@ -2412,6 +2416,16 @@ try {
     const row = (s) => `<tr><td>${esc(name[s.id])}${s.id === c.current ? ` <span class="chip info">${T("seasonNow")}</span>` : ""}</td>
       <td class="n">${num(s.distance, 0)}</td>
       ${s.kwh_per_100 == null ? `<td colspan="2" class="sub" style="text-align:right">${T("seasonWait")}</td>` : `<td class="n">${num(s.kwh_per_100, 1)}</td><td class="n">${dash(s.per_100, money)}</td>`}</tr>`;
+    const qName = { winter: T("quarterWinter"), spring: T("quarterSpring"), summer: T("quarterSummer"), autumn: T("quarterAutumn") };
+    const qRow = (s) => `<tr><td>${esc(qName[s.id])}${s.id === c.current_quarter ? ` <span class="chip info">${T("seasonNow")}</span>` : ""}</td>
+      <td class="n">${num(s.distance, 0)}</td>
+      ${s.kwh_per_100 == null ? `<td colspan="2" class="sub" style="text-align:right">${T("seasonWait")}</td>` : `<td class="n">${num(s.kwh_per_100, 1)}</td><td class="n">${dash(s.per_100, money)}</td>`}</tr>`;
+    const quarters = (c.quarters || []).length ? `<h3>${T("quarterTitle")}</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>${T("thQuarter")}</th><th class="n">${unit()}</th><th class="n">${T("thKwh100", { unit: unit() })}</th><th class="n">${T("thCost100")}</th></tr></thead>
+        <tbody>${c.quarters.map(qRow).join("")}</tbody>
+      </table></div>
+      <p class="sub">${T("quarterSub")}</p>` : "";
     let delta = "";
     if (c.kwh_diff_pct != null && c.cost_diff_pct != null) {
       delta = T(c.kwh_diff_pct >= 0 ? "seasonMore" : "seasonLess", { kwh: num(Math.abs(c.kwh_diff_pct), 0), cost: num(Math.abs(c.cost_diff_pct), 0), unit: unit() });
@@ -2424,6 +2438,7 @@ try {
       </table></div>
       ${tip ? `<div class="tip">${ico.bolt}<span>${esc(tip.text)}</span></div>` : delta ? `<p class="sub">${esc(delta)}</p>` : ""}
       <p class="sub">${T("seasonSub", { unit: unit() })}</p>
+      ${quarters}
     </section>`;
   }
 

@@ -98,6 +98,10 @@ TEXTS = {
         "ent_consumption_note": "Abgerechnete kWh pro 100 km diesen Monat, inklusive Ladeverlusten.",
         "season_winter": "Winterzeit",
         "season_summer": "Sommerzeit",
+        "quarter_winter": "Winter",
+        "quarter_spring": "Frühling",
+        "quarter_summer": "Sommer",
+        "quarter_autumn": "Herbst",
         "csv_header": "Datum;Start;Ende;Standort;kWh;Preis pro kWh;Ladekosten;Blockiergebühr;Summe;Währung;Ø kW;Ladung-ID;Netz;Listenpreis pro kWh;Gutschrift;Netto;Betreiber;Adresse",
     },
     "en": {
@@ -176,6 +180,10 @@ TEXTS = {
         "ent_consumption_note": "Billed kWh per 100 km/mi this month, including charging losses.",
         "season_winter": "Winter time",
         "season_summer": "Summer time",
+        "quarter_winter": "Winter",
+        "quarter_spring": "Spring",
+        "quarter_summer": "Summer",
+        "quarter_autumn": "Autumn",
         "csv_header": "Date,Start,End,Site,kWh,Price per kWh,Charging cost,Idle fee,Total,Currency,Avg kW,Session ID,Network,List price per kWh,Credit,Net,Operator,Address",
     },
 }
