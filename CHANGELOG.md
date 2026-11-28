@@ -3,6 +3,7 @@
 ## 0.25.0 – 2026-11-28
 
 - **Vier Jahreszeiten.** Der Bereich *Winterzeit und Sommerzeit* in der Web-App hat eine zweite Tabelle *Nach Jahreszeit*: Strecke, Verbrauch (kWh pro 100 km) und Kosten pro 100 km der letzten zwölf Monate für Winter (Dezember–Februar), Frühling (März–Mai), Sommer (Juni–August) und Herbst (September–November). Auf der Südhalbkugel – erkannt an einer Zeitzone mit Sommerzeit im Januar – sind die Jahreszeiten um ein halbes Jahr versetzt. Wie bei Winter- und Sommerzeit zeigt eine Jahreszeit mit weniger als 300 km „Noch zu wenig Strecke“, und die aktuelle ist mit *jetzt* markiert. Neue Felder `quarters` und `current_quarter` in `seasons` im Dashboard-JSON; der Sensor `sensor.ladecockpit_consumption` hat die neuen Attribute `by_season` (je Jahreszeit `id`, `label`, `current`, `distance`, `kwh_per_100`, `cost_per_100`, `price_per_kwh`) und `quarter_now`.
+- **Wetter-Entität als Außentemperatur auch im Verlauf.** Ist als Außentemperatur eine Wetter-Entität eingestellt (`weather.…`), liest Ladecockpit beim Start auch den Verlauf aus Home Assistant aus deren Attribut `temperature` – bisher kam aus dem Verlauf nichts an, weil der Zustand einer Wetter-Entität das Wetter ist („sunny“) und keine Zahl. Der *Verbrauch nach Außentemperatur* hat damit nach einer Einrichtung oder einem Neustart sofort die Temperaturen der letzten Tage.
 - Die Handy-App ist unverändert.
 
 ## 0.24.0 – 2026-11-28

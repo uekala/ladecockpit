@@ -115,12 +115,13 @@ class HAClient:
         ts = quote(start.astimezone(timezone.utc).isoformat(timespec="seconds"), safe="")
         # Ohne end_time liefert Home Assistant nur den ersten Tag nach start.
         end = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        # Eine Wetter-Entität führt die Temperatur in einem Attribut, der Zustand ist das Wetter („sunny“).
+        weather = entity_id.startswith("weather.")
+        params = {"filter_entity_id": entity_id, "end_time": end}
+        if not weather:
+            params.update(minimal_response="", no_attributes="")
         try:
-            r = await self._http.get(
-                f"/api/history/period/{ts}",
-                params={"filter_entity_id": entity_id, "end_time": end,
-                        "minimal_response": "", "no_attributes": ""},
-            )
+            r = await self._http.get(f"/api/history/period/{ts}", params=params)
         except httpx.HTTPError:
             return []
         if r.status_code >= 400:
@@ -128,7 +129,7 @@ class HAClient:
         points: list[tuple[datetime, float]] = []
         for series in r.json() or []:
             for row in series:
-                val = as_float(row.get("state"))
+                val = as_float((row.get("attributes") or {}).get("temperature") if weather else row.get("state"))
                 dt = parse_dt(row.get("last_changed") or row.get("last_updated"))
                 if val is not None and dt is not None:
                     points.append((dt, val))

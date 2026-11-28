@@ -112,6 +112,24 @@ def test_history_sorts_and_skips_bad_rows_and_errors(settings):
     assert asyncio.run(ha.history("sensor.car_battery", datetime(2026, 11, 19, tzinfo=timezone.utc))) == []
 
 
+def test_history_of_a_weather_entity_reads_the_temperature_attribute(settings):
+    seen = []
+    rows = [[
+        {"state": "sunny", "attributes": {"temperature": 4.5}, "last_changed": "2026-11-20T12:00:00+00:00"},
+        {"state": "cloudy", "attributes": {"temperature": 2.0}, "last_changed": "2026-11-20T08:00:00+00:00"},
+        {"state": "rainy", "attributes": {}, "last_changed": "2026-11-20T10:00:00+00:00"},
+    ]]
+
+    def handler(request):
+        seen.append(request.url.params)
+        return httpx.Response(200, json=rows)
+
+    ha = _client(settings, handler)
+    points = asyncio.run(ha.history("weather.home", datetime(2026, 11, 19, tzinfo=timezone.utc)))
+    assert [v for _, v in points] == [2.0, 4.5]
+    assert "no_attributes" not in seen[0] and "minimal_response" not in seen[0]
+
+
 def test_fire_event_posts_data_and_reports_rejection(settings):
     seen = []
 
