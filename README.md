@@ -189,7 +189,7 @@ Ohne die Integration unten werden sie über die REST-API geschrieben und haben k
 
 Die optionale Integration in [`custom_components/ladecockpit`](custom_components/ladecockpit) macht daraus echte Entitäten: mit eindeutiger ID und einem Gerät *Ladecockpit*, umbenennbar, einem Bereich zuordenbar und nach einem Neustart sofort wieder da. Die Entitäts-IDs bleiben gleich, Dashboards und Automationen laufen also weiter.
 
-1. In HACS: ⋮ → *Benutzerdefinierte Repositories* → `https://github.com/uekala/ladecockpit`, Typ *Integration*. *Ladecockpit* herunterladen und Home Assistant neu starten. (Ohne HACS: `custom_components/ladecockpit` nach `config/custom_components` kopieren.)
+1. Ab Home Assistant 2026.11 im Marketplace, davor in HACS: `https://github.com/uekala/ladecockpit` als benutzerdefiniertes Repository hinzufügen (in HACS Typ *Integration*), *Ladecockpit* herunterladen und Home Assistant neu starten. Wer Ladecockpit schon über HACS hat, muss nichts tun: Der Marketplace übernimmt es samt Updates. (Ohne beides: `custom_components/ladecockpit` nach `config/custom_components` kopieren.)
 2. *Einstellungen → Geräte & Dienste → Integration hinzufügen → Ladecockpit*. Einzugeben gibt es nichts.
 
 Innerhalb von fünf Minuten findet die App die Integration und schickt ihr jeden Wert als Event `ladecockpit_state`, statt Zustände zu schreiben. App und Integration brauchen keine gemeinsamen Einstellungen; das klappt mit der Home-Assistant-App und mit dem Docker-Container. Nach dem Entfernen der Integration Home Assistant neu starten, dann schreibt die App wieder Zustände.

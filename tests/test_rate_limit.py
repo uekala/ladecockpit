@@ -81,3 +81,32 @@ def test_sync_counts_a_rate_limit_as_failure_without_traceback(settings, db, cap
         asyncio.run(sync.tick())
     assert sync.failures == 3
     assert db.kv_get("problem_kind") == "sync"
+
+
+def test_rejected_requests_are_retried_less_and_less_often(settings, db):
+    """Lehnt Tesla die Abfrage ab (HTTP 4xx), kostet jede Wiederholung: Die Pause wächst bis zum normalen Takt."""
+    answers = [403, 403, 403, 403, 403, 200, 503, 403]
+    calls = []
+
+    def handler(request):
+        calls.append(request.url.path)
+        status = answers[len(calls) - 1]
+        if status == 200:
+            return httpx.Response(200, json={"response": {"data": [], "totalResults": 0}})
+        return httpx.Response(status, text="no")
+
+    ha = HAClient(dataclasses.replace(settings, ha_url="", ha_token=""))
+    sync = SyncService(settings, db, _tesla(settings, db, handler), ha)
+    normal = settings.sync_interval_h * 3600
+    waits, failures = [], []
+    for _ in answers:
+        asyncio.run(sync.tick())
+        waits.append(sync.retry_wait(normal) if sync.failures else normal)
+        failures.append(sync.failures)
+    assert len(calls) == len(answers)
+    assert waits[:5] == [1800, 3600, 7200, 14400, min(28800, normal)]
+    assert failures[:6] == [1, 2, 3, 4, 5, 0]
+    assert waits[5] == normal                                 # wieder erreichbar: normaler Takt
+    assert waits[6] == 1800                                   # Serverstörung (HTTP 503): bald erneut
+    assert waits[7] == 1800                                   # erste neue Ablehnung: wieder ab 30 Minuten
+    assert "HTTP 403" in sync.last_error

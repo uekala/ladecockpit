@@ -61,6 +61,7 @@ configuration:
     description: Spritkosten eines anderen Autos, neben den Ladekosten angezeigt.
   fuel_label:
     name: Bezeichnung für Spritkosten
+    description: Wie die Spritkosten des Monats in der Web-App heißen, z. B. „Diesel diesen Monat“. Ohne Angabe „Sprit diesen Monat“.
   fuel_consumption:
     name: Verbrauch Vergleichsauto (L/100 km)
     description: Für den Vergleich „Was hätte die Strecke mit einem Verbrenner gekostet“. Fester Wert, z. B. 7,5.
@@ -105,6 +106,7 @@ configuration:
     description: Die Prognose sagt, wann dieser Stand erreicht wird.
   soc_target:
     name: Ladelimit (%)
+    description: Bis zu diesem Stand lädst du meist. Beim Laden nutzen ihn der Countdown und die Prognose des nächsten Ladestopps.
   notify_problems:
     name: Bei Problemen benachrichtigen
     description: Benachrichtigung in Home Assistant, wenn die Tesla-Anmeldung abläuft oder der Abgleich fehlschlägt.
@@ -128,7 +130,9 @@ configuration:
     description: 'Für Stationen, bei denen Ladecockpit den Betreiber nicht kennt (vor allem im Ausland). Schreibweise: Text aus Standortname oder Adresse, Gleichheitszeichen, Betreiber – mehrere mit Semikolon getrennt, z. B. „Hafenstadt=Fastned; Parkhaus Mitte=Stadtwerke“. Groß- und Kleinschreibung ist egal. Eine so zugeordnete Station zählt als MultiPass.'
   sync_interval_hours:
     name: Regelmäßiger Abgleich (Stunden)
+    description: Wie oft Ladecockpit bei Tesla nach neuen Rechnungen fragt (Standard 6). Nach einer Ladung fragt es öfter, bis die Rechnung da ist.
   api_budget_requests:
     name: Monatslimit Tesla-Abfragen
+    description: Feste Obergrenze der Tesla-Abfragen im Monat (Standard 1500). Ist sie erreicht, pausiert der Abgleich bis zum nächsten Monat.
 network:
   8077/tcp: Web-App außerhalb von Home Assistant (optional)
