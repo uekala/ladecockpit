@@ -34,12 +34,13 @@ jobs:
         if: github.event_name == 'release'
         working-directory: .
         run: python3 tools/check_versions.py
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: flutter-actions/setup-flutter@0e3ac53a5126c46be01612423cf26b5d59018adc # v5
         with:
           channel: stable
-          flutter-version: 3.50.0
+          version: 3.50.1
           cache: true
-      - name: Build with Java 21 (the Android tools of Flutter 3.50 need it)
+          cache-sdk: true
+      - name: Java 21 für die Android-Werkzeuge von Flutter 3.50
         run: |
           test -n "$JAVA_HOME_21_X64"
           echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
@@ -308,11 +309,12 @@ jobs:
         working-directory: mobile
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: flutter-actions/setup-flutter@0e3ac53a5126c46be01612423cf26b5d59018adc # v5
         with:
           channel: stable
-          flutter-version: 3.50.0
+          version: 3.50.1
           cache: true
+          cache-sdk: true
       - run: flutter create --platforms=android,ios --org io.github.uekala --project-name ladecockpit .
       - name: Check the iOS bundle identifier
         run: grep -q 'PRODUCT_BUNDLE_IDENTIFIER = io.github.uekala.ladecockpit;' ios/Runner.xcodeproj/project.pbxproj
