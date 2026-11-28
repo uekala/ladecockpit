@@ -2588,7 +2588,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                     height: 240,
                                     child: Center(child: CircularProgressIndicator()),
                                   ),
-                            errorBuilder: (_, __, ___) => Padding(
+                            errorBuilder: (_, _, _) => Padding(
                               padding: EdgeInsets.all(24),
                               child: Text(tr('Seite konnte nicht geladen werden.')),
                             ));
