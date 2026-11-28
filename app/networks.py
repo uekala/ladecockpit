@@ -53,18 +53,7 @@ _BRANDS = re.compile(
 # Tesla nennt seine Supercharger „Ort, Land“ („Bergstadt, Germany“, „Seestadt - Center, Germany“).
 # Fremdstandorte können ähnlich aussehen („Brunnenhausstr. 46, Neustadt“), deshalb muss der Teil nach
 # dem letzten Komma ein Land sein.
-_COUNTRIES = frozenset("""
-germany deutschland netherlands the-netherlands nederland belgium belgique belgië belgie france austria
-österreich osterreich switzerland schweiz suisse svizzera italy italia spain españa espana portugal denmark
-danmark sweden sverige norway norge finland suomi poland polska czech-republic czechia česko cesko slovakia
-slovensko hungary magyarország magyarorszag slovenia slovenija croatia hrvatska luxembourg luxemburg ireland
-united-kingdom uk great-britain england scotland wales northern-ireland iceland ísland estonia eesti latvia
-latvija lithuania lietuva romania românia bulgaria greece turkey türkiye turkiye serbia liechtenstein monaco
-andorra malta cyprus bosnia-and-herzegovina montenegro north-macedonia albania kosovo ukraine moldova
-georgia israel jordan morocco united-arab-emirates uae saudi-arabia qatar united-states usa canada mexico
-chile australia new-zealand japan china south-korea korea taiwan hong-kong singapore thailand malaysia
-philippines india
-""".split())
+_COUNTRIES = frozenset(["germany", "deutschland", "netherlands", "the-netherlands", "nederland", "belgium", "belgique", "belgië", "belgie", "france", "austria", "österreich", "osterreich", "switzerland", "schweiz", "suisse", "svizzera", "italy", "italia", "spain", "españa", "espana", "portugal", "denmark", "danmark", "sweden", "sverige", "norway", "norge", "finland", "suomi", "poland", "polska", "czech-republic", "czechia", "česko", "cesko", "slovakia", "slovensko", "hungary", "magyarország", "magyarorszag", "slovenia", "slovenija", "croatia", "hrvatska", "luxembourg", "luxemburg", "ireland", "united-kingdom", "uk", "great-britain", "england", "scotland", "wales", "northern-ireland", "iceland", "ísland", "estonia", "eesti", "latvia", "latvija", "lithuania", "lietuva", "romania", "românia", "bulgaria", "greece", "turkey", "türkiye", "turkiye", "serbia", "liechtenstein", "monaco", "andorra", "malta", "cyprus", "bosnia-and-herzegovina", "montenegro", "north-macedonia", "albania", "kosovo", "ukraine", "moldova", "georgia", "israel", "jordan", "morocco", "united-arab-emirates", "uae", "saudi-arabia", "qatar", "united-states", "usa", "canada", "mexico", "chile", "australia", "new-zealand", "japan", "china", "south-korea", "korea", "taiwan", "hong-kong", "singapore", "thailand", "malaysia", "philippines", "india"])
 _TESLA_WORDS = re.compile(r"\b(tesla|supercharger)\b", re.I)
 
 # Preisregel: Eine Ladung, deren Standort nicht wie ein Supercharger aussieht und deren Energie mehr

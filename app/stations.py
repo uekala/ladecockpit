@@ -25,8 +25,8 @@ import csv
 import logging
 import re
 import tempfile
+from datetime import UTC, datetime, timedelta
 from difflib import SequenceMatcher
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
@@ -300,7 +300,7 @@ class Register:
 
     async def rows_for(self, postcodes: set[str]) -> list[dict] | None:
         """Registerzeilen für einige Postleitzahlen, oder None, wenn das Register gerade nicht verfügbar ist."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if self.last_download and now - self.last_download < REGISTER_MIN_GAP:
             return None
         self.last_download = now

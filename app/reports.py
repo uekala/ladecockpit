@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from . import i18n
 from .config import Settings
@@ -81,12 +81,12 @@ class MonthReporter:
         while True:
             try:
                 await self.check()
-            except Exception:  # noqa: BLE001 – try again later
+            except Exception:
                 log.exception("Monthly report failed")
             await asyncio.sleep(CHECK_EVERY_S)
 
     async def check(self, now: datetime | None = None) -> dict | None:
-        now_local = (now or datetime.now(timezone.utc)).astimezone(self.s.tz)
+        now_local = (now or datetime.now(UTC)).astimezone(self.s.tz)
         current = _key(now_local)
         done = self.db.kv_get(KV_KEY)
         if done is None:

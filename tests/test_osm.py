@@ -1,6 +1,6 @@
 import asyncio
 import dataclasses
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
@@ -10,7 +10,7 @@ from app.sync import SyncService
 from app.tesla import parse_session
 
 REAL_LOOKUP = osm.Lookup.operator   # conftest ersetzt sie für jeden Test
-NOW = datetime(2026, 11, 15, 12, tzinfo=timezone.utc)
+NOW = datetime(2026, 11, 15, 12, tzinfo=UTC)
 HAFEN = {"name": "Hafenstadt", "street": "Kadeweg", "number": "12", "postcode": "2980 AB", "city": "Hafenstadt", "country": "NL"}
 LAT, LON = 51.9, 4.6
 

@@ -315,7 +315,7 @@ class EntityPublisher:
         while True:
             try:
                 await self.publish_once()
-            except Exception:  # noqa: BLE001 – keep going
+            except Exception:
                 log.exception("Writing entities to Home Assistant failed")
             await asyncio.sleep(PUBLISH_EVERY_S)
 

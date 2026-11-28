@@ -1,18 +1,18 @@
 import asyncio
+import contextlib
 import json
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fpdf import FPDF
+from test_networks import SUPERCHARGER_RAW
 
 from app import invoices
 from app.db import DB
 from app.networks import MULTIPASS, SUPERCHARGER, classify
 from app.sync import SyncService
 from app.tesla import TeslaError, parse_session
-
-from test_networks import SUPERCHARGER_RAW
 
 
 def pdf(*lines):
@@ -53,7 +53,7 @@ def store(db, sid, site, start, with_invoice=True):
 
 
 def test_the_invoice_has_the_last_word(db):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     store(db, 1, "Brunnenhausstr. 46, Neustadt", now)
     store(db, 2, "Charging Station ALDI SÜD", now - timedelta(hours=1))
     assert {s["session_id"]: s["network"] for s in db.sessions()} == {"1": SUPERCHARGER, "2": MULTIPASS}
@@ -91,7 +91,7 @@ class InvoiceTesla:
 
 
 def test_sync_reads_new_invoices_once(settings, db):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     store(db, 1, "Neustadt - KiK", now)
     store(db, 2, "Bergstadt, Germany", now - timedelta(days=1))
     store(db, 3, "Bergstadt, Germany", now - timedelta(days=2), with_invoice=False)   # no invoice yet
@@ -108,7 +108,7 @@ def test_sync_reads_new_invoices_once(settings, db):
 
 
 def test_sync_stops_when_tesla_fails_and_tries_again(settings, db):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     store(db, 1, "Neustadt - KiK", now)
     tesla = InvoiceTesla({"c1": RuntimeError("HTTP 503")})
     sync = SyncService(settings, db, tesla, None)
@@ -130,7 +130,7 @@ class FakeRegister:
 
 
 def test_the_file_name_tells_without_a_download(settings, db):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     raw = {**SUPERCHARGER_RAW, "sessionId": 9, "chargeStartDateTime": now.isoformat(),
            "invoices": [{"contentId": "c9", "fileName": "4020P0019025690_DE-DE.pdf", "invoiceType": "IMMEDIATE"}]}
     db.upsert_session(parse_session(raw), "backfill")
@@ -142,7 +142,7 @@ def test_the_file_name_tells_without_a_download(settings, db):
 
 
 def test_operators_from_the_register(settings, db):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     store(db, 1, "Musterstadt - Markt", now)
     store(db, 2, "Musterstadt - Markt", now - timedelta(hours=2))
     db.set_invoice_network("1", MULTIPASS)
@@ -165,6 +165,7 @@ def test_operators_from_the_register(settings, db):
 
 def test_one_rejected_token_refresh_is_not_a_lost_sign_in(settings, db):
     import httpx
+
     from app.tesla import TeslaClient, TeslaError
 
     answers = [httpx.Response(401, json={"error": "server_busy"}), httpx.Response(401, json={"error": "login_required"}),
@@ -176,16 +177,12 @@ def test_one_rejected_token_refresh_is_not_a_lost_sign_in(settings, db):
     client = TeslaClient(settings, db, transport=httpx.MockTransport(handler))
     db.kv_set("tesla_refresh_token", "r1")
     for expected_error in (None, "Token refresh failed (HTTP 401). Please connect to Tesla again."):
-        try:
+        with contextlib.suppress(TeslaError):
             asyncio.run(client._access_token())
-        except TeslaError:
-            pass
         assert client.auth_error == expected_error                                   # erst die zweite in Folge
     db.kv_del("tesla_auth_error")
-    try:
+    with contextlib.suppress(TeslaError):
         asyncio.run(client._access_token())
-    except TeslaError:
-        pass
     assert asyncio.run(client._access_token()) == "a"                                 # success resets the count
     assert db.kv_get("tesla_refresh_failures") is None and client.auth_error is None
 

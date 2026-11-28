@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from . import networks
@@ -57,11 +57,11 @@ _MUTABLE = ("site", "stop_ts", "unlatch_ts", "kwh", "charge_cost", "idle_fee",
 
 
 def utcnow_iso() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 def iso(dt: datetime) -> str:
-    return dt.astimezone(timezone.utc).isoformat(timespec="seconds")
+    return dt.astimezone(UTC).isoformat(timespec="seconds")
 
 
 class DB:
@@ -263,7 +263,7 @@ class DB:
         except (json.JSONDecodeError, TypeError):
             d["station"] = None
         raw = d.pop("raw", None)
-        if "raw" in row.keys():
+        if "raw" in row.keys():  # noqa: SIM118 – sqlite3.Row: „in row“ prüft die Werte, nicht die Spalten
             try:
                 record = json.loads(raw) if raw else None
             except json.JSONDecodeError:
@@ -317,7 +317,7 @@ class DB:
             self._conn.commit()
 
     def calls_this_month(self) -> dict[str, int]:
-        month_prefix = datetime.now(timezone.utc).strftime("%Y-%m")
+        month_prefix = datetime.now(UTC).strftime("%Y-%m")
         with self._lock:
             rows = self._conn.execute(
                 "SELECT category, COUNT(*) AS n FROM api_calls WHERE ts LIKE ? GROUP BY category",

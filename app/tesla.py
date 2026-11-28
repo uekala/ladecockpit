@@ -11,7 +11,7 @@ import hashlib
 import json
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from urllib.parse import quote, urlencode
 
@@ -183,7 +183,7 @@ class TeslaClient:
         if time.time() < retry_at:
             # Erneut fragen, solange Tesla uns noch begrenzt, kostet nur Anfragen und verlängert die Grenze.
             raise RateLimited("Tesla asked to wait (HTTP 429) until "
-                              f"{datetime.fromtimestamp(retry_at, timezone.utc).isoformat(timespec='seconds')}.")
+                              f"{datetime.fromtimestamp(retry_at, UTC).isoformat(timespec='seconds')}.")
         for attempt in (1, 2):
             token = await self._access_token(force_refresh=attempt == 2)
             r = await self._http.get(
@@ -210,7 +210,7 @@ class TeslaClient:
         if self.s.tesla_vin:
             base["vin"] = self.s.tesla_vin
         if start_time:
-            base["startTime"] = start_time.astimezone(timezone.utc).isoformat(timespec="seconds")
+            base["startTime"] = start_time.astimezone(UTC).isoformat(timespec="seconds")
 
         try:
             first = await self._get(HISTORY_PATH, base)
@@ -282,8 +282,8 @@ def _iso(value) -> str | None:
     except ValueError:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc).isoformat(timespec="seconds")
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC).isoformat(timespec="seconds")
 
 
 def parse_session(raw: dict) -> dict | None:

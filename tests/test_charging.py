@@ -1,5 +1,5 @@
 import dataclasses
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
 
@@ -7,7 +7,7 @@ from app.demo import build_demo
 from app.vehicle import _until, live_charge, soc_rate
 from app.watcher import FAST_POLL_SECONDS, Watcher
 
-NOW = datetime(2026, 10, 27, 14, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 27, 14, tzinfo=UTC)
 
 
 def test_time_to_full_as_timestamp_or_duration():
@@ -91,7 +91,8 @@ def test_watcher_polls_faster_while_charging(settings, db):
 
 
 def test_old_look_name_still_works():
-    from app.main import app, db as app_db
+    from app.main import app
+    from app.main import db as app_db
     with TestClient(app) as client:
         app_db.kv_set("ui_look", "modern")                                       # von 0.9 oder 0.10 gespeichert
         assert client.get("/api/dashboard").json()["look"] == "dynamic"

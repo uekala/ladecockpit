@@ -1,6 +1,6 @@
 import asyncio
 import dataclasses
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.sync import SyncService
 
@@ -46,7 +46,7 @@ def make(settings, db):
 
 def test_first_sync_imports_without_sending(settings, db):
     sync, tesla, ha = make(settings, db)
-    old = datetime.now(timezone.utc) - timedelta(days=3)
+    old = datetime.now(UTC) - timedelta(days=3)
     tesla.items = [raw_session(1, old), raw_session(2, old + timedelta(hours=5))]
     assert asyncio.run(sync.sync_once()) == 2
     assert ha.events == []
@@ -56,7 +56,7 @@ def test_first_sync_imports_without_sending(settings, db):
 def test_new_session_is_sent_once(settings, db):
     sync, tesla, ha = make(settings, db)
     asyncio.run(sync.sync_once())  # sets push_since
-    tesla.items = [raw_session(7, datetime.now(timezone.utc) + timedelta(seconds=5), kwh=22.5, rate=0.52)]
+    tesla.items = [raw_session(7, datetime.now(UTC) + timedelta(seconds=5), kwh=22.5, rate=0.52)]
     asyncio.run(sync.sync_once())
     asyncio.run(sync.sync_once())
     assert len(ha.events) == 1
@@ -70,7 +70,7 @@ def test_new_session_is_sent_once(settings, db):
 def test_pending_billing_is_sent_when_final(settings, db):
     sync, tesla, ha = make(settings, db)
     asyncio.run(sync.sync_once())
-    start = datetime.now(timezone.utc) + timedelta(seconds=5)
+    start = datetime.now(UTC) + timedelta(seconds=5)
     tesla.items = [raw_session(8, start, fees=False)]
     asyncio.run(sync.sync_once())
     assert ha.events == []
@@ -81,8 +81,8 @@ def test_pending_billing_is_sent_when_final(settings, db):
 
 def test_old_unsent_session_goes_stale(settings, db):
     sync, tesla, ha = make(dataclasses.replace(settings, push_max_age_h=24), db)
-    db.kv_set("push_since", (datetime.now(timezone.utc) - timedelta(days=10)).isoformat(timespec="seconds"))
-    tesla.items = [raw_session(9, datetime.now(timezone.utc) - timedelta(days=4))]
+    db.kv_set("push_since", (datetime.now(UTC) - timedelta(days=10)).isoformat(timespec="seconds"))
+    tesla.items = [raw_session(9, datetime.now(UTC) - timedelta(days=4))]
     asyncio.run(sync.sync_once())
     assert ha.events == []
     assert db.session("9")["push_state"] == "stale"
@@ -91,6 +91,6 @@ def test_old_unsent_session_goes_stale(settings, db):
 def test_german_event_text(settings, db):
     sync, tesla, ha = make(dataclasses.replace(settings, lang="de"), db)
     asyncio.run(sync.sync_once())
-    tesla.items = [raw_session(10, datetime.now(timezone.utc) + timedelta(seconds=5), kwh=18.0, rate=0.37)]
+    tesla.items = [raw_session(10, datetime.now(UTC) + timedelta(seconds=5), kwh=18.0, rate=0.37)]
     asyncio.run(sync.sync_once())
     assert ha.events[0][1]["text"].startswith("18,0 kWh · 6,66 € · 0,37 €/kWh")

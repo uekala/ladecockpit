@@ -29,7 +29,7 @@ def test_catalog_is_consistent():
                 assert crop is None  # the old image service ignores crop
                 continue
             w, h, x, y = crop
-            assert 0 <= x and 0 <= y and x + w <= CANVAS[0] and y + h <= CANVAS[1], (g.key, view)
+            assert x >= 0 and y >= 0 and x + w <= CANVAS[0] and y + h <= CANVAS[1], (g.key, view)
             assert 1.8 < w / h < 3.2, (g.key, view)  # a car, not a sliver
 
 

@@ -1,6 +1,6 @@
 import asyncio
 import dataclasses
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.watcher import Watcher
 
@@ -25,7 +25,7 @@ class FakeSync:
 def run(settings, db, states):
     sync = FakeSync()
     watcher = Watcher(dataclasses.replace(settings, charging_value="charging"), db, SequenceHA(states), sync)
-    start = datetime(2026, 10, 1, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 10, 1, 8, tzinfo=UTC)
 
     async def go():
         for i in range(len(states)):
@@ -52,5 +52,5 @@ def test_no_burst_without_charging(settings, db):
 
 def test_readings_only_on_change(settings, db):
     run(settings, db, [(40, "disconnected"), (40, "disconnected"), (39.5, "disconnected"), (38, "disconnected")])
-    values = [v for _, v in db.readings_since("soc", datetime(2026, 1, 1, tzinfo=timezone.utc))]
+    values = [v for _, v in db.readings_since("soc", datetime(2026, 1, 1, tzinfo=UTC))]
     assert values == [40, 38]

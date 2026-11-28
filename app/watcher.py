@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from .config import Settings
 from .db import DB
@@ -46,12 +46,12 @@ class Watcher:
     async def run_forever(self) -> None:
         try:
             await self.seed_from_history()
-        except Exception:  # noqa: BLE001
+        except Exception:
             log.exception("Could not read history from Home Assistant")
         while True:
             try:
                 await self.poll_once()
-            except Exception:  # noqa: BLE001 – keep polling
+            except Exception:
                 log.exception("Polling Home Assistant failed")
             await asyncio.sleep(self.interval())
 
@@ -62,7 +62,7 @@ class Watcher:
         return self.s.ha_poll_seconds
 
     async def poll_once(self, now: datetime | None = None) -> dict:
-        now = now or datetime.now(timezone.utc)
+        now = now or datetime.now(UTC)
         live = await self.ha.live()
         self.latest = live
         values = live.get("values", {})
@@ -87,7 +87,7 @@ class Watcher:
     async def seed_from_history(self, now: datetime | None = None) -> int:
         """Neuinstallation: die letzten Tage aus dem Verlauf von HA übernehmen, damit Akkustand,
         Prognose und Strecke sofort erscheinen statt erst, wenn das Auto online war."""
-        now = now or datetime.now(timezone.utc)
+        now = now or datetime.now(UTC)
         roles = self.ha.entities()
         added = 0
         for key in ("soc", "range", "odometer", "temp", "fuel_price"):

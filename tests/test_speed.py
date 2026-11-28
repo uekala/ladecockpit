@@ -1,13 +1,13 @@
 import asyncio
 import dataclasses
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app import vehicle
 from app.demo import build_demo
 from app.entities import build_states
 from app.sync import SyncService
 
-T0 = datetime(2026, 10, 1, 12, tzinfo=timezone.utc)
+T0 = datetime(2026, 10, 1, 12, tzinfo=UTC)
 
 
 def _s(sid, day, kwh, minutes, site="Bergstadt, Germany"):
@@ -25,7 +25,8 @@ BERGSTADT = [
 
 
 def test_slow_against_the_usual_power_at_the_site():
-    sessions = BERGSTADT + [
+    sessions = [
+        *BERGSTADT,
         _s("e", 4, 6.0, 6),                      # short session: not compared
         _s("f", 5, 40.0, 60, site="Elsewhere"),  # no other sessions there
     ]
@@ -37,7 +38,7 @@ def test_slow_against_the_usual_power_at_the_site():
 
 
 def test_needs_two_other_sessions_and_a_duration():
-    speed = vehicle.charging_speed(BERGSTADT[1:3] + [{**_s("x", 9, 30.0, 20), "stop_ts": None}], [])
+    speed = vehicle.charging_speed([*BERGSTADT[1:3], {**_s("x", 9, 30.0, 20), "stop_ts": None}], [])
     assert speed["c"]["typical_kw"] is None and not speed["c"]["slow"]
     assert "x" not in speed
 

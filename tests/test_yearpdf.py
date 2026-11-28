@@ -1,5 +1,5 @@
 import io
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 from fastapi.testclient import TestClient
@@ -48,7 +48,7 @@ def test_month_without_net_leaves_net_and_vat_open():
 
 def test_cover_de():
     data = yearpdf.cover(2026, SESSIONS, lang="de", tz=TZ, currency="EUR", home={"kwh": 420.0, "cost": 130.2},
-                         now=datetime(2027, 1, 2, tzinfo=timezone.utc))
+                         now=datetime(2027, 1, 2, tzinfo=UTC))
     pages = PdfReader(io.BytesIO(data)).pages
     assert len(pages) == 1
     text = pages[0].extract_text()

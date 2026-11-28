@@ -1,11 +1,11 @@
 import asyncio
 import dataclasses
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.vehicle import paid_fuel_price
 from app.watcher import Watcher
 
-NOW = datetime(2026, 10, 27, 12, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 27, 12, tzinfo=UTC)
 
 
 def days_ago(n):

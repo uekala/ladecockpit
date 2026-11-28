@@ -1,5 +1,5 @@
 import dataclasses
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import parse_qs, urlparse
 
 from app import demo, networks
@@ -20,7 +20,7 @@ def test_map_url_is_a_plain_search_link():
 
 
 def _s(sid, site, day, kwh, total, network="multipass"):
-    start = datetime(2026, 10, day, 15, tzinfo=timezone.utc)
+    start = datetime(2026, 10, day, 15, tzinfo=UTC)
     return {"session_id": sid, "site": site, "start_ts": start.isoformat(timespec="seconds"), "stop_ts": None,
             "kwh": kwh, "charge_cost": total, "idle_fee": 0.0, "total": total, "currency": "EUR",
             "price": total / kwh if kwh else None, "invoices": [], "push_state": "pushed", "network": network}
@@ -29,7 +29,7 @@ def _s(sid, site, day, kwh, total, network="multipass"):
 def _dash(settings, sessions):
     return build_dashboard(sessions=sessions, live={"values": {}, "units": {"odometer": "km"}},
                            readings={"soc": [], "soc_last": None, "range_last": None, "odometer": []},
-                           settings=settings, meta={}, now=datetime(2026, 10, 24, 12, tzinfo=timezone.utc))
+                           settings=settings, meta={}, now=datetime(2026, 10, 24, 12, tzinfo=UTC))
 
 
 def test_stations_operators_and_entity(settings):

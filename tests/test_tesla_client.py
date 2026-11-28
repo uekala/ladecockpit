@@ -2,7 +2,7 @@
 import asyncio
 import dataclasses
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 import pytest
@@ -10,7 +10,7 @@ import pytest
 from app import tesla as tesla_mod
 from app.homeassistant import HAClient
 from app.sync import SyncService
-from app.tesla import HISTORY_PATH, PAGE_SIZE, BudgetExceeded, TeslaClient, TeslaError
+from app.tesla import PAGE_SIZE, BudgetExceeded, TeslaClient, TeslaError
 
 
 def _client(settings, db, handler, **changes):
@@ -71,7 +71,7 @@ def test_rejected_time_filter_is_asked_again_without_it(settings, db):
         return _page(["s1", "s2"], total=2)
 
     client = _client(settings, db, handler, tesla_vin="5YJ3E7EB0KF000000")
-    start = datetime(2026, 11, 18, 10, tzinfo=timezone.utc)
+    start = datetime(2026, 11, 18, 10, tzinfo=UTC)
     items = asyncio.run(client.charging_history(start))
     assert len(items) == 2
     assert params[0]["startTime"] == "2026-11-18T10:00:00+00:00"
@@ -82,7 +82,7 @@ def test_rejected_time_filter_is_asked_again_without_it(settings, db):
 def test_other_errors_with_a_time_filter_are_not_hidden(settings, db):
     client = _client(settings, db, lambda request: httpx.Response(500, text="boom"))
     with pytest.raises(TeslaError, match="HTTP 500"):
-        asyncio.run(client.charging_history(datetime(2026, 11, 18, tzinfo=timezone.utc)))
+        asyncio.run(client.charging_history(datetime(2026, 11, 18, tzinfo=UTC)))
     assert client.calls_used() == 1
 
 
@@ -90,7 +90,7 @@ def test_pages_are_fetched_until_the_total_and_duplicates_dropped(settings, db):
     first = [f"a{i}" for i in range(PAGE_SIZE)]
     pages = {
         None: _page(first, total=PAGE_SIZE + 3),
-        "1": _page(first[-2:] + ["b1", "b2", "b3"]),         # Tesla counting from 0: page 1 overlaps
+        "1": _page([*first[-2:], "b1", "b2", "b3"]),         # Tesla counting from 0: page 1 overlaps
     }
     asked = []
 

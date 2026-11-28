@@ -1,4 +1,5 @@
 import json
+from datetime import UTC
 
 from app.db import DB
 from app.networks import MULTIPASS, SUPERCHARGER, classify, unknown_keys
@@ -64,8 +65,9 @@ def test_network_flows_into_db_event_and_csv(settings, tmp_path):
     assert sync.event_payload(by_id["42"])["network"] == SUPERCHARGER
     json.dumps(payload)
 
-    from app.export import sessions_csv
     import csv
+
+    from app.export import sessions_csv
     rows = list(csv.reader(sessions_csv(db.sessions(), settings).lstrip("﻿").splitlines()))
     col = rows[0].index("Network")
     assert {r[col] for r in rows[1:]} == {"Supercharger", "MultiPass"}
@@ -97,9 +99,9 @@ def test_credit_from_real_shape(settings, tmp_path):
     payload = SyncService(settings, db, tesla=None, ha=None).event_payload(s)
     assert payload["list_price_per_kwh"] == 0.45 and payload["credit"] == 13.5
 
-    from datetime import datetime, timezone
+    from datetime import datetime
     d = build_dashboard(sessions=db.sessions(), live={"values": {}, "units": {}}, readings={},
-                        settings=settings, meta={}, now=datetime(2026, 10, 2, tzinfo=timezone.utc))
+                        settings=settings, meta={}, now=datetime(2026, 10, 2, tzinfo=UTC))
     assert d["sites"][0]["avg_price"] == 0.45                          # comparisons use the list price
     assert d["totals"]["credit"] == 13.5 and d["totals"]["avg_price"] == 0.2177
     assert d["sessions"][0]["credit"] == 13.5 and d["sessions"][0]["net"] == 10.63

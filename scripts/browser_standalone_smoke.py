@@ -49,7 +49,7 @@ def main() -> None:
                     for width, height in ((1440, 1000), (390, 844)):
                         page = browser.new_page(viewport={"width": width, "height": height})
                         errors: list[str] = []
-                        page.on("pageerror", lambda error: errors.append(str(error)))
+                        page.on("pageerror", lambda error: errors.append(str(error)))  # noqa: B023 – wird in derselben Schleifenrunde benutzt
 
                         def without_home_assistant(route):
                             response = route.fetch()

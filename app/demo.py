@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 import math
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from . import carimage, checks
 from .analytics import build_dashboard
@@ -53,15 +53,15 @@ def demo_sessions(settings: Settings, now: datetime) -> list[dict]:
         listed = round(kwh * price, 2)
         credit = 10.0 if i == 0 else 0.0              # die erste Ladung wurde teils mit Tesla-Guthaben bezahlt
         charge = round(listed - credit, 2)
-        start_utc = start.astimezone(timezone.utc)
+        start_utc = start.astimezone(UTC)
         out.append({
             "session_id": f"demo-{1000 + i}",
             "vin": "DEMO",
             "site": site,
             "country": "DE",
             "start_ts": start_utc.isoformat(timespec="seconds"),
-            "stop_ts": stop.astimezone(timezone.utc).isoformat(timespec="seconds"),
-            "unlatch_ts": (stop + timedelta(minutes=12 if idle else 3)).astimezone(timezone.utc).isoformat(timespec="seconds"),
+            "stop_ts": stop.astimezone(UTC).isoformat(timespec="seconds"),
+            "unlatch_ts": (stop + timedelta(minutes=12 if idle else 3)).astimezone(UTC).isoformat(timespec="seconds"),
             "kwh": kwh,
             "charge_cost": charge,
             "idle_fee": idle,
@@ -103,7 +103,7 @@ def demo_readings(settings: Settings, sessions: list[dict], now: datetime) -> di
     while t < end:
         t += timedelta(hours=1)
         temp = _demo_temp(t, now)
-        utc = t.astimezone(timezone.utc)
+        utc = t.astimezone(UTC)
         if t.hour % 3 == 0:
             temp_pts.append((utc, temp))
         drove = 0.0
@@ -145,7 +145,7 @@ def demo_readings(settings: Settings, sessions: list[dict], now: datetime) -> di
 
 
 def build_demo(settings: Settings) -> dict:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     sessions = demo_sessions(settings, now)
     readings = demo_readings(settings, sessions, now)
     inv_total = sum(s["total"] for s in sessions)
