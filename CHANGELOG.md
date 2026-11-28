@@ -1,5 +1,11 @@
 # Changelog
 
+
+## Unveröffentlicht
+
+- Weboberfläche: Antwortet Teslas Bilddienst nicht, steht statt einer großen leeren Fläche nur eine schmale Zeile mit Autosymbol und „Erneut laden“. Die Ladeanzeige rückt nach oben.
+- Handy-App intern: Server-Anbindung und Fehlertexte liegen in `cockpit_client.dart` statt in `main.dart` (keine Änderung in der Bedienung).
+
 ## 0.25.0 – 2026-11-28
 
 - **Vier Jahreszeiten.** Der Bereich *Winterzeit und Sommerzeit* in der Web-App hat eine zweite Tabelle *Nach Jahreszeit*: Strecke, Verbrauch (kWh pro 100 km) und Kosten pro 100 km der letzten zwölf Monate für Winter (Dezember–Februar), Frühling (März–Mai), Sommer (Juni–August) und Herbst (September–November). Auf der Südhalbkugel – erkannt an einer Zeitzone mit Sommerzeit im Januar – sind die Jahreszeiten um ein halbes Jahr versetzt. Wie bei Winter- und Sommerzeit zeigt eine Jahreszeit mit weniger als 300 km „Noch zu wenig Strecke“, und die aktuelle ist mit *jetzt* markiert. Neue Felder `quarters` und `current_quarter` in `seasons` im Dashboard-JSON; der Sensor `sensor.ladecockpit_consumption` hat die neuen Attribute `by_season` (je Jahreszeit `id`, `label`, `current`, `distance`, `kwh_per_100`, `cost_per_100`, `price_per_kwh`) und `quarter_now`.
